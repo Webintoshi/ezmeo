@@ -1,0 +1,359 @@
+Handle,Title,Body (HTML),Vendor,Product Category,Type,Tags,Published,Option1 Name,Option1 Value,Option1 Linked To,Option2 Name,Option2 Value,Option2 Linked To,Option3 Name,Option3 Value,Option3 Linked To,Variant SKU,Variant Grams,Variant Inventory Tracker,Variant Inventory Policy,Variant Fulfillment Service,Variant Price,Variant Compare At Price,Variant Requires Shipping,Variant Taxable,Unit Price Total Measure,Unit Price Total Measure Unit,Unit Price Base Measure,Unit Price Base Measure Unit,Variant Barcode,Image Src,Image Position,Image Alt Text,Gift Card,SEO Title,SEO Description,Google Shopping / Google Product Category,Google Shopping / Gender,Google Shopping / Age Group,Google Shopping / MPN,Google Shopping / Condition,Google Shopping / Custom Product,Google Shopping / Custom Label 0,Google Shopping / Custom Label 1,Google Shopping / Custom Label 2,Google Shopping / Custom Label 3,Google Shopping / Custom Label 4,Google: Custom Product (product.metafields.mm-google-shopping.custom_product),Ürün derecelendirmesi sayısı (product.metafields.reviews.rating_count),Alerjen Bilgisi (product.metafields.shopify.allergen-information),Diyet Tercihleri (product.metafields.shopify.dietary-preferences),Fındık Ezmesi Çeşitleri (product.metafields.shopify.nut-butter-variety),Kabuklu yemiş işleme yöntemi (product.metafields.shopify.nut-processing-method),Fındık/Tohum türü (product.metafields.shopify.nut-seed-type),Variant Image,Variant Weight Unit,Variant Tax Code,Cost per item,Status
+yer-fistigi-500g,Yer Fıstığı 500G,"<h2>Doğal Yer Fıstığı - Protein ve Enerji Kaynağı</h2>
+<p>%100 doğal ve yüksek kaliteli <strong>yer fıstığı</strong> ile günlük beslenmenize lezzet ve sağlık katın. Yer fıstığı; protein, sağlıklı yağlar, E vitamini, magnezyum, folik asit ve çinko açısından zengin yapısıyla kas gelişimini destekler, uzun süre tokluk hissi sağlar ve kalp sağlığını korumaya yardımcı olur.</p>
+<p>Lif içeriği, sindirimi desteklerken kan şekerinin dengelenmesine katkı sağlar. Koruyucu ve katkı maddesi içermez; dengeli diyetin bir parçası olarak, atıştırmalık veya tariflerinizde doğal bir enerji kaynağı olarak tüketebilirsiniz.</p>
+<p>Bir avuç (yaklaşık 30 gram) yer fıstığı, protein ihtiyacının yanında günlük enerji ve vitamin desteği sağlar. Tazelik ve kalite garantili ambalajla size ulaşır.</p>
+<h3>Yer Fıstığının Faydaları</h3>
+<ul>
+<li>Kalp ve damar sağlığını destekler</li>
+<li>Kas gelişimini ve onarımını hızlandırır</li>
+<li>B vitamini, E vitamini, magnezyum ve çinko bakımından zengin</li>
+<li>Uzun süreli tokluk ve enerji sağlar</li>
+<li>Doğal antioksidanlar içerir</li>
+</ul>
+<h3>Kullanım Alanları</h3>
+<p>Ara öğünlerde direkt tüketebilir, kahvaltıda, salatalarda veya tatlılarda kullanabilirsiniz. Spor öncesi ya da sonrasında enerji için idealdir.</p>",Ezmeo,"Food, Beverages & Tobacco > Food Items > Nuts & Seeds","","",true,Title,Default Title,,,,,,,,EZMEO-K005,500.0,,deny,manual,249.00,,true,true,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/Yer_f_st_doypack.jpg?v=1764562035,1,Kavrulmuş kabuksuz yer fıstıkları yakın çekim detay.,false,Doğal Yer Fıstığı: Protein ve Vitamin Deposu | Ezmeo,"Doğal %100 yer fıstığı, protein ve vitamin yönünden zengin sağlıklı atıştırmalık. Yüksek lif, magnezyum ve E vitamini içerir. Hemen sipariş ver!
+",,,,,,,,,,,,,,peanuts,vegetarian; vegan; gluten-free; halal; keto; high-protein; dairy-free,,raw,peanuts,,g,,,active
+yer-fistigi-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/Yer_f_st_kase_i_inde_sergileniyor.jpg?v=1764562016,2,"Doğal yer fıstığı taneleri, kabuklarıyla birlikte bir kase içinde.",,,,,,,,,,,,,,,,,,,,,,,,,,
+yer-fistigi-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/YerFistigi3.Gorsel.jpg?v=1764531680,3,Elinde taze yer fıstığı tutan bir yetişkin.,,,,,,,,,,,,,,,,,,,,,,,,,,
+yer-fistigi-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/1_59060caa-2c33-4415-864f-edf106c5539e.png?v=1764531680,4,Salata üzerine serpilmiş yer fıstığı parçaları.,,,,,,,,,,,,,,,,,,,,,,,,,,
+yer-fistigi-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/2_9a951d1e-808b-413f-8a69-08e99be73987.png?v=1764531680,5,Enerji veren doğal atıştırmalık doğal yer fıstığı tabağı.,,,,,,,,,,,,,,,,,,,,,,,,,,
+cig-badem-500g,Çiğ Badem 500G,"<h2>Çiğ Badem 500g - Doğal ve Katkısız</h2>
+<p><strong>Çiğ badem</strong>, sağlıklı beslenmenin vazgeçilmez besin kaynaklarından biridir. %100 doğal ve katkısız olan ürünümüz, E vitamini, magnezyum, kalsiyum, protein ve sağlıklı yağlar açısından son derece zengindir.</p>
+<p>Çiğ badem, kalp sağlığını destekler, kolesterol seviyesini dengelemeye yardımcı olur ve beyin fonksiyonlarını güçlendirir. Lif içeriği sayesinde sindirim sistemini düzenler ve uzun süre tokluk hissi sağlar.</p>
+<p>Antioksidan özelliği ile hücre yenilenmesine destek olur ve bağışıklık sistemini güçlendirir. Günde bir avuç (yaklaşık 30 gram) çiğ badem tüketmek, günlük vitamin ve mineral ihtiyacınızı karşılamaya yardımcı olur. Ezmeo olarak, en kaliteli çiğ bademleri özenle seçiyor ve hijyenik koşullarda paketleyerek sofranıza ulaştırıyoruz.</p>
+<h3>Çiğ Bademin Faydaları</h3>
+<ul>
+<li>Kalp ve damar sağlığını korur, kolesterol dengesini düzenler</li>
+<li>Beyin fonksiyonlarını destekler, hafıza güçlendirir</li>
+<li>E vitamini ile cilt sağlığını korur ve yaşlanmayı geciktirir</li>
+<li>Kemik sağlığını destekleyen kalsiyum ve magnezyum içerir</li>
+<li>Kan şekeri dengesini korumaya yardımcı olur</li>
+<li>Doğal protein kaynağı olarak kas gelişimini destekler</li>
+</ul>
+<h3>Kullanım Önerileri</h3>
+<p>Çiğ bademi direkt olarak ara öğünlerde tüketebilir, smoothie ve yoğurtlara ekleyebilir, salata ve tatlı tariflerinizde kullanabilirsiniz. Badem sütü yapımında veya ev yapımı granola karışımlarında mükemmel bir seçenektir. Kahvaltılarınızı zenginleştirmek için de idealdir.</p>
+<h3>Ürün Özellikleri</h3>
+<ul>
+<li>500 gram net ağırlık</li>
+<li>%100 doğal ve katkısız</li>
+<li>Tuz, şeker ve koruyucu içermez</li>
+<li>Hijyenik koşullarda paketlenmiştir</li>
+<li>Serin ve kuru yerde muhafaza edilmelidir</li>
+<li>Glutensiz ve vegan</li>
+</ul>
+<p>Sağlıklı yaşamın vazgeçilmezi <strong>Çiğ Badem 500g</strong>'ı hemen sipariş verin, doğal besin deposundan yararlanın!</p>",Ezmeo,"Food, Beverages & Tobacco > Food Items > Nuts & Seeds","","",true,Title,Default Title,,,,,,,,EZMEO-K004,500.0,,deny,manual,321.00,,true,true,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/GeneratedImageNovember30_2025-3_33AM.jpg?v=1764530859,1,"",false,Çiğ Badem 500g - Doğal Protein ve Vitamin Deposu | Ezmeo,"500g çiğ badem, E vitamini, magnezyum ve protein deposu. Kalp sağlığı, beyin fonksiyonları için ideal doğal atıştırmalık. Katkısız ve taze!",,,,,,,,,,,,,,almonds,vegetarian; vegan; gluten-free; halal; keto; high-protein,,raw,almonds,,g,,,active
+cig-badem-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/bademici2.gorsel.jpg?v=1764530859,2,"",,,,,,,,,,,,,,,,,,,,,,,,,,
+cig-badem-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/Badem3.Fotograf.jpg?v=1764530859,3,"",,,,,,,,,,,,,,,,,,,,,,,,,,
+cig-badem-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/1_ee694136-f123-48f6-b82d-d9f31c5f1e60.png?v=1764530859,4,"",,,,,,,,,,,,,,,,,,,,,,,,,,
+cig-badem-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/2_570db969-579b-4275-919a-0d6dcc0fc7ad.png?v=1764530859,5,"",,,,,,,,,,,,,,,,,,,,,,,,,,
+cig-findik-i̇ci-500g,Çiğ Fındık İçi 500G,"<h2>Çiğ İç Fındık 500g - Giresun'un Lezzeti</h2>
+<p><strong>Çiğ iç fındık</strong>, Türkiye'nin en kaliteli fındık bölgelerinden özenle seçilmiş, %100 doğal ve katkısız bir üründür. E vitamini, B vitaminleri, folat, magnezyum, fosfor ve sağlıklı yağlar açısından son derece zengin olan fındık, kalp sağlığını korur ve kolesterol seviyesini dengelemeye yardımcı olur.</p>
+<p>Güçlü antioksidan özellikleri sayesinde hücre yenilenmesini destekler ve bağışıklık sistemini güçlendirir. Omega-3 ve omega-9 yağ asitleri içeren fındık, beyin fonksiyonlarını destekler ve hafızayı güçlendirir. Protein ve lif bakımından zengin yapısı, kas gelişimine katkı sağlar ve uzun süre tokluk hissi verir.</p>
+<p>Çiğ iç fındık, günlük ara öğünlerde tüketebileceğiniz, tariflerinize ekleyebileceğiniz veya fındık sütü yapımında kullanabileceğiniz çok yönlü bir besin kaynağıdır. Ezmeo olarak, taze ve kaliteli fındıkları hijyenik koşullarda paketleyerek size sunuyoruz.</p>
+<h3>Çiğ İç Fındığın Faydaları</h3>
+<ul>
+<li>Kalp ve damar sağlığını korur, iyi kolesterol seviyesini artırır</li>
+<li>Beyin sağlığını destekler, konsantrasyon ve hafızayı güçlendirir</li>
+<li>E vitamini ile cilt sağlığını korur, yaşlanma belirtilerini geciktirir</li>
+<li>Kemik ve diş sağlığını destekleyen kalsiyum ve fosfor içerir</li>
+<li>Enerji metabolizmasını hızlandırır, yorgunluğu azaltır</li>
+<li>Antioksidan özelliği ile bağışıklık sistemini güçlendirir</li>
+</ul>
+<h3>Kullanım Önerileri</h3>
+<p>Çiğ iç fındığı direkt olarak tüketebilir, kahvaltıda yoğurt ve meyve ile kombinleyebilir, smoothie ve milkshake'lerinize ekleyebilirsiniz. Kek, kurabiye ve tatlı tariflerinizde kullanabilir, fındık sütü veya fındık ezmesi yapabilirsiniz. Salatalara ekleyerek besleyici değerini artırabilirsiniz.</p>
+<h3>Ürün Özellikleri</h3>
+<ul>
+<li>500 gram net ağırlık</li>
+<li>%100 doğal çiğ iç fındık</li>
+<li>Hiçbir katkı maddesi, tuz veya şeker içermez</li>
+<li>Kaliteli bölgelerden tedarik edilir</li>
+<li>Hijyenik koşullarda paketlenmiştir</li>
+<li>Serin ve kuru ortamda muhafaza edilmelidir</li>
+<li>Glutensiz ve vegan</li>
+</ul>
+<p>Türkiye'nin en değerli ürünlerinden <strong>Çiğ İç Fındık 500g</strong>'ı hemen sipariş edin, doğal lezzet ve sağlığın keyfini çıkarın!</p>",Ezmeo,"Food, Beverages & Tobacco > Food Items > Nuts & Seeds","","",true,Title,Default Title,,,,,,,,EZMEO-K003,500.0,,deny,manual,371.00,,true,true,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/CigFindik500G.jpg?v=1764528107,1,Çiğ iç fındık taneleri ahşap kase içinde üstten görünüm,false,Çiğ İç Fındık 500g - Doğal Türk Fındığı | Ezmeo,"500g çiğ iç fındık, E vitamini ve omega-3 deposu. Kalp ve beyin sağlığı için ideal. %100 doğal, katkısız Türk fındığı. Hemen sipariş ver!",,,,,,,,,,,,,,nuts,vegetarian; vegan; gluten-free; halal; keto; high-protein,,raw,hazelnuts,,g,,,active
+cig-findik-i̇ci-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/cigfindikici2.gorsel.jpg?v=1764528107,2,Doğal kabuksuz çiğ iç fındık yakın çekim detay fotoğrafı,,,,,,,,,,,,,,,,,,,,,,,,,,
+cig-findik-i̇ci-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/KavrulmusFindik3.Gorsel.jpg?v=1764528148,3,Ezmeo markası çiğ iç fındık 500g doypack ambalaj ürün görseli,,,,,,,,,,,,,,,,,,,,,,,,,,
+cig-findik-i̇ci-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/1_11b8ee39-f532-4bdb-b0ff-3a2b6c08ed3b.png?v=1764528148,4,Elden dökülen taze çiğ iç fındık taneleri doğal arka plan,,,,,,,,,,,,,,,,,,,,,,,,,,
+cig-findik-i̇ci-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/2_36376f17-e46a-4eb2-ae86-de6b3c5b41e6.png?v=1764528148,5,Çiğ iç fındık taneleri beyaz zemin üzerinde sağlıklı atıştırmalık,,,,,,,,,,,,,,,,,,,,,,,,,,
+cig-ceviz-ici-500g,Çiğ Ceviz İçi 500G,"<h2>Çiğ Ceviz İçi 500g - Beyin Sağlığının Dostu</h2>
+<p><strong>Çiğ ceviz içi</strong>, doğanın en değerli besin kaynaklarından biri olup %100 doğal ve katkısız yapısıyla sağlıklı beslenmenin vazgeçilmezidir.</p>
+<p>Omega-3 yağ asitleri, protein, E vitamini, B vitaminleri, magnezyum, fosfor ve antioksidanlar açısından son derece zengin olan ceviz, beyin sağlığını destekler ve bilişsel fonksiyonları güçlendirir. </p>
+<p>Kalp ve damar sağlığını korur, kolesterol seviyesini dengelemeye yardımcı olur ve kan şekeri kontrolünü destekler. Güçlü antioksidan özellikleri sayesinde hücresel yaşlanmayı yavaşlatır ve bağışıklık sistemini güçlendirir.</p>
+<p>Melatonin içeriği sayesinde uyku kalitesini artırır. Çiğ ceviz içi, günlük 4-5 adet (yaklaşık 30 gram) tüketildiğinde omega-3 ihtiyacınızı karşılamaya yardımcı olur. Sporcular, öğrenciler ve zihinsel performans arayanlar için ideal bir besin kaynağıdır. Ezmeo olarak, en taze ve kaliteli ceviz içlerini hijyenik koşullarda paketleyerek sofralarınıza taşıyoruz.</p>
+<h3>Çiğ Ceviz İçinin Faydaları</h3>
+<ul>
+<li>Beyin fonksiyonlarını güçlendirir, hafıza ve konsantrasyonu artırır</li>
+<li>Omega-3 yağ asitleri ile kalp ve damar sağlığını destekler</li>
+<li>Kolesterol seviyesini dengelemeye yardımcı olur</li>
+<li>Güçlü antioksidanlar içerir, hücre yenilenmesini destekler</li>
+<li>Kan şekeri kontrolüne yardımcı olur, diyabet riskini azaltır</li>
+<li>Kemik sağlığını destekleyen mineral deposudur</li>
+<li>Uyku kalitesini artırır, stres ve anksiyeteyi azaltır</li>
+</ul>
+<h3>Kullanım Önerileri</h3>
+<p>Çiğ ceviz içini direkt olarak ara öğünlerde tüketebilir, kahvaltıda yulaf ezmesi veya yoğurt ile karıştırabilirsiniz. Salatalara, kek ve kurabiye tariflerine ekleyebilir, smoothie ve milkshake'lerinizde kullanabilirsiniz.</p>
+<p>Bal ile birlikte tüketmek geleneksel bir yöntemdir. Öğrenciler sınav dönemlerinde düzenli tüketebilir.</p>
+<h3>Ürün Özellikleri</h3>
+<ul>
+<li>500 gram net ağırlık</li>
+<li>%100 doğal çiğ ceviz içi</li>
+<li>Hiçbir katkı maddesi, koruyucu veya şeker içermez</li>
+<li>Taze ve kaliteli cevizlerden elde edilir</li>
+<li>Hijyenik koşullarda özenle paketlenmiştir</li>
+<li>Serin ve kuru yerde, hava almayacak şekilde saklanmalıdır</li>
+<li>Glutensiz ve vegan</li>
+</ul>
+<p>Beyin sağlığınız için en doğru tercih <strong>Çiğ Ceviz İçi 500g</strong>'ı hemen sipariş edin, doğal omega-3 deposundan faydalanın!</p>",Ezmeo,"Food, Beverages & Tobacco > Food Items > Nuts & Seeds","","",true,Title,Default Title,,,,,,,,EZMEO-K002,500.0,,deny,manual,411.00,,true,true,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/Cevizici500g1.Gorsel.jpg?v=1764526624,1,Çiğ ceviz içi taneleri ahşap kase içinde üstten görünüm,false,Çiğ Ceviz İçi 500g - Omega-3 ve Beyin Sağlığı | Ezmeo,"500g çiğ ceviz içi, omega-3 ve antioksidan deposu. Beyin, kalp sağlığı için ideal. %100 doğal, katkısız. Hafıza güçlendirici! Hemen al!",,,,,,,,,,,,,,walnuts,vegetarian; vegan; gluten-free; halal; keto; high-protein,,raw,walnuts,,g,,,active
+cig-ceviz-ici-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/Cevizici2.fotograf.jpg?v=1764526624,2,Doğal taze çiğ ceviz içi yarımları yakın çekim detay fotoğrafı,,,,,,,,,,,,,,,,,,,,,,,,,,
+cig-ceviz-ici-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/Cevizici3.fotograf.jpg?v=1764526624,3,Ezmeo markası çiğ ceviz içi 500g doypack ambalaj ürün görseli,,,,,,,,,,,,,,,,,,,,,,,,,,
+cig-ceviz-ici-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/1_62701a8e-e66a-44c6-a019-0e9f8cce5276.png?v=1764526624,4,Elden tutulan taze çiğ ceviz içi taneleri doğal ışık,,,,,,,,,,,,,,,,,,,,,,,,,,
+cig-ceviz-ici-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/2_9d3f610c-4302-46f4-8594-28ec159f24a7.png?v=1764526624,5,Çiğ ceviz içi taneleri beyaz mermer zemin sağlıklı atıştırmalık,,,,,,,,,,,,,,,,,,,,,,,,,,
+kavrulmus-findik-500g,Kavrulmuş Fındık 500G,"<h2>Kavrulmuş Fındık 500g - Gevrek Lezzet, Doğal Tat</h2>
+<p><strong>Kavrulmuş fındık</strong>, Türkiye'nin gurur kaynağı kaliteli fındıklarının özel kavurma teknikleriyle işlenmesiyle ortaya çıkan, çıtır çıtır ve aromatik bir lezzettir.</p>
+<p>%100 doğal ve tuz içermeyen ürünümüz, E vitamini, B vitaminleri, magnezyum, fosfor, folat ve sağlıklı yağlar açısından son derece zengindir.</p>
+<p>Kavrulmuş fındık, çiğ fındığa göre daha yoğun aroması ve çıtır dokusuyla damak zevkinize hitap ederken sağlık faydalarını da korur. Kalp sağlığını destekler, kolesterol dengesini korumaya yardımcı olur ve kan basıncını düzenlemeye katkı sağlar.</p>
+<p>Antioksidan özellikleri sayesinde hücre yenilenmesini destekler, bağışıklık sistemini güçlendirir. Omega-9 yağ asitleri içeren fındık, beyin fonksiyonlarını destekler ve enerji metabolizmasını hızlandırır.</p>
+<p>Protein ve lif içeriği ile uzun süre tokluk hissi sağlar. Günde bir avuç kavrulmuş fındık tüketmek, günlük vitamin ve mineral ihtiyacınızı karşılamaya yardımcı olur. Ezmeo olarak, en kaliteli fındıkları ustalıkla kavurup hijyenik koşullarda paketliyoruz.</p>
+<h3>Kavrulmuş Fındığın Faydaları</h3>
+<ul>
+<li>Kalp ve damar sağlığını korur, iyi kolesterol seviyesini artırır</li>
+<li>E vitamini ile cilt sağlığını destekler, yaşlanmayı geciktirir</li>
+<li>Beyin fonksiyonlarını güçlendirir, konsantrasyonu artırır</li>
+<li>Kemik ve kas sağlığını destekleyen mineral kaynağıdır</li>
+<li>Enerji verir, yorgunluk ve halsizliği azaltır</li>
+<li>Sindirim sistemini düzenler, uzun süre tokluk sağlar</li>
+<li>Antioksidanlar ile bağışıklık sistemini güçlendirir</li>
+</ul>
+<h3>Kullanım Önerileri</h3>
+<p>Kavrulmuş fındığı direkt olarak atıştırmalık olarak tüketebilir, kahvaltıda gevrek ve yoğurt ile kombinleyebilirsiniz.</p>
+<p>Çikolata ve tatlı yapımında, kek ve kurabiye tariflerinde kullanabilirsiniz. Salatalara ekleyerek çıtırlık katabilir, granola karışımlarında değerlendirebilirsiniz. Çay veya kahve yanında ikram için idealdir.</p>
+<h3>Ürün Özellikleri</h3>
+<ul>
+<li>500 gram net ağırlık</li>
+<li>%100 doğal kavrulmuş fındık</li>
+<li>Tuz, şeker ve katkı maddesi içermez</li>
+<li>Özel kavurma tekniği ile işlenmiştir</li>
+<li>Türk fındığının eşsiz lezzetini taşır</li>
+<li>Hijyenik koşullarda paketlenmiştir</li>
+<li>Serin ve kuru ortamda muhafaza edilmelidir</li>
+<li>Glutensiz ve vegan</li>
+</ul>
+<p>Türkiye'nin en lezzetli ürünü <strong>Kavrulmuş Fındık 500g</strong>'ı hemen sipariş edin, gevrek ve aromatik tadın keyfini çıkarın!</p>",Ezmeo,"Food, Beverages & Tobacco > Food Items > Nuts & Seeds","","",true,Title,Default Title,,,,,,,,EZMEO-K001,0.0,,deny,manual,671.00,,true,true,,,,,"",https://cdn.shopify.com/s/files/1/0987/2297/1942/files/kavrulmus-findik-500-g.jpg?v=1764679145,1,Kavrulmuş fındık 500g fındık  taneleri ahşap kase içinde üstten görünüm,false,Kavrulmuş Fındık 500g - Tuzsuz Türk Fındığı | Ezmeo,"500g kavrulmuş fındık, gevrek lezzet ve E vitamini deposu. Tuzsuz, katkısız %100 doğal Türk fındığı. Sağlıklı atıştırmalık! Hemen al!",,,,,,,,,,,,,,nuts,gluten-free; vegan; vegetarian; no-preservatives; no-artificial-colors; no-artificial-flavors; non-gmo,,roasted,hazelnuts,,g,,,active
+kavrulmus-findik-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/kavrulmus-findik-kasede-sergileniyor.jpg?v=1764679210,2,Gevrek kavrulmuş fındık taneleri yakın çekim detay fotoğrafı,,,,,,,,,,,,,,,,,,,,,,,,,,
+kavrulmus-findik-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/kavrulmus-findik-katmanlari.jpg?v=1764679401,3,Ezmeo markası kavrulmuş fındık 500g doypack ambalaj ürün görseli,,,,,,,,,,,,,,,,,,,,,,,,,,
+kavrulmus-findik-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/kavrulmus-findik-doypack.png?v=1764679421,4,Elden dökülen taze kavrulmuş fındık taneleri doğal arka plan,,,,,,,,,,,,,,,,,,,,,,,,,,
+kavrulmus-findik-500g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/kavrulmus-findik-doypackleri-uc-adet.png?v=1764679453,5,Kavrulmuş fındık taneleri ahşap zemin çay bardağı yanında,,,,,,,,,,,,,,,,,,,,,,,,,,
+sutlu-findik-kremasi-450-g,Sütlü Fındık Kreması 450 G,"<h2>Sütlü Fındık Kreması 450g - Kremalı Lezzet, Fındık Aroması</h2>
+<p><strong>Sütlü fındık kreması</strong>, %100 Türk fındığı ve doğal süt ürünleriyle hazırlanan, yumuşak kıvamlı ve kremsi dokusuyla damakta unutulmaz bir tat bırakan özel bir üründür. Yüksek kaliteli kavrulmuş fındık, süt tozu ve doğal kakao ile hazırlanan kremamız, E vitamini, kalsiyum, protein ve sağlıklı yağlar açısından zengindir.</p>
+<p>Kahvaltılarınızı lezzetli hale getiren, enerji deposu olan sütlü fındık kreması, çocuklar ve yetişkinler için sağlıklı bir atıştırmalık alternatifidir. Yapay tatlandırıcı, palm yağı ve trans yağ içermeyen formülüyle ailenizin güvenle tüketebileceği doğal bir lezzettir.</p>
+<p>Fındığın beyin ve kalp sağlığına olan faydalarını, sütün kalsiyum ve protein değerini bir arada sunar. Kolay yayılabilir dokusu sayesinde ekmek, kraker, waffle ve tatlılarda pratik kullanım sağlar. Ezmeo olarak, en kaliteli fındık ve doğal malzemelerle ürettiğimiz sütlü fındık kremasını hijyenik koşullarda, cam kavanozda sofralarınıza taşıyoruz.</p>
+<h3>Sütlü Fındık Kremasının Faydaları</h3>
+<ul>
+<li>Yüksek kaliteli Türk fındığından üretilir, doğal fındık aroması içerir</li>
+<li>Kalsiyum ve protein deposu, kemik ve kas sağlığını destekler</li>
+<li>E vitamini ile cilt ve bağışıklık sistemini güçlendirir</li>
+<li>Enerji verir, zihinsel ve fiziksel performansı artırır</li>
+<li>Palm yağı ve trans yağ içermez, sağlıklı formül</li>
+<li>Çocukların ve yetişkinlerin severek tüketebileceği doğal lezzet</li>
+</ul>
+<h3>Kullanım Önerileri</h3>
+<p>Sütlü fındık kremasını kahvaltıda ekmek, kraker veya galeta üzerine sürebilir, krep ve waffle ile birlikte servis edebilirsiniz.</p>
+<p>Meyve dilimleriyle tüketebilir, kek ve kurabiye dolgularında kullanabilirsiniz. Sıcak süt veya kahveye ekleyerek lezzetli içecekler hazırlayabilir, tatlı sosları zenginleştirebilirsiniz. Pancake ve tost tariflerinizde de mükemmel bir seçenektir.</p>
+<h3>Ürün Özellikleri</h3>
+<ul>
+<li>450 gram net ağırlık</li>
+<li>%100 Türk fındığı ile üretilir</li>
+<li>Doğal süt tozu ve kakao içerir</li>
+<li>Palm yağı, trans yağ ve yapay tatlandırıcı içermez</li>
+<li>Kremsi ve kolay yayılabilir kıvam</li>
+<li>Cam kavanozda hijyenik paket</li>
+<li>Açıldıktan sonra buzdolabında saklanmalıdır</li>
+<li>Son kullanma tarihi ambalaj üzerinde belirtilmiştir</li>
+</ul>
+<p>Kahvaltılarınızın vazgeçilmezi <strong>Sütlü Fındık Kreması 450g</strong>'ı hemen sipariş edin, fındık ve sütün eşsiz lezzetini keşfedin!</p>",Ezmeo,"Food, Beverages & Tobacco > Food Items > Nuts & Seeds","","",true,Title,Default Title,,,,,,,,EZMEO-1105,680.0,,deny,manual,241.00,,true,true,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/S_tl_f_nd_k_kremas_r_n_ezmeo_markas_na_ait..jpg?v=1764351678,1,Bu görselde sütü fındık kreması sergileniyor. Ezmeo markasına özel üretildi,false,Sütlü Fındık Kreması 450g - Doğal ve Kremalı | Ezmeo,"450g sütlü fındık kreması, %100 Türk fındığı ve doğal süt ile. Palm yağı yok, katkısız lezzet. Kahvaltıların favorisi! Hemen sipariş ver!",,,,,,,,,,,,,,peanuts; nuts; milk,gluten-free; vegan; vegetarian; dairy-free; no-artificial-sweeteners; no-artificial-flavors; no-preservatives,,raw; roasted,peanuts; hazelnuts,,g,,,active
+sutlu-findik-kremasi-450-g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/sutlufindikkremasi2.jpg?v=1764351678,2,Ekmek üzerine sürülmüş sütlü fındık kreması kahvaltı masası,,,,,,,,,,,,,,,,,,,,,,,,,,
+sutlu-findik-kremasi-450-g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/SUTLU_FINDIK_KREMASI_450_G.jpg?v=1764352216,3,Kaşıkla alınan kremsi sütlü fındık kreması yakın çekim,,,,,,,,,,,,,,,,,,,,,,,,,,
+sutlu-findik-kremasi-450-g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/1_1d7d3ec2-793c-441a-945b-c73f7d212ed3.png?v=1764352366,4,Ezmeo markası sütlü fındık kreması 450g kavanoz ambalaj,,,,,,,,,,,,,,,,,,,,,,,,,,
+sutlu-findik-kremasi-450-g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/2_4df7bd10-066f-4e2e-a3a6-d654f914447b.png?v=1764352366,5,Sütlü fındık kreması waffle üzerinde meyve garnitürlü sunum,,,,,,,,,,,,,,,,,,,,,,,,,,
+kakaolu-findik-ezmesi-450-g,Kakaolu Fındık Ezmesi 450 G,"<h2>Kakaolu Fındık Ezmesi 450g - Yoğun Çikolata, Gerçek Fındık</h2>
+<p><strong>Kakaolu fındık ezmesi</strong>, %100 Türk fındığı ve kaliteli kakao ile hazırlanan, yoğun çikolata aroması ve gerçek fındık tadıyla öne çıkan özel bir üründür. Yüksek oranda kavrulmuş fındık içeren ezmemiz, E vitamini, magnezyum, protein ve antioksidanlar açısından zengindir.</p>
+<p>Doğal kakao ile zenginleştirilmiş formülü, enerji ve lezzeti bir arada sunar. Palm yağı, trans yağ ve yapay tatlandırıcı içermeyen sağlıklı yapısıyla ailenizin güvenle tüketebileceği bir üründür.</p>
+<p>Fındığın kalp ve beyin sağlığına olan katkılarını, kakaonun antioksidan gücünü birleştirir. Kahvaltılarda, atıştırmalıklarda ve tatlı tariflerinde kullanabileceğiniz çok yönlü bir lezzettir. Kremsi ve kolay yayılabilir kıvamı sayesinde ekmek, kraker, waffle ve pancake'lerde mükemmel bir tat deneyimi sunar.</p>
+<p>Çocukların ve yetişkinlerin favorisi olan kakaolu fındık ezmesi, doğal malzemelerle üretilir ve yapay katkı maddesi içermez. Ezmeo olarak, en kaliteli Türk fındığı ve doğal kakao ile hazırladığımız bu lezzeti hijyenik koşullarda cam kavanozda sofralarınıza ulaştırıyoruz.</p>
+<h3>Kakaolu Fındık Ezmesinin Faydaları</h3>
+<ul>
+<li>Yüksek oranda Türk fındığı içerir, gerçek fındık lezzeti sunar</li>
+<li>Doğal kakao ile zenginleştirilmiş, antioksidan deposudur</li>
+<li>E vitamini ve magnezyum ile enerji metabolizmasını destekler</li>
+<li>Palm yağı ve trans yağ içermez, sağlıklı yağ profili</li>
+<li>Protein kaynağı, uzun süre tokluk hissi sağlar</li>
+<li>Yapay tatlandırıcı ve koruyucu içermez</li>
+<li>Kalp ve beyin sağlığını destekleyen besin değerleri içerir</li>
+</ul>
+<h3>Kullanım Önerileri</h3>
+<p>Kakaolu fındık ezmesini kahvaltıda ekmek ve simit üzerine sürebilir, krep ve waffle ile servis edebilirsiniz.</p>
+<p>Meyve dilimleriyle (muz, çilek, elma) tüketebilir, smoothie ve milkshake'lerinize ekleyebilirsiniz. Kek, brownie ve kurabiye tariflerinde dolgu veya sos olarak kullanabilirsiniz. Dondurma ve tatlı soslarında lezzet katmanı olarak değerlendirebilirsiniz.</p>
+<h3>Ürün Özellikleri</h3>
+<ul>
+<li>450 gram net ağırlık</li>
+<li>Yüksek oranda %100 Türk fındığı</li>
+<li>Doğal kakao tozu ile zenginleştirilmiş</li>
+<li>Palm yağı, trans yağ ve yapay katkı içermez</li>
+<li>Kremsi ve pürüzsüz doku</li>
+<li>Kolay yayılabilir kıvam</li>
+<li>Cam kavanozda hijyenik ambalaj</li>
+<li>Açıldıktan sonra serin yerde saklanmalıdır</li>
+<li>Son kullanma tarihi ambalaj üzerindedir</li>
+</ul>
+<p>Çikolata ve fındık tutkunlarının tercihi <strong>Kakaolu Fındık Ezmesi 450g</strong>'ı hemen sipariş edin, yoğun lezzetin tadını çıkarın!</p>",Ezmeo,"Food, Beverages & Tobacco > Food Items > Nuts & Seeds","","",true,Title,Default Title,,,,,,,,EZMEO-1104,680.0,,deny,manual,371.00,,true,true,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/kakaolu-findik-ezmesi.jpg?v=1764786587,1,Kakaolu fındık ezmesi cam kavanoz ürün görseli ön yüz,false,Kakaolu Fındık Ezmesi 450g - Palm Yağsız | Ezmeo,"450g kakaolu fındık ezmesi, yüksek oranda Türk fındığı ve doğal kakao. Palm yağı yok! Çikolata ve fındık lezzeti. Hemen sipariş ver!",,,,,,,,,,,,,,nuts,gluten-free; vegan; vegetarian; dairy-free; no-artificial-sweeteners; no-preservatives; no-artificial-flavors,,roasted,hazelnuts,,g,,,active
+kakaolu-findik-ezmesi-450-g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/kakaolu-findik-ezmesi-akiskan.jpg?v=1764786611,2,Ekmek üzerine sürülmüş kakaolu fındık ezmesi kahvaltı sofrasında,,,,,,,,,,,,,,,,,,,,,,,,,,
+kakaolu-findik-ezmesi-450-g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/kakaolu-findik-ezmesi-kapali-kutu.jpg?v=1764786630,3,Kaşıkla alınan kremsi kakaolu fındık ezmesi yakın çekim detay,,,,,,,,,,,,,,,,,,,,,,,,,,
+kakaolu-findik-ezmesi-450-g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/kakaolu-findik-ezmesi-ikili-firsat.png?v=1764786651,4,Ezmeo markası kakaolu fındık ezmesi 450g cam kavanoz ambalaj,,,,,,,,,,,,,,,,,,,,,,,,,,
+kakaolu-findik-ezmesi-450-g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/kakaolu-findik-ezmesi-uclu-firsat.png?v=1764786667,5,Kakaolu fındık ezmesi waffle üzerinde muz ve çilek garnitürlü,,,,,,,,,,,,,,,,,,,,,,,,,,
+hurmali-fistik-ezmesi-450g,Hurmalı Fıstık Ezmesi 450G,"<h2>Hurmalı Fıstık Ezmesi 450g - Doğal Tatlandırıcı, Sağlıklı Enerji</h2>
+<p><strong>Hurmalı fıstık ezmesi</strong>, %100 doğal fıstık ve tatlılığını hurmadan alan, şeker ilavesi içermeyen benzersiz bir üründür. Yüksek kaliteli kavrulmuş fıstık ve doğal hurma ile hazırlanan ezmemiz, protein, lif, potasyum, magnezyum, demir ve B vitaminleri açısından son derece zengindir.</p>
+<p>Hurmanın doğal tatlandırıcı özelliği sayesinde ek şeker kullanmadan lezzetli bir tat sunar. Sporcular, fitness tutkunları, diyabet hastaları ve sağlıklı beslenmeye önem verenler için ideal bir üründür.</p>
+<p>Fıstığın kalp sağlığını destekleyen sağlıklı yağları ile hurmanın doğal enerjisi bir araya gelir. Lif içeriği sayesinde sindirim sistemini düzenler ve uzun süre tokluk hissi sağlar. Antioksidan özellikleri ile bağışıklık sistemini güçlendirir ve hücresel yaşlanmayı yavaşlatır.</p>
+<p>Vegan ve glutensiz olan bu ezme, kahvaltılardan atıştırmalıklara, spor öncesi enerjiden tatlı tariflerine kadar geniş kullanım alanına sahiptir. Ezmeo olarak, en kaliteli fıstık ve doğal hurma ile hazırladığımız bu özel lezzeti hijyenik koşullarda, cam kavanozda sofralarınıza sunuyoruz.</p>
+<h3>Hurmalı Fıstık Ezmesinin Faydaları</h3>
+<ul>
+<li>Şeker ilavesi yok, doğal hurma ile tatlandırılmıştır</li>
+<li>Yüksek protein kaynağı, kas gelişimini destekler</li>
+<li>Doğal enerji deposu, antrenman öncesi ve sonrası ideal</li>
+<li>Potasyum ve magnezyum ile kalp sağlığını korur</li>
+<li>Lif içeriği ile sindirim sistemini düzenler</li>
+<li>Demir içeriği ile kan yapımını destekler</li>
+<li>Antioksidanlar ile bağışıklık sistemini güçlendirir</li>
+<li>Vegan, glutensiz ve katkısız doğal formül</li>
+</ul>
+<h3>Kullanım Önerileri</h3>
+<p>Hurmalı fıstık ezmesini kahvaltıda tam buğday ekmeği üzerine sürebilir, yulaf ezmesi ve chia pudinginize ekleyebilirsiniz.</p>
+<p>Smoothie bowl ve protein shake'lerinizde kullanabilir, muz veya elma dilimleriyle tüketebilirsiniz. Enerji topları (energy balls) yapımında bağlayıcı olarak kullanabilir, spor öncesi bir kaşık tüketebilirsiniz. Kek ve kurabiye tariflerinizde şeker yerine tatlandırıcı olarak değerlendirebilirsiniz.</p>
+<h3>Ürün Özellikleri</h3>
+<ul>
+<li>450 gram net ağırlık</li>
+<li>%100 doğal fıstık ve hurma</li>
+<li>Şeker, tuz ve katkı maddesi içermez</li>
+<li>Palm yağı ve trans yağ içermez</li>
+<li>Vegan ve glutensiz</li>
+<li>Doğal tatlandırıcı ile hazırlanmıştır</li>
+<li>Kremsi ve yoğun kıvam</li>
+<li>Cam kavanozda hijyenik ambalaj</li>
+<li>Serin ve kuru yerde saklanmalıdır</li>
+</ul>
+<p>Sağlıklı yaşamın lezzetli tercihi <strong>Hurmalı Fıstık Ezmesi 450g</strong>'ı hemen sipariş edin, doğal tatlandırıcının gücünü keşfedin!</p>",Ezmeo,"Food, Beverages & Tobacco > Food Items > Nuts & Seeds","","",true,Title,Default Title,,,,,,,,EZMEO-1106,680.0,,deny,manual,341.00,,true,true,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/Hurmal_f_st_k_ezmesi_mermer_tezgaha_d_k_l_yor.jpg?v=1764281898,1,Hurmalı fıstık ezmesi mermer tezgaha dökülüyor,false,Hurmalı Fıstık Ezmesi 450g - Şekersiz Doğal | Ezmeo,"450g hurmalı fıstık ezmesi, şeker ilavesiz doğal hurma ile. Protein ve enerji deposu. Vegan, glutensiz, katkısız! Hemen sipariş ver!",,,,,,,,,,,,,,peanuts,gluten-free; vegan; vegetarian; dairy-free; no-preservatives; no-artificial-colors; no-artificial-flavors; no-artificial-sweeteners; non-gmo,,raw,peanuts,,g,,,active
+hurmali-fistik-ezmesi-450g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/Hurmal_f_st_k_ezmesi_ekmekle_birlikte_sergileniyor..jpg?v=1764282202,2,Hurmalı fıstık ezmesi ekmekle birlikte sergileniyor.,,,,,,,,,,,,,,,,,,,,,,,,,,
+hurmali-fistik-ezmesi-450g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/Hurmal_f_st_k_ezmesi_450g_kutusunda_kapal_paket_olarak_sergileniyor..jpg?v=1764282371,3,Hurmalı fıstık ezmesi 450g kutusunda kapalı paket olarak sergileniyor.,,,,,,,,,,,,,,,,,,,,,,,,,,
+hurmali-fistik-ezmesi-450g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/1_f8eea97f-0907-4316-b8a2-b9350227f3c1.png?v=1764282601,4,Hurmalı fıstık ezmesi cam kavanoz ürün görseli ön yüz,,,,,,,,,,,,,,,,,,,,,,,,,,
+hurmali-fistik-ezmesi-450g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/2_e3e4fe6b-daf7-493f-a338-6e3494de5c52.png?v=1764282601,5,Tam buğday ekmeği üzerine sürülmüş hurmalı fıstık ezmesi,,,,,,,,,,,,,,,,,,,,,,,,,,
+balli-fistik-ezmesi-450g,Ballı Fıstık Ezmesi 450G,"<h2>Ballı Fıstık Ezmesi 450g - Doğal Bal, Saf Fıstık Lezzeti</h2>
+<p><strong>Ballı fıstık ezmesi</strong>, %100 doğal fıstık ve saf çiçek balının eşsiz birleşimiyle hazırlanan, geleneksel lezzetin modern yorumudur. Yüksek kaliteli kavrulmuş fıstık ve doğal bal ile üretilen ezmemiz, protein, sağlıklı yağlar, antioksidanlar, vitaminler ve mineraller açısından son derece zengindir.</p>
+<p>Balın doğal enzimler, aminoasitler ve antibakteriyel özellikleri ile fıstığın kalp dostu yağları bir araya gelir. Enerji deposu olan bu ezme, sporcular, çocuklar ve aktif yaşam sürenler için ideal bir besin kaynağıdır. Bağışıklık sistemini güçlendiren bal ile kas gelişimini destekleyen fıstık proteini, sağlıklı bir kombinasyon oluşturur.</p>
+<p>Lif içeriği sayesinde sindirim sistemini düzenler ve uzun süre tokluk hissi sağlar. Katkı maddesi, koruyucu ve palm yağı içermeyen doğal formülüyle ailenizin güvenle tüketebileceği bir üründür.</p>
+<p>Kremsi dokusu ve aromatik tadıyla kahvaltılardan atıştırmalıklara, geleneksel tariflerden modern kullanımlara kadar geniş bir yelpazede değerlendirilebilir. Ezmeo olarak, en kaliteli fıstık ve saf doğal bal ile hazırladığımız bu lezzeti hijyenik koşullarda, cam kavanozda sofralarınıza ulaştırıyoruz.</p>
+<h3>Ballı Fıstık Ezmesinin Faydaları</h3>
+<ul>
+<li>Doğal bal ve fıstık ile zenginleştirilmiş enerji kaynağı</li>
+<li>Yüksek protein içeriği, kas gelişimini destekler</li>
+<li>Balın doğal antioksidanları ile bağışıklık sistemini güçlendirir</li>
+<li>Kalp sağlığını destekleyen sağlıklı yağlar içerir</li>
+<li>Doğal enzimler ile sindirim sistemini düzenler</li>
+<li>Uzun süreli enerji ve tokluk hissi sağlar</li>
+<li>Vitamin ve mineral deposudur</li>
+<li>Palm yağı, trans yağ ve yapay katkı içermez</li>
+</ul>
+<h3>Kullanım Önerileri</h3>
+<p>Ballı fıstık ezmesini kahvaltıda ekmek, simit veya pankek üzerine sürebilir, tereyağı yerine kullanabilirsiniz. Yoğurt ve meyve ile karıştırarak sağlıklı atıştırmalık hazırlayabilir, yulaf ezmesi ve granola'ya ekleyebilirsiniz.</p>
+<p>Spor öncesi enerji için bir kaşık tüketebilir, smoothie ve protein shake'lerinize ekleyebilirsiniz. Geleneksel kahvaltılarda peynir-reçel ile kombinleyebilir, çay yanında lezzet katmanı olarak sunabilirsiniz.</p>
+<h3>Ürün Özellikleri</h3>
+<ul>
+<li>450 gram net ağırlık</li>
+<li>%100 doğal fıstık ve saf çiçek balı</li>
+<li>Katkı maddesi ve koruyucu içermez</li>
+<li>Palm yağı ve trans yağ içermez</li>
+<li>Glutensiz formül</li>
+<li>Kremsi ve akıcı kıvam</li>
+<li>Cam kavanozda hijyenik ambalaj</li>
+<li>Oda sıcaklığında veya serin yerde saklanabilir</li>
+<li>Son kullanma tarihi ambalaj üzerinde belirtilmiştir</li>
+</ul>
+<p>Geleneksel lezzetin doğal hali <strong>Ballı Fıstık Ezmesi 450g</strong>'ı hemen sipariş edin, bal ve fıstığın kusursuz uyumunu tadın!</p>",Ezmeo,"Food, Beverages & Tobacco > Food Items > Nuts & Seeds","","",true,Title,Default Title,,,,,,,,EZMEO-1107,680.0,,deny,manual,341.00,,true,true,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/1.png?v=1764281274,1,Ballı fıstık ezmesi cam kavanoz ürün görseli ön yüz,false,Ballı Fıstık Ezmesi 450g - Doğal Bal ve Fıstık | Ezmeo,"450g ballı fıstık ezmesi, saf çiçek balı ve doğal fıstık. Enerji deposu, bağışıklık güçlendirici. Katkısız doğal lezzet! Hemen al!",,,,,,,,,,,,,,peanuts,gluten-free; vegan; vegetarian; dairy-free; no-preservatives; no-artificial-colors; no-artificial-flavors; no-artificial-sweeteners; non-gmo,,raw,peanuts,,g,,,active
+balli-fistik-ezmesi-450g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/2.png?v=1764281274,2,Ekmek üzerine sürülmüş ballı fıstık ezmesi kahvaltı sofrasında,,,,,,,,,,,,,,,,,,,,,,,,,,
+balli-fistik-ezmesi-450g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/3.png?v=1764281274,3,Kaşıkla alınan kremsi ballı fıstık ezmesi bal damlası detay,,,,,,,,,,,,,,,,,,,,,,,,,,
+balli-fistik-ezmesi-450g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/4.png?v=1764281274,4,Ezmeo markası ballı fıstık ezmesi 450g cam kavanoz ambalaj,,,,,,,,,,,,,,,,,,,,,,,,,,
+balli-fistik-ezmesi-450g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/5.png?v=1764281274,5,Ballı fıstık ezmesi pankek üzerinde taze meyve garnitürlü sunum,,,,,,,,,,,,,,,,,,,,,,,,,,
+klasik-fistik-ezmesi-450g,Klasik Fıstık Ezmesi 450G,"<h2>Klasik Fıstık Ezmesi 450g - Saf Fıstık, Sade Lezzet</h2>
+<p><strong>Klasik fıstık ezmesi</strong>, %100 doğal kavrulmuş fıstıktan üretilen, hiçbir katkı maddesi içermeyen en saf haliyle fıstık lezzetidir. Yalnızca kavrulmuş fıstıktan oluşan ezmemiz, protein, sağlıklı yağlar, E vitamini, B vitaminleri, magnezyum, fosfor ve çinko açısından son derece zengindir.</p>
+<p>Şeker, tuz, palm yağı veya herhangi bir ilave içermeden üretilen bu ezme, fıstığın gerçek tadını ve besin değerini en üst seviyede sunar. Sporcular, sağlıklı beslenme tutkunları, vegan ve vejetaryenler için ideal bir protein kaynağıdır.</p>
+<p>Kalp sağlığını destekleyen tekli doymamış yağ asitleri içerir ve kolesterol seviyesini dengelemeye yardımcı olur. Yüksek protein içeriği sayesinde kas gelişimini destekler ve uzun süre tokluk hissi sağlar. Lif içeriği ile sindirim sistemini düzenler ve kan şekeri dengesini korumaya yardımcı olur.</p>
+<p>Antioksidan özellikleri ile bağışıklık sistemini güçlendirir ve hücresel yaşlanmayı yavaşlatır. Klasik fıstık ezmesi, kahvaltıdan spor beslenme programlarına, tatlı tariflerinden smoothie'lere kadar geniş kullanım alanına sahiptir. Ezmeo olarak, en kaliteli fıstıkları ustalıkla işleyerek hijyenik koşullarda, cam kavanozda sofralarınıza ulaştırıyoruz.</p>
+<h3>Klasik Fıstık Ezmesinin Faydaları</h3>
+<ul>
+<li>%100 saf fıstık, hiçbir katkı maddesi yok</li>
+<li>Yüksek protein kaynağı, kas gelişimini ve onarımını destekler</li>
+<li>Kalp sağlığını koruyan sağlıklı yağlar içerir</li>
+<li>E vitamini ile cilt sağlığını ve bağışıklık sistemini güçlendirir</li>
+<li>Magnezyum ve B vitaminleri ile enerji metabolizmasını destekler</li>
+<li>Uzun süreli tokluk hissi ve enerji sağlar</li>
+<li>Şeker, tuz ve palm yağı içermez</li>
+<li>Vegan, glutensiz ve keto diyetine uygun</li>
+</ul>
+<h3>Kullanım Önerileri</h3>
+<p>Klasik fıstık ezmesini kahvaltıda tam tahıllı ekmek üzerine sürebilir, meyve dilimleriyle (elma, muz, çilek) tüketebilirsiniz. Yulaf ezmesi, smoothie ve protein shake'lerinize ekleyebilir, enerji topları (energy balls) yapımında kullanabilirsiniz.</p>
+<p>Spor öncesi veya sonrası protein kaynağı olarak tüketebilir, salata soslarında kremalı doku için değerlendirebilirsiniz. Tatlı ve kurabiye tariflerinizde, Asya mutfağı soslarında da kullanabilirsiniz.</p>
+<h3>Ürün Özellikleri</h3>
+<ul>
+<li>450 gram net ağırlık</li>
+<li>%100 doğal kavrulmuş fıstık</li>
+<li>Tek içerik: Fıstık</li>
+<li>Şeker, tuz, katkı maddesi içermez</li>
+<li>Palm yağı ve trans yağ içermez</li>
+<li>Vegan, glutensiz ve keto uyumlu</li>
+<li>Kremsi ve yoğun doku</li>
+<li>Cam kavanozda hijyenik ambalaj</li>
+<li>Serin yerde saklanmalı, açıldıktan sonra buzdolabında muhafaza edilebilir</li>
+</ul>
+<p>Saf fıstık lezzetinin en doğal hali <strong>Klasik Fıstık Ezmesi 450g</strong>'ı hemen sipariş edin, katkısız beslenmenin tadını çıkarın!</p>",Ezmeo,"Food, Beverages & Tobacco > Food Items > Dips & Spreads > Nut Butters","","",true,Title,Default Title,,,,,,,,EZMEO-1111,680.0,,deny,manual,331.00,,true,true,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/KLASIK_FISTIK_EZMESI_1.jpg?v=1764292472,1,	Klasik fıstık ezmesi cam kavanoz ürün görseli ön yüz,false,Klasik Fıstık Ezmesi 450g - %100 Saf Fıstık | Ezmeo,"450g klasik fıstık ezmesi, sadece fıstık! Şeker, tuz, katkı yok. Yüksek protein, sağlıklı yağlar. Vegan, keto uyumlu. Hemen sipariş ver!",3965,,,,,,,,,,,,,peanuts,gluten-free; keto; vegan; vegetarian; no-preservatives; no-artificial-colors; no-artificial-flavors; no-artificial-sweeteners; non-gmo,peanut,,,,g,,,active
+klasik-fistik-ezmesi-450g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/KLASIKFISTIKEZMESIGORSEL2.jpg?v=1764292472,2,Tam tahıllı ekmek üzerine sürülmüş klasik fıstık ezmesi,,,,,,,,,,,,,,,,,,,,,,,,,,
+klasik-fistik-ezmesi-450g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/KLASIKFISTIKEZMESI450G.jpg?v=1764292472,3,Kaşıkla alınan kremsi klasik fıstık ezmesi yakın çekim detay,,,,,,,,,,,,,,,,,,,,,,,,,,
+klasik-fistik-ezmesi-450g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/1_a149e3fd-07e4-4b43-b8a9-b61b6894f892.png?v=1764292472,4,Kaşıkla alınan kremsi klasik fıstık ezmesi yakın çekim detay,,,,,,,,,,,,,,,,,,,,,,,,,,
+klasik-fistik-ezmesi-450g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/2_5b37b5eb-77eb-4718-ab00-9a019e8760e3.png?v=1764292472,5,Klasik fıstık ezmesi muz ve elma dilimleri ile sağlıklı atıştırmalık,,,,,,,,,,,,,,,,,,,,,,,,,,
+sekersiz-fistik-ezmesi-450-g,Şekersiz Fıstık Ezmesi 450 G,"<h2>Şekersiz Fıstık Ezmesi 450g - Sağlıklı Seçim, Şeker Yok</h2>
+<p><strong>Şekersiz fıstık ezmesi</strong>, %100 doğal kavrulmuş fıstıktan üretilen, hiçbir şeker veya tatlandırıcı içermeyen sağlıklı bir üründür. Sadece fıstığın doğal tadını sunan ezmemiz, protein, sağlıklı yağlar, E vitamini, B vitaminleri, magnezyum, potasyum ve lif açısından son derece zengindir.</p>
+<p>Diyabet hastaları, keto diyeti yapanlar, şeker tüketimini azaltmak isteyenler ve sağlıklı beslenme prensiplerini benimseyen herkes için ideal bir üründür. Kan şekeri seviyesini dengede tutmaya yardımcı olur ve insülin direncini azaltabilir. Kalp sağlığını destekleyen tekli doymamış yağ asitleri içerir ve kötü kolesterol seviyesini düşürmeye yardımcı olur.</p>
+<p>Yüksek protein içeriği sayesinde kas gelişimini destekler, spor sonrası kas onarımını hızlandırır ve uzun süre tokluk hissi sağlar. Lif içeriği ile sindirim sistemini düzenler ve bağırsak sağlığını destekler.</p>
+<p>Palm yağı, trans yağ ve yapay katkı maddesi içermeyen temiz etiketli formülüyle güvenle tüketilebilir. Şekersiz fıstık ezmesi, kahvaltılardan spor beslenmesine, smoothie'lerden tuzlu tariflere kadar geniş kullanım alanı sunar. Ezmeo olarak, en kaliteli fıstıkları özenle işleyerek hijyenik koşullarda, cam kavanozda sofralarınıza ulaştırıyoruz.</p>
+<h3>Şekersiz Fıstık Ezmesinin Faydaları</h3>
+<ul>
+<li>Hiçbir şeker veya tatlandırıcı içermez</li>
+<li>Diyabet dostu, kan şekeri dengesini korur</li>
+<li>Keto, paleo ve düşük karbonhidrat diyetlerine uygun</li>
+<li>Yüksek protein kaynağı, kas gelişimini destekler</li>
+<li>Kalp sağlığını koruyan sağlıklı yağlar içerir</li>
+<li>Uzun süreli tokluk hissi ve enerji sağlar</li>
+<li>Palm yağı, trans yağ ve katkı maddesi içermez</li>
+<li>Vegan, glutensiz ve temiz etiketli ürün</li>
+</ul>
+<h3>Kullanım Önerileri</h3>
+<p>Şekersiz fıstık ezmesini kahvaltıda tam tahıllı veya kepekli ekmek üzerine sürebilir, meyve dilimleriyle (özellikle düşük glisemik indeksli meyveler) tüketebilirsiniz.</p>
+<p>Smoothie ve protein shake'lerinize ekleyebilir, yulaf ezmesi ve chia pudinginizde kullanabilirsiniz. Spor öncesi veya sonrası enerji ve protein kaynağı olarak tüketebilir, salata soslarında ve Asya mutfağı tariflerinde kremalı doku için değerlendirebilirsiniz. Sebze stikleriyle atıştırmalık olarak da idealdir.</p>
+<h3>Ürün Özellikleri</h3>
+<ul>
+<li>450 gram net ağırlık</li>
+<li>%100 doğal kavrulmuş fıstık</li>
+<li>Tek içerik: Fıstık</li>
+<li>Şeker, tatlandırıcı ve tuz içermez</li>
+<li>Palm yağı ve trans yağ içermez</li>
+<li>Diyabet dostu, keto ve paleo uyumlu</li>
+<li>Vegan ve glutensiz</li>
+<li>Kremsi ve doğal doku</li>
+<li>Cam kavanozda hijyenik ambalaj</li>
+<li>Serin yerde saklanmalı, karıştırılarak kullanılmalıdır</li>
+</ul>
+<p>Şekersiz beslenmenin en lezzetli hali <strong>Şekersiz Fıstık Ezmesi 450g</strong>'ı hemen sipariş edin, sağlıklı seçimlerin tadını çıkarın!</p>",Ezmeo,"Food, Beverages & Tobacco > Food Items > Dips & Spreads > Nut Butters","","",true,Title,Default Title,,,,,,,,EZMEO-1103,680.0,,deny,manual,321.00,,true,true,,,,,"",https://cdn.shopify.com/s/files/1/0987/2297/1942/files/Generated_Image_November_28_2025_-_1_43AM_1.jpg?v=1764283590,1,Şekersiz fıstık ezmesi cam kavanoz ürün görseli ön yüz,false,Şekersiz Fıstık Ezmesi 450g - Diyabet Dostu | Ezmeo,"450g şekersiz fıstık ezmesi, sadece fıstık! Diyabet dostu, keto uyumlu. Şeker, tatlandırıcı yok. Sağlıklı protein kaynağı. Hemen sipariş ver!",3965,,,,,,,,,,,,'2,peanuts,gluten-free; vegan; vegetarian; dairy-free; keto; paleo; no-artificial-sweeteners; no-preservatives; no-artificial-flavors,peanut,raw,peanuts,,g,,,active
+sekersiz-fistik-ezmesi-450-g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/b972221a-13c5-4cab-b0dd-c8f0c4b94fca.jpg?v=1764283590,2,Kepekli ekmek üzerine sürülmüş şekersiz fıstık ezmesi sağlıklı kahvaltı,,,,,,,,,,,,,,,,,,,,,,,,,,
+sekersiz-fistik-ezmesi-450-g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/c96544bf-889e-4ae7-a31d-24f0ee76c139.jpg?v=1764283590,3,Kaşıkla alınan kremsi şekersiz fıstık ezmesi yakın çekim detay,,,,,,,,,,,,,,,,,,,,,,,,,,
+sekersiz-fistik-ezmesi-450-g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/1_50e7ee5c-e62c-4a60-a8db-000820cecbbf.png?v=1764286312,4,Ezmeo markası şekersiz fıstık ezmesi 450g cam kavanoz ambalaj,,,,,,,,,,,,,,,,,,,,,,,,,,
+sekersiz-fistik-ezmesi-450-g,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://cdn.shopify.com/s/files/1/0987/2297/1942/files/2_16d6b15c-54f1-419d-a861-53421416aaf6.png?v=1764286312,5,Şekersiz fıstık ezmesi kereviz sapları ile sağlıklı atıştırmalık sunum,,,,,,,,,,,,,,,,,,,,,,,,,,

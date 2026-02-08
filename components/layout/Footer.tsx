@@ -1,194 +1,225 @@
 import Link from "next/link";
-import {
-  Instagram,
-  Facebook,
-  Twitter,
-  Mail,
-  Phone,
-  MapPin,
-} from "lucide-react";
-import { SITE_NAME, FOOTER_LINKS, CONTACT_INFO, SOCIAL_LINKS } from "@/lib/constants";
+import { Mail, MapPin, Phone, Instagram, Linkedin, Send } from "lucide-react";
+import { SITE_NAME, CONTACT_INFO, SOCIAL_LINKS } from "@/lib/constants";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-primary text-primary-foreground">
-      {/* Newsletter Section */}
-      <div className="border-b border-primary-foreground/10">
-        <div className="container mx-auto px-4 py-12">
-          <div className="max-w-2xl mx-auto text-center">
-            <h3 className="text-2xl font-bold mb-2">E-Bültene Abone Ol</h3>
-            <p className="text-primary-foreground/70 mb-6">
-              Siparişi tamamlarken adresinize gönderilen kuponu kullanmayı unutmayın.
+    <footer className="bg-neutral-900 text-white">
+      {/* Newsletter Section - Modern & Clean */}
+      <div className="border-b border-white/10">
+        <div className="container mx-auto px-4 py-16 md:py-20">
+          <div className="max-w-4xl mx-auto text-center">
+            <h3 className="text-2xl md:text-3xl font-bold mb-3">
+              Özel Fırsatları Kaçırma
+            </h3>
+            <p className="text-white/70 text-base mb-8">
+              İlk siparişinde %10 indirim kazanmak için e-bültene abone ol
             </p>
+            
             <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
               <input
                 type="email"
-                placeholder="E-posta adresiniz"
-                className="flex-1 px-4 py-3 rounded-lg bg-primary-foreground/10 border border-primary-foreground/20 text-white placeholder:text-primary-foreground/50 focus:outline-none focus:ring-2 focus:ring-accent"
+                placeholder="E-posta adresin"
+                className="flex-1 px-5 py-3.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all"
+                required
               />
               <button
                 type="submit"
-                className="px-6 py-3 bg-accent text-white rounded-lg font-medium hover:bg-accent/90 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white text-neutral-900 rounded-lg font-semibold hover:bg-white/90 transition-all"
               >
+                <Send className="h-4 w-4" />
                 Abone Ol
               </button>
             </form>
-            <p className="text-xs text-primary-foreground/50 mt-3">
-              %5 İndirim Kazan!
+            
+            <p className="text-xs text-white/50 mt-4">
+              Dilediğin zaman abonelikten çıkabilirsin
             </p>
           </div>
         </div>
       </div>
 
-      {/* Main Footer */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-          {/* Brand */}
-          <div className="lg:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-xl">E</span>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold">{SITE_NAME}</h3>
-                <p className="text-xs text-primary-foreground/70">
-                  Doğalın En Saf Hali
-                </p>
-              </div>
+      {/* Main Footer - Clean Grid */}
+      <div className="container mx-auto px-4 py-12 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
+          
+          {/* Brand Column */}
+          <div className="lg:col-span-4">
+            <Link href="/" className="inline-block mb-5">
+              <img src="/logo.webp" alt={SITE_NAME} className="h-10 w-auto brightness-0 invert" />
             </Link>
-            <p className="text-primary-foreground/70 mb-6 max-w-sm">
-              %100 doğal, katkısız kuruyemiş ezmeleri. Kahvaltınıza doğallık,
-              tariflerinize enerji katıyoruz.
+            <p className="text-white/60 text-sm leading-relaxed mb-6 max-w-xs">
+              %100 doğal, katkısız fıstık ezmeleri ve kuruyemişler. Sağlıklı yaşamın vazgeçilmezi.
             </p>
-
-            {/* Social Links */}
+            
+            {/* Social Media - Minimal */}
             <div className="flex gap-3">
               <a
                 href={SOCIAL_LINKS.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-primary-foreground/10 flex items-center justify-center hover:bg-accent transition-colors"
+                className="w-9 h-9 bg-white/10 hover:bg-white hover:text-neutral-900 rounded-lg flex items-center justify-center transition-all"
                 aria-label="Instagram"
               >
-                <Instagram className="h-5 w-5" />
+                <Instagram className="w-4 h-4" />
               </a>
               <a
                 href={SOCIAL_LINKS.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-primary-foreground/10 flex items-center justify-center hover:bg-accent transition-colors"
+                className="w-9 h-9 bg-white/10 hover:bg-white hover:text-neutral-900 rounded-lg flex items-center justify-center transition-all"
                 aria-label="Facebook"
               >
-                <Facebook className="h-5 w-5" />
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
               </a>
               <a
                 href={SOCIAL_LINKS.twitter}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-primary-foreground/10 flex items-center justify-center hover:bg-accent transition-colors"
+                className="w-9 h-9 bg-white/10 hover:bg-white hover:text-neutral-900 rounded-lg flex items-center justify-center transition-all"
                 aria-label="Twitter"
               >
-                <Twitter className="h-5 w-5" />
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
               </a>
             </div>
+          </div>
 
-            {/* App Store Buttons - Coming Soon */}
-            <div className="mt-6">
-              <p className="text-xs text-primary-foreground/50 mb-2">
-                Çok Yakında...
-              </p>
-              <div className="flex gap-2">
-                <div className="w-32 h-10 bg-primary-foreground/10 rounded flex items-center justify-center">
-                  <span className="text-xs">App Store</span>
+          {/* Ürünler */}
+          <div className="lg:col-span-2">
+            <h4 className="font-semibold text-sm uppercase tracking-wider mb-4">Ürünler</h4>
+            <ul className="space-y-2.5">
+              <li>
+                <Link href="/urunler" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Tüm Ürünler
+                </Link>
+              </li>
+              <li>
+                <Link href="/kategori/fistik-ezmesi" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Fıstık Ezmeleri
+                </Link>
+              </li>
+              <li>
+                <Link href="/kategori/findik-ezmesi" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Fındık Ezmeleri
+                </Link>
+              </li>
+              <li>
+                <Link href="/kategori/kuruyemis" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Kuruyemişler
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Kurumsal */}
+          <div className="lg:col-span-2">
+            <h4 className="font-semibold text-sm uppercase tracking-wider mb-4">Kurumsal</h4>
+            <ul className="space-y-2.5">
+              <li>
+                <Link href="/hakkimizda" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Hakkımızda
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Blog
+                </Link>
+              </li>
+              <li>
+                <Link href="/iletisim" className="text-white/60 hover:text-white text-sm transition-colors">
+                  İletişim
+                </Link>
+              </li>
+              <li>
+                <Link href="/sss" className="text-white/60 hover:text-white text-sm transition-colors">
+                  SSS
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Yardım */}
+          <div className="lg:col-span-2">
+            <h4 className="font-semibold text-sm uppercase tracking-wider mb-4">Yardım</h4>
+            <ul className="space-y-2.5">
+              <li>
+                <Link href="/kargo" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Kargo & Teslimat
+                </Link>
+              </li>
+              <li>
+                <Link href="/iade" className="text-white/60 hover:text-white text-sm transition-colors">
+                  İade & Değişim
+                </Link>
+              </li>
+              <li>
+                <Link href="/gizlilik" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Gizlilik Politikası
+                </Link>
+              </li>
+              <li>
+                <Link href="/sartlar" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Hizmet Şartları
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* İletişim */}
+          <div className="lg:col-span-2">
+            <h4 className="font-semibold text-sm uppercase tracking-wider mb-4">İletişim</h4>
+            <ul className="space-y-3">
+              <li>
+                <a
+                  href={`mailto:${CONTACT_INFO.email}`}
+                  className="flex items-start gap-2 text-white/60 hover:text-white text-sm transition-colors group"
+                >
+                  <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 group-hover:text-white" />
+                  <span className="break-all">{CONTACT_INFO.email}</span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`tel:${CONTACT_INFO.phone}`}
+                  className="flex items-start gap-2 text-white/60 hover:text-white text-sm transition-colors group"
+                >
+                  <Phone className="w-4 h-4 mt-0.5 flex-shrink-0 group-hover:text-white" />
+                  <span>{CONTACT_INFO.phone}</span>
+                </a>
+              </li>
+              <li>
+                <div className="flex items-start gap-2 text-white/60 text-sm">
+                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span className="leading-relaxed">Altınordu, Ordu</span>
                 </div>
-                <div className="w-32 h-10 bg-primary-foreground/10 rounded flex items-center justify-center">
-                  <span className="text-xs">Google Play</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div>
-            <h4 className="font-semibold mb-4">Kategoriler</h4>
-            <ul className="space-y-2">
-              {FOOTER_LINKS.categories.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-primary-foreground/70 hover:text-accent transition-colors text-sm"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
+              </li>
             </ul>
           </div>
 
-          {/* Useful Links */}
-          <div>
-            <h4 className="font-semibold mb-4">Faydalı Linkler</h4>
-            <ul className="space-y-2">
-              {FOOTER_LINKS.useful.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-primary-foreground/70 hover:text-accent transition-colors text-sm"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Policies */}
-          <div>
-            <h4 className="font-semibold mb-4">Politikalar</h4>
-            <ul className="space-y-2">
-              {FOOTER_LINKS.policies.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-primary-foreground/70 hover:text-accent transition-colors text-sm"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
+      </div>
 
-        {/* Contact Info */}
-        <div className="mt-12 pt-8 border-t border-primary-foreground/10">
-          <div className="flex flex-col md:flex-row gap-6 justify-between items-center">
-            <div className="flex flex-col sm:flex-row gap-6">
-              <a
-                href={`mailto:${CONTACT_INFO.email}`}
-                className="flex items-center gap-2 text-primary-foreground/70 hover:text-accent transition-colors"
-              >
-                <Mail className="h-4 w-4" />
-                <span className="text-sm">{CONTACT_INFO.email}</span>
-              </a>
-              <a
-                href={`tel:${CONTACT_INFO.phone}`}
-                className="flex items-center gap-2 text-primary-foreground/70 hover:text-accent transition-colors"
-              >
-                <Phone className="h-4 w-4" />
-                <span className="text-sm">{CONTACT_INFO.phone}</span>
-              </a>
-              <span className="flex items-center gap-2 text-primary-foreground/70">
-                <MapPin className="h-4 w-4" />
-                <span className="text-sm">{CONTACT_INFO.address}</span>
-              </span>
-            </div>
-
-            <p className="text-primary-foreground/50 text-sm">
+      {/* Bottom Bar - Minimal */}
+      <div className="border-t border-white/10">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/50">
+            <p>
               © {currentYear} {SITE_NAME}. Tüm hakları saklıdır.
             </p>
+            <div className="flex items-center gap-4">
+              <span className="text-xs">Güvenli Ödeme</span>
+              <div className="flex gap-2">
+                <div className="px-2 py-1 bg-white/10 rounded text-[10px] font-semibold">VISA</div>
+                <div className="px-2 py-1 bg-white/10 rounded text-[10px] font-semibold">MC</div>
+                <div className="px-2 py-1 bg-white/10 rounded text-[10px] font-semibold">AMEX</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

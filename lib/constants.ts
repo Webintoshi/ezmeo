@@ -4,14 +4,14 @@ import { CategoryInfo, ProductCategory } from "@/types/product";
 export const SITE_NAME = "Ezmeo";
 export const SITE_TAGLINE = "Doğalın En Saf Hali";
 export const SITE_DESCRIPTION =
-  "Doğal fıstık, fındık, badem ve ceviz ezmeleri Ezmeo'da! Katkısız içerik, yüksek protein, hızlı kargo.";
+  "Doğal fıstık ezmeleri, fındık ezmeleri ve kuruyemişler Ezmeo'da! Katkısız içerik, yüksek protein, hızlı kargo.";
 
 // İletişim Bilgileri
 export const CONTACT_INFO = {
-  email: "info@ezmeo.com",
+  email: "ezmeoshopify@proton.me",
   phone: "+90 555 123 4567",
   whatsapp: "+90 555 123 4567",
-  address: "Organize Sanayi Bölgesi, Merkez, Türkiye",
+  address: "Akyazı Mahallesi 873. Sokak No:2 Daire:4, Altınordu / Ordu, Türkiye",
 };
 
 // Sosyal Medya
@@ -23,80 +23,73 @@ export const SOCIAL_LINKS = {
 };
 
 // Kargo Bilgileri
-export const SHIPPING_THRESHOLD = 350; // Ücretsiz kargo sınırı (TL)
+export const SHIPPING_THRESHOLD = 500; // Ücretsiz kargo sınırı (TL)
 export const SHIPPING_COST = 29.9; // Standart kargo ücreti (TL)
+
+// Kargo Yöntemleri
+export const SHIPPING_METHODS = [
+  {
+    id: "standard",
+    name: "Standart Kargo",
+    description: "2-3 iş günü içinde teslimat",
+    cost: 29.9,
+  },
+  {
+    id: "express",
+    name: "Hızlı Kargo",
+    description: "1-2 iş günü içinde teslimat",
+    cost: 49.9,
+  },
+];
+
+// Türkiye İlleri
+export const TURKISH_CITIES = [
+  "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ankara", "Antalya", "Ardahan", "Artvin",
+  "Aydın", "Balıkesir", "Bartın", "Batman", "Bayburt", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur",
+  "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ", "Erzincan",
+  "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkari", "Hatay", "Iğdır", "Isparta", "İstanbul",
+  "İzmir", "Kahramanmaraş", "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kırıkkale", "Kırklareli", "Kırşehir",
+  "Kilis", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Mardin", "Mersin", "Muğla", "Muş",
+  "Nevşehir", "Niğde", "Ordu", "Osmaniye", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas",
+  "Şırnak", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Şanlıurfa", "Uşak", "Van", "Yalova", "Yozgat",
+  "Zonguldak",
+];
 
 // Kategoriler
 export const CATEGORIES: CategoryInfo[] = [
   {
-    id: "findik",
-    name: "Fındık Ezmeleri",
-    slug: "findik-ezmeleri",
-    description: "Giresun kalitesi fıstık ezmeleri",
-    image: "/images/categories/findik.jpg",
-    icon: "🌰",
-    productCount: 6,
-  },
-  {
-    id: "fistik",
+    id: "fistik-ezmesi",
     name: "Fıstık Ezmeleri",
-    slug: "fistik-ezmeleri",
-    description: "Yer fıstığından doğal ezme",
-    image: "/images/categories/fistik.jpg",
+    slug: "fistik-ezmesi",
+    description: "Akdeniz ve Ege bölgelerinden en kaliteli yer fıstıklarından üretilen doğal ezmeler",
+    image: "/images/categories/fistik-ezmesi.jpg",
     icon: "🥜",
     productCount: 4,
   },
   {
-    id: "antep-fistigi",
-    name: "Antep Fıstığı Ezmeleri",
-    slug: "antep-fistigi-ezmeleri",
-    description: "Gaziantep'in lezzeti",
-    image: "/images/categories/antep-fistigi.jpg",
-    icon: "✨",
-    productCount: 4,
-  },
-  {
-    id: "badem",
-    name: "Badem Ezmeleri",
-    slug: "badem-ezmeleri",
-    description: "Kaliforniya bademi",
-    image: "/images/categories/badem.jpg",
+    id: "findik-ezmesi",
+    name: "Fındık Ezmeleri",
+    slug: "findik-ezmesi",
+    description: "Karadeniz bölgesinin en iyi fındıklarından üretilen ezmeler",
+    image: "/images/categories/findik-ezmesi.jpg",
     icon: "🌰",
-    productCount: 4,
+    productCount: 2,
   },
   {
-    id: "ceviz",
-    name: "Ceviz Ezmeleri",
-    slug: "ceviz-ezmeleri",
-    description: "Yağ cevizi",
-    image: "/images/categories/ceviz.jpg",
+    id: "kuruyemis",
+    name: "Kuruyemişler",
+    slug: "kuruyemis",
+    description: "Çiğ ve kavrulmuş doğal kuruyemişler",
+    image: "/images/categories/kuruyemisler.jpg",
     icon: "🥔",
-    productCount: 4,
-  },
-  {
-    id: "kaju",
-    name: "Kaju Ezmeleri",
-    slug: "kaju-ezmeleri",
-    description: "Hindistan cevizinden",
-    image: "/images/categories/kaju.jpg",
-    icon: "🥥",
-    productCount: 4,
-  },
-  {
-    id: "paketler",
-    name: "Ezme Paketleri",
-    slug: "ezme-paketleri",
-    description: "Çeşitli ezmeleri bir arada",
-    image: "/images/categories/paketler.jpg",
-    icon: "🎁",
-    productCount: 3,
+    productCount: 5,
   },
 ];
 
 // URL Yolları
 export const ROUTES = {
   home: "/",
-  shop: "/shop",
+  allProducts: "/urunler",
   products: "/urunler",
   category: (slug: string) => `/kategori/${slug}`,
   product: (slug: string) => `/urunler/${slug}`,
@@ -105,48 +98,48 @@ export const ROUTES = {
   about: "/hakkimizda",
   contact: "/iletisim",
   blog: "/blog",
+  wishlist: "/favoriler",
+  login: "/giris",
+  register: "/kayit",
 } as const;
 
 // Ürün Özellik Rozetleri
 export const PRODUCT_BADGES = {
-  vegan: { label: "Vegan", color: "bg-green-100 text-green-800" },
-  glutenFree: { label: "Glutensiz", color: "bg-yellow-100 text-yellow-800" },
-  sugarFree: { label: "Şekersiz", color: "bg-blue-100 text-blue-800" },
-  highProtein: { label: "Yüksek Protein", color: "bg-purple-100 text-purple-800" },
-  new: { label: "Yeni", color: "bg-pink-100 text-pink-800" },
-  discount: { label: "İndirim", color: "bg-red-100 text-red-800" },
+  vegan: { label: "Vegan", color: "bg-primary/10 text-primary" },
+  glutenFree: { label: "Glutensiz", color: "bg-primary/10 text-primary" },
+  sugarFree: { label: "Şekersiz", color: "bg-primary/10 text-primary" },
+  highProtein: { label: "Yüksek Protein", color: "bg-primary/10 text-primary" },
+  new: { label: "Yeni", color: "bg-primary/10 text-primary" },
+  discount: { label: "İndirim", color: "bg-primary/10 text-primary" },
 };
 
 // Nav Linkleri
 export const NAV_LINKS = [
   { name: "Ana Sayfa", href: ROUTES.home },
-  { name: "Ürünler", href: ROUTES.products },
-  { name: "Kategoriler", href: ROUTES.shop },
-  { name: "Hakkımızda", href: ROUTES.about },
-  { name: "İletişim", href: ROUTES.contact },
+  { name: "Tüm Ürünler", href: ROUTES.allProducts },
+  { name: "Fıstık Ezmeleri", href: ROUTES.category("fistik-ezmesi") },
+  { name: "Fındık Ezmeleri", href: ROUTES.category("findik-ezmesi") },
+  { name: "Kuruyemişler", href: ROUTES.category("kuruyemis") },
+  { name: "SSS", href: "/sss" },
 ];
 
 // Footer Linkleri
 export const FOOTER_LINKS = {
   categories: [
-    { name: "Antep Fıstığı Ezmesi", href: ROUTES.category("antep-fistigi-ezmeleri") },
-    { name: "Fındık Ezmesi", href: ROUTES.category("findik-ezmeleri") },
-    { name: "Fıstık Ezmesi", href: ROUTES.category("fistik-ezmeleri") },
-    { name: "Ceviz Ezmesi", href: ROUTES.category("ceviz-ezmeleri") },
-    { name: "Kaju Ezmesi", href: ROUTES.category("kaju-ezmeleri") },
-    { name: "Badem Ezmesi", href: ROUTES.category("badem-ezmeleri") },
+    { name: "Fıstık Ezmeleri", href: ROUTES.category("fistik-ezmesi") },
+    { name: "Fındık Ezmeleri", href: ROUTES.category("findik-ezmesi") },
+    { name: "Kuruyemişler", href: ROUTES.category("kuruyemis") },
   ],
   useful: [
-    { name: "Süper Kampanya", href: "/kampanya" },
-    { name: "Tüm Ürünler", href: ROUTES.products },
-    { name: "İletişim", href: ROUTES.contact },
-    { name: "Blog", href: ROUTES.blog },
+    { name: "Ana Sayfa", href: ROUTES.home },
+    { name: "Tüm Ürünler", href: ROUTES.allProducts },
+    { name: "SSS", href: "/sss" },
   ],
   policies: [
-    { name: "Gizlilik Anlaşması", href: "/gizlilik" },
-    { name: "Mesafeli Satış", href: "/mesafeli-satis" },
-    { name: "Kargo & İade", href: "/kargo-iade" },
-    { name: "KVKK", href: "/kvkk" },
+    { name: "Gizlilik Sözleşmesi", href: "/gizlilik" },
+    { name: "İade Sözleşmesi", href: "/iade" },
+    { name: "Hizmet Şartları", href: "/sartlar" },
+    { name: "Kargo Politikası", href: "/kargo" },
   ],
 };
 
@@ -154,50 +147,26 @@ export const FOOTER_LINKS = {
 export const TESTIMONIALS = [
   {
     id: "1",
-    name: "Feriha S.",
-    role: "Müşteri",
-    text: "Öğrencilik dönemimden beridir düzenli alıyorum ve tadı hiç değişmiyor hep aynı severek yiyorum iş yerinde tatlı krizlerine çözüm oluyor.",
+    name: "Sadullah",
+    role: "Mağaza Değerlendirmesi",
+    text: "Ürünler kaliteli ve taze. Kesinlikle tavsiye ediyorum.",
     rating: 5,
-    image: "/images/testimonials/feriha.jpg",
+    image: "/images/testimonials/sadullah.jpg",
   },
   {
     id: "2",
-    name: "Ahmet E.",
-    role: "Diyetisyen",
-    text: "PT olduğum için sürekli şekersiz ürün danışanlar oluyor yıllardır önerdiğim tek marka lezzet ve fiyat olarak en iyisi.",
+    name: "Sadullah",
+    role: "Ürün Değerlendirmesi",
+    text: "Şekersiz Fıstık Ezmesi 450G harika. Lezzeti gerçekten doğal ve taze.",
     rating: 5,
-    image: "/images/testimonials/ahmet.jpg",
+    image: "/images/testimonials/sadullah2.jpg",
   },
   {
     id: "3",
-    name: "Aysel Kıraz",
-    role: "Vegan",
-    text: "Ezmeo'nun vegan.org tarafından tescilli olması sebebi ile tamamen güvenerek alıyorum. Veganlara tavsiye ediyorum.",
+    name: "Cem Devran",
+    role: "Ürün Değerlendirmesi",
+    text: "Şekersiz Fıstık Ezmesi 450G siparişim çok hızlı geldi. Teşekkürler Ezmeo!",
     rating: 5,
-    image: "/images/testimonials/aysel.jpg",
-  },
-  {
-    id: "4",
-    name: "Arıfa Cihangir",
-    role: "Müşteri",
-    text: "Lezzet kıvam harika gerçekten. Alman arkadaşım tarafından önerilmişti yurtdışında popüler bir marka.",
-    rating: 5,
-    image: "/images/testimonials/arifa.jpg",
-  },
-  {
-    id: "5",
-    name: "Tuba Çise Z.",
-    role: "Fuar Yöneticisi",
-    text: "İlk gördüğümde İtalyan marka sanmıştım. Türk markası olmasına şaşırdığım marka. Fındık ezmeleri gerçekten harika.",
-    rating: 5,
-    image: "/images/testimonials/tuba.jpg",
-  },
-  {
-    id: "6",
-    name: "Ahmet Canbay",
-    role: "Sporcu",
-    text: "Profesyonel sporcu olarak birinci tercihim olan marka özellikle ballı badem ezmesine bayılıyorum şekersiz ama gerçekten tatlı.",
-    rating: 5,
-    image: "/images/testimonials/ahmet-c.jpg",
+    image: "/images/testimonials/cem.jpg",
   },
 ];

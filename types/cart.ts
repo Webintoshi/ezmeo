@@ -54,5 +54,5 @@ export interface WishlistContextType {
 }
 
 // Kargo Bilgisi
-export const SHIPPING_THRESHOLD = 350; // Ücretsiz kargo sınırı (TL)
+export const SHIPPING_THRESHOLD = 500; // Ücretsiz kargo sınırı (TL)
 export const SHIPPING_COST = 29.90; // Standart kargo ücreti (TL)

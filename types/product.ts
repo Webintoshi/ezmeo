@@ -1,21 +1,19 @@
 // Ürün Kategorileri
 export type ProductCategory =
-  | "findik"
-  | "fistik"
-  | "antep-fistigi"
-  | "badem"
-  | "ceviz"
-  | "kaju"
-  | "paketler";
+  | "fistik-ezmesi"
+  | "findik-ezmesi"
+  | "kuruyemis";
 
 // Ürün Alt Kategorileri
 export type ProductSubcategory =
   | "sekersiz"
+  | "hurmalı"
   | "balli"
-  | "hurmali"
-  | "kakaolu"
+  | "klasik"
   | "sutlu-findik-kremasi"
-  | "klasik";
+  | "kakaolu"
+  | "cig"
+  | "kavrulmus";
 
 // Besin Değerleri
 export interface NutritionalInfo {
@@ -57,14 +55,16 @@ export interface Product {
   highProtein: boolean;
   rating: number; // 0-5
   reviewCount: number;
-  featured: boolean;
-  new: boolean;
+  featured?: boolean;
+  new?: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
   discount?: number; // yüzde olarak, örn: 15
 }
 
 // Kategori Bilgisi
 export interface CategoryInfo {
-  id: ProductCategory;
+  id: string;
   name: string;
   slug: string;
   description: string;

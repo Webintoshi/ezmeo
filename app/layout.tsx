@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { CartProvider } from "@/lib/cart-context";
+import { WishlistProvider } from "@/lib/wishlist-context";
+// No imports here
+import { LayoutWrapper } from "@/components/layout/LayoutWrapper";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
+import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +39,9 @@ export const metadata: Metadata = {
   authors: [{ name: SITE_NAME }],
   creator: SITE_NAME,
   metadataBase: new URL("https://ezmeo.com"),
+  icons: {
+    icon: "/favicon_1.png",
+  },
   openGraph: {
     type: "website",
     locale: "tr_TR",
@@ -64,12 +70,14 @@ export default function RootLayout({
     <html lang="tr" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
-        <div className="flex min-h-screen flex-col">
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </div>
+        <AnalyticsTracker />
+        <CartProvider>
+          <WishlistProvider>
+            <LayoutWrapper>{children}</LayoutWrapper>
+          </WishlistProvider>
+        </CartProvider>
       </body>
     </html>
   );

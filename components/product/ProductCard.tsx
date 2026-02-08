@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { Star, ShoppingCart, Heart } from "lucide-react";
 import { Product } from "@/types/product";
 import { formatPrice } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
-import { useState } from "react";
+import { useCart } from "@/lib/cart-context";
+import { useWishlist } from "@/lib/wishlist-context";
 
 interface ProductCardProps {
   product: Product;
@@ -14,8 +14,9 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, index = 0 }: ProductCardProps) {
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const isWishlisted = isInWishlist(product.id);
 
   // İlk varyasyonu göster (veya en ucuz olanı)
   const displayVariant = product.variants[0];
@@ -23,6 +24,11 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const hasDiscount = displayVariant.originalPrice
     ? displayVariant.originalPrice > displayVariant.price
     : false;
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    addToCart(product, displayVariant, 1);
+  };
 
   return (
     <Link
@@ -33,20 +39,18 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
       <div className="glass-card rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full flex flex-col">
         {/* Image Container */}
         <div className="relative aspect-square overflow-hidden bg-white">
-          {/* Placeholder for product image */}
-          {!imageError ? (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 text-6xl">
-              {product.category === "findik" && "🌰"}
-              {product.category === "fistik" && "🥜"}
-              {product.category === "antep-fistigi" && "✨"}
-              {product.category === "badem" && "🌰"}
-              {product.category === "ceviz" && "🥔"}
-              {product.category === "kaju" && "🥥"}
-              {product.category === "paketler" && "🎁"}
-            </div>
+          {/* Product Image */}
+          {product.images && product.images.length > 0 ? (
+            <img
+              src={product.images[0]}
+              alt={product.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-muted">
-              <span className="text-muted">Görsel yok</span>
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5 text-6xl">
+              {product.category === "fistik-ezmesi" && "🥜"}
+              {product.category === "findik-ezmesi" && "🌰"}
+              {product.category === "kuruyemis" && "🥔"}
             </div>
           )}
 
@@ -73,7 +77,11 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
           <button
             onClick={(e) => {
               e.preventDefault();
-              setIsWishlisted(!isWishlisted);
+              if (isWishlisted) {
+                removeFromWishlist(product.id);
+              } else {
+                addToWishlist(product);
+              }
             }}
             className="absolute top-3 right-3 p-2 rounded-full bg-white/80 backdrop-blur hover:bg-white transition-colors shadow-sm"
             aria-label={isWishlisted ? "Favorilerden çıkar" : "Favorilere ekle"}
@@ -87,10 +95,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
 
           {/* Quick Add Button - Show on Hover */}
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              // Add to cart logic
-            }}
+            onClick={handleAddToCart}
             className="absolute bottom-3 left-3 right-3 py-2 bg-primary text-primary-foreground rounded-lg font-medium opacity-0 group-hover:opacity-100 transition-opacity shadow-lg flex items-center justify-center gap-2"
             aria-label="Sepete ekle"
           >
