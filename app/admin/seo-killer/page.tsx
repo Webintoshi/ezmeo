@@ -342,8 +342,8 @@ export default function SEOKillerDashboard() {
                             key={f.key}
                             onClick={() => setFilter(f.key as typeof filter)}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === f.key
-                                    ? "bg-gray-900 text-white"
-                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                ? "bg-gray-900 text-white"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                                 }`}
                         >
                             {f.label}
@@ -413,7 +413,7 @@ export default function SEOKillerDashboard() {
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <Link
-                                            href={`/admin/seo-killer/${item.type === "product" ? "urunler" : item.type === "category" ? "kategoriler" : "sayfalar"}/${item.slug || item.id}`}
+                                            href={`/admin/seo-killer/${item.type === "product" ? "urunler" : item.type === "category" ? "kategoriler" : "sayfalar"}`}
                                             className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors"
                                         >
                                             Düzenle
