@@ -1,0 +1,239 @@
+import { createServerClient, Order, OrderItem } from "@/lib/supabase";
+
+// =====================================================
+// ORDER MUTATIONS (Server-side only - all order operations require admin)
+// =====================================================
+
+/**
+ * Generate unique order number
+ */
+function generateOrderNumber(): string {
+    const timestamp = Date.now().toString(36).toUpperCase();
+    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `EZM-${timestamp}-${random}`;
+}
+
+/**
+ * Create a new order
+ */
+export async function createOrder(orderData: {
+    customerId?: string;
+    items: {
+        productId: string;
+        variantId: string;
+        productName: string;
+        variantName: string;
+        price: number;
+        quantity: number;
+    }[];
+    shippingAddress: Record<string, unknown>;
+    billingAddress?: Record<string, unknown>;
+    paymentMethod: string;
+    shippingCost?: number;
+    discount?: number;
+    notes?: string;
+}) {
+    const serverClient = createServerClient();
+
+    // Calculate totals
+    const subtotal = orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const shippingCost = orderData.shippingCost || 0;
+    const discount = orderData.discount || 0;
+    const total = subtotal + shippingCost - discount;
+
+    // Create order
+    const { data: order, error: orderError } = await serverClient
+        .from("orders")
+        .insert({
+            order_number: generateOrderNumber(),
+            customer_id: orderData.customerId || null,
+            status: "pending",
+            subtotal,
+            shipping_cost: shippingCost,
+            discount,
+            total,
+            shipping_address: orderData.shippingAddress,
+            billing_address: orderData.billingAddress || orderData.shippingAddress,
+            payment_method: orderData.paymentMethod,
+            payment_status: "pending",
+            notes: orderData.notes || null,
+        })
+        .select()
+        .single();
+
+    if (orderError) throw orderError;
+
+    // Create order items
+    const orderItems = orderData.items.map(item => ({
+        order_id: order.id,
+        product_id: item.productId,
+        variant_id: item.variantId,
+        product_name: item.productName,
+        variant_name: item.variantName,
+        price: item.price,
+        quantity: item.quantity,
+        total: item.price * item.quantity,
+    }));
+
+    const { error: itemsError } = await serverClient
+        .from("order_items")
+        .insert(orderItems);
+
+    if (itemsError) throw itemsError;
+
+    return { ...order, items: orderItems };
+}
+
+/**
+ * Get all orders (admin)
+ */
+export async function getOrders(options?: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+}) {
+    const serverClient = createServerClient();
+
+    let query = serverClient
+        .from("orders")
+        .select(`
+      *,
+      items:order_items(*)
+    `)
+        .order("created_at", { ascending: false });
+
+    if (options?.status) {
+        query = query.eq("status", options.status);
+    }
+
+    if (options?.limit) {
+        query = query.limit(options.limit);
+    }
+
+    if (options?.offset) {
+        query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    return data;
+}
+
+/**
+ * Get order by ID (admin)
+ */
+export async function getOrderById(id: string) {
+    const serverClient = createServerClient();
+
+    const { data, error } = await serverClient
+        .from("orders")
+        .select(`
+      *,
+      items:order_items(*)
+    `)
+        .eq("id", id)
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+/**
+ * Get order by order number
+ */
+export async function getOrderByNumber(orderNumber: string) {
+    const serverClient = createServerClient();
+
+    const { data, error } = await serverClient
+        .from("orders")
+        .select(`
+      *,
+      items:order_items(*)
+    `)
+        .eq("order_number", orderNumber)
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+/**
+ * Update order status (admin)
+ */
+export async function updateOrderStatus(id: string, status: string) {
+    const serverClient = createServerClient();
+
+    const { data, error } = await serverClient
+        .from("orders")
+        .update({ status })
+        .eq("id", id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+/**
+ * Update payment status (admin)
+ */
+export async function updatePaymentStatus(id: string, paymentStatus: string) {
+    const serverClient = createServerClient();
+
+    const { data, error } = await serverClient
+        .from("orders")
+        .update({ payment_status: paymentStatus })
+        .eq("id", id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+/**
+ * Delete order (admin)
+ */
+export async function deleteOrder(id: string) {
+    const serverClient = createServerClient();
+
+    const { error } = await serverClient
+        .from("orders")
+        .delete()
+        .eq("id", id);
+
+    if (error) throw error;
+    return true;
+}
+
+/**
+ * Get order statistics (admin)
+ */
+export async function getOrderStats() {
+    const serverClient = createServerClient();
+
+    const { data: orders, error } = await serverClient
+        .from("orders")
+        .select("total, status, created_at");
+
+    if (error) throw error;
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const todayOrders = orders.filter(o => new Date(o.created_at) >= today);
+    const monthOrders = orders.filter(o => new Date(o.created_at) >= thisMonth);
+    const pendingOrders = orders.filter(o => o.status === "pending");
+
+    return {
+        totalOrders: orders.length,
+        totalRevenue: orders.reduce((sum, o) => sum + Number(o.total), 0),
+        todayOrders: todayOrders.length,
+        todayRevenue: todayOrders.reduce((sum, o) => sum + Number(o.total), 0),
+        monthOrders: monthOrders.length,
+        monthRevenue: monthOrders.reduce((sum, o) => sum + Number(o.total), 0),
+        pendingOrders: pendingOrders.length,
+    };
+}
