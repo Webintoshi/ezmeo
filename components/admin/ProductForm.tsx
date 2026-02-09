@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Product, ProductVariant, NutritionalInfo, ProductCategory, ProductSubcategory } from "@/types/product";
-import { addProduct, updateProduct, getProductById } from "@/lib/products";
+import { addProduct, updateProduct } from "@/lib/products";
 
 const CATEGORIES: { value: ProductCategory; label: string; subcategories: { value: ProductSubcategory; label: string }[] }[] = [
   {
@@ -111,37 +111,63 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
   const [images, setImages] = useState<string[]>([]);
 
-  const loadProductData = useCallback(() => {
+  const [loading, setLoading] = useState(false);
+
+  const loadProductData = useCallback(async () => {
     if (productId) {
-      const product = getProductById(productId);
-      if (product) {
-        setFormData({
-          name: product.name,
-          slug: product.slug,
-          description: product.description,
-          shortDescription: product.shortDescription,
-          category: product.category,
-          subcategory: product.subcategory,
-          tags: product.tags,
-          nutritionalInfo: product.nutritionalInfo || {
-            calories: 0,
-            protein: 0,
-            carbs: 0,
-            fat: 0,
-            fiber: 0,
-            sugar: 0,
-          },
-          vegan: product.vegan,
-          glutenFree: product.glutenFree,
-          sugarFree: product.sugarFree,
-          highProtein: product.highProtein,
-          rating: product.rating,
-          reviewCount: product.reviewCount,
-          featured: product.featured || false,
-          new: product.new || false,
-        });
-        setVariants(product.variants);
-        setImages(product.images);
+      setLoading(true);
+      try {
+        // Fetch from API instead of static data
+        const res = await fetch(`/api/products?id=${productId}`);
+        const data = await res.json();
+
+        if (data.success && data.product) {
+          const product = data.product;
+          setFormData({
+            name: product.name || "",
+            slug: product.slug || "",
+            description: product.description || "",
+            shortDescription: product.short_description || "",
+            category: product.category || "",
+            subcategory: "",
+            tags: product.tags || [],
+            nutritionalInfo: {
+              calories: 0,
+              protein: 0,
+              carbs: 0,
+              fat: 0,
+              fiber: 0,
+              sugar: 0,
+            },
+            vegan: true,
+            glutenFree: true,
+            sugarFree: true,
+            highProtein: true,
+            rating: 5,
+            reviewCount: 0,
+            featured: product.is_featured || false,
+            new: false,
+          });
+
+          // Map variants from database format
+          if (product.variants && product.variants.length > 0) {
+            setVariants(product.variants.map((v: Record<string, unknown>) => ({
+              id: v.id as string,
+              name: v.name as string || "",
+              weight: parseInt(String(v.weight) || "0"),
+              price: Number(v.price) || 0,
+              originalPrice: Number(v.original_price) || 0,
+              stock: Number(v.stock) || 0,
+              sku: v.sku as string || "",
+            })));
+          }
+
+          setImages(product.images || []);
+        }
+      } catch (error) {
+        console.error("Failed to load product:", error);
+      } finally {
+        setLoading(false);
       }
     }
   }, [productId]);
