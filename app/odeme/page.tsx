@@ -69,7 +69,6 @@ export default function CheckoutPage() {
         setPaymentGateways(gateways);
         setShippingRates(rates);
 
-        // Do NOT auto-select payment method as per user request
         if (rates.length > 0 && !selectedShippingMethod) {
           setSelectedShippingMethod(rates[0].id);
         }
@@ -180,38 +179,31 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-[#F3F4F6] font-sans pb-20">
 
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="container mx-auto max-w-[1200px] px-4 md:px-8 h-20 flex items-center justify-between">
-          {/* Logo - Removed "Ezmeo" text, just an icon or clean link if requested, or just the breadcrumbs? User said "butonlar üst kısım", likely referring to header. Keeping it minimal. */}
-          <Link href="/" className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold text-xl italic shadow-lg shadow-primary/30">
-            E
-          </Link>
-
-          {/* Breadcrumbs */}
-          <div className="flex items-center gap-3">
-            <div onClick={() => currentStep === 2 && setCurrentStep(1)} className={cn("flex items-center gap-2 cursor-pointer transition-colors", currentStep === 1 ? "text-primary font-bold" : "text-gray-500 font-medium")}>
-              <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-xs", currentStep === 1 ? "bg-primary text-white" : "bg-emerald-100 text-emerald-600")}>
-                {currentStep > 1 ? <Check className="h-4 w-4" /> : "1"}
-              </div>
-              <span className="hidden sm:inline">Teslimat</span>
-            </div>
-            <ChevronRight className="h-4 w-4 text-gray-300" />
-            <div className={cn("flex items-center gap-2", currentStep === 2 ? "text-primary font-bold" : "text-gray-400 font-medium")}>
-              <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-xs", currentStep === 2 ? "bg-primary text-white" : "bg-gray-100 text-gray-400")}>
-                2
-              </div>
-              <span className="hidden sm:inline">Ödeme</span>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Header Removed as requested */}
 
       <main className="container mx-auto max-w-[1200px] px-4 md:px-8 py-8 md:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* Left Column (Forms) */}
           <div className="lg:col-span-8 space-y-8">
+
+            {/* Breadcrumbs - Moved here since header is gone */}
+            {/* Keeping it subtle as a navigation aid */}
+            <div className="flex items-center gap-3 mb-2">
+              <div onClick={() => currentStep === 2 && setCurrentStep(1)} className={cn("flex items-center gap-2 cursor-pointer transition-colors", currentStep === 1 ? "text-primary font-bold" : "text-gray-500 font-medium")}>
+                <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-xs", currentStep === 1 ? "bg-primary text-white" : "bg-emerald-100 text-emerald-600")}>
+                  {currentStep > 1 ? <Check className="h-4 w-4" /> : "1"}
+                </div>
+                <span className="hidden sm:inline">Teslimat</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-gray-300" />
+              <div className={cn("flex items-center gap-2", currentStep === 2 ? "text-primary font-bold" : "text-gray-400 font-medium")}>
+                <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-xs", currentStep === 2 ? "bg-primary text-white" : "bg-gray-100 text-gray-400")}>
+                  2
+                </div>
+                <span className="hidden sm:inline">Ödeme</span>
+              </div>
+            </div>
 
             <AnimatePresence mode="wait">
               {currentStep === 1 ? (
@@ -354,9 +346,7 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* VISUAL CREDIT CARD WRAPPER */}
-                  {/* This stays visible as a design element or changes based on method */}
                   <div className="mb-8">
-                    {/* Purple Gradient Card - Only show if Card payment is selected or generic default */}
                     {['paytr', 'iyzico', 'stripe', 'credit_card'].includes(getGatewayType(selectedPaymentMethod) || '') && (
                       <div className="w-full max-w-md mx-auto aspect-[1.586] rounded-2xl p-6 md:p-8 text-white relative overflow-hidden shadow-2xl shadow-indigo-500/20 mb-8 transform transition-transform hover:scale-[1.02] duration-500">
                         {/* Gradient Background */}
@@ -496,7 +486,7 @@ export default function CheckoutPage() {
 
           {/* Right Column (Summary) */}
           <div className="lg:col-span-4 relative">
-            <div className="sticky top-20 space-y-6">
+            <div className="sticky top-8 space-y-6">
 
               <h2 className="text-lg font-bold text-gray-900">Sipariş Özeti</h2>
 
@@ -544,7 +534,7 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* Dark Total Box - Using Primary Brand Color as base */}
-                  <div className="bg-[#0F172A] rounded-xl p-5 flex justify-between items-center text-white shadow-lg shadow-gray-900/10">
+                  <div className="bg-primary rounded-xl p-5 flex justify-between items-center text-white shadow-lg shadow-primary/20">
                     <span className="font-bold text-lg">Toplam</span>
                     <span className="font-black text-2xl tracking-tight">{formatPrice(total)}</span>
                   </div>
@@ -556,7 +546,7 @@ export default function CheckoutPage() {
                       <input
                         type="text"
                         placeholder="Kodu girin"
-                        className="flex-1 h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-gray-900 focus:ring-0 bg-gray-50"
+                        className="flex-1 h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-primary focus:ring-primary focus:ring-1 bg-gray-50"
                       />
                       <button className="px-4 h-10 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">
                         Uygula
