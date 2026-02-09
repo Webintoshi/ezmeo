@@ -312,59 +312,80 @@ export default function CheckoutPage() {
               </div>
 
               {/* Section 3: Shipping Method */}
-              <div className="bg-white rounded-[2rem] p-6 lg:p-8 shadow-sm border border-primary/5">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-primary shadow-sm">
-                    <Truck className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900 tracking-tight">Kargo Yöntemi</h2>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Tercih ettiğiniz teslimat seçeneği</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  {shippingRates.length > 0 ? (
-                    shippingRates.map((method) => (
-                      <label
-                        key={method.id}
-                        className={cn(
-                          "flex items-center justify-between p-6 rounded-2xl border-2 transition-all cursor-pointer group",
-                          selectedShippingMethod === method.id
-                            ? "border-primary bg-primary/5 ring-4 ring-primary/5 shadow-lg shadow-primary/5"
-                            : "border-gray-50 hover:border-primary/20 hover:bg-gray-50/50"
-                        )}
-                      >
-                        <div className="flex items-center gap-5">
-                          <input
-                            type="radio"
-                            name="shipping"
-                            checked={selectedShippingMethod === method.id}
-                            onChange={() => setSelectedShippingMethod(method.id)}
-                            className="peer sr-only"
-                          />
-                          <div className={cn(
-                            "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all",
-                            selectedShippingMethod === method.id ? "border-primary bg-primary shadow-inner" : "border-gray-200 group-hover:border-primary/30"
-                          )}>
-                            {selectedShippingMethod === method.id && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
-                          </div>
-                          <div>
-                            <p className="font-black text-primary text-sm uppercase tracking-tight">{method.name}</p>
-                            {method.condition && <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">{method.condition}</p>}
-                          </div>
-                        </div>
-                        <span className="font-black text-primary text-lg">
-                          {method.price === 0 ? "Ücretsiz" : formatPrice(method.price)}
-                        </span>
-                      </label>
-                    ))
-                  ) : (
-                    <div className="text-center py-10 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 font-bold text-gray-400">
-                      Bu bölge için kargo yöntemi yükleniyor...
+              {subtotal >= SHIPPING_THRESHOLD ? (
+                // Free shipping info box when cart >= 500₺
+                <div className="bg-emerald-50 rounded-[2rem] p-6 lg:p-8 shadow-sm border border-emerald-200">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                      <Truck className="h-6 w-6" />
                     </div>
-                  )}
+                    <div className="flex-1">
+                      <h2 className="text-lg font-bold text-emerald-800 tracking-tight">Ücretsiz Kargo 🎉</h2>
+                      <p className="text-sm text-emerald-600 mt-0.5">500₺ üzeri siparişiniz için kargo tamamen ücretsiz!</p>
+                    </div>
+                    <div className="hidden sm:block">
+                      <span className="inline-flex items-center px-4 py-2 bg-emerald-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-200">
+                        Kazandınız!
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                // Normal shipping selection when cart < 500₺
+                <div className="bg-white rounded-[2rem] p-6 lg:p-8 shadow-sm border border-primary/5">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-primary shadow-sm">
+                      <Truck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900 tracking-tight">Kargo Yöntemi</h2>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Tercih ettiğiniz teslimat seçeneği</p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {shippingRates.length > 0 ? (
+                      shippingRates.map((method) => (
+                        <label
+                          key={method.id}
+                          className={cn(
+                            "flex items-center justify-between p-6 rounded-2xl border-2 transition-all cursor-pointer group",
+                            selectedShippingMethod === method.id
+                              ? "border-primary bg-primary/5 ring-4 ring-primary/5 shadow-lg shadow-primary/5"
+                              : "border-gray-50 hover:border-primary/20 hover:bg-gray-50/50"
+                          )}
+                        >
+                          <div className="flex items-center gap-5">
+                            <input
+                              type="radio"
+                              name="shipping"
+                              checked={selectedShippingMethod === method.id}
+                              onChange={() => setSelectedShippingMethod(method.id)}
+                              className="peer sr-only"
+                            />
+                            <div className={cn(
+                              "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all",
+                              selectedShippingMethod === method.id ? "border-primary bg-primary shadow-inner" : "border-gray-200 group-hover:border-primary/30"
+                            )}>
+                              {selectedShippingMethod === method.id && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+                            </div>
+                            <div>
+                              <p className="font-black text-primary text-sm uppercase tracking-tight">{method.name}</p>
+                              {method.condition && <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">{method.condition}</p>}
+                            </div>
+                          </div>
+                          <span className="font-black text-primary text-lg">
+                            {method.price === 0 ? "Ücretsiz" : formatPrice(method.price)}
+                          </span>
+                        </label>
+                      ))
+                    ) : (
+                      <div className="text-center py-10 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 font-bold text-gray-400">
+                        Bu bölge için kargo yöntemi yükleniyor...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Section 4: Payment Method */}
               <div className="bg-white rounded-[2rem] p-6 lg:p-8 shadow-sm border border-primary/5">

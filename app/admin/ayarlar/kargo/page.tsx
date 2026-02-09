@@ -1,12 +1,38 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Plus, Truck, Map, Trash2, Edit2 } from "lucide-react";
+import { Save, Plus, Truck, Map, Trash2, Edit2, Loader2 } from "lucide-react";
 import { getShippingZones, deleteShippingZone } from "@/lib/shipping";
 import { ShippingZone, ShippingRate } from "@/lib/shipping-storage";
+import { toast } from "sonner";
+
+// Basit Kargo settings storage key
+const BASIT_KARGO_STORAGE_KEY = "ezmeo_basit_kargo_settings";
+
+interface BasitKargoSettings {
+    apiToken: string;
+    senderProfile: string;
+    addressPreference: string;
+}
+
+function getBasitKargoSettings(): BasitKargoSettings {
+    if (typeof window === "undefined") return { apiToken: "", senderProfile: "Ezmeo", addressPreference: "Home Ofis" };
+    try {
+        const stored = localStorage.getItem(BASIT_KARGO_STORAGE_KEY);
+        if (stored) return JSON.parse(stored);
+    } catch { }
+    return { apiToken: "61FCA4B2-501A-490C-9584-CA5A6294C404", senderProfile: "Ezmeo", addressPreference: "Home Ofis" };
+}
+
+function saveBasitKargoSettings(settings: BasitKargoSettings): void {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(BASIT_KARGO_STORAGE_KEY, JSON.stringify(settings));
+}
 
 export default function ShippingSettingsPage() {
     const [zones, setZones] = useState<ShippingZone[]>([]);
+    const [basitKargoSettings, setBasitKargoSettings] = useState<BasitKargoSettings>(getBasitKargoSettings());
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         setZones(getShippingZones());
@@ -128,7 +154,8 @@ export default function ShippingSettingsPage() {
                                 <div className="flex gap-2">
                                     <input
                                         type="password"
-                                        defaultValue="61FCA4B2-501A-490C-9584-CA5A6294C404"
+                                        value={basitKargoSettings.apiToken}
+                                        onChange={(e) => setBasitKargoSettings({ ...basitKargoSettings, apiToken: e.target.value })}
                                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
                                     />
                                     <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600">
@@ -141,17 +168,25 @@ export default function ShippingSettingsPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Gönderici Profili</label>
-                                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                                        <option>Ezmeo</option>
-                                        <option>Depo 1</option>
+                                    <select
+                                        value={basitKargoSettings.senderProfile}
+                                        onChange={(e) => setBasitKargoSettings({ ...basitKargoSettings, senderProfile: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                    >
+                                        <option value="Ezmeo">Ezmeo</option>
+                                        <option value="Depo 1">Depo 1</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Adres Tercihi</label>
-                                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                                        <option>Home Ofis</option>
-                                        <option>Depo Adresi</option>
-                                        <option>Mağaza Adresi</option>
+                                    <select
+                                        value={basitKargoSettings.addressPreference}
+                                        onChange={(e) => setBasitKargoSettings({ ...basitKargoSettings, addressPreference: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                    >
+                                        <option value="Home Ofis">Home Ofis</option>
+                                        <option value="Depo Adresi">Depo Adresi</option>
+                                        <option value="Mağaza Adresi">Mağaza Adresi</option>
                                     </select>
                                 </div>
                             </div>
@@ -177,8 +212,38 @@ export default function ShippingSettingsPage() {
                                 </div>
 
                                 <div className="pt-4 mt-2 border-t border-blue-200">
-                                    <button className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
-                                        Ayarları Kaydet ve Test Et
+                                    <button
+                                        onClick={async () => {
+                                            setIsSaving(true);
+                                            try {
+                                                // Simulate API test delay
+                                                await new Promise(resolve => setTimeout(resolve, 500));
+                                                saveBasitKargoSettings(basitKargoSettings);
+                                                toast.success("Ayarlar başarıyla kaydedildi!", {
+                                                    description: "Basit Kargo entegrasyon ayarları güncellendi."
+                                                });
+                                            } catch {
+                                                toast.error("Ayarlar kaydedilemedi", {
+                                                    description: "Lütfen tekrar deneyin."
+                                                });
+                                            } finally {
+                                                setIsSaving(false);
+                                            }
+                                        }}
+                                        disabled={isSaving}
+                                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        {isSaving ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Kaydediliyor...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="w-4 h-4" />
+                                                Ayarları Kaydet ve Test Et
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </div>
