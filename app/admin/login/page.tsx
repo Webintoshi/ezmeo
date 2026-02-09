@@ -2,36 +2,78 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Shield, ArrowLeft } from "lucide-react";
+import { Lock, Shield, ArrowLeft, Loader2, UserPlus } from "lucide-react";
 import Link from "next/link";
-import { authenticateAdmin } from "@/lib/admins";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Setup Mode State
+  const [isSetupMode, setIsSetupMode] = useState(false);
+  const [fullName, setFullName] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
-    // Simulate network delay
-    setTimeout(() => {
-      const isAuthenticated = authenticateAdmin(username, password);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      if (isAuthenticated) {
-        localStorage.setItem("admin_authenticated", "true");
-        localStorage.setItem("admin_username", username);
+      if (error) {
+        toast.error("Giriş başarısız: " + error.message);
+      } else {
+        toast.success("Giriş yapıldı.");
+        localStorage.setItem("admin_authenticated", "true"); // Legacy support
         router.push("/admin");
         router.refresh();
-      } else {
-        setError("Geçersiz e-posta veya şifre");
       }
+    } catch (error) {
+      console.error("Login Error:", error);
+      toast.error("Bir hata oluştu.");
+    } finally {
       setLoading(false);
-    }, 500);
+    }
+  };
+
+  const handleSetup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          fullName,
+          role: "super_admin", // API enforces this for first user anyway
+          taskDefinition: "Sistem Kurucusu"
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success("Yönetici oluşturuldu! Şimdi giriş yapabilirsiniz.");
+        setIsSetupMode(false);
+      } else {
+        toast.error(data.error || "Kurulum başarısız.");
+      }
+    } catch (error) {
+      console.error("Setup Error:", error);
+      toast.error("Bağlantı hatası.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,36 +87,49 @@ export default function AdminLoginPage() {
           Ana Sayfaya Dön
         </Link>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        <div className="bg-white rounded-2xl shadow-lg p-8 relative overflow-hidden">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-white" />
+            <div className={`w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 transition-colors ${isSetupMode ? "bg-gray-900" : "bg-primary"}`}>
+              {isSetupMode ? <UserPlus className="w-8 h-8 text-white" /> : <Shield className="w-8 h-8 text-white" />}
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Admin Paneli
+              {isSetupMode ? "İlk Yönetici Kurulumu" : "Admin Paneli"}
             </h1>
             <p className="text-sm text-gray-500">
-              Güvenli erişim için giriş yapın
+              {isSetupMode
+                ? "Sistemin ilk yöneticisini oluşturun."
+                : "Güvenli erişim için giriş yapın."}
             </p>
           </div>
 
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-100 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
+          <form onSubmit={isSetupMode ? handleSetup : handleLogin} className="space-y-4">
+            {isSetupMode && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ad Soyad
+                </label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Adınız Soyadınız"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all"
+                  required={isSetupMode}
+                />
+              </div>
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Kullanıcı Adı
+                E-posta Adresi
               </label>
               <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Kullanıcı adınızı girin"
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@ezmeo.com"
+                className={`w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 transition-all ${isSetupMode ? "focus:ring-gray-900/20 focus:border-gray-900" : "focus:ring-primary/20 focus:border-primary"
+                  }`}
                 required
               />
             </div>
@@ -89,8 +144,10 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className={`w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 transition-all ${isSetupMode ? "focus:ring-gray-900/20 focus:border-gray-900" : "focus:ring-primary/20 focus:border-primary"
+                    }`}
                   required
+                  minLength={6}
                 />
                 <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>
@@ -99,11 +156,30 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`w-full text-white py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${isSetupMode ? "bg-gray-900 hover:bg-gray-800" : "bg-primary hover:bg-primary/90"
+                }`}
             >
-              {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                isSetupMode ? "Yöneticiyi Oluştur" : "Giriş Yap"
+              )}
             </button>
           </form>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => {
+                setIsSetupMode(!isSetupMode);
+                setEmail("");
+                setPassword("");
+                setFullName("");
+              }}
+              className="text-sm text-gray-500 hover:text-gray-900 underline decoration-gray-300 underline-offset-4 transition-colors"
+            >
+              {isSetupMode ? "Giriş Ekranına Dön" : "Sistemi ilk kez mi kuruyorsunuz?"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

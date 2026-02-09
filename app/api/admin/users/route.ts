@@ -59,6 +59,48 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // Security Check:
+        // 1. Check total user count
+        const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 2 });
+        if (listError) throw listError;
+
+        const isFirstUser = users.length === 0;
+
+        if (!isFirstUser) {
+            // If not first user, require authentication
+            const authHeader = req.headers.get("Authorization");
+            if (!authHeader) {
+                return NextResponse.json(
+                    { success: false, error: "Yetkisiz erişim. Kayıtlı yönetici varsa oturum açmalısınız." },
+                    { status: 401 }
+                );
+            }
+
+            const token = authHeader.replace("Bearer ", "");
+            const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+            if (authError || !user) {
+                return NextResponse.json(
+                    { success: false, error: "Geçersiz oturum." },
+                    { status: 401 }
+                );
+            }
+
+            // Optional: Check if the requester is super_admin
+            const { data: requesterProfile } = await supabaseAdmin
+                .from("profiles")
+                .select("role")
+                .eq("id", user.id)
+                .single();
+
+            if (requesterProfile?.role !== "super_admin") {
+                return NextResponse.json(
+                    { success: false, error: "Sadece Süper Yöneticiler yeni yönetici ekleyebilir." },
+                    { status: 403 }
+                );
+            }
+        }
+
         // 1. Create user in Supabase Auth
         const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
             email,
@@ -76,8 +118,8 @@ export async function POST(req: NextRequest) {
             .insert({
                 id: userData.user.id,
                 full_name: fullName,
-                role,
-                task_definition: taskDefinition
+                role: isFirstUser ? "super_admin" : role, // Force super_admin for first user
+                task_definition: isFirstUser ? "Sistem Kurucusu" : taskDefinition
             });
 
         if (profileError) {
@@ -86,7 +128,7 @@ export async function POST(req: NextRequest) {
             throw profileError;
         }
 
-        return NextResponse.json({ success: true, message: "Yönetici başarıyla oluşturuldu." });
+        return NextResponse.json({ success: true, message: isFirstUser ? "İlk yönetici başarıyla oluşturuldu." : "Yönetici başarıyla oluşturuldu." });
 
     } catch (error: unknown) {
         console.log("Create Admin Error:", error);
