@@ -168,17 +168,7 @@ export default function AdminLoginPage() {
           </form>
 
           <div className="mt-6 text-center">
-            <button
-              onClick={() => {
-                setIsSetupMode(!isSetupMode);
-                setEmail("");
-                setPassword("");
-                setFullName("");
-              }}
-              className="text-sm text-gray-500 hover:text-gray-900 underline decoration-gray-300 underline-offset-4 transition-colors"
-            >
-              {isSetupMode ? "Giriş Ekranına Dön" : "Sistemi ilk kez mi kuruyorsunuz?"}
-            </button>
+            {/* Setup mode button removed as per user request */}
           </div>
         </div>
       </div>

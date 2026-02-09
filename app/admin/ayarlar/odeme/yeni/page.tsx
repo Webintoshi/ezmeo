@@ -90,7 +90,7 @@ export default function NewPaymentGatewayPage() {
 
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-        addPaymentGateway(formData);
+        await addPaymentGateway(formData);
 
         setSaving(false);
         router.push("/admin/ayarlar/odeme");

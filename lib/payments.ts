@@ -1,59 +1,22 @@
 import { PaymentGatewayConfig, PaymentGatewayFormData, PaymentGatewayFormState, PaymentGateway, PaymentMethodStatus } from "@/types/payment";
-import { getStoredPaymentGateways, savePaymentGateways } from "./payment-storage";
+import { PaymentService } from "./payment-service";
 
 let paymentGateways: PaymentGatewayConfig[] = [];
 
-const DEFAULT_GATEWAYS: PaymentGatewayConfig[] = [
-  {
-    id: "bank-transfer",
-    gateway: "bank_transfer",
-    name: "Havale / EFT",
-    description: "Siparişinizi tamamladıktan sonra banka hesabımıza havale yapın.",
-    icon: "🏛️",
-    status: "active",
-    environment: "production",
-    merchantId: "",
-    apiKey: "",
-    apiSecret: "",
-    publicKey: "",
-    clientId: "",
-    secretKey: "",
-    webhookUrl: "",
-    bankAccount: {
-      bankName: "Garanti BBVA",
-      iban: "TR12 3456 7890 1234 5678 9012 34",
-      accountHolder: "Ezmeo Gıda San. ve Tic. Ltd. Şti.",
-      swift: "",
-      currency: "TRY",
-    },
-    codSettings: {
-      minOrderAmount: 0,
-      maxOrderAmount: 10000,
-      applicableRegions: ["Türkiye"],
-      instructions: "",
-    },
-    supportedCardTypes: [],
-    supportedMethods: ["bank_transfer", "eft"],
-    currency: "TRY",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-];
+// Initialize with empty or default, but real data comes from async API
+// Removed DEFAULT_GATEWAYS
 
-// Initialize on load
-if (typeof window !== "undefined") {
-  const stored = getStoredPaymentGateways();
-  if (stored.length === 0) {
-    savePaymentGateways(DEFAULT_GATEWAYS);
-    paymentGateways = DEFAULT_GATEWAYS;
-  } else {
-    paymentGateways = stored;
-  }
-}
-
-export function getPaymentGateways(): PaymentGatewayConfig[] {
-  if (typeof window !== "undefined") {
-    paymentGateways = getStoredPaymentGateways();
+export async function getPaymentGateways(): Promise<PaymentGatewayConfig[]> {
+  try {
+    const fromApi = await PaymentService.getAll();
+    if (fromApi.length > 0) {
+      paymentGateways = fromApi;
+    } else {
+      paymentGateways = [];
+    }
+  } catch (error) {
+    console.error("Failed to fetch gateways:", error);
+    // paymentGateways remains as is (empty)
   }
   return paymentGateways;
 }
@@ -74,7 +37,7 @@ export function getPaymentGatewaysByStatus(status: PaymentMethodStatus): Payment
   return paymentGateways.filter(g => g.status === status);
 }
 
-export function addPaymentGateway(data: PaymentGatewayFormState): PaymentGatewayConfig {
+export async function addPaymentGateway(data: PaymentGatewayFormState): Promise<PaymentGatewayConfig> {
   const newGateway: PaymentGatewayConfig = {
     id: `pg-${Date.now()}`,
     ...data,
@@ -84,7 +47,7 @@ export function addPaymentGateway(data: PaymentGatewayFormState): PaymentGateway
     updatedAt: new Date(),
   };
   paymentGateways.push(newGateway);
-  savePaymentGateways(paymentGateways);
+  await PaymentService.saveAll(paymentGateways);
   return newGateway;
 }
 
@@ -99,7 +62,7 @@ function getGatewayIcon(gateway: PaymentGateway | ""): string {
   return icons[gateway as PaymentGateway] || "💳";
 }
 
-export function updatePaymentGateway(id: string, data: Partial<PaymentGatewayFormState>): void {
+export async function updatePaymentGateway(id: string, data: Partial<PaymentGatewayFormState>): Promise<void> {
   const index = paymentGateways.findIndex(g => g.id === id);
   if (index !== -1) {
     const { gateway: newGateway, ...rest } = data;
@@ -109,24 +72,24 @@ export function updatePaymentGateway(id: string, data: Partial<PaymentGatewayFor
       ...(newGateway ? { gateway: newGateway } : {}),
       updatedAt: new Date(),
     };
-    savePaymentGateways(paymentGateways);
+    await PaymentService.saveAll(paymentGateways);
   }
 }
 
-export function deletePaymentGateway(id: string): void {
+export async function deletePaymentGateway(id: string): Promise<void> {
   const index = paymentGateways.findIndex(g => g.id === id);
   if (index !== -1) {
     paymentGateways.splice(index, 1);
-    savePaymentGateways(paymentGateways);
+    await PaymentService.saveAll(paymentGateways);
   }
 }
 
-export function togglePaymentGatewayStatus(id: string, status: PaymentMethodStatus): void {
+export async function togglePaymentGatewayStatus(id: string, status: PaymentMethodStatus): Promise<void> {
   const gateway = getPaymentGatewayById(id);
   if (gateway) {
     gateway.status = status;
     gateway.updatedAt = new Date();
-    savePaymentGateways(paymentGateways);
+    await PaymentService.saveAll(paymentGateways);
   }
 }
 
@@ -213,13 +176,13 @@ export function getPaymentGatewayStats() {
   };
 }
 
-export function updatePaymentGatewayOrder(ids: string[]): void {
+export async function updatePaymentGatewayOrder(ids: string[]): Promise<void> {
   const sortedGateways = ids.map(id => getPaymentGatewayById(id)).filter((g): g is PaymentGatewayConfig => g !== undefined);
   paymentGateways = sortedGateways;
-  savePaymentGateways(paymentGateways);
+  await PaymentService.saveAll(paymentGateways);
 }
 
-export function duplicatePaymentGateway(id: string): PaymentGatewayConfig {
+export async function duplicatePaymentGateway(id: string): Promise<PaymentGatewayConfig> {
   const original = getPaymentGatewayById(id);
   if (!original) throw new Error("Payment gateway not found");
 
@@ -254,7 +217,7 @@ export function duplicatePaymentGateway(id: string): PaymentGatewayConfig {
     currency: "TRY",
   };
 
-  return addPaymentGateway(duplicate);
+  return await addPaymentGateway(duplicate);
 }
 
 export function getDefaultPaymentGatewayConfig(gateway: PaymentGateway): PaymentGatewayFormData {

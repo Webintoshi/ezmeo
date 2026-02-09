@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice, cn } from "@/lib/utils";
-import { TURKISH_CITIES, SHIPPING_THRESHOLD, SITE_NAME } from "@/lib/constants";
+import { TURKISH_CITIES, SHIPPING_THRESHOLD } from "@/lib/constants";
 import { getActivePaymentGateways } from "@/lib/payments";
 import { getShippingRatesForCountry } from "@/lib/shipping";
 import { PaymentGatewayConfig } from "@/types/payment";
 import { ShippingRate } from "@/lib/shipping-storage";
+import { toast } from "sonner";
 import {
   CreditCard,
   Truck,
@@ -20,19 +21,20 @@ import {
   ChevronDown,
   CheckCircle2,
   ShieldCheck,
-  ArrowLeft,
   Building2,
   Package,
   Phone,
-  ShoppingBag
+  Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function CheckoutPage() {
-  const { items, subtotal, shipping, total, getTotalItems } = useCart();
+  const router = useRouter();
+  const { items, subtotal, shipping, total, getTotalItems, clearCart } = useCart();
 
   const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayConfig[]>([]);
   const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [contactEmail, setContactEmail] = useState("");
   const [receiveUpdates, setReceiveUpdates] = useState(false);
@@ -53,20 +55,94 @@ export default function CheckoutPage() {
 
   // Initialize data on mount and when country changes
   useEffect(() => {
-    const gateways = getActivePaymentGateways();
-    const rates = getShippingRatesForCountry(shippingInfo.country);
+    const initData = async () => {
+      const gateways = await getActivePaymentGateways();
+      setPaymentGateways(gateways);
 
-    setPaymentGateways(gateways);
+      if (gateways.length > 0 && !selectedPaymentMethod) {
+        setSelectedPaymentMethod(gateways[0].id);
+      }
+    };
+
+    initData();
+
+    const rates = getShippingRatesForCountry(shippingInfo.country);
     setShippingRates(rates);
 
     if (rates.length > 0 && !selectedShippingMethod) {
       setSelectedShippingMethod(rates[0].id);
     }
+  }, [shippingInfo.country, selectedPaymentMethod, selectedShippingMethod]); // Added missing dependencies
 
-    if (gateways.length > 0 && !selectedPaymentMethod) {
-      setSelectedPaymentMethod(gateways[0].id);
+  const handleCompleteOrder = async () => {
+    if (items.length === 0) return;
+
+    // Validation
+    if (!contactEmail || !contactEmail.includes("@")) {
+      toast.error("Lütfen geçerli bir e-posta adresi giriniz.");
+      return;
     }
-  }, [shippingInfo.country, selectedShippingMethod, selectedPaymentMethod]);
+    if (!shippingInfo.firstName || !shippingInfo.lastName || !shippingInfo.address || !shippingInfo.city || !shippingInfo.phone) {
+      toast.error("Lütfen tüm teslimat bilgilerini doldurunuz.");
+      return;
+    }
+    if (!selectedShippingMethod) {
+      toast.error("Lütfen bir kargo yöntemi seçiniz.");
+      return;
+    }
+    if (!selectedPaymentMethod) {
+      toast.error("Lütfen bir ödeme yöntemi seçiniz.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const orderData = {
+        customerId: null, // Guest checkout for now
+        items: items.map(item => ({
+          productId: item.productId,
+          variantId: item.variantId,
+          productName: item.product.name,
+          variantName: item.variant.name,
+          price: item.variant.price,
+          quantity: item.quantity,
+          total: item.variant.price * item.quantity
+        })),
+        shippingAddress: shippingInfo,
+        billingAddress: shippingInfo, // Assuming same for now
+        paymentMethod: selectedPaymentMethod,
+        shippingCost: shipping,
+        discount: 0,
+        notes: "",
+        contactEmail,
+        receiveUpdates
+      };
+
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("Siparişiniz başarıyla alındı!");
+        clearCart();
+        // Redirect to success page or order details
+        // For now, redirect to homepage with success parameter or a dedicated success page
+        router.push(`/siparisler/${result.order.id}?new=true`);
+      } else {
+        toast.error(result.error || "Sipariş oluşturulurken bir hata oluştu.");
+      }
+    } catch (error) {
+      console.error("Order Error:", error);
+      toast.error("Bir bağlantı hatası oluştu.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -77,7 +153,20 @@ export default function CheckoutPage() {
           className="max-w-md w-full text-center bg-white rounded-[2.5rem] p-12 shadow-2xl shadow-primary/5 border border-primary/5"
         >
           <div className="w-24 h-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto mb-8">
-            <ShoppingBag className="h-12 w-12 text-primary" />
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-12 w-12 text-primary"
+            >
+              <path d="M16 8V6a2 2 0 0 0-2-2H9.5a2 2 0 0 0-2 2v2" />
+              <path d="M7 8h10" />
+              <path d="M6 8v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8" />
+              <path d="M9.5 13a2.5 2.5 0 0 1 5 0" />
+            </svg>
           </div>
           <h1 className="text-3xl font-black text-primary mb-4 tracking-tight">Sepetiniz Boş</h1>
           <p className="text-gray-500 mb-8 leading-relaxed font-medium">Ödeme sayfasına devam etmek için sepetinize ürün eklemelisiniz.</p>
@@ -409,10 +498,16 @@ export default function CheckoutPage() {
               {/* Final Complete Action - Only for Mobile to be visible early */}
               <div className="lg:hidden space-y-4">
                 <button
-                  className="w-full py-6 bg-primary text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-lg hover:bg-primary/95 transition-all shadow-2xl shadow-primary/30 flex items-center justify-center gap-4 active:scale-95 group"
+                  onClick={handleCompleteOrder}
+                  disabled={isSubmitting}
+                  className="w-full py-6 bg-primary text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-lg hover:bg-primary/95 transition-all shadow-2xl shadow-primary/30 flex items-center justify-center gap-4 active:scale-95 group disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <Lock className="h-5 w-5" />
-                  Siparişi Onayla
+                  {isSubmitting ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Lock className="h-5 w-5" />
+                  )}
+                  {isSubmitting ? "İşleniyor..." : "Siparişi Onayla"}
                 </button>
                 <p className="text-[10px] text-center font-bold text-gray-400 uppercase tracking-wider">
                   KVKK ve Satış Sözleşmesini onaylayarak ödeme yapmaktasınız.
@@ -432,7 +527,20 @@ export default function CheckoutPage() {
                       <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">{getTotalItems()} Ürün Seçildi</p>
                     </div>
                     <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center">
-                      <ShoppingBag className="h-6 w-6" />
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-6 w-6 text-white"
+                      >
+                        <path d="M16 8V6a2 2 0 0 0-2-2H9.5a2 2 0 0 0-2 2v2" />
+                        <path d="M7 8h10" />
+                        <path d="M6 8v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8" />
+                        <path d="M9.5 13a2.5 2.5 0 0 1 5 0" />
+                      </svg>
                     </div>
                   </div>
                 </div>
@@ -506,10 +614,16 @@ export default function CheckoutPage() {
 
                     {/* Completion Button - Desktop */}
                     <button
-                      className="hidden lg:flex w-full py-5 bg-primary text-white rounded-2xl font-black uppercase tracking-[0.2em] text-base hover:bg-primary/95 transition-all shadow-2xl shadow-primary/20 items-center justify-center gap-3 active:scale-[0.98] group"
+                      onClick={handleCompleteOrder}
+                      disabled={isSubmitting}
+                      className="hidden lg:flex w-full py-5 bg-primary text-white rounded-2xl font-black uppercase tracking-[0.2em] text-base hover:bg-primary/95 transition-all shadow-2xl shadow-primary/20 items-center justify-center gap-3 active:scale-[0.98] group disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                      <Lock className="h-5 w-5 group-hover:rotate-12 transition-transform" />
-                      Siparişi Tamamla
+                      {isSubmitting ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Lock className="h-5 w-5 group-hover:rotate-12 transition-transform" />
+                      )}
+                      {isSubmitting ? "İşleniyor..." : "Siparişi Tamamla"}
                     </button>
 
                     <div className="mt-6 flex items-center justify-center gap-6 opacity-30 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-700">

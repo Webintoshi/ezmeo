@@ -1,10 +1,9 @@
 "use client";
 
+import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
 import {
   Search,
-  ShoppingBag,
   Menu,
   X,
   Heart,
@@ -30,7 +29,7 @@ export function Header() {
   const { getTotalItems, setIsOpen: setIsCartOpen } = useCart();
   const cartItemCount = getTotalItems();
   const cartControls = useAnimation();
-  const [prevCartCount, setPrevCartCount] = useState(cartItemCount);
+  const prevCartCountRef = useRef(cartItemCount);
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -57,14 +56,14 @@ export function Header() {
 
   // Cart Animation Logic
   useEffect(() => {
-    if (cartItemCount > prevCartCount) {
+    if (cartItemCount > prevCartCountRef.current) {
       cartControls.start({
         scale: [1, 1.3, 1],
         transition: { duration: 0.3 }
       });
     }
-    setPrevCartCount(cartItemCount);
-  }, [cartItemCount, prevCartCount, cartControls]);
+    prevCartCountRef.current = cartItemCount;
+  }, [cartItemCount, cartControls]);
 
   const menuVariants = {
     closed: { x: "-100%", transition: { type: "spring" as const, stiffness: 400, damping: 40 } },
@@ -155,9 +154,10 @@ export function Header() {
                   strokeLinejoin="round"
                   className="h-6 w-6 text-primary"
                 >
-                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-                  <path d="M3 6h18" />
-                  <path d="M16 10a4 4 0 0 1-8 0" />
+                  <path d="M16 8V6a2 2 0 0 0-2-2H9.5a2 2 0 0 0-2 2v2" />
+                  <path d="M7 8h10" />
+                  <path d="M6 8v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8" />
+                  <path d="M9.5 13a2.5 2.5 0 0 1 5 0" />
                 </svg>
                 {cartItemCount > 0 && (
                   <motion.span

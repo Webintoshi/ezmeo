@@ -37,32 +37,39 @@ export default function EditPaymentGatewayPage() {
 
     useEffect(() => {
         if (gatewayId) {
-            // Simulate async data fetching or ensure it doesn't trigger synchronous re-render in effect
-            const timer = setTimeout(() => {
+            const fetchGateway = async () => {
                 const loadedGateway = getPaymentGatewayById(gatewayId);
-                if (loadedGateway) {
-                    setGateway(loadedGateway);
+                // If not found in memory (first load), try fetching all 
+                // Since getPaymentGatewayById relies on local array which is populated by getPaymentGateways
+                if (!loadedGateway) {
+                    await getPaymentGateways(); // Populate local array
+                    const retry = getPaymentGatewayById(gatewayId);
+                    if (retry) {
+                        setGateway(retry);
+                    } else {
+                        router.push("/admin/ayarlar/odeme");
+                    }
                 } else {
-                    router.push("/admin/ayarlar/odeme");
+                    setGateway(loadedGateway);
                 }
-            }, 0);
-            return () => clearTimeout(timer);
+            };
+            fetchGateway();
         }
     }, [gatewayId, router]);
 
-    const handleToggleStatus = () => {
+    const handleToggleStatus = async () => {
         if (!gateway) return;
 
         const newStatus = gateway.status === "active" ? "inactive" : "active";
-        updatePaymentGateway(gatewayId, { status: newStatus });
+        await updatePaymentGateway(gatewayId, { status: newStatus });
         setGateway({ ...gateway, status: newStatus, updatedAt: new Date() });
     };
 
-    const handleToggleEnvironment = () => {
+    const handleToggleEnvironment = async () => {
         if (!gateway) return;
 
         const newEnvironment = gateway.environment === "production" ? "sandbox" : "production";
-        updatePaymentGateway(gatewayId, { environment: newEnvironment });
+        await updatePaymentGateway(gatewayId, { environment: newEnvironment });
         setGateway({ ...gateway, environment: newEnvironment, updatedAt: new Date() });
     };
 
@@ -84,7 +91,7 @@ export default function EditPaymentGatewayPage() {
 
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-        updatePaymentGateway(gatewayId, gateway);
+        await updatePaymentGateway(gatewayId, gateway);
 
         setSaving(false);
     };

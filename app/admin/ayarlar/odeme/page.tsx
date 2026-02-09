@@ -40,34 +40,32 @@ export default function PaymentSettingsPage() {
     const [testingConnection, setTestingConnection] = useState<string | null>(null);
     const [testResults, setTestResults] = useState<Record<string, boolean>>({});
 
-    const loadPaymentGateways = () => {
+    const loadPaymentGateways = async () => {
         setLoading(true);
-        setPaymentGateways(getPaymentGateways());
+        const gateways = await getPaymentGateways();
+        setPaymentGateways(gateways);
         setLoading(false);
     };
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            loadPaymentGateways();
-        }, 0);
-        return () => clearTimeout(timer);
+        loadPaymentGateways();
     }, []);
 
-    const handleToggleStatus = (id: string, currentStatus: PaymentMethodStatus) => {
+    const handleToggleStatus = async (id: string, currentStatus: PaymentMethodStatus) => {
         const newStatus = currentStatus === "active" ? "inactive" : "active";
-        togglePaymentGatewayStatus(id, newStatus);
+        await togglePaymentGatewayStatus(id, newStatus);
         loadPaymentGateways();
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (confirm("Bu ödeme yöntemini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
-            deletePaymentGateway(id);
+            await deletePaymentGateway(id);
             loadPaymentGateways();
         }
     };
 
-    const handleDuplicate = (id: string) => {
-        duplicatePaymentGateway(id);
+    const handleDuplicate = async (id: string) => {
+        await duplicatePaymentGateway(id);
         loadPaymentGateways();
     };
 
