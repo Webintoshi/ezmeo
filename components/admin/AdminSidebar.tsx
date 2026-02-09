@@ -113,7 +113,7 @@ const MENU_ITEMS: MenuItem[] = [
     submenu: [
       { title: "Dashboard", href: "/admin/seo-killer" },
       { title: "İç Linkleme Robotu", href: "/admin/seo-killer/ic-linkleme" },
-      { title: "Meta Sihirbazı", href: "/admin/seo-killer/meta-sihirbazi" },
+
       { title: "Hızlı İndex (Ping)", href: "/admin/seo-killer/hizli-index" },
       { title: "Sosyal Önizleme", href: "/admin/seo-killer/sosyal-onizleme" },
       { title: "Sitemap", href: "/admin/seo-killer/sitemap" },
