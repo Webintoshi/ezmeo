@@ -386,6 +386,7 @@ export default function CheckoutPage() {
                     {paymentGateways.map(gateway => (
                       <label
                         key={gateway.id}
+                        onClick={() => setSelectedPaymentMethod(gateway.id)}
                         className={cn(
                           "flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all",
                           selectedPaymentMethod === gateway.id ? "border-primary bg-primary/5" : "border-gray-100 hover:border-gray-200"
@@ -534,7 +535,8 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* Dark Total Box - Using Primary Brand Color as base */}
-                  <div className="bg-primary rounded-xl p-5 flex justify-between items-center text-white shadow-lg shadow-primary/20">
+                  {/* Total Box - Nude Theme */}
+                  <div className="bg-[#F5E6E0] rounded-xl p-5 flex justify-between items-center text-[#7B1113] shadow-sm">
                     <span className="font-bold text-lg">Toplam</span>
                     <span className="font-black text-2xl tracking-tight">{formatPrice(total)}</span>
                   </div>

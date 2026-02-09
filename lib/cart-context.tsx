@@ -11,6 +11,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
 
   // Load cart from localStorage
   useEffect(() => {
@@ -29,6 +30,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items, isLoaded]);
 
   const addToCart = (product: Product, variant: ProductVariant, quantity: number = 1) => {
+    const newItem: CartItem = {
+      productId: product.id,
+      variantId: variant.id,
+      quantity,
+      product,
+      variant,
+    };
+
     setItems((prev) => {
       const existingItem = prev.find(
         (item) => item.productId === product.id && item.variantId === variant.id
@@ -42,22 +51,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
-      return [
-        ...prev,
-        {
-          productId: product.id,
-          variantId: variant.id,
-          quantity,
-          product,
-          variant,
-        },
-      ];
+      return [...prev, newItem];
     });
+
+    setLastAddedItem(newItem);
     setIsOpen(true);
   };
 
   const removeFromCart = (itemId: string) => {
     setItems((prev) => prev.filter((item) => item.variantId !== itemId));
+    // If the removed item was the last added one, technically we could clear it, 
+    // but usually "last added" notification persists until another action. 
+    // We'll leave it as is or clear it if that ItemId matches.
+    if (lastAddedItem?.variantId === itemId) {
+      setLastAddedItem(null);
+    }
   };
 
   const updateQuantity = (itemId: string, quantity: number) => {
@@ -74,6 +82,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = () => {
     setItems([]);
+    setLastAddedItem(null);
   };
 
   const getItemQuantity = (productId: string, variantId: string) => {
@@ -111,6 +120,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         total,
         isOpen,
         setIsOpen,
+        lastAddedItem,
       }}
     >
       {children}

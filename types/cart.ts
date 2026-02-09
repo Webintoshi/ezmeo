@@ -42,6 +42,7 @@ export interface CartContextType {
   total: number;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  lastAddedItem: CartItem | null;
 }
 
 // Favori Listesi
