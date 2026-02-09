@@ -3,10 +3,10 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
-// No imports here
 import { LayoutWrapper } from "@/components/layout/LayoutWrapper";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
 import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
+import TrackingProvider from "@/components/TrackingProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -78,12 +78,14 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <AnalyticsTracker />
-        <CartProvider>
-          <WishlistProvider>
-            <LayoutWrapper>{children}</LayoutWrapper>
-          </WishlistProvider>
-        </CartProvider>
+        <TrackingProvider>
+          <AnalyticsTracker />
+          <CartProvider>
+            <WishlistProvider>
+              <LayoutWrapper>{children}</LayoutWrapper>
+            </WishlistProvider>
+          </CartProvider>
+        </TrackingProvider>
       </body>
     </html>
   );

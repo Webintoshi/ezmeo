@@ -1,34 +1,83 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PRODUCTS } from "@/lib/products";
-import { getOrders } from "@/lib/orders";
-import { Package, ShoppingCart, Users, TrendingUp, TrendingDown } from "lucide-react";
+import { Package, ShoppingCart, TrendingUp, TrendingDown } from "lucide-react";
+import LiveVisitors from "@/components/admin/LiveVisitors";
+import AbandonedCartsWidget from "@/components/admin/AbandonedCartsWidget";
+import ActivityFeed from "@/components/admin/ActivityFeed";
+
+interface Stats {
+  totalProducts: number;
+  totalOrders: number;
+  pendingOrders: number;
+  totalRevenue: number;
+  lowStockProducts: number;
+}
+
+interface RecentOrder {
+  id: string;
+  orderNumber: string;
+  shippingAddress: { firstName: string; lastName: string };
+  total: number;
+  createdAt: string;
+}
+
+interface LowStockProduct {
+  id: string;
+  name: string;
+  variants: Array<{ name: string; stock: number }>;
+}
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<Stats>({
     totalProducts: 0,
     totalOrders: 0,
     pendingOrders: 0,
     totalRevenue: 0,
     lowStockProducts: 0,
   });
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const orders = getOrders();
-    const deliveredOrders = orders.filter((o) => o.status === "delivered");
-    const revenue = deliveredOrders.reduce((sum, order) => sum + order.total, 0);
-    const lowStock = PRODUCTS.filter((p) =>
-      p.variants.some((v) => v.stock < 10)
-    ).length;
+    const fetchData = async () => {
+      try {
+        // Fetch products
+        const productsRes = await fetch("/api/products");
+        const productsData = await productsRes.json();
+        const products = productsData.products || [];
 
-    setStats({
-      totalProducts: PRODUCTS.length,
-      totalOrders: orders.length,
-      pendingOrders: orders.filter((o) => o.status === "pending").length,
-      totalRevenue: revenue,
-      lowStockProducts: lowStock,
-    });
+        // Fetch orders
+        const ordersRes = await fetch("/api/orders");
+        const ordersData = await ordersRes.json();
+        const orders = ordersData.orders || [];
+
+        // Calculate stats
+        const deliveredOrders = orders.filter((o: { status: string }) => o.status === "delivered");
+        const revenue = deliveredOrders.reduce((sum: number, order: { total: number }) => sum + Number(order.total), 0);
+        const lowStock = products.filter((p: LowStockProduct) =>
+          p.variants?.some((v) => v.stock < 10)
+        );
+
+        setStats({
+          totalProducts: products.length,
+          totalOrders: orders.length,
+          pendingOrders: orders.filter((o: { status: string }) => o.status === "pending").length,
+          totalRevenue: revenue,
+          lowStockProducts: lowStock.length,
+        });
+
+        setRecentOrders(orders.slice(0, 5));
+        setLowStockProducts(lowStock.slice(0, 5));
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const StatCard = ({
@@ -52,9 +101,8 @@ export default function AdminDashboard() {
       <div className="text-2xl font-bold text-gray-900">{value}</div>
       {trend && (
         <p
-          className={`text-xs mt-1 flex items-center gap-1 ${
-            trendUp ? "text-green-600" : "text-red-600"
-          }`}
+          className={`text-xs mt-1 flex items-center gap-1 ${trendUp ? "text-green-600" : "text-red-600"
+            }`}
         >
           {trendUp ? (
             <TrendingUp className="w-3 h-3" />
@@ -67,6 +115,24 @@ export default function AdminDashboard() {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Ana Sayfa</h1>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+              <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -76,6 +142,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
         <StatCard
           title="Toplam Ürün"
@@ -112,36 +179,50 @@ export default function AdminDashboard() {
         />
       </div>
 
+      {/* Real-Time Analytics Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <LiveVisitors />
+        <AbandonedCartsWidget />
+        <ActivityFeed />
+      </div>
+
+      {/* Orders and Low Stock Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Son Siparişler
           </h3>
           <div className="space-y-4">
-            {getOrders().slice(0, 5).map((order) => (
-              <div
-                key={order.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-              >
-                <div>
-                  <div className="font-medium text-gray-900">
-                    {order.orderNumber}
+            {recentOrders.length > 0 ? (
+              recentOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div>
+                    <div className="font-medium text-gray-900">
+                      {order.orderNumber}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {order.shippingAddress?.firstName || "Müşteri"}{" "}
+                      {order.shippingAddress?.lastName || ""}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    {order.shippingAddress.firstName}{" "}
-                    {order.shippingAddress.lastName}
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900">
+                      ₺{Number(order.total).toLocaleString("tr-TR")}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(order.createdAt).toLocaleDateString("tr-TR")}
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-semibold text-gray-900">
-                    ₺{order.total.toLocaleString("tr-TR")}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {new Date(order.createdAt).toLocaleDateString("tr-TR")}
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-center text-gray-500 py-8">
+                Henüz sipariş yok.
+              </p>
+            )}
           </div>
         </div>
 
@@ -150,12 +231,9 @@ export default function AdminDashboard() {
             Düşük Stoklu Ürünler
           </h3>
           <div className="space-y-4">
-            {PRODUCTS.filter((p) =>
-              p.variants.some((v) => v.stock < 10)
-            )
-              .slice(0, 5)
-              .map((product) => {
-                const lowStockVariant = product.variants.find((v) => v.stock < 10);
+            {lowStockProducts.length > 0 ? (
+              lowStockProducts.map((product) => {
+                const lowStockVariant = product.variants?.find((v) => v.stock < 10);
                 return (
                   <div
                     key={product.id}
@@ -169,27 +247,18 @@ export default function AdminDashboard() {
                     </div>
                     <div className="text-right">
                       <div className="font-semibold text-red-600">
-                        {lowStockVariant?.stock} adet
+                        {lowStockVariant?.stock || 0} adet
                       </div>
                     </div>
                   </div>
                 );
-              })}
-            {stats.lowStockProducts === 0 && (
+              })
+            ) : (
               <p className="text-center text-gray-500 py-8">
                 Düşük stoklu ürün bulunmuyor.
               </p>
             )}
           </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Satış Grafiği
-        </h3>
-        <div className="h-[300px] flex items-center justify-center text-gray-400">
-          Grafik entegrasyonu için veri bekleniyor...
         </div>
       </div>
     </div>
