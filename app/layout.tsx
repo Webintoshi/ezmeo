@@ -59,6 +59,12 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  alternates: {
+    canonical: "./",
+    languages: {
+      "tr-TR": "./",
+    },
+  },
 };
 
 export default function RootLayout({

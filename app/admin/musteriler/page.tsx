@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
-import { getCustomers, deleteCustomer, exportCustomersToCSV, importCustomersFromCSV, addCustomer } from "@/lib/customers";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { Customer } from "@/types/customer";
 import {
   Plus,
@@ -25,12 +24,59 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 
+// Transform database customer to frontend format
+function transformCustomer(dbCustomer: Record<string, unknown>): Customer {
+  return {
+    id: dbCustomer.id as string,
+    firstName: (dbCustomer.first_name as string) || "",
+    lastName: (dbCustomer.last_name as string) || "",
+    email: dbCustomer.email as string,
+    phone: (dbCustomer.phone as string) || "",
+    status: "active" as Customer["status"],
+    totalOrders: Number(dbCustomer.total_orders) || 0,
+    totalSpent: Number(dbCustomer.total_spent) || 0,
+    createdAt: new Date(dbCustomer.created_at as string),
+    lastOrderAt: dbCustomer.last_order_at ? new Date(dbCustomer.last_order_at as string) : undefined,
+    addresses: [],
+    notes: "",
+  };
+}
+
+// Simple CSV export function
+function exportCustomersToCSV(customers: Customer[]): string {
+  const headers = "Ad,Soyad,E-posta,Telefon,Toplam Sipariş,Toplam Harcama";
+  const rows = customers.map(c =>
+    `${c.firstName},${c.lastName},${c.email},${c.phone || ""},${c.totalOrders},${c.totalSpent}`
+  );
+  return [headers, ...rows].join("\n");
+}
+
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>(getCustomers());
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const loadCustomers = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/customers");
+      const data = await res.json();
+      if (data.success && data.customers) {
+        setCustomers(data.customers.map(transformCustomer));
+      }
+    } catch (error) {
+      console.error("Failed to load customers:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCustomers();
+  }, []);
 
   // Metrics Calculation
   const metrics = useMemo(() => {
@@ -53,18 +99,28 @@ export default function CustomersPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = async (id: string, name: string) => {
     if (confirm(`"${name}" müşterisini silmek istediğinizden emin misiniz?`)) {
-      deleteCustomer(id);
-      setCustomers(getCustomers());
+      try {
+        await fetch(`/api/customers?id=${id}`, { method: "DELETE" });
+        await loadCustomers();
+      } catch (error) {
+        console.error("Failed to delete customer:", error);
+      }
     }
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (confirm(`${selectedCustomers.length} müşteriyi silmek istediğinizden emin misiniz?`)) {
-      selectedCustomers.forEach((id) => deleteCustomer(id));
-      setCustomers(getCustomers());
-      setSelectedCustomers([]);
+      try {
+        for (const id of selectedCustomers) {
+          await fetch(`/api/customers?id=${id}`, { method: "DELETE" });
+        }
+        await loadCustomers();
+        setSelectedCustomers([]);
+      } catch (error) {
+        console.error("Failed to delete customers:", error);
+      }
     }
   };
 
@@ -94,12 +150,27 @@ export default function CustomersPage() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const csvContent = event.target?.result as string;
-      const importedCustomers = importCustomersFromCSV(csvContent);
-      importedCustomers.forEach((data) => addCustomer(data));
-      setCustomers(getCustomers());
-      alert(`${importedCustomers.length} müşteri içe aktarıldı.`);
+      const lines = csvContent.split("\n").slice(1); // Skip header
+      let imported = 0;
+      for (const line of lines) {
+        const [firstName, lastName, email, phone] = line.split(",");
+        if (email) {
+          try {
+            await fetch("/api/customers", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ firstName, lastName, email, phone })
+            });
+            imported++;
+          } catch (err) {
+            console.error("Failed to import customer:", err);
+          }
+        }
+      }
+      await loadCustomers();
+      alert(`${imported} müşteri içe aktarıldı.`);
     };
     reader.readAsText(file);
     e.target.value = "";
