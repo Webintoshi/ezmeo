@@ -25,7 +25,8 @@ import {
   Loader2,
   AlertCircle,
   RotateCcw,
-  Check
+  Check,
+  ChevronLeft
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -68,9 +69,7 @@ export default function CheckoutPage() {
         setPaymentGateways(gateways);
         setShippingRates(rates);
 
-        if (gateways.length > 0 && !selectedPaymentMethod) {
-          setSelectedPaymentMethod(gateways[0].id);
-        }
+        // Do NOT auto-select payment method as per user request
         if (rates.length > 0 && !selectedShippingMethod) {
           setSelectedShippingMethod(rates[0].id);
         }
@@ -85,7 +84,6 @@ export default function CheckoutPage() {
   }, [shippingInfo.country]);
 
   const handleNextStep = () => {
-    // Validation for Step 1
     if (!contactEmail || !contactEmail.includes("@")) {
       toast.error("Geçerli bir e-posta adresi giriniz.");
       return;
@@ -164,6 +162,10 @@ export default function CheckoutPage() {
     toast.success("Kopyalandı!");
   };
 
+  const getGatewayType = (id: string) => {
+    return paymentGateways.find(g => g.id === id)?.gateway;
+  };
+
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center p-4">
@@ -179,21 +181,24 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-[#F3F4F6] font-sans pb-20">
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="container mx-auto max-w-[1200px] px-4 md:px-8 h-20 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-black italic tracking-tighter text-primary">Ezmeo</Link>
+          {/* Logo - Removed "Ezmeo" text, just an icon or clean link if requested, or just the breadcrumbs? User said "butonlar üst kısım", likely referring to header. Keeping it minimal. */}
+          <Link href="/" className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold text-xl italic shadow-lg shadow-primary/30">
+            E
+          </Link>
 
           {/* Breadcrumbs */}
           <div className="flex items-center gap-3">
-            <div className={cn("flex items-center gap-2", currentStep === 1 ? "text-gray-900 font-bold" : "text-emerald-600 font-medium")}>
-              <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-xs", currentStep === 1 ? "bg-gray-900 text-white" : "bg-emerald-100 text-emerald-600")}>
+            <div onClick={() => currentStep === 2 && setCurrentStep(1)} className={cn("flex items-center gap-2 cursor-pointer transition-colors", currentStep === 1 ? "text-primary font-bold" : "text-gray-500 font-medium")}>
+              <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-xs", currentStep === 1 ? "bg-primary text-white" : "bg-emerald-100 text-emerald-600")}>
                 {currentStep > 1 ? <Check className="h-4 w-4" /> : "1"}
               </div>
               <span className="hidden sm:inline">Teslimat</span>
             </div>
             <ChevronRight className="h-4 w-4 text-gray-300" />
-            <div className={cn("flex items-center gap-2", currentStep === 2 ? "text-gray-900 font-bold" : "text-gray-400 font-medium")}>
-              <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-xs", currentStep === 2 ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-400")}>
+            <div className={cn("flex items-center gap-2", currentStep === 2 ? "text-primary font-bold" : "text-gray-400 font-medium")}>
+              <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-xs", currentStep === 2 ? "bg-primary text-white" : "bg-gray-100 text-gray-400")}>
                 2
               </div>
               <span className="hidden sm:inline">Ödeme</span>
@@ -208,130 +213,131 @@ export default function CheckoutPage() {
           {/* Left Column (Forms) */}
           <div className="lg:col-span-8 space-y-8">
 
-            {/* Step 1: Delivery Info */}
-            <div className={cn("bg-white rounded-[1.5rem] shadow-sm p-8 transition-opacity duration-300", currentStep !== 1 && "opacity-60 pointer-events-none grayscale")}>
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                  <Truck className="h-6 w-6" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Teslimat Bilgileri</h2>
-                  <p className="text-sm text-gray-500">Siparişinizin gönderileceği adres</p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-600">Ad</label>
-                    <input
-                      type="text"
-                      value={shippingInfo.firstName}
-                      onChange={(e) => setShippingInfo({ ...shippingInfo, firstName: e.target.value })}
-                      placeholder="Adınız"
-                      className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-0 transition-colors bg-white text-gray-900 placeholder:text-gray-400"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-600">Soyad</label>
-                    <input
-                      type="text"
-                      value={shippingInfo.lastName}
-                      onChange={(e) => setShippingInfo({ ...shippingInfo, lastName: e.target.value })}
-                      placeholder="Soyadınız"
-                      className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-0 transition-colors bg-white text-gray-900 placeholder:text-gray-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-600">E-posta</label>
-                  <input
-                    type="email"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    placeholder="ornek@email.com"
-                    className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-0 transition-colors bg-white text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-600">Telefon</label>
-                  <input
-                    type="tel"
-                    value={shippingInfo.phone}
-                    onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
-                    placeholder="05XX XXX XX XX"
-                    className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-0 transition-colors bg-white text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-600">Adres</label>
-                  <input
-                    type="text"
-                    value={shippingInfo.address}
-                    onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value })}
-                    placeholder="Sokak, Mahalle, Bina No"
-                    className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-0 transition-colors bg-white text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="space-y-2 relative">
-                    <label className="text-sm font-medium text-gray-600">Şehir</label>
-                    <select
-                      value={shippingInfo.city}
-                      onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
-                      className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-0 transition-colors bg-white text-gray-900 placeholder:text-gray-400 appearance-none cursor-pointer"
-                    >
-                      <option value="">Seçiniz</option>
-                      {TURKISH_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                    <div className="absolute right-4 bottom-3.5 pointer-events-none text-gray-400">
-                      <ChevronRight className="h-4 w-4 rotate-90" />
+            <AnimatePresence mode="wait">
+              {currentStep === 1 ? (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="bg-white rounded-[1.5rem] shadow-sm p-8"
+                >
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-700">
+                      <Truck className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">Teslimat Bilgileri</h2>
+                      <p className="text-sm text-gray-500">Siparişinizin gönderileceği adres</p>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-600">İlçe</label>
-                    <input
-                      type="text"
-                      className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-0 transition-colors bg-white text-gray-900 placeholder:text-gray-400"
-                      placeholder="İlçe"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-600">Posta Kodu</label>
-                    <input
-                      type="text"
-                      value={shippingInfo.postalCode}
-                      onChange={(e) => setShippingInfo({ ...shippingInfo, postalCode: e.target.value })}
-                      className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-gray-900 focus:ring-0 transition-colors bg-white text-gray-900 placeholder:text-gray-400"
-                      placeholder="34000"
-                    />
-                  </div>
-                </div>
 
-                {currentStep === 1 && (
-                  <button
-                    onClick={handleNextStep}
-                    className="w-full bg-[#0F172A] text-white font-bold h-14 rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 mt-4"
-                  >
-                    Ödemeye Geç <ChevronRight className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </div>
+                  <div className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-600">Ad</label>
+                        <input
+                          type="text"
+                          value={shippingInfo.firstName}
+                          onChange={(e) => setShippingInfo({ ...shippingInfo, firstName: e.target.value })}
+                          placeholder="Adınız"
+                          className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-600">Soyad</label>
+                        <input
+                          type="text"
+                          value={shippingInfo.lastName}
+                          onChange={(e) => setShippingInfo({ ...shippingInfo, lastName: e.target.value })}
+                          placeholder="Soyadınız"
+                          className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300"
+                        />
+                      </div>
+                    </div>
 
-            {/* Step 2: Payment Info */}
-            {/* We render this block only if we are on step 2, or keep it visible but disabled? Reference suggests separate pages or states.
-                 Let's keep it in DOM but hidden/collapsed if step 1.
-             */}
-            <AnimatePresence>
-              {currentStep === 2 && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-600">E-posta</label>
+                      <input
+                        type="email"
+                        value={contactEmail}
+                        onChange={(e) => setContactEmail(e.target.value)}
+                        placeholder="ornek@email.com"
+                        className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-600">Telefon</label>
+                      <input
+                        type="tel"
+                        value={shippingInfo.phone}
+                        onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
+                        placeholder="05XX XXX XX XX"
+                        className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-600">Adres</label>
+                      <input
+                        type="text"
+                        value={shippingInfo.address}
+                        onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value })}
+                        placeholder="Sokak, Mahalle, Bina No"
+                        className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300"
+                      />
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-6">
+                      <div className="space-y-2 relative">
+                        <label className="text-sm font-medium text-gray-600">Şehir</label>
+                        <select
+                          value={shippingInfo.city}
+                          onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
+                          className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300 appearance-none cursor-pointer"
+                        >
+                          <option value="">Seçiniz</option>
+                          {TURKISH_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                        <div className="absolute right-4 bottom-3.5 pointer-events-none text-gray-400">
+                          <ChevronRight className="h-4 w-4 rotate-90" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-600">İlçe</label>
+                        <input
+                          type="text"
+                          className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300"
+                          placeholder="İlçe"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-600">Posta Kodu</label>
+                        <input
+                          type="text"
+                          value={shippingInfo.postalCode}
+                          onChange={(e) => setShippingInfo({ ...shippingInfo, postalCode: e.target.value })}
+                          className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300"
+                          placeholder="34000"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleNextStep}
+                      className="w-full bg-primary text-white font-bold h-14 rounded-xl hover:bg-red-800 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg shadow-primary/20"
+                    >
+                      Ödemeye Geç <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  key="step2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
                   className="bg-white rounded-[1.5rem] shadow-sm p-8"
                 >
                   <div className="flex items-center gap-4 mb-8">
@@ -347,7 +353,45 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* Payment Method Selection - Clean Tabs or List */}
+                  {/* VISUAL CREDIT CARD WRAPPER */}
+                  {/* This stays visible as a design element or changes based on method */}
+                  <div className="mb-8">
+                    {/* Purple Gradient Card - Only show if Card payment is selected or generic default */}
+                    {['paytr', 'iyzico', 'stripe', 'credit_card'].includes(getGatewayType(selectedPaymentMethod) || '') && (
+                      <div className="w-full max-w-md mx-auto aspect-[1.586] rounded-2xl p-6 md:p-8 text-white relative overflow-hidden shadow-2xl shadow-indigo-500/20 mb-8 transform transition-transform hover:scale-[1.02] duration-500">
+                        {/* Gradient Background */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#6366f1] via-[#8b5cf6] to-[#ec4899]" />
+
+                        {/* Chip */}
+                        <div className="relative w-12 h-9 bg-yellow-400 rounded-lg mb-8 opacity-90 shadow-sm border border-yellow-300/50 flex items-center justify-center">
+                          <div className="w-8 h-px bg-yellow-600/30 absolute" />
+                          <div className="h-5 w-px bg-yellow-600/30 absolute" />
+                        </div>
+
+                        {/* Card Number Dots */}
+                        <div className="relative flex gap-4 text-2xl tracking-widest mb-8 font-mono opacity-90">
+                          <span>••••</span>
+                          <span>••••</span>
+                          <span>••••</span>
+                          <span>••••</span>
+                        </div>
+
+                        {/* Bottom Row */}
+                        <div className="relative flex justify-between items-end">
+                          <div>
+                            <p className="text-[10px] uppercase font-bold tracking-widest opacity-70 mb-1">Kart Sahibi</p>
+                            <p className="font-medium tracking-wide">AD SOYAD</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] uppercase font-bold tracking-widest opacity-70 mb-1">SKT</p>
+                            <p className="font-medium tracking-wide">AA/YY</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Payment Method Selection */}
                   <div className="grid grid-cols-1 gap-4 mb-8">
                     {paymentGateways.map(gateway => (
                       <label
@@ -360,14 +404,21 @@ export default function CheckoutPage() {
                         <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center", selectedPaymentMethod === gateway.id ? "border-primary" : "border-gray-300")}>
                           {selectedPaymentMethod === gateway.id && <div className="w-2.5 h-2.5 bg-primary rounded-full" />}
                         </div>
-                        <span className="font-bold text-gray-900">{gateway.name}</span>
+                        <div className="flex-1">
+                          <span className="font-bold text-gray-900 block">{gateway.name}</span>
+                          <span className="text-xs text-gray-400">{gateway.description}</span>
+                        </div>
+                        {/* Icon */}
+                        {gateway.gateway === 'bank_transfer' && <Building2 className="h-5 w-5 text-gray-400" />}
+                        {gateway.gateway === 'cod' && <Truck className="h-5 w-5 text-gray-400" />}
+                        {['paytr', 'iyzico', 'stripe'].includes(gateway.gateway) && <CreditCard className="h-5 w-5 text-gray-400" />}
                       </label>
                     ))}
                   </div>
 
                   {/* Selected Gateway Details */}
                   {paymentGateways.find(g => g.id === selectedPaymentMethod)?.gateway === 'bank_transfer' && (
-                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 space-y-4">
+                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 space-y-4 animate-in fade-in slide-in-from-top-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-500 font-medium">Banka</span>
                         <span className="font-bold text-gray-900 text-right">{paymentGateways.find(g => g.id === selectedPaymentMethod)?.bankAccount?.bankName}</span>
@@ -379,14 +430,20 @@ export default function CheckoutPage() {
                       <div className="pt-4 border-t border-gray-200">
                         <p className="text-xs text-gray-500 font-bold uppercase mb-2">IBAN</p>
                         <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
-                          <code className="font-mono font-bold text-gray-900">{paymentGateways.find(g => g.id === selectedPaymentMethod)?.bankAccount?.iban}</code>
-                          <button onClick={() => copyToClipboard(paymentGateways.find(g => g.id === selectedPaymentMethod)?.bankAccount?.iban || "")} className="text-primary text-sm font-bold hover:underline">Kopyala</button>
+                          <code className="font-mono font-bold text-gray-900 break-all">{paymentGateways.find(g => g.id === selectedPaymentMethod)?.bankAccount?.iban}</code>
+                          <button onClick={() => copyToClipboard(paymentGateways.find(g => g.id === selectedPaymentMethod)?.bankAccount?.iban || "")} className="text-primary text-sm font-bold hover:underline shrink-0 ml-2">Kopyala</button>
                         </div>
                       </div>
                       <div className="flex gap-2 text-xs text-amber-600 bg-amber-50 p-3 rounded-lg">
                         <AlertCircle className="h-4 w-4 shrink-0" />
                         Sipariş numaranızı açıklama kısmına yazmayı unutmayınız.
                       </div>
+                    </div>
+                  )}
+
+                  {['paytr', 'iyzico', 'stripe'].includes(getGatewayType(selectedPaymentMethod) || '') && selectedPaymentMethod && (
+                    <div className="bg-blue-50 text-blue-700 p-4 rounded-xl text-sm font-medium text-center animate-in fade-in">
+                      Ödeme butonuna tıkladıktan sonra güvenli 3D Secure ekranına yönlendirileceksiniz.
                     </div>
                   )}
 
@@ -400,7 +457,7 @@ export default function CheckoutPage() {
                     <button
                       onClick={handleCompleteOrder}
                       disabled={isSubmitting}
-                      className="flex-[2] h-14 bg-[#0F172A] text-white font-bold rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+                      className="flex-[2] h-14 bg-primary text-white font-bold rounded-xl hover:bg-red-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 shadow-lg shadow-primary/20"
                     >
                       {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-4 w-4" />}
                       {formatPrice(total)} Öde
@@ -439,7 +496,7 @@ export default function CheckoutPage() {
 
           {/* Right Column (Summary) */}
           <div className="lg:col-span-4 relative">
-            <div className="sticky top-8 space-y-6">
+            <div className="sticky top-20 space-y-6">
 
               <h2 className="text-lg font-bold text-gray-900">Sipariş Özeti</h2>
 
@@ -486,7 +543,7 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* Dark Total Box - EXACTLY LIKE REFERENCE */}
+                  {/* Dark Total Box - Using Primary Brand Color as base */}
                   <div className="bg-[#0F172A] rounded-xl p-5 flex justify-between items-center text-white shadow-lg shadow-gray-900/10">
                     <span className="font-bold text-lg">Toplam</span>
                     <span className="font-black text-2xl tracking-tight">{formatPrice(total)}</span>
