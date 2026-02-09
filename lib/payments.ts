@@ -110,12 +110,25 @@ export function testPaymentGatewayConnection(id: string): Promise<boolean> {
         return;
       }
 
-      // Simulate connection test
+      // Bank transfer and COD don't need API credentials - they're always "connected"
+      if (gateway.gateway === "bank_transfer") {
+        const hasBankDetails = gateway.bankAccount?.bankName && gateway.bankAccount?.iban && gateway.bankAccount?.accountHolder;
+        resolve(gateway.status === "active" && !!hasBankDetails);
+        return;
+      }
+
+      if (gateway.gateway === "cod") {
+        // COD just needs to be active
+        resolve(gateway.status === "active");
+        return;
+      }
+
+      // For API-based gateways (paytr, iyzico, stripe), check credentials
       const isActive = gateway.status === "active";
       const hasCredentials = gateway.apiKey || gateway.apiSecret || gateway.secretKey || gateway.merchantId;
 
       resolve(isActive && !!hasCredentials);
-    }, 2000);
+    }, 1000); // Reduced timeout for better UX
   });
 }
 
