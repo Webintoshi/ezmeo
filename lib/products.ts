@@ -583,6 +583,10 @@ export function getAllProducts(): Product[] {
 
 export const PRODUCTS = getAllProducts();
 
+export function getProductSlug(): string[] {
+  return getAllProducts().map((p) => p.slug);
+}
+
 // Yardımcı Fonksiyonlar
 export function getProductBySlug(slug: string): Product | undefined {
   return getAllProducts().find((p) => p.slug === slug);
@@ -642,7 +646,7 @@ export function importProductsFromCSVFile(csvContent: string): {
   message: string;
 } {
   const result = importProductsFromCSV(csvContent);
-  
+
   if (result.success && result.products.length > 0) {
     addStoredProducts(result.products);
     return {
@@ -651,7 +655,7 @@ export function importProductsFromCSVFile(csvContent: string): {
       message: `${result.products.length} ürün başarıyla içe aktarıldı.`,
     };
   }
-  
+
   return {
     success: false,
     count: 0,
