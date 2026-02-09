@@ -21,6 +21,9 @@ import {
   FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import { UserRole, hasPermission } from "@/lib/permissions";
+import { useEffect } from "react";
 
 interface MenuItem {
   title: string;
@@ -140,11 +143,55 @@ const MENU_ITEMS: MenuItem[] = [
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [role, setRole] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const [expandedMenus, setExpandedMenus] = useState<string[]>([
     "Siparişler",
     "Ürünler",
     "Müşteriler",
   ]);
+
+  useEffect(() => {
+    const checkPermission = async () => {
+      try {
+        // Get current user session
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          router.push("/admin/login");
+          return;
+        }
+
+        setUserEmail(user.email || "");
+
+        // Get user profile for role
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+
+        if (profile) {
+          setRole(profile.role);
+        } else {
+          // Fallback for old admins or missing profiles (treat as super_admin for safety if it's the main admin)
+          if (user.email === "admin@ezmeo.com" || user.email === "webintosh") {
+            setRole("super_admin");
+          } else {
+            setRole("product_manager"); // Default restricted
+          }
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkPermission();
+  }, [router]);
 
   const toggleMenu = (title: string) => {
     setExpandedMenus((prev) =>
@@ -154,25 +201,42 @@ export function AdminSidebar() {
     );
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("admin_authenticated");
-    localStorage.removeItem("admin_email");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    localStorage.removeItem("admin_authenticated"); // clear legacy
     router.push("/admin/login");
   };
+
+  // Filter menu items based on role
+  const filteredItems = MENU_ITEMS.filter(item => {
+    if (!role) return false;
+    if (role === 'super_admin') return true;
+    if (item.title === "Ana Sayfa") return true; // Always show dashboard
+
+    // Check if the item href matches any allowed path prefix
+    return hasPermission(role as UserRole, item.href);
+  });
+
+  if (loading) return <aside className="w-64 bg-[#ebebeb] min-h-screen border-r border-gray-200" />;
 
   return (
     <aside className="w-64 bg-[#ebebeb] min-h-screen border-r border-gray-200 flex flex-col">
       {/* Admin Header */}
       <div className="p-4 flex items-center gap-3 border-b border-gray-200/50">
         <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-          E
+          {userEmail?.[0]?.toUpperCase() || "E"}
         </div>
-        <span className="font-semibold text-gray-700">Ezmeo Admin</span>
+        <div>
+          <span className="font-semibold text-gray-900 block leading-tight">Ezmeo Admin</span>
+          <span className="text-xs text-gray-500 font-medium capitalize">
+            {role ? role.replace("_", " ") : "Yükleniyor..."}
+          </span>
+        </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-        {MENU_ITEMS.map((item) => {
+        {filteredItems.map((item) => {
           const isActive = pathname === item.href;
           const isExpanded = expandedMenus.includes(item.title);
           const hasSubmenu = item.submenu && item.submenu.length > 0;
