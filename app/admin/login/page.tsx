@@ -8,7 +8,7 @@ import { authenticateAdmin } from "@/lib/admins";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,11 +20,11 @@ export default function AdminLoginPage() {
 
     // Simulate network delay
     setTimeout(() => {
-      const isAuthenticated = authenticateAdmin(email, password);
+      const isAuthenticated = authenticateAdmin(username, password);
 
       if (isAuthenticated) {
         localStorage.setItem("admin_authenticated", "true");
-        localStorage.setItem("admin_email", email);
+        localStorage.setItem("admin_username", username);
         router.push("/admin");
         router.refresh();
       } else {
@@ -67,13 +67,13 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                E-posta
+                Kullanıcı Adı
               </label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@ezmeo.com"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Kullanıcı adınızı girin"
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 required
               />
@@ -104,20 +104,6 @@ export default function AdminLoginPage() {
               {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
             </button>
           </form>
-
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-xs text-blue-800 font-medium mb-1">
-                Demo Bilgileri:
-              </p>
-              <p className="text-xs text-blue-700">
-                E-posta: admin@ezmeo.com
-              </p>
-              <p className="text-xs text-blue-700">
-                Şifre: admin123
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

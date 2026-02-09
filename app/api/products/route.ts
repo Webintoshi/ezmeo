@@ -15,6 +15,7 @@ import {
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
+        const id = searchParams.get("id");
         const featured = searchParams.get("featured");
         const bestseller = searchParams.get("bestseller");
         const category = searchParams.get("category");
@@ -23,7 +24,18 @@ export async function GET(request: NextRequest) {
 
         let products;
 
-        if (slug) {
+        if (id) {
+            // Fetch single product by ID
+            const { createServerClient } = await import("@/lib/supabase");
+            const supabase = createServerClient();
+            const { data, error } = await supabase
+                .from("products")
+                .select("*, variants:product_variants(*)")
+                .eq("id", id)
+                .single();
+            if (error) throw error;
+            return NextResponse.json({ success: true, product: data });
+        } else if (slug) {
             products = await getProductBySlug(slug);
             return NextResponse.json({ success: true, product: products });
         } else if (featured === "true") {

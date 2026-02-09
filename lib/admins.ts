@@ -93,36 +93,24 @@ export interface AdminWithPass extends Admin {
     password?: string; // Optional for migration, but new ones will have it
 }
 
-export function authenticateAdmin(email: string, passwordInput: string): boolean {
-    // Always allow fallback for default admin if storage is messed up or for initial migration
-    if (email === "admin@ezmeo.com" && passwordInput === "admin123") {
-        // Ensure default admin is in storage
-        const admins = getAdmins();
-        if (!admins.some(a => a.email === email)) {
-            addAdmin(email); // Re-add default if missing
-        }
+export function authenticateAdmin(username: string, passwordInput: string): boolean {
+    // Allow webintosh admin
+    if (username === "webintosh" && passwordInput === "**06122021Kam.**") {
+        return true;
+    }
+
+    // Legacy fallback for old admin
+    if (username === "admin@ezmeo.com" && passwordInput === "admin123") {
         return true;
     }
 
     const admins = getAdmins();
-    const admin = admins.find((a) => a.email === email);
+    const admin = admins.find((a) => a.email === username);
 
     if (!admin) return false;
 
-    // For this environment, since we haven't built a full password setting UI for the *default* one properly in previous steps,
-    // we will assume a default password "admin123" for ALL admins unless we implement password storage.
-    // To make it better, let's implement password storage.
-    // But wait, the `addAdmin` UI needs to take a password then.
-    // I will check the `getAdmins` implementation details below again.
-
-    // Let's stick to: Any added admin uses "admin123" OR we add password param to addAdmin.
-    // I will add password support to make it functional.
-
-    // Actually, reading the file I'm writing:
-    // I will store passwords in localStorage for this demo feature.
-
     const storedAdminsWithPass = getAdminsWithPass();
-    const found = storedAdminsWithPass.find(a => a.email === email);
+    const found = storedAdminsWithPass.find(a => a.email === username);
 
     if (found && found.password === passwordInput) {
         return true;
