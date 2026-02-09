@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 
-import { getAllProducts, deleteProduct } from "@/lib/products";
 import { Product } from "@/types/product";
 import {
   Plus,
@@ -31,6 +30,40 @@ const CATEGORIES = [
   { value: "kuruyemis", label: "Kuruyemiş", color: "bg-green-100 text-green-700" },
 ];
 
+// Transform database product to frontend format
+function transformProduct(dbProduct: Record<string, unknown>): Product {
+  const variants = (dbProduct.variants as Record<string, unknown>[]) || [];
+  return {
+    id: dbProduct.id as string,
+    name: dbProduct.name as string,
+    slug: dbProduct.slug as string,
+    description: (dbProduct.description as string) || "",
+    shortDescription: (dbProduct.short_description as string) || "",
+    images: (dbProduct.images as string[]) || [],
+    category: ((dbProduct.category as string) || "fistik-ezmesi") as Product["category"],
+    subcategory: "normal" as Product["subcategory"],
+    tags: (dbProduct.tags as string[]) || [],
+    variants: variants.map((v: Record<string, unknown>) => ({
+      id: v.id as string,
+      name: v.name as string,
+      weight: parseInt((v.weight as string) || "0"),
+      price: Number(v.price) || 0,
+      originalPrice: Number(v.original_price) || 0,
+      stock: Number(v.stock) || 0,
+      sku: (v.sku as string) || "",
+    })),
+    nutritionalInfo: { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
+    vegan: false,
+    glutenFree: false,
+    sugarFree: false,
+    highProtein: false,
+    rating: 5,
+    reviewCount: 0,
+    featured: dbProduct.is_featured as boolean,
+    new: false,
+  };
+}
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,34 +74,54 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState<"name" | "price" | "stock" | "newest">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-
-
-  const loadProducts = () => {
+  const loadProducts = async () => {
     setLoading(true);
-    setProducts(getAllProducts());
-    setLoading(false);
+    try {
+      const res = await fetch("/api/products");
+      const data = await res.json();
+      if (data.success && data.products) {
+        setProducts(data.products.map(transformProduct));
+      }
+    } catch (error) {
+      console.error("Failed to load products:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     loadProducts();
   }, []);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Bu ürünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
-      deleteProduct(id);
-      setProducts(getAllProducts());
-      setSelectedProducts(prev => prev.filter(pid => pid !== id));
+      try {
+        const res = await fetch(`/api/products?id=${id}`, { method: "DELETE" });
+        if (res.ok) {
+          await loadProducts();
+          setSelectedProducts(prev => prev.filter(pid => pid !== id));
+        }
+      } catch (error) {
+        console.error("Failed to delete product:", error);
+      }
     }
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedProducts.length === 0) return;
     if (confirm(`${selectedProducts.length} ürünü silmek istediğinizden emin misiniz?`)) {
-      selectedProducts.forEach(id => deleteProduct(id));
-      setProducts(getAllProducts());
-      setSelectedProducts([]);
+      try {
+        for (const id of selectedProducts) {
+          await fetch(`/api/products?id=${id}`, { method: "DELETE" });
+        }
+        await loadProducts();
+        setSelectedProducts([]);
+      } catch (error) {
+        console.error("Failed to delete products:", error);
+      }
     }
   };
+
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {

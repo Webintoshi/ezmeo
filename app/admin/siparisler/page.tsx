@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { getOrders, updateOrderStatus, updateOrderPaymentStatus } from "@/lib/orders";
+import { useState, useEffect } from "react";
 import { Order, OrderStatus, PaymentStatus } from "@/types/order";
 import {
   Search,
@@ -17,10 +16,60 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+// Transform database order to frontend format
+function transformOrder(dbOrder: Record<string, unknown>): Order {
+  return {
+    id: dbOrder.id as string,
+    orderNumber: dbOrder.order_number as string,
+    items: ((dbOrder.items as Record<string, unknown>[]) || []).map(item => ({
+      productId: item.product_id as string,
+      variantId: item.variant_id as string,
+      productName: item.product_name as string,
+      variantName: item.variant_name as string,
+      price: Number(item.price) || 0,
+      quantity: Number(item.quantity) || 0,
+      total: Number(item.total) || (Number(item.price) * Number(item.quantity)) || 0,
+    })),
+    subtotal: Number(dbOrder.subtotal) || 0,
+    shippingCost: Number(dbOrder.shipping_cost) || 0,
+    discount: Number(dbOrder.discount) || 0,
+    total: Number(dbOrder.total) || 0,
+    status: (dbOrder.status as OrderStatus) || "pending",
+    paymentStatus: (dbOrder.payment_status as PaymentStatus) || "pending",
+    paymentMethod: ((dbOrder.payment_method as string) || "card") as Order["paymentMethod"],
+    shippingAddress: (dbOrder.shipping_address as Order["shippingAddress"]) || {
+      firstName: "", lastName: "", phone: "", email: "",
+      address: "", city: "", district: "", postalCode: ""
+    },
+    createdAt: new Date(dbOrder.created_at as string),
+    updatedAt: new Date(dbOrder.updated_at as string),
+  };
+}
+
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(getOrders());
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const loadOrders = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/orders");
+      const data = await res.json();
+      if (data.success && data.orders) {
+        setOrders(data.orders.map(transformOrder));
+      }
+    } catch (error) {
+      console.error("Failed to load orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
@@ -61,14 +110,30 @@ export default function OrdersPage() {
     }
   };
 
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    updateOrderStatus(orderId, newStatus);
-    setOrders(getOrders());
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    try {
+      await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: orderId, status: newStatus }),
+      });
+      await loadOrders();
+    } catch (error) {
+      console.error("Failed to update status:", error);
+    }
   };
 
-  const handlePaymentStatusChange = (orderId: string, newStatus: PaymentStatus) => {
-    updateOrderPaymentStatus(orderId, newStatus);
-    setOrders(getOrders());
+  const handlePaymentStatusChange = async (orderId: string, newStatus: PaymentStatus) => {
+    try {
+      await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: orderId, paymentStatus: newStatus }),
+      });
+      await loadOrders();
+    } catch (error) {
+      console.error("Failed to update payment status:", error);
+    }
   };
 
   const formatPrice = (price: number) => {
@@ -138,9 +203,8 @@ export default function OrdersPage() {
                     </div>
                   </div>
                   <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                      statusOptions.find((s) => s.value === order.status)?.color
-                    }`}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusOptions.find((s) => s.value === order.status)?.color
+                      }`}
                   >
                     {getStatusIcon(order.status)}
                     {statusOptions.find((s) => s.value === order.status)?.label}
