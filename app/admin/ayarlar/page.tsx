@@ -9,8 +9,7 @@ import {
     ChevronRight,
     ShieldCheck,
     Globe2,
-    Mail,
-    Smartphone
+    ImageIcon
 } from "lucide-react";
 import Link from "next/link";
 
@@ -57,6 +56,13 @@ const SETTINGS_SECTIONS = [
         href: "/admin/ayarlar/dil",
         color: "bg-teal-50 text-teal-600",
     },
+    {
+        title: "Hero Banner",
+        description: "Ana sayfa manşet alanı yönetimi.",
+        icon: ImageIcon,
+        href: "/admin/ayarlar/hero-banner",
+        color: "bg-pink-50 text-pink-600",
+    },
 ];
 
 export default function SettingsPage() {
@@ -99,7 +105,7 @@ export default function SettingsPage() {
                 <div>
                     <h3 className="text-lg font-semibold">Mobil Uygulama Hazır mı?</h3>
                     <p className="text-gray-300 mt-2 max-w-xl text-sm leading-relaxed">
-                        Mağazanızı bir mobil uygulamaya dönüştürmek artık çok kolay. App Store ve Google Play'de yerinizi alın, satışlarınızı artırın.
+                        Mağazanızı bir mobil uygulamaya dönüştürmek artık çok kolay. App Store ve Google Play&apos;de yerinizi alın, satışlarınızı artırın.
                     </p>
                 </div>
                 <button className="px-6 py-2.5 bg-white text-gray-900 rounded-lg font-medium hover:bg-gray-100 transition-colors text-sm whitespace-nowrap">
