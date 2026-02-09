@@ -7,7 +7,7 @@ import {
     ArrowLeft,
     Eye,
     Code,
-    Wand2,
+    Sparkles,
     CheckCircle2,
     AlertTriangle
 } from "lucide-react";
@@ -70,17 +70,48 @@ export default function CategorySEOPage() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState({ metaTitle: "", metaDescription: "" });
     const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+    const [generating, setGenerating] = useState(false);
 
     const handleEdit = (cat: CategorySEO) => {
         setEditingId(cat.id);
         setEditForm({ metaTitle: cat.metaTitle, metaDescription: cat.metaDescription });
     };
 
-    const handleAutoGenerate = (cat: CategorySEO) => {
-        setEditForm({
-            metaTitle: `${cat.name} Çeşitleri | Doğal & Katkısız | Ezmeo`,
-            metaDescription: `En kaliteli ${cat.name.toLowerCase()} çeşitleri. %100 doğal, şekersiz, katkısız. Türkiye geneli ücretsiz kargo. Hemen sipariş verin!`
-        });
+    const generateWithToshiAI = async (cat: CategorySEO) => {
+        setGenerating(true);
+        setMessage(null);
+
+        try {
+            const res = await fetch("/api/seo/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    type: "category",
+                    name: cat.name,
+                    description: cat.description,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                setEditForm({
+                    metaTitle: data.metaTitle || "",
+                    metaDescription: data.metaDescription || "",
+                });
+                setMessage({
+                    type: "success",
+                    text: data.source === "ai" ? "Toshi AI ile oluşturuldu!" : "Şablon ile oluşturuldu."
+                });
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (error) {
+            console.error("AI generation failed:", error);
+            setMessage({ type: "error", text: "AI oluşturma başarısız oldu." });
+        } finally {
+            setGenerating(false);
+        }
     };
 
     const handleSave = (catId: string) => {
@@ -227,11 +258,16 @@ export default function CategorySEOPage() {
                                 {/* Actions */}
                                 <div className="flex items-center justify-between">
                                     <button
-                                        onClick={() => handleAutoGenerate(cat)}
-                                        className="flex items-center gap-2 px-4 py-2 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors text-sm font-medium"
+                                        onClick={() => generateWithToshiAI(cat)}
+                                        disabled={generating}
+                                        className="flex items-center gap-2 px-4 py-2 text-purple-700 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-lg transition-all text-sm font-medium disabled:opacity-50 border border-purple-200"
                                     >
-                                        <Wand2 className="w-4 h-4" />
-                                        Otomatik Oluştur
+                                        {generating ? (
+                                            <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                                        ) : (
+                                            <Sparkles className="w-4 h-4" />
+                                        )}
+                                        {generating ? "Oluşturuluyor..." : "Toshi AI ile Oluştur"}
                                     </button>
                                     <div className="flex gap-2">
                                         <button

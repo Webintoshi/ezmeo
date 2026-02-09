@@ -7,13 +7,11 @@ import {
     RefreshCw,
     AlertTriangle,
     CheckCircle2,
-    Wand2,
+    Sparkles,
     Eye,
     ArrowLeft,
     Search,
-    ExternalLink,
     Code,
-    FileText
 } from "lucide-react";
 import Link from "next/link";
 
@@ -39,6 +37,7 @@ export default function ProductSEOPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState({ metaTitle: "", metaDescription: "" });
+    const [generating, setGenerating] = useState(false);
 
     useEffect(() => {
         loadProducts();
@@ -105,15 +104,43 @@ export default function ProductSEOPage() {
         }
     };
 
-    const generateAIMeta = (product: ProductSEO) => {
-        // Simple AI-like meta generation based on product info
-        const name = product.name;
-        const desc = product.description.slice(0, 80);
+    const generateWithToshiAI = async (product: ProductSEO) => {
+        setGenerating(true);
+        setMessage(null);
 
-        const title = `${name} | Doğal & Katkısız | Ezmeo`;
-        const description = `${name} - ${desc}... Türkiye'nin en kaliteli doğal ezmeleri. Şekersiz, katkısız, %100 doğal. Hemen sipariş verin!`;
+        try {
+            const res = await fetch("/api/seo/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    type: "product",
+                    name: product.name,
+                    description: product.description,
+                    category: "",
+                    keywords: [],
+                }),
+            });
 
-        return { title, description };
+            const data = await res.json();
+
+            if (data.success) {
+                setEditForm({
+                    metaTitle: data.metaTitle || "",
+                    metaDescription: data.metaDescription || "",
+                });
+                setMessage({
+                    type: "success",
+                    text: data.source === "ai" ? "Toshi AI ile oluşturuldu!" : "Şablon ile oluşturuldu."
+                });
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (error) {
+            console.error("AI generation failed:", error);
+            setMessage({ type: "error", text: "AI oluşturma başarısız oldu." });
+        } finally {
+            setGenerating(false);
+        }
     };
 
     const handleEdit = (product: ProductSEO) => {
@@ -124,12 +151,8 @@ export default function ProductSEOPage() {
         });
     };
 
-    const handleAutoGenerate = (product: ProductSEO) => {
-        const { title, description } = generateAIMeta(product);
-        setEditForm({
-            metaTitle: title.slice(0, 60),
-            metaDescription: description.slice(0, 160),
-        });
+    const handleAIGenerate = (product: ProductSEO) => {
+        generateWithToshiAI(product);
     };
 
     const handleSave = async (productId: string) => {
@@ -363,11 +386,16 @@ export default function ProductSEOPage() {
                                 {/* Actions */}
                                 <div className="flex items-center justify-between">
                                     <button
-                                        onClick={() => handleAutoGenerate(product)}
-                                        className="flex items-center gap-2 px-4 py-2 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors text-sm font-medium"
+                                        onClick={() => handleAIGenerate(product)}
+                                        disabled={generating}
+                                        className="flex items-center gap-2 px-4 py-2 text-purple-700 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-lg transition-all text-sm font-medium disabled:opacity-50 border border-purple-200"
                                     >
-                                        <Wand2 className="w-4 h-4" />
-                                        Otomatik Oluştur
+                                        {generating ? (
+                                            <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                                        ) : (
+                                            <Sparkles className="w-4 h-4" />
+                                        )}
+                                        {generating ? "Oluşturuluyor..." : "Toshi AI ile Oluştur"}
                                     </button>
                                     <div className="flex gap-2">
                                         <button
