@@ -27,27 +27,36 @@
   --font-mono: var(--font-geist-mono), monospace;
 }
 
-/* Glassmorphism Utilities */
+/* Glassmorphism Utilities - Enhanced for Apple Style */
 @utility glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
 }
 
 @utility glass-dark {
-  background: rgba(123, 17, 19, 0.4);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(123, 17, 19, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
 }
 
 @utility glass-card {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+}
+
+/* Apple-style Input */
+@utility apple-input {
+  @apply w-full px-4 py-4 rounded-xl bg-gray-50/50 border border-gray-200 text-gray-900 placeholder:text-gray-400 outline-none transition-all duration-300;
+}
+@utility apple-input:focus {
+  @apply bg-white border-primary/30 ring-4 ring-primary/5 shadow-lg shadow-primary/5;
 }
 
 /* Slide-in on scroll */
@@ -95,6 +104,7 @@ body {
 }
 .bg-primary-foreground {
   background-color: #FFFFFF !important;
+  color: #7B1113 !important;
 }
 .text-secondary-foreground {
   color: #7B1113 !important;
