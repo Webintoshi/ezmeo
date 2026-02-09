@@ -29,6 +29,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function CheckoutPage() {
+  // Force redeploy v2
   const router = useRouter();
   const { items, subtotal, shipping, total, getTotalItems, clearCart } = useCart();
 

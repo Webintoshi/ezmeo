@@ -38,6 +38,9 @@ export function getPaymentGatewaysByStatus(status: PaymentMethodStatus): Payment
 }
 
 export async function addPaymentGateway(data: PaymentGatewayFormState): Promise<PaymentGatewayConfig> {
+  // Ensure we have the latest data
+  await getPaymentGateways();
+
   const newGateway: PaymentGatewayConfig = {
     id: `pg-${Date.now()}`,
     ...data,
@@ -46,8 +49,13 @@ export async function addPaymentGateway(data: PaymentGatewayFormState): Promise<
     createdAt: new Date(),
     updatedAt: new Date(),
   };
-  paymentGateways.push(newGateway);
-  await PaymentService.saveAll(paymentGateways);
+
+  const updatedGateways = [...paymentGateways, newGateway];
+  await PaymentService.saveAll(updatedGateways);
+
+  // Update local cache
+  paymentGateways = updatedGateways;
+
   return newGateway;
 }
 

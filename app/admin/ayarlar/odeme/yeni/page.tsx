@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { addPaymentGateway, validatePaymentGatewayConfig, getDefaultPaymentGatewayConfig } from "@/lib/payments";
 import { PaymentGateway, PaymentGatewayFormState } from "@/types/payment";
 import {
@@ -75,6 +76,7 @@ export default function NewPaymentGatewayPage() {
         e.preventDefault();
 
         if (!selectedGateway) {
+            toast.error("Lütfen bir ödeme yöntemi seçiniz.");
             setErrors({ gateway: "Ödeme yöntemi seçilmelidir" });
             return;
         }
@@ -83,17 +85,23 @@ export default function NewPaymentGatewayPage() {
         setErrors(validationErrors.reduce((acc, err, idx) => ({ ...acc, [idx]: err }), {}));
 
         if (validationErrors.length > 0) {
+            toast.error("Lütfen formdaki hataları düzeltiniz.");
             return;
         }
 
         setSaving(true);
 
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        await addPaymentGateway(formData);
-
-        setSaving(false);
-        router.push("/admin/ayarlar/odeme");
+        try {
+            await addPaymentGateway(formData);
+            toast.success("Ödeme yöntemi başarıyla eklendi.");
+            router.push("/admin/ayarlar/odeme");
+            router.refresh();
+        } catch (error) {
+            console.error("Save error:", error);
+            toast.error("Kaydetme sırasında bir hata oluştu: " + (error instanceof Error ? error.message : "Bilinmeyen hata"));
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -164,6 +172,17 @@ export default function NewPaymentGatewayPage() {
             ) : (
                 <form onSubmit={handleSubmit}>
                     <div className="space-y-6">
+                        {Object.keys(errors).length > 0 && (
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                                <h3 className="text-red-800 font-bold text-sm mb-2">Lütfen aşağıdaki hataları düzeltin:</h3>
+                                <ul className="list-disc list-inside text-sm text-red-700">
+                                    {Object.values(errors).map((err, idx) => (
+                                        <li key={idx}>{err}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
                         {/* Gateway Info */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-3">
