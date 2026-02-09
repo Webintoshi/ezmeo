@@ -142,8 +142,8 @@ export default function ProductSEOPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     id: productId,
-                    meta_title: editForm.metaTitle,
-                    meta_description: editForm.metaDescription,
+                    seo_title: editForm.metaTitle,
+                    seo_description: editForm.metaDescription,
                 }),
             });
 
