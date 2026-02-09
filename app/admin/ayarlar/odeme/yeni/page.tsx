@@ -355,13 +355,17 @@ export default function NewPaymentGatewayPage() {
                                 <div className="p-6 space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Banka Adı</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Banka Adı <span className="text-red-500">*</span></label>
                                             <input type="text" value={formData.bankAccount?.bankName} onChange={e => setFormData({ ...formData, bankAccount: { ...formData.bankAccount!, bankName: e.target.value } })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">IBAN</label>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">IBAN <span className="text-red-500">*</span></label>
                                             <input type="text" value={formData.bankAccount?.iban} onChange={e => setFormData({ ...formData, bankAccount: { ...formData.bankAccount!, iban: e.target.value } })} className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono" required />
                                         </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Hesap Sahibi <span className="text-red-500">*</span></label>
+                                        <input type="text" value={formData.bankAccount?.accountHolder} onChange={e => setFormData({ ...formData, bankAccount: { ...formData.bankAccount!, accountHolder: e.target.value } })} placeholder="Hesap sahibinin tam adı" className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
                                     </div>
                                 </div>
                             </div>
