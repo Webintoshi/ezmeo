@@ -201,24 +201,24 @@ export default function CheckoutPage() {
               {/* Section 1: Contact */}
               <div className="bg-white rounded-[2rem] p-6 lg:p-8 shadow-sm border border-primary/5">
                 <div className="flex items-center gap-4 mb-8">
-                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
-                    <Mail className="h-6 w-6" />
+                  <div className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-primary shadow-sm">
+                    <Mail className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-primary tracking-tight">İletişim Bilgileri</h2>
+                    <h2 className="text-lg font-bold text-gray-900 tracking-tight">İletişim Bilgileri</h2>
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Sipariş güncellemeleri için</p>
                   </div>
                 </div>
                 <div className="space-y-6">
                   <div className="group">
-                    <label className="block text-[11px] font-black text-gray-400 mb-2 ml-1 uppercase tracking-widest">E-posta Adresi</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5 ml-1">E-posta Adresi</label>
                     <div className="relative">
                       <input
                         type="email"
                         value={contactEmail}
                         onChange={(e) => setContactEmail(e.target.value)}
                         placeholder="ornek@email.com"
-                        className="w-full px-6 py-4 bg-gray-50 border-2 border-primary/10 focus:border-primary/20 rounded-2xl focus:ring-4 focus:ring-primary/5 transition-all font-bold placeholder:text-gray-300"
+                        className="w-full px-4 py-3 bg-white border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl transition-all font-medium text-sm placeholder:text-gray-400"
                       />
                       <div className="absolute inset-y-0 right-5 flex items-center">
                         <Mail className="h-5 w-5 text-gray-300" />
@@ -245,49 +245,49 @@ export default function CheckoutPage() {
               {/* Section 2: Shipping Info */}
               <div className="bg-white rounded-[2rem] p-6 lg:p-8 shadow-sm border border-primary/5">
                 <div className="flex items-center gap-4 mb-8">
-                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
-                    <MapPin className="h-6 w-6" />
+                  <div className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-primary shadow-sm">
+                    <MapPin className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-primary tracking-tight">Teslimat Adresi</h2>
+                    <h2 className="text-lg font-bold text-gray-900 tracking-tight">Teslimat Adresi</h2>
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Ürününüzün gönderileceği yer</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2 group">
-                    <label className="text-[11px] font-black text-gray-400 ml-1 uppercase tracking-widest">Ad</label>
+                    <label className="text-sm font-medium text-gray-700 ml-1">Ad</label>
                     <input
                       type="text"
                       value={shippingInfo.firstName}
                       onChange={(e) => setShippingInfo({ ...shippingInfo, firstName: e.target.value })}
-                      className="w-full px-6 py-4 bg-gray-50 border-2 border-primary/10 focus:border-primary/20 rounded-2xl focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+                      className="w-full px-4 py-3 bg-white border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl transition-all font-medium text-sm"
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <label className="text-[11px] font-black text-gray-400 ml-1 uppercase tracking-widest">Soyad</label>
+                    <label className="text-sm font-medium text-gray-700 ml-1">Soyad</label>
                     <input
                       type="text"
                       value={shippingInfo.lastName}
                       onChange={(e) => setShippingInfo({ ...shippingInfo, lastName: e.target.value })}
-                      className="w-full px-6 py-4 bg-gray-50 border-2 border-primary/10 focus:border-primary/20 rounded-2xl focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+                      className="w-full px-4 py-3 bg-white border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl transition-all font-medium text-sm"
                     />
                   </div>
                   <div className="sm:col-span-2 space-y-2 group">
-                    <label className="text-[11px] font-black text-gray-400 ml-1 uppercase tracking-widest">Açık Adres</label>
+                    <label className="text-sm font-medium text-gray-700 ml-1">Açık Adres</label>
                     <textarea
                       value={shippingInfo.address}
                       onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value })}
                       rows={3}
-                      className="w-full px-6 py-4 bg-gray-50 border-2 border-primary/10 focus:border-primary/20 rounded-2xl focus:ring-4 focus:ring-primary/5 transition-all font-bold resize-none"
+                      className="w-full px-4 py-3 bg-white border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl transition-all font-medium text-sm resize-none"
                     />
                   </div>
                   <div className="space-y-2 group">
-                    <label className="text-[11px] font-black text-gray-400 ml-1 uppercase tracking-widest">Şehir</label>
+                    <label className="text-sm font-medium text-gray-700 ml-1">Şehir</label>
                     <div className="relative">
                       <select
                         value={shippingInfo.city}
                         onChange={(e) => setShippingInfo({ ...shippingInfo, city: e.target.value })}
-                        className="w-full px-6 py-4 bg-gray-50 border-2 border-primary/10 focus:border-primary/20 rounded-2xl focus:ring-4 focus:ring-primary/5 transition-all font-bold appearance-none cursor-pointer"
+                        className="w-full px-4 py-3 bg-white border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl transition-all font-medium text-sm appearance-none cursor-pointer"
                       >
                         <option value="">Seçiniz</option>
                         {TURKISH_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -296,14 +296,14 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   <div className="space-y-2 group">
-                    <label className="text-[11px] font-black text-gray-400 ml-1 uppercase tracking-widest">Telefon</label>
+                    <label className="text-sm font-medium text-gray-700 ml-1">Telefon</label>
                     <div className="relative">
                       <input
                         type="tel"
                         value={shippingInfo.phone}
                         onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
                         placeholder="0 5xx xxx xx xx"
-                        className="w-full px-6 py-4 bg-gray-50 border-2 border-primary/10 focus:border-primary/20 rounded-2xl focus:ring-4 focus:ring-primary/5 transition-all font-bold"
+                        className="w-full px-4 py-3 bg-white border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl transition-all font-medium text-sm"
                       />
                       <Phone className="absolute right-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-300" />
                     </div>
@@ -314,11 +314,11 @@ export default function CheckoutPage() {
               {/* Section 3: Shipping Method */}
               <div className="bg-white rounded-[2rem] p-6 lg:p-8 shadow-sm border border-primary/5">
                 <div className="flex items-center gap-4 mb-8">
-                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
-                    <Truck className="h-6 w-6" />
+                  <div className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-primary shadow-sm">
+                    <Truck className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-primary tracking-tight">Kargo Yöntemi</h2>
+                    <h2 className="text-lg font-bold text-gray-900 tracking-tight">Kargo Yöntemi</h2>
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Tercih ettiğiniz teslimat seçeneği</p>
                   </div>
                 </div>
@@ -369,11 +369,11 @@ export default function CheckoutPage() {
               {/* Section 4: Payment Method */}
               <div className="bg-white rounded-[2rem] p-6 lg:p-8 shadow-sm border border-primary/5">
                 <div className="flex items-center gap-4 mb-8">
-                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
-                    <CreditCard className="h-6 w-6" />
+                  <div className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-primary shadow-sm">
+                    <CreditCard className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-primary tracking-tight">Ödeme Yöntemi</h2>
+                    <h2 className="text-lg font-bold text-gray-900 tracking-tight">Ödeme Yöntemi</h2>
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Güvenli ödeme altyapısı</p>
                   </div>
                 </div>

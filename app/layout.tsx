@@ -7,6 +7,7 @@ import { LayoutWrapper } from "@/components/layout/LayoutWrapper";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
 import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 import TrackingProvider from "@/components/TrackingProvider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -82,7 +83,10 @@ export default function RootLayout({
           <AnalyticsTracker />
           <CartProvider>
             <WishlistProvider>
-              <LayoutWrapper>{children}</LayoutWrapper>
+              <LayoutWrapper>
+                {children}
+                <Toaster position="top-right" theme="light" />
+              </LayoutWrapper>
             </WishlistProvider>
           </CartProvider>
         </TrackingProvider>
