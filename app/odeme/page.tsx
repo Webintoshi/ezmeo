@@ -32,7 +32,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, shipping, total, getTotalItems, clearCart } = useCart();
+  const { items, subtotal, shipping, total, clearCart } = useCart();
 
   const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayConfig[]>([]);
   const [isLoadingGateways, setIsLoadingGateways] = useState(true);
@@ -620,7 +620,7 @@ export default function CheckoutPage() {
               {/* Secondary Info */}
               <div className="text-center px-4">
                 <p className="text-xs text-gray-400 leading-relaxed">
-                  Siparişi onaylayarak <Link href="/sozlesmeler" className="text-gray-600 hover:text-primary transition-colors underline decoration-gray-300">Mesafeli Satış Sözleşmesi</Link> ve <Link href="/sozlesmeler" className="text-gray-600 hover:text-primary transition-colors underline decoration-gray-300">Ön Bilgilendirme Formu</Link>'nu okuduğunuzu ve kabul ettiğinizi onaylamış olursunuz.
+                  Siparişi onaylayarak <Link href="/sozlesmeler" className="text-gray-600 hover:text-primary transition-colors underline decoration-gray-300">Mesafeli Satış Sözleşmesi</Link> ve <Link href="/sozlesmeler" className="text-gray-600 hover:text-primary transition-colors underline decoration-gray-300">Ön Bilgilendirme Formu&apos;nu</Link> okuduğunuzu ve kabul ettiğinizi onaylamış olursunuz.
                 </p>
               </div>
 

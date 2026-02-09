@@ -52,10 +52,11 @@
 }
 
 /* Apple-style Input */
-@utility apple-input {
+.apple-input {
   @apply w-full px-4 py-4 rounded-xl bg-gray-50/50 border border-gray-200 text-gray-900 placeholder:text-gray-400 outline-none transition-all duration-300;
 }
-@utility apple-input:focus {
+
+.apple-input:focus {
   @apply bg-white border-primary/30 ring-4 ring-primary/5 shadow-lg shadow-primary/5;
 }
 
@@ -65,6 +66,7 @@
   transform: translateY(24px);
   transition: opacity 0.6s ease, transform 0.6s ease;
 }
+
 .scroll-slide.is-visible {
   opacity: 1;
   transform: translateY(0);
@@ -81,34 +83,44 @@ body {
 .bg-primary {
   background-color: #7B1113 !important;
 }
+
 .text-primary {
   color: #7B1113 !important;
 }
+
 .border-primary {
   border-color: #7B1113 !important;
 }
+
 .ring-primary {
   --tw-ring-color: #7B1113 !important;
 }
+
 .bg-primary\/10 {
   background-color: rgba(123, 17, 19, 0.1) !important;
 }
+
 .border-primary\/10 {
   border-color: rgba(123, 17, 19, 0.1) !important;
 }
+
 .border-primary\/20 {
   border-color: rgba(123, 17, 19, 0.2) !important;
 }
+
 .text-primary-foreground {
   color: #FFFFFF !important;
 }
+
 .bg-primary-foreground {
   background-color: #FFFFFF !important;
   color: #7B1113 !important;
 }
+
 .text-secondary-foreground {
   color: #7B1113 !important;
 }
+
 .bg-secondary {
   background-color: #F3E0E1 !important;
 }
@@ -126,12 +138,10 @@ body {
 }
 
 @utility shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.3) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0) 100%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -140,6 +150,7 @@ body {
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -157,9 +168,12 @@ body {
 
 /* Floating Animation */
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -171,9 +185,12 @@ body {
 
 /* Pulse Glow */
 @keyframes pulse-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(123, 17, 19, 0.3);
   }
+
   50% {
     box-shadow: 0 0 40px rgba(123, 17, 19, 0.6);
   }
