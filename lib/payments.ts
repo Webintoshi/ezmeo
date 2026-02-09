@@ -29,8 +29,20 @@ export function getPaymentGatewayByType(type: PaymentGateway): PaymentGatewayCon
   return paymentGateways.find(g => g.gateway === type);
 }
 
-export function getActivePaymentGateways(): PaymentGatewayConfig[] {
-  return paymentGateways.filter(g => g.status === "active");
+// Public API endpoint for checkout - no auth required
+export async function getActivePaymentGateways(): Promise<PaymentGatewayConfig[]> {
+  try {
+    const res = await fetch("/api/public/payments");
+    if (!res.ok) {
+      console.error("Failed to fetch public payment gateways:", res.status);
+      return [];
+    }
+    const data = await res.json();
+    return data.gateways || [];
+  } catch (error) {
+    console.error("getActivePaymentGateways error:", error);
+    return [];
+  }
 }
 
 export function getPaymentGatewaysByStatus(status: PaymentMethodStatus): PaymentGatewayConfig[] {
