@@ -1,21 +1,44 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Lazy client initialization to prevent build-time errors
+let _supabase: SupabaseClient | null = null;
 
-// Client for browser/client-side operations
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+function getSupabaseUrl(): string {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!url) throw new Error("NEXT_PUBLIC_SUPABASE_URL is not configured");
+    return url;
+}
+
+function getSupabaseAnonKey(): string {
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!key) throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured");
+    return key;
+}
+
+// Client for browser/client-side operations (lazy initialization)
+export const supabase = new Proxy({} as SupabaseClient, {
+    get(_, prop) {
+        if (!_supabase) {
+            _supabase = createClient(getSupabaseUrl(), getSupabaseAnonKey());
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (_supabase as any)[prop as string];
+    },
+});
 
 // Server client with service role for admin operations
 export function createServerClient() {
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    return createClient(supabaseUrl, serviceRoleKey, {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured");
+
+    return createClient(getSupabaseUrl(), serviceRoleKey, {
         auth: {
             autoRefreshToken: false,
             persistSession: false,
         },
     });
 }
+
 
 // Type definitions for database tables
 export interface Product {
