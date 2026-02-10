@@ -13,33 +13,30 @@ const ACTION_LABELS: Record<OrderActivityAction, string> = {
   order_created: "Sipariş oluşturuldu",
   status_changed: "Durum değişti",
   payment_status_changed: "Ödeme durumu değişti",
-  shipping_updated: "Kargo bilgisi güncellendi",
+  shipping_updated: "Kargo güncellendi",
   note_added: "Not eklendi",
   note_updated: "Not güncellendi",
   note_deleted: "Not silindi",
-  customer_notified: "Müşteriye bildirim gönderildi",
+  customer_notified: "Bildirim gönderildi",
 };
 
-const ACTION_ICONS: Record<OrderActivityAction, { icon: string; color: string }> = {
-  order_created: { icon: "🟢", color: "bg-emerald-50 text-emerald-600" },
-  status_changed: { icon: "🔄", color: "bg-blue-50 text-blue-600" },
-  payment_status_changed: { icon: "💳", color: "bg-purple-50 text-purple-600" },
-  shipping_updated: { icon: "📦", color: "bg-indigo-50 text-indigo-600" },
-  note_added: { icon: "📝", color: "bg-amber-50 text-amber-600" },
-  note_updated: { icon: "✏️", color: "bg-amber-50 text-amber-600" },
-  note_deleted: { icon: "🗑️", color: "bg-red-50 text-red-600" },
-  customer_notified: { icon: "📧", color: "bg-cyan-50 text-cyan-600" },
+const ACTION_ICONS: Record<OrderActivityAction, { icon: string; color: string; bg: string }> = {
+  order_created: { icon: "🟢", color: "text-emerald-600", bg: "bg-emerald-50" },
+  status_changed: { icon: "🔄", color: "text-blue-600", bg: "bg-blue-50" },
+  payment_status_changed: { icon: "💳", color: "text-purple-600", bg: "bg-purple-50" },
+  shipping_updated: { icon: "📦", color: "text-indigo-600", bg: "bg-indigo-50" },
+  note_added: { icon: "📝", color: "text-amber-600", bg: "bg-amber-50" },
+  note_updated: { icon: "✏️", color: "text-amber-600", bg: "bg-amber-50" },
+  note_deleted: { icon: "🗑️", color: "text-red-600", bg: "bg-red-50" },
+  customer_notified: { icon: "📧", color: "text-cyan-600", bg: "bg-cyan-50" },
 };
 
 type FilterType = "all" | OrderActivityAction;
 
-// Simple time formatter
 function formatTime(dateString: string | Date): string {
   const date = typeof dateString === "string" ? new Date(dateString) : dateString;
-  // Check if date is valid
-  if (isNaN(date.getTime())) {
-    return "Bilinmiyor";
-  }
+  if (isNaN(date.getTime())) return "Bilinmiyor";
+  
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -47,14 +44,13 @@ function formatTime(dateString: string | Date): string {
   const diffDays = Math.floor(diffMs / 86400000);
 
   if (diffMins < 1) return "Az önce";
-  if (diffMins < 60) return `${diffMins} dakika önce`;
-  if (diffHours < 24) return `${diffHours} saat önce`;
-  if (diffDays < 7) return `${diffDays} gün önce`;
+  if (diffMins < 60) return `${diffMins} dk`;
+  if (diffHours < 24) return `${diffHours} sa`;
+  if (diffDays < 7) return `${diffDays} gün`;
 
   return date.toLocaleDateString("tr-TR", {
-    day: "2-digit",
+    day: "numeric",
     month: "short",
-    year: "numeric",
   });
 }
 
@@ -78,7 +74,7 @@ export function OrderActivityLogComponent({ activities, className = "" }: OrderA
         return `"${activity.oldValue}" → "${activity.newValue}"`;
       case "shipping_updated":
         return activity.newValue?.trackingNumber
-          ? `Takip No: ${activity.newValue.trackingNumber}`
+          ? `${activity.newValue.trackingNumber}`
           : "Kargo bilgisi güncellendi";
       case "note_added":
       case "note_updated":
@@ -93,35 +89,26 @@ export function OrderActivityLogComponent({ activities, className = "" }: OrderA
   };
 
   return (
-    <div className={`bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
-        <div className="flex items-center gap-2.5">
+    <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
+      {/* Compact Header */}
+      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/30">
+        <div className="flex items-center gap-2">
           <History className="w-4 h-4 text-gray-500" />
-          <div>
-            <h3 className="text-base font-bold text-gray-900">Sipariş Geçmişi</h3>
-            <p className="text-xs text-gray-500">{activities.length} kayıt</p>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-bold text-gray-900">Sipariş Geçmişi</h3>
+            <span className="text-xs text-gray-400">({activities.length})</span>
           </div>
         </div>
 
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-        </button>
-      </div>
-
-      {isExpanded && (
-        <div className="p-6">
+        <div className="flex items-center gap-2">
           {/* Filter */}
           {uniqueActions.length > 1 && (
-            <div className="flex items-center gap-2 mb-4 pb-4 border-b border-gray-100">
-              <Filter className="w-3.5 h-3.5 text-gray-400" />
+            <div className="flex items-center gap-1">
+              <Filter className="w-3 h-3 text-gray-400" />
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as FilterType)}
-                className="bg-transparent text-sm font-bold text-gray-600 border-0 focus:ring-0 cursor-pointer"
+                className="bg-transparent text-xs font-bold text-gray-600 border-0 focus:ring-0 cursor-pointer py-0"
               >
                 <option value="all">Tümü</option>
                 {uniqueActions.map(action => (
@@ -131,59 +118,65 @@ export function OrderActivityLogComponent({ activities, className = "" }: OrderA
               {filter !== "all" && (
                 <button
                   onClick={() => setFilter("all")}
-                  className="p-1 hover:bg-gray-100 rounded-lg"
+                  className="p-0.5 hover:bg-gray-200 rounded"
                 >
                   <X className="w-3 h-3 text-gray-400" />
                 </button>
               )}
             </div>
           )}
+          
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-1 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? "" : "-rotate-90"}`} />
+          </button>
+        </div>
+      </div>
 
-          {/* Activity List */}
-          <div className="space-y-3">
+      {isExpanded && (
+        <div className="p-4">
+          {/* Activity List - Compact */}
+          <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
             {filteredActivities.length === 0 ? (
-              <div className="text-center py-6 text-gray-400">
-                <p className="text-xs">Bu filtre için kayıt bulunmuyor.</p>
+              <div className="text-center py-4 text-gray-400">
+                <p className="text-xs">Kayıt bulunmuyor.</p>
               </div>
             ) : (
-              filteredActivities.map((activity, index) => {
+              filteredActivities.map((activity) => {
                 const actionConfig = ACTION_ICONS[activity.action];
-                const isLast = index === filteredActivities.length - 1;
+                const description = formatActivityDescription(activity);
 
                 return (
-                  <div key={activity.id} className="flex gap-3">
-                    {/* Icon & Line */}
-                    <div className="relative flex flex-col items-center">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${actionConfig.color}`}>
-                        {actionConfig.icon}
-                      </div>
-                      {!isLast && (
-                        <div className="w-0.5 h-full bg-gray-100 mt-1.5" />
-                      )}
+                  <div key={activity.id} className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                    {/* Icon */}
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs shrink-0 ${actionConfig.bg} ${actionConfig.color}`}>
+                      {actionConfig.icon}
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 pb-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <p className="font-bold text-gray-900 text-sm">
-                            {ACTION_LABELS[activity.action]}
-                          </p>
-                          {activity.newValue?.text && (
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              {activity.newValue.text}
-                            </p>
-                          )}
-                          {activity.adminName && (
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              {activity.adminName}
-                            </p>
-                          )}
-                        </div>
-                        <span className="text-xs text-gray-400 whitespace-nowrap">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-bold text-gray-900 text-sm">
+                          {ACTION_LABELS[activity.action]}
+                        </p>
+                        <span className="text-[10px] text-gray-400 whitespace-nowrap">
                           {formatTime(activity.createdAt)}
                         </span>
                       </div>
+                      
+                      {description && (
+                        <p className="text-xs text-gray-500 mt-0.5 truncate">
+                          {description}
+                        </p>
+                      )}
+                      
+                      {activity.adminName && (
+                        <p className="text-[10px] text-gray-400 mt-0.5">
+                          {activity.adminName}
+                        </p>
+                      )}
                     </div>
                   </div>
                 );
@@ -196,5 +189,4 @@ export function OrderActivityLogComponent({ activities, className = "" }: OrderA
   );
 }
 
-// Export as default for easier import
 export { OrderActivityLogComponent as OrderActivityLog };

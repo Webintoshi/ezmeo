@@ -16,10 +16,6 @@ import {
     ShippingInfoCard,
     InternalNotes,
     OrderItemsList,
-    OrderDangerZone,
-    PaymentStatusCard,
-    OrderAmountEditor,
-    OrderActions,
 } from "@/components/admin/order-detail";
 import "./print.css";
 
@@ -225,67 +221,6 @@ export function OrderDetailClient({
         }
     };
 
-    // Handle payment status change
-    const handlePaymentStatusChange = async (newStatus: string) => {
-        const response = await fetch(`/api/admin/orders/${order.id}/payment-status`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ paymentStatus: newStatus, adminName: "Admin" }),
-        });
-
-        if (response.ok) {
-            const newLog: OrderActivityLogType = {
-                id: crypto.randomUUID(),
-                orderId: order.id,
-                action: "payment_status_changed",
-                oldValue: order.payment_status,
-                newValue: newStatus,
-                adminName: "Admin",
-                createdAt: new Date(),
-            };
-            setLogs([newLog, ...logs]);
-
-            startTransition(() => {
-                router.refresh();
-            });
-        }
-    };
-
-    // Handle amount change
-    const handleAmountChange = async (discount: number, note: string) => {
-        const response = await fetch(`/api/admin/orders/${order.id}/amount`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ discount, note, adminName: "Admin" }),
-        });
-
-        if (response.ok) {
-            const newLog: OrderActivityLogType = {
-                id: crypto.randomUUID(),
-                orderId: order.id,
-                action: "note_added",
-                newValue: { text: `Tutar güncellendi: ${discount >= 0 ? "+" : ""}${discount}₺. ${note}` },
-                adminName: "Admin",
-                createdAt: new Date(),
-            };
-            setLogs([newLog, ...logs]);
-
-            startTransition(() => {
-                router.refresh();
-            });
-        }
-    };
-
-    // Handle send SMS
-    const handleSendSms = () => {
-        alert("SMS gönderme özelliği yakında eklenecek!");
-    };
-
-    // Handle duplicate order
-    const handleDuplicateOrder = () => {
-        alert("Sipariş çoğaltma özelliği yakında eklenecek!");
-    };
-
     const formattedDate = (() => {
         try {
             const date = new Date(order.created_at);
@@ -303,7 +238,7 @@ export function OrderDetailClient({
     })();
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-5 animate-in fade-in duration-500">
             {/* Print Header - Only visible when printing */}
             <div className="hidden print:block text-center mb-6 pb-4 border-b-2 border-black">
                 <h1 className="text-2xl font-bold">EZMEO</h1>
@@ -316,7 +251,7 @@ export function OrderDetailClient({
                 <div className="flex items-center gap-3">
                     <Link
                         href="/admin/siparisler"
-                        className="p-2 bg-white border border-gray-100 hover:bg-gray-50 rounded-xl shadow-sm transition-all"
+                        className="p-2 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl shadow-sm transition-all"
                     >
                         <ArrowLeft className="w-4 h-4 text-gray-500" />
                     </Link>
@@ -336,15 +271,6 @@ export function OrderDetailClient({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <OrderActions
-                        orderNumber={order.order_number}
-                        customerEmail={order.shipping_address?.email}
-                        customerPhone={order.shipping_address?.phone}
-                        customerAddress={order.shipping_address}
-                        trackingNumber={order.tracking_number}
-                        onSendSms={handleSendSms}
-                        onDuplicateOrder={handleDuplicateOrder}
-                    />
                     <Link
                         href={`/admin/siparisler/${order.id}/yazdir`}
                         target="_blank"
@@ -355,7 +281,6 @@ export function OrderDetailClient({
                     </Link>
                     <button
                         onClick={() => {
-                            // TODO: Implement invoice download
                             alert("Fatura indiriliyor...");
                         }}
                         className="h-9 px-3 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-red-800 transition-all flex items-center gap-1.5"
@@ -385,58 +310,46 @@ export function OrderDetailClient({
                 total={order.total}
             />
 
-            {/* Middle Section: 2x2 Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Payment Status */}
-                <PaymentStatusCard
-                    currentStatus={order.payment_status as any}
-                    paymentMethod={paymentMethodName}
-                    onStatusChange={handlePaymentStatusChange}
-                />
-
-                {/* Amount Editor */}
-                <OrderAmountEditor
-                    subtotal={order.subtotal}
-                    shippingCost={order.shipping_cost}
-                    currentDiscount={order.discount}
-                    currentTotal={order.total}
-                    onAmountChange={handleAmountChange}
-                />
-
-                {/* Customer Info */}
+            {/* Middle Section: Customer & Shipping - More Compact */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Customer Info - Takes 2 columns on large screens */}
                 {customer && (
-                    <CustomerInfoCard
-                        customer={{
-                            id: customer.id,
-                            firstName: customer.first_name,
-                            lastName: customer.last_name,
-                            email: customer.email,
-                            phone: customer.phone,
-                            totalOrders: customer.total_orders,
-                            totalSpent: customer.total_spent,
-                        }}
-                        customerOrders={customerOrders.map((o) => ({
-                            id: o.id,
-                            orderNumber: o.order_number,
-                            status: o.status,
-                            total: o.total,
-                            createdAt: o.created_at,
-                        }))}
-                    />
+                    <div className="lg:col-span-2">
+                        <CustomerInfoCard
+                            customer={{
+                                id: customer.id,
+                                firstName: customer.first_name,
+                                lastName: customer.last_name,
+                                email: customer.email,
+                                phone: customer.phone,
+                                totalOrders: customer.total_orders,
+                                totalSpent: customer.total_spent,
+                            }}
+                            customerOrders={customerOrders.map((o) => ({
+                                id: o.id,
+                                orderNumber: o.order_number,
+                                status: o.status,
+                                total: o.total,
+                                createdAt: o.created_at,
+                            }))}
+                        />
+                    </div>
                 )}
 
-                {/* Shipping Info */}
-                <ShippingInfoCard
-                    trackingNumber={order.tracking_number}
-                    carrier={order.shipping_carrier}
-                    estimatedDelivery={order.estimated_delivery}
-                    shippingAddress={order.shipping_address}
-                    onTrackingUpdate={handleTrackingUpdate}
-                />
+                {/* Shipping Info - Compact */}
+                <div className="lg:col-span-1">
+                    <ShippingInfoCard
+                        trackingNumber={order.tracking_number}
+                        carrier={order.shipping_carrier}
+                        estimatedDelivery={order.estimated_delivery}
+                        shippingAddress={order.shipping_address}
+                        onTrackingUpdate={handleTrackingUpdate}
+                    />
+                </div>
             </div>
 
-            {/* Bottom Section: Activity Log & Notes */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Bottom Section: Activity Log & Notes - Side by Side with better use of space */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Activity Log */}
                 <OrderActivityLog activities={formattedLogs} />
 
@@ -460,14 +373,6 @@ export function OrderDetailClient({
             <div className="hidden print:block text-center mt-6 pt-4 border-t border-gray-300 text-xs text-gray-500">
                 <p>EZMEO - Doğal ve Sağlıklı Ürünler | www.ezmeo.com</p>
                 <p>Bu belge bilgisayar ortamında otomatik olarak üretilmiştir.</p>
-            </div>
-
-            {/* Danger Zone - Delete Order */}
-            <div className="no-print">
-                <OrderDangerZone
-                    orderId={order.id}
-                    orderNumber={order.order_number}
-                />
             </div>
         </div>
     );

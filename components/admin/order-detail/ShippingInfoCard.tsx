@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Truck, MapPin, Calendar, MessageSquare, ExternalLink } from "lucide-react";
+import { Truck, MapPin, Calendar, ExternalLink, Package, Edit2, Check, X } from "lucide-react";
 import { ShippingCarrier, SHIPPING_CARRIERS } from "@/types/order";
 
 interface ShippingInfoCardProps {
@@ -17,7 +17,6 @@ interface ShippingInfoCardProps {
     phone?: string;
   };
   onTrackingUpdate?: (data: { carrier: ShippingCarrier | string; trackingNumber: string }) => Promise<void>;
-  onSendSms?: () => void;
   className?: string;
 }
 
@@ -27,7 +26,6 @@ export function ShippingInfoCard({
   estimatedDelivery,
   shippingAddress,
   onTrackingUpdate,
-  onSendSms,
   className = "",
 }: ShippingInfoCardProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -55,218 +53,167 @@ export function ShippingInfoCard({
 
   const getTrackingUrl = () => {
     if (!trackingNumber) return null;
-
     const selectedCarrier = SHIPPING_CARRIERS.find(c => c.id === carrier);
     if (selectedCarrier) {
       return `${selectedCarrier.trackingUrl}${trackingNumber}`;
     }
-
-    // Generic search if carrier not found
     return `https://www.google.com/search?q=${trackingNumber}+kargo+takip`;
   };
 
   const trackingUrl = getTrackingUrl();
 
-  const calculateEstimatedDelivery = () => {
-    if (estimatedDelivery) {
-      const date = new Date(estimatedDelivery);
-      // Check if date is valid
-      if (!isNaN(date.getTime())) {
-        return date;
-      }
-    }
-    // Varsayılan: 2-3 iş günü
-    const date = new Date();
-    date.setDate(date.getDate() + 3);
-    return date;
+  const formatDate = (dateString?: string | Date) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString("tr-TR", {
+      day: "numeric",
+      month: "long",
+    });
   };
 
-  const estDeliveryDate = calculateEstimatedDelivery();
+  const estDate = formatDate(estimatedDelivery);
 
   return (
-    <div className={`bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-50 bg-gray-50/30">
-        <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-          <Truck className="w-4 h-4 text-gray-400" />
+    <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
+      {/* Compact Header */}
+      <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+          <Truck className="w-4 h-4 text-gray-500" />
           Kargo & Teslimat
         </h3>
+        {onTrackingUpdate && !isEditing && (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="p-1.5 hover:bg-white rounded-lg transition-colors text-gray-400 hover:text-primary"
+            title="Düzenle"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
-      <div className="p-6 space-y-5">
-        {/* Shipping Address */}
+      <div className="p-4 space-y-4">
+        {/* Shipping Address - Compact */}
         {shippingAddress && (
-          <div>
-            <div className="flex items-center gap-1.5 mb-2">
-              <MapPin className="w-3.5 h-3.5 text-gray-400" />
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                Teslimat Adresi
-              </p>
+          <div className="flex gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+              <MapPin className="w-4 h-4 text-gray-500" />
             </div>
-            <div className="bg-gray-50 rounded-xl p-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-gray-400 uppercase mb-1">Teslimat Adresi</p>
               <p className="font-bold text-gray-900 text-sm">
                 {shippingAddress.firstName} {shippingAddress.lastName}
               </p>
-              <p className="text-gray-600 text-sm mt-1">{shippingAddress.address}</p>
-              <p className="text-gray-900 font-medium text-sm mt-0.5">
+              <p className="text-gray-600 text-sm truncate">{shippingAddress.address}</p>
+              <p className="text-gray-900 font-medium text-sm">
                 {shippingAddress.city} / {shippingAddress.country}
               </p>
               {shippingAddress.phone && (
-                <p className="text-xs text-gray-500 mt-1">{shippingAddress.phone}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{shippingAddress.phone}</p>
               )}
             </div>
           </div>
         )}
 
-        {/* Tracking Info */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Kargo Takip
-            </p>
-            {onTrackingUpdate && !isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="text-xs font-bold text-primary hover:text-red-700"
-              >
-                Düzenle
-              </button>
-            )}
+        {/* Tracking Info - Compact */}
+        <div className="flex gap-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+            <Package className="w-4 h-4 text-blue-500" />
           </div>
-
-          {isEditing ? (
-            <div className="space-y-2">
-              <div>
-                <label className="text-xs font-bold text-gray-500 mb-1 block">Kargo Firması</label>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-gray-400 uppercase mb-1">Kargo Takip</p>
+            
+            {isEditing ? (
+              <div className="space-y-2">
                 <select
                   value={carrierInput}
                   onChange={(e) => setCarrierInput(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
                 >
-                  <option value="">Seçiniz</option>
+                  <option value="">Kargo Firması</option>
                   {SHIPPING_CARRIERS.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-500 mb-1 block">Takip Numarası</label>
                 <input
                   type="text"
                   value={trackingInput}
                   onChange={(e) => setTrackingInput(e.target.value)}
-                  placeholder="Örn: 1234567890"
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="Takip No"
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSave}
+                    disabled={isUpdating}
+                    className="flex-1 px-3 py-1.5 bg-primary text-white rounded-lg font-bold text-xs hover:bg-red-800 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
+                  >
+                    <Check className="w-3 h-3" />
+                    Kaydet
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditing(false);
+                      setTrackingInput(trackingNumber);
+                      setCarrierInput(carrier);
+                    }}
+                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg font-bold text-xs hover:bg-gray-200 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleSave}
-                  disabled={isUpdating || !trackingInput}
-                  className="flex-1 px-3 py-2 bg-primary text-white rounded-lg font-bold text-sm hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isUpdating ? "Kaydediliyor..." : "Kaydet"}
-                </button>
-                <button
-                  onClick={() => {
-                    setIsEditing(false);
-                    setTrackingInput(trackingNumber);
-                    setCarrierInput(carrier);
-                  }}
-                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg font-bold text-sm hover:bg-gray-200 transition-colors"
-                >
-                  İptal
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {/* Carrier */}
-              {carrier && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Kargo</span>
-                  <span className="font-bold text-gray-900">
+            ) : trackingNumber ? (
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-gray-900 text-sm">
                     {SHIPPING_CARRIERS.find(c => c.id === carrier)?.name || carrier}
                   </span>
                 </div>
-              )}
-
-              {/* Tracking Number */}
-              {trackingNumber ? (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Takip No</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono font-bold text-gray-900 text-sm">{trackingNumber}</span>
-                    {trackingUrl && (
-                      <a
-                        href={trackingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Kargo Takip"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-3 border-2 border-dashed border-gray-200 rounded-lg">
-                  <p className="text-xs text-gray-400">Takip numarası girilmemiş</p>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              {trackingNumber && (
-                <div className="flex gap-2 pt-1">
+                <div className="flex items-center gap-2">
+                  <code className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded">{trackingNumber}</code>
                   {trackingUrl && (
                     <a
                       href={trackingUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg font-bold text-sm hover:bg-gray-200 transition-colors flex items-center justify-center gap-1.5"
+                      className="p-1 hover:bg-blue-50 rounded text-blue-600 transition-colors"
+                      title="Kargo Takip"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
-                      Takip Et
                     </a>
                   )}
-                  {onSendSms && (
-                    <button
-                      onClick={onSendSms}
-                      className="flex-1 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg font-bold text-sm hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      SMS
-                    </button>
-                  )}
                 </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Estimated Delivery */}
-        <div className="pt-4 border-t border-gray-100">
-          <div className="flex items-center gap-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-3">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-              <Calendar className="w-4 h-4 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
-                Tahmini Teslimat
-              </p>
-              <p className="font-bold text-gray-900 text-sm">
-                {estDeliveryDate.toLocaleDateString("tr-TR", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </p>
-            </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-gray-400">
+                <span className="text-sm">Takip numarası girilmemiş</span>
+                {onTrackingUpdate && (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="text-xs text-primary font-bold hover:underline"
+                  >
+                    Ekle
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Estimated Delivery - Compact */}
+        {estDate && (
+          <div className="flex gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+              <Calendar className="w-4 h-4 text-emerald-500" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-bold text-gray-400 uppercase mb-0.5">Tahmini Teslimat</p>
+              <p className="font-bold text-gray-900 text-sm">{estDate}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

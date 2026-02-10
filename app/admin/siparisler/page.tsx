@@ -4,17 +4,13 @@ import { useState, useEffect } from "react";
 import { Order, OrderStatus, PaymentStatus } from "@/types/order";
 import {
   Search,
-  Filter,
   ChevronDown,
-  Eye,
-  Truck,
-  XCircle,
-  CheckCircle,
-  Clock,
-  Package,
-  ArrowRight,
 } from "lucide-react";
-import Link from "next/link";
+import { OrderCard } from "@/components/admin/orders/OrderCard";
+import { OrderBulkActions } from "@/components/admin/orders/OrderBulkActions";
+import { OrderPagination } from "@/components/admin/orders/OrderPagination";
+import { OrderSort } from "@/components/admin/orders/OrderSort";
+import { OrderExport } from "@/components/admin/orders/OrderExport";
 
 // Transform database order to frontend format
 function transformOrder(dbOrder: Record<string, unknown>): Order {
@@ -46,11 +42,18 @@ function transformOrder(dbOrder: Record<string, unknown>): Order {
   };
 }
 
+type SortOption = "date-desc" | "date-asc" | "total-desc" | "total-asc";
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("date-desc");
+  const [currentPage, setCurrentPage] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const ITEMS_PER_PAGE = 20;
 
   const loadOrders = async () => {
     setLoading(true);
@@ -71,14 +74,37 @@ export default function OrdersPage() {
     loadOrders();
   }, []);
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.shippingAddress.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.shippingAddress.lastName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Apply filters, search, and sorting
+  const processedOrders = orders
+    .filter((order) => {
+      const matchesSearch =
+        order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.shippingAddress.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.shippingAddress.lastName.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "date-desc":
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case "date-asc":
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case "total-desc":
+          return b.total - a.total;
+        case "total-asc":
+          return a.total - b.total;
+        default:
+          return 0;
+      }
+    });
+
+  // Pagination
+  const totalPages = Math.ceil(processedOrders.length / ITEMS_PER_PAGE);
+  const paginatedOrders = processedOrders.slice(
+    currentPage * ITEMS_PER_PAGE,
+    (currentPage + 1) * ITEMS_PER_PAGE
+  );
 
   const statusOptions = [
     { value: "all", label: "Tümü", color: "bg-gray-100 text-gray-700" },
@@ -90,25 +116,6 @@ export default function OrdersPage() {
     { value: "cancelled", label: "İptal", color: "bg-red-50 text-red-700" },
     { value: "refunded", label: "İade", color: "bg-orange-50 text-orange-700" },
   ];
-
-  const getStatusIcon = (status: OrderStatus) => {
-    switch (status) {
-      case "pending":
-        return <Clock className="w-4 h-4" />;
-      case "confirmed":
-        return <CheckCircle className="w-4 h-4" />;
-      case "preparing":
-        return <Package className="w-4 h-4" />;
-      case "shipped":
-        return <Truck className="w-4 h-4" />;
-      case "delivered":
-        return <CheckCircle className="w-4 h-4" />;
-      case "cancelled":
-        return <XCircle className="w-4 h-4" />;
-      case "refunded":
-        return <ArrowRight className="w-4 h-4" />;
-    }
-  };
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     try {
@@ -123,59 +130,122 @@ export default function OrdersPage() {
     }
   };
 
-  const handlePaymentStatusChange = async (orderId: string, newStatus: PaymentStatus) => {
+  const handleDelete = async (orderId: string) => {
     try {
-      await fetch("/api/orders", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: orderId, paymentStatus: newStatus }),
+      const res = await fetch(`/api/admin/orders?id=${orderId}`, {
+        method: "DELETE",
       });
-      await loadOrders();
+
+      if (res.ok) {
+        await loadOrders();
+      } else {
+        const error = await res.json();
+        alert(error.error || "Sipariş silinirken bir hata oluştu.");
+      }
     } catch (error) {
-      console.error("Failed to update payment status:", error);
+      console.error("Failed to delete order:", error);
+      alert("Sipariş silinirken bir hata oluştu.");
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("tr-TR", {
-      style: "currency",
-      currency: "TRY",
-    }).format(price);
+  const handleSelectOrder = (orderId: string) => {
+    setSelectedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
   };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("tr-TR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
+  const handleSelectAll = () => {
+    if (selectedIds.size === paginatedOrders.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginatedOrders.map((o) => o.id)));
+    }
   };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    const confirmed = confirm(
+      `${selectedIds.size} siparişi silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          fetch(`/api/admin/orders?id=${id}`, { method: "DELETE" })
+        )
+      );
+      setSelectedIds(new Set());
+      await loadOrders();
+    } catch (error) {
+      console.error("Failed to bulk delete:", error);
+      alert("Toplu silme işlemi başarısız oldu.");
+    }
+  };
+
+  const handleBulkStatusChange = async (newStatus: OrderStatus) => {
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          fetch("/api/orders", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, status: newStatus }),
+          })
+        )
+      );
+      setSelectedIds(new Set());
+      await loadOrders();
+    } catch (error) {
+      console.error("Failed to bulk update status:", error);
+      alert("Toplu durum güncelleme başarısız oldu.");
+    }
+  };
+
+  const isAllSelected = paginatedOrders.length > 0 && selectedIds.size === paginatedOrders.length;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900">Siparişler</h1>
+        <OrderExport orders={processedOrders} />
       </div>
 
+      {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 relative">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Search */}
+            <div className="flex-1 min-w-[200px] relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Sipariş numarası veya müşteri ara..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(0); // Reset to first page on search
+                }}
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
+
+            {/* Status Filter */}
             <div className="relative">
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(0); // Reset to first page on filter
+                }}
                 className="appearance-none pl-4 pr-10 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer"
               >
                 {statusOptions.map((status) => (
@@ -186,95 +256,62 @@ export default function OrdersPage() {
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
+
+            {/* Sort */}
+            <OrderSort currentSort={sortBy} onSortChange={setSortBy} />
           </div>
         </div>
 
+        {/* Bulk Actions */}
+        <div className="p-4 border-b border-gray-200">
+          <OrderBulkActions
+            selectedCount={selectedIds.size}
+            totalCount={processedOrders.length}
+            onBulkDelete={handleBulkDelete}
+            onBulkStatusChange={handleBulkStatusChange}
+            onSelectAll={handleSelectAll}
+            onClearSelection={() => setSelectedIds(new Set())}
+            isAllSelected={isAllSelected}
+          />
+        </div>
+
+        {/* Orders List */}
         <div className="divide-y divide-gray-200">
-          {filteredOrders.map((order) => (
-            <div key={order.id} className="p-6 hover:bg-gray-50 transition-colors">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div>
-                    <div className="font-semibold text-gray-900">
-                      {order.orderNumber}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {formatDate(new Date(order.createdAt))}
-                    </div>
-                  </div>
-                  <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusOptions.find((s) => s.value === order.status)?.color
-                      }`}
-                  >
-                    {getStatusIcon(order.status)}
-                    {statusOptions.find((s) => s.value === order.status)?.label}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <div className="text-lg font-semibold text-gray-900">
-                      {formatPrice(order.total)}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {order.items.length} ürün
-                    </div>
-                  </div>
-                  <Link
-                    href={`/admin/siparisler/${order.id}`}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-                  >
-                    <Eye className="w-4 h-4" />
-                    Detay
-                  </Link>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  <span>
-                    {order.shippingAddress.firstName}{" "}
-                    {order.shippingAddress.lastName}
-                  </span>
-                  <span>•</span>
-                  <span>{order.shippingAddress.city}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm text-gray-600">Durum:</label>
-                    <select
-                      value={order.status}
-                      onChange={(e) =>
-                        handleStatusChange(order.id, e.target.value as OrderStatus)
-                      }
-                      className="text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    >
-                      {statusOptions
-                        .filter((s) => s.value !== "all")
-                        .map((status) => (
-                          <option key={status.value} value={status.value}>
-                            {status.label}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {order.notes && (
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-100 rounded-lg">
-                  <p className="text-sm text-yellow-800">
-                    <span className="font-medium">Not:</span> {order.notes}
-                  </p>
-                </div>
-              )}
+          {loading ? (
+            <div className="p-12 text-center text-gray-500">
+              <div className="inline-block w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3" />
+              <p>Yükleniyor...</p>
             </div>
-          ))}
+          ) : paginatedOrders.length > 0 ? (
+            paginatedOrders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                isSelected={selectedIds.has(order.id)}
+                onSelect={handleSelectOrder}
+                onDelete={handleDelete}
+                onStatusChange={handleStatusChange}
+                statusOptions={statusOptions}
+              />
+            ))
+          ) : (
+            <div className="p-12 text-center text-gray-500">
+              {searchQuery || statusFilter !== "all"
+                ? "Arama kriterlerinize uygun sipariş bulunamadı."
+                : "Henüz sipariş bulunmuyor."}
+            </div>
+          )}
         </div>
 
-        {filteredOrders.length === 0 && (
-          <div className="p-12 text-center text-gray-500">
-            Arama kriterlerinize uygun sipariş bulunamadı.
-          </div>
+        {/* Pagination */}
+        {!loading && processedOrders.length > 0 && (
+          <OrderPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={processedOrders.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
     </div>

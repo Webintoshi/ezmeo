@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { OrderStatus, ORDER_TIMELINE_STEPS, ORDER_STATUS_CONFIG } from "@/types/order";
 import { Clock, CheckCircle, Package, Truck, Mail, MessageSquare, FileText, RefreshCw, Printer, Download } from "lucide-react";
 import { OrderStatusChanger } from "./OrderStatusChanger";
@@ -122,8 +121,8 @@ export function OrderStatusSection({
   // Eğer iptal veya iade durumundaysa, özel mesaj göster
   if (currentStatus === "cancelled" || currentStatus === "refunded") {
     return (
-      <div className={`bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
-        <div className="p-6">
+      <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
+        <div className="p-5">
           <div className="flex items-center gap-3">
             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
               currentStatus === "cancelled"
@@ -136,7 +135,7 @@ export function OrderStatusSection({
                 <Package className="w-6 h-6" />
               )}
             </div>
-            <div>
+            <div className="flex-1">
               <p className="font-bold text-gray-900 text-lg">
                 {currentStatus === "cancelled" ? "Sipariş İptal Edildi" : "Sipariş İade Edildi"}
               </p>
@@ -146,11 +145,17 @@ export function OrderStatusSection({
                   : "Bu sipariş iade edildi."}
               </p>
             </div>
+            
+            {/* Status Changer - Still visible for cancelled/refunded */}
+            <OrderStatusChanger
+              currentStatus={currentStatus}
+              onStatusChange={onStatusChange}
+            />
           </div>
         </div>
 
         {/* Quick Actions Row */}
-        <div className="px-6 pb-6">
+        <div className="px-5 pb-5">
           <div className="flex flex-wrap gap-2">
             {quickActions.map((action) => {
               const Icon = action.icon;
@@ -162,7 +167,7 @@ export function OrderStatusSection({
                   onClick={() => handleAction(action.id, action.onClick)}
                   disabled={action.disabled || isLoading}
                   className={`
-                    flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold
+                    flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold
                     transition-all duration-200
                     ${action.color}
                     ${action.disabled || isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
@@ -185,16 +190,16 @@ export function OrderStatusSection({
   }
 
   return (
-    <div className={`bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
+    <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
       {/* Compact Timeline Row */}
-      <div className="p-6 pb-4">
+      <div className="p-5 pb-4">
         <div className="relative">
           {/* Progress Line */}
-          <div className="absolute top-4 left-0 right-0 h-1 bg-gray-100 rounded-full">
+          <div className="absolute top-4 left-0 right-0 h-1.5 bg-gray-100 rounded-full">
             <div
               className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-500"
               style={{
-                width: `${(currentIndex / (ORDER_TIMELINE_STEPS.length - 1)) * 100}%`,
+                width: `${Math.max(0, (currentIndex / (ORDER_TIMELINE_STEPS.length - 1)) * 100)}%`,
               }}
             />
           </div>
@@ -210,11 +215,11 @@ export function OrderStatusSection({
                 <div key={step.status} className="flex flex-col items-center">
                   {/* Step Circle */}
                   <div
-                    className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                    className={`relative z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
                       isCompleted
                         ? "bg-emerald-500 text-white shadow-md"
                         : isCurrent
-                          ? "bg-primary text-white shadow-lg ring-3 ring-red-50 scale-110"
+                          ? "bg-primary text-white shadow-lg ring-4 ring-red-50 scale-110"
                           : "bg-gray-100 text-gray-400"
                     }`}
                   >
@@ -227,7 +232,7 @@ export function OrderStatusSection({
 
                   {/* Step Label */}
                   <span
-                    className={`text-xs font-bold mt-1.5 ${
+                    className={`text-[10px] font-bold mt-1.5 ${
                       isCompleted || isCurrent
                         ? "text-gray-900"
                         : "text-gray-400"
@@ -243,7 +248,7 @@ export function OrderStatusSection({
       </div>
 
       {/* Status & Actions Row */}
-      <div className="px-6 pb-6 pt-2 border-t border-gray-50">
+      <div className="px-5 pb-5 pt-2 border-t border-gray-100">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Current Status */}
           <div className="flex items-center gap-3">
@@ -262,7 +267,7 @@ export function OrderStatusSection({
             </div>
           </div>
 
-          {/* Status Changer */}
+          {/* Status Changer - More Prominent */}
           <OrderStatusChanger
             currentStatus={currentStatus}
             onStatusChange={onStatusChange}
@@ -281,7 +286,7 @@ export function OrderStatusSection({
                 onClick={() => handleAction(action.id, action.onClick)}
                 disabled={action.disabled || isLoading}
                 className={`
-                  flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold
+                  flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold
                   transition-all duration-200
                   ${action.color}
                   ${action.disabled || isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
