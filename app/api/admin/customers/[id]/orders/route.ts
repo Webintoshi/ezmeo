@@ -5,7 +5,7 @@ interface Params {
   params: Promise<{ id: string }>;
 }
 
-// GET - Get customer's other orders
+// GET - Get customer's orders
 export async function GET(request: NextRequest, { params }: Params) {
   const { id } = await params;
   const serverClient = createServerClient();
@@ -13,11 +13,14 @@ export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { searchParams } = new URL(request.url);
     const excludeOrderId = searchParams.get("exclude");
-    const limit = parseInt(searchParams.get("limit") || "10");
+    const limit = parseInt(searchParams.get("limit") || "50");
 
     let query = serverClient
       .from("orders")
-      .select("*")
+      .select(`
+        *,
+        items:order_items(*)
+      `)
       .eq("customer_id", id)
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -29,14 +32,14 @@ export async function GET(request: NextRequest, { params }: Params) {
     const { data, error } = await query;
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ orders: data || [] });
+    return NextResponse.json({ success: true, orders: data || [] });
   } catch (error) {
     console.error("Error fetching customer orders:", error);
     return NextResponse.json(
-      { error: "Failed to fetch customer orders" },
+      { success: false, error: "Failed to fetch customer orders" },
       { status: 500 }
     );
   }

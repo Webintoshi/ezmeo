@@ -32,13 +32,15 @@ function transformCustomer(dbCustomer: Record<string, unknown>): Customer {
     lastName: (dbCustomer.last_name as string) || "",
     email: dbCustomer.email as string,
     phone: (dbCustomer.phone as string) || "",
-    status: "active" as Customer["status"],
+    status: (dbCustomer.status as Customer["status"]) || "active",
     totalOrders: Number(dbCustomer.total_orders) || 0,
     totalSpent: Number(dbCustomer.total_spent) || 0,
-    createdAt: new Date(dbCustomer.created_at as string),
-    lastOrderAt: dbCustomer.last_order_at ? new Date(dbCustomer.last_order_at as string) : undefined,
+    lastOrderDate: dbCustomer.last_order_at ? new Date(dbCustomer.last_order_at as string) : undefined,
+    averageOrderValue: Number(dbCustomer.total_spent) / Number(dbCustomer.total_orders) || 0,
+    registeredAt: new Date(dbCustomer.created_at as string),
     addresses: [],
-    notes: "",
+    notes: (dbCustomer.notes as string) || "",
+    tags: [],
   };
 }
 
@@ -312,10 +314,10 @@ export default function CustomersPage() {
                       <div className="text-xs text-gray-500">{customer.totalOrders} sipariş</div>
                     </td>
                     <td className="px-6 py-4 text-gray-500">
-                      {customer.lastOrderDate ? (
+                      {customer.lastOrderAt ? (
                         <div className="flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5" />
-                          {format(new Date(customer.lastOrderDate), 'd MMM yyyy', { locale: tr })}
+                          {format(new Date(customer.lastOrderAt), 'd MMM yyyy', { locale: tr })}
                         </div>
                       ) : '-'}
                     </td>

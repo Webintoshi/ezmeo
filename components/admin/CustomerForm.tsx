@@ -1,11 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getCustomerById, addCustomer, updateCustomer } from "@/lib/customers";
-import { CustomerFormData, Address } from "@/types/customer";
-import { ArrowLeft, Save, Plus, Trash2, Phone, Mail, User, MapPin } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Phone, Mail, User, MapPin, Loader2 } from "lucide-react";
 import Link from "next/link";
+
+interface AddressInput {
+  title: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  city: string;
+  district: string;
+  addressLine: string;
+  postalCode: string;
+}
+
+interface CustomerFormData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  addresses: AddressInput[];
+  status: "active" | "inactive" | "blocked";
+  notes: string;
+  tags: string[];
+}
 
 interface CustomerFormProps {
   customerId?: string;
@@ -13,45 +33,94 @@ interface CustomerFormProps {
 
 export default function CustomerForm({ customerId }: CustomerFormProps) {
   const router = useRouter();
-  const existingCustomer = customerId ? getCustomerById(customerId) : null;
-
-  const [formData, setFormData] = useState<CustomerFormData>({
-    email: existingCustomer?.email || "",
-    firstName: existingCustomer?.firstName || "",
-    lastName: existingCustomer?.lastName || "",
-    phone: existingCustomer?.phone || "",
-    addresses: existingCustomer?.addresses.map(addr => ({
-      title: addr.title,
-      firstName: addr.firstName,
-      lastName: addr.lastName,
-      phone: addr.phone,
-      city: addr.city,
-      district: addr.district,
-      addressLine: addr.addressLine,
-      postalCode: addr.postalCode,
-    })) || [],
-    status: existingCustomer?.status || "active",
-    tags: existingCustomer?.tags || [],
-    notes: existingCustomer?.notes || "",
-  });
-
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [tagInput, setTagInput] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const [formData, setFormData] = useState<CustomerFormData>({
+    email: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    addresses: [],
+    status: "active",
+    notes: "",
+    tags: [],
+  });
 
+  // Load customer data if editing
+  useEffect(() => {
     if (customerId) {
-      const addressesWithIds = formData.addresses.map((addr, i) => ({
-        ...addr,
-        id: existingCustomer?.addresses[i]?.id || `addr-${Date.now()}-${i}`,
-        isDefault: i === 0,
-      }));
-      updateCustomer(customerId, { ...formData, addresses: addressesWithIds });
-    } else {
-      addCustomer(formData);
+      loadCustomer();
     }
+  }, [customerId]);
 
-    router.push("/admin/musteriler");
+  const loadCustomer = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/customers?id=${customerId}`);
+      const data = await res.json();
+      
+      if (data.success && data.customer) {
+        const c = data.customer;
+        setFormData({
+          email: c.email || "",
+          firstName: c.first_name || "",
+          lastName: c.last_name || "",
+          phone: c.phone || "",
+          status: c.status || "active",
+          notes: c.notes || "",
+          tags: [], // Tags not in DB yet
+          addresses: (c.addresses || []).map((addr: any) => ({
+            title: addr.type === "shipping" ? "Teslimat" : "Fatura",
+            firstName: addr.first_name || "",
+            lastName: addr.last_name || "",
+            phone: addr.phone || "",
+            city: addr.city || "",
+            district: addr.state || "",
+            addressLine: addr.address_line1 || "",
+            postalCode: addr.postal_code || "",
+          })),
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load customer:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      if (customerId) {
+        // Update existing customer
+        await fetch("/api/customers", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: customerId,
+            ...formData,
+          }),
+        });
+      } else {
+        // Create new customer
+        await fetch("/api/customers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+      }
+
+      router.push("/admin/musteriler");
+    } catch (error) {
+      console.error("Failed to save customer:", error);
+      alert("Müşteri kaydedilirken bir hata oluştu.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAddAddress = () => {
@@ -60,7 +129,7 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
       addresses: [
         ...formData.addresses,
         {
-          title: "Ev",
+          title: "Yeni Adres",
           firstName: formData.firstName,
           lastName: formData.lastName,
           phone: formData.phone || "",
@@ -80,7 +149,7 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
     });
   };
 
-  const handleAddressChange = (index: number, field: string, value: any) => {
+  const handleAddressChange = (index: number, field: keyof AddressInput, value: string) => {
     const newAddresses = [...formData.addresses];
     newAddresses[index] = { ...newAddresses[index], [field]: value };
     setFormData({ ...formData, addresses: newAddresses });
@@ -103,14 +172,19 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
     });
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link
-            href="/admin/musteriler"
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
+          <Link href="/admin/musteriler" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -119,9 +193,10 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
         </div>
         <button
           type="submit"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          disabled={saving}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
-          <Save className="w-4 h-4" />
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Kaydet
         </button>
       </div>
@@ -135,63 +210,47 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ad
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ad</label>
                 <input
                   type="text"
                   value={formData.firstName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, firstName: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Soyad
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Soyad</label>
                 <input
                   type="text"
                   value={formData.lastName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, lastName: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   required
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                E-posta
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   required
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Telefon
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   placeholder="05XXXXXXXXX"
                 />
@@ -216,22 +275,13 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
             </div>
 
             {formData.addresses.length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-4">
-                Henüz adres eklenmedi.
-              </p>
+              <p className="text-sm text-gray-500 text-center py-4">Henüz adres eklenmedi.</p>
             )}
 
             {formData.addresses.map((address, index) => (
-              <div
-                key={index}
-                className="p-4 border border-gray-200 rounded-lg space-y-4"
-              >
+              <div key={index} className="p-4 border border-gray-200 rounded-lg space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium text-gray-900">
-                      Adres {index + 1}
-                    </h4>
-                  </div>
+                  <h4 className="font-medium text-gray-900">Adres {index + 1}</h4>
                   {formData.addresses.length > 1 && (
                     <button
                       type="button"
@@ -243,75 +293,44 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Adres Başlığı
-                    </label>
-                    <input
-                      type="text"
-                      value={address.title}
-                      onChange={(e) =>
-                        handleAddressChange(index, "title", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      placeholder="Ev, İş vb."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Telefon
-                    </label>
-                    <input
-                      type="tel"
-                      value={address.phone}
-                      onChange={(e) =>
-                        handleAddressChange(index, "phone", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Adres Başlığı</label>
+                  <input
+                    type="text"
+                    value={address.title}
+                    onChange={(e) => handleAddressChange(index, "title", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    placeholder="Ev, İş vb."
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Ad
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Ad</label>
                     <input
                       type="text"
                       value={address.firstName}
-                      onChange={(e) =>
-                        handleAddressChange(index, "firstName", e.target.value)
-                      }
+                      onChange={(e) => handleAddressChange(index, "firstName", e.target.value)}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Soyad
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Soyad</label>
                     <input
                       type="text"
                       value={address.lastName}
-                      onChange={(e) =>
-                        handleAddressChange(index, "lastName", e.target.value)
-                      }
+                      onChange={(e) => handleAddressChange(index, "lastName", e.target.value)}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Adres Satırı
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Adres</label>
                   <input
                     type="text"
                     value={address.addressLine}
-                    onChange={(e) =>
-                      handleAddressChange(index, "addressLine", e.target.value)
-                    }
+                    onChange={(e) => handleAddressChange(index, "addressLine", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     required
                   />
@@ -319,47 +338,46 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Şehir
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Şehir</label>
                     <input
                       type="text"
                       value={address.city}
-                      onChange={(e) =>
-                        handleAddressChange(index, "city", e.target.value)
-                      }
+                      onChange={(e) => handleAddressChange(index, "city", e.target.value)}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      İlçe
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">İlçe</label>
                     <input
                       type="text"
                       value={address.district}
-                      onChange={(e) =>
-                        handleAddressChange(index, "district", e.target.value)
-                      }
+                      onChange={(e) => handleAddressChange(index, "district", e.target.value)}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                       required
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Posta Kodu
-                  </label>
-                  <input
-                    type="text"
-                    value={address.postalCode}
-                    onChange={(e) =>
-                      handleAddressChange(index, "postalCode", e.target.value)
-                    }
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Posta Kodu</label>
+                    <input
+                      type="text"
+                      value={address.postalCode}
+                      onChange={(e) => handleAddressChange(index, "postalCode", e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                    <input
+                      type="tel"
+                      value={address.phone}
+                      onChange={(e) => handleAddressChange(index, "phone", e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                  </div>
                 </div>
               </div>
             ))}
@@ -376,12 +394,7 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
                   name="status"
                   value="active"
                   checked={formData.status === "active"}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      status: e.target.value as any,
-                    })
-                  }
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                   className="w-4 h-4 text-primary"
                 />
                 <span className="text-sm text-gray-700">Aktif</span>
@@ -392,12 +405,7 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
                   name="status"
                   value="inactive"
                   checked={formData.status === "inactive"}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      status: e.target.value as any,
-                    })
-                  }
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                   className="w-4 h-4 text-primary"
                 />
                 <span className="text-sm text-gray-700">Pasif</span>
@@ -408,12 +416,7 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
                   name="status"
                   value="blocked"
                   checked={formData.status === "blocked"}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      status: e.target.value as any,
-                    })
-                  }
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                   className="w-4 h-4 text-primary"
                 />
                 <span className="text-sm text-gray-700">Engellendi</span>
@@ -428,9 +431,7 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                onKeyPress={(e) =>
-                  e.key === "Enter" && (e.preventDefault(), handleAddTag())
-                }
+                onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
                 placeholder="Etiket ekle..."
                 className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
@@ -449,11 +450,7 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
                   className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-sm rounded"
                 >
                   {tag}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    className="hover:text-red-600 transition-colors"
-                  >
+                  <button type="button" onClick={() => handleRemoveTag(tag)} className="hover:text-red-600 transition-colors">
                     ×
                   </button>
                 </span>
@@ -465,9 +462,7 @@ export default function CustomerForm({ customerId }: CustomerFormProps) {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Notlar</h3>
             <textarea
               value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={4}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               placeholder="Müşteri hakkında notlar..."
