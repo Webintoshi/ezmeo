@@ -89,33 +89,31 @@ export function OrderActivityLogComponent({ activities, className = "" }: OrderA
   };
 
   return (
-    <div className={`bg-white rounded-3xl shadow-sm border border-gray-100 ${className}`}>
+    <div className={`bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-            <History className="w-5 h-5 text-gray-500" />
-          </div>
+      <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+        <div className="flex items-center gap-2.5">
+          <History className="w-4 h-4 text-gray-500" />
           <div>
-            <h3 className="text-lg font-bold text-gray-900">Sipariş Geçmişi</h3>
-            <p className="text-sm text-gray-500">{activities.length} kayıt</p>
+            <h3 className="text-base font-bold text-gray-900">Sipariş Geçmişi</h3>
+            <p className="text-xs text-gray-500">{activities.length} kayıt</p>
           </div>
         </div>
 
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="p-2 hover:bg-gray-50 rounded-xl transition-colors"
+          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
         >
-          <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
         </button>
       </div>
 
       {isExpanded && (
-        <div className="p-8">
+        <div className="p-6">
           {/* Filter */}
           {uniqueActions.length > 1 && (
-            <div className="flex items-center gap-2 mb-6 pb-6 border-b border-gray-100">
-              <Filter className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center gap-2 mb-4 pb-4 border-b border-gray-100">
+              <Filter className="w-3.5 h-3.5 text-gray-400" />
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as FilterType)}
@@ -138,10 +136,10 @@ export function OrderActivityLogComponent({ activities, className = "" }: OrderA
           )}
 
           {/* Activity List */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {filteredActivities.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                <p className="text-sm">Bu filtre için kayıt bulunmuyor.</p>
+              <div className="text-center py-6 text-gray-400">
+                <p className="text-xs">Bu filtre için kayıt bulunmuyor.</p>
               </div>
             ) : (
               filteredActivities.map((activity, index) => {
@@ -149,31 +147,31 @@ export function OrderActivityLogComponent({ activities, className = "" }: OrderA
                 const isLast = index === filteredActivities.length - 1;
 
                 return (
-                  <div key={activity.id} className="flex gap-4">
+                  <div key={activity.id} className="flex gap-3">
                     {/* Icon & Line */}
                     <div className="relative flex flex-col items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm ${actionConfig.color}`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${actionConfig.color}`}>
                         {actionConfig.icon}
                       </div>
                       {!isLast && (
-                        <div className="w-0.5 h-full bg-gray-100 mt-2" />
+                        <div className="w-0.5 h-full bg-gray-100 mt-1.5" />
                       )}
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 pb-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-bold text-gray-900">
+                    <div className="flex-1 pb-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <p className="font-bold text-gray-900 text-sm">
                             {ACTION_LABELS[activity.action]}
                           </p>
                           {activity.newValue?.text && (
-                            <p className="text-sm text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 mt-0.5">
                               {activity.newValue.text}
                             </p>
                           )}
                           {activity.adminName && (
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className="text-xs text-gray-400 mt-0.5">
                               {activity.adminName}
                             </p>
                           )}

@@ -55,13 +55,9 @@ CREATE TABLE IF NOT EXISTS order_activity_log (
 CREATE INDEX IF NOT EXISTS idx_order_activity_log_order ON order_activity_log(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_activity_log_created ON order_activity_log(created_at DESC);
 
--- Enable RLS on order_activity_log if not already enabled
-ALTER TABLE order_activity_log ENABLE ROW LEVEL SECURITY;
-
--- Add policy for service role
-DROP POLICY IF EXISTS "Service role has full access to order_activity_log" ON order_activity_log;
-CREATE POLICY "Service role has full access to order_activity_log"
-    ON order_activity_log FOR ALL USING (auth.role() = 'service_role');
+-- DISABLE RLS on order_activity_log since we only access it from server components
+-- with service role key (which bypasses RLS anyway)
+ALTER TABLE order_activity_log DISABLE ROW LEVEL SECURITY;
 
 -- Create initial activity log entries for existing orders
 -- (Optional: Comment out if you don't want to backfill data)

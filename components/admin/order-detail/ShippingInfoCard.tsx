@@ -80,33 +80,35 @@ export function ShippingInfoCard({
   const estDeliveryDate = calculateEstimatedDelivery();
 
   return (
-    <div className={`bg-white rounded-3xl shadow-sm border border-gray-100 ${className}`}>
+    <div className={`bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="px-8 py-6 border-b border-gray-50">
-        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-          <Truck className="w-5 h-5 text-gray-400" />
-          Kargo Bilgileri
+      <div className="px-6 py-4 border-b border-gray-50 bg-gray-50/30">
+        <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+          <Truck className="w-4 h-4 text-gray-400" />
+          Kargo & Teslimat
         </h3>
       </div>
 
-      <div className="p-8 space-y-6">
+      <div className="p-6 space-y-5">
         {/* Shipping Address */}
         {shippingAddress && (
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
-              <MapPin className="w-3 h-3 inline mr-1" />
-              Teslimat Adresi
-            </p>
-            <div className="bg-gray-50 rounded-2xl p-4">
-              <p className="font-bold text-gray-900">
+            <div className="flex items-center gap-1.5 mb-2">
+              <MapPin className="w-3.5 h-3.5 text-gray-400" />
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                Teslimat Adresi
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="font-bold text-gray-900 text-sm">
                 {shippingAddress.firstName} {shippingAddress.lastName}
               </p>
-              <p className="text-gray-600 mt-2">{shippingAddress.address}</p>
-              <p className="text-gray-900 font-medium mt-1">
+              <p className="text-gray-600 text-sm mt-1">{shippingAddress.address}</p>
+              <p className="text-gray-900 font-medium text-sm mt-0.5">
                 {shippingAddress.city} / {shippingAddress.country}
               </p>
               {shippingAddress.phone && (
-                <p className="text-sm text-gray-500 mt-2">{shippingAddress.phone}</p>
+                <p className="text-xs text-gray-500 mt-1">{shippingAddress.phone}</p>
               )}
             </div>
           </div>
@@ -114,8 +116,8 @@ export function ShippingInfoCard({
 
         {/* Tracking Info */}
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
               Kargo Takip
             </p>
             {onTrackingUpdate && !isEditing && (
@@ -129,13 +131,13 @@ export function ShippingInfoCard({
           </div>
 
           {isEditing ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div>
                 <label className="text-xs font-bold text-gray-500 mb-1 block">Kargo Firması</label>
                 <select
                   value={carrierInput}
                   onChange={(e) => setCarrierInput(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent"
                 >
                   <option value="">Seçiniz</option>
                   {SHIPPING_CARRIERS.map((c) => (
@@ -152,14 +154,14 @@ export function ShippingInfoCard({
                   value={trackingInput}
                   onChange={(e) => setTrackingInput(e.target.value)}
                   placeholder="Örn: 1234567890"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={handleSave}
                   disabled={isUpdating || !trackingInput}
-                  className="flex-1 px-4 py-2.5 bg-primary text-white rounded-xl font-bold text-sm hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 px-3 py-2 bg-primary text-white rounded-lg font-bold text-sm hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {isUpdating ? "Kaydediliyor..." : "Kaydet"}
                 </button>
@@ -169,18 +171,18 @@ export function ShippingInfoCard({
                     setTrackingInput(trackingNumber);
                     setCarrierInput(carrier);
                   }}
-                  className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors"
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg font-bold text-sm hover:bg-gray-200 transition-colors"
                 >
                   İptal
                 </button>
               </div>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {/* Carrier */}
               {carrier && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Kargo Firması</span>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Kargo</span>
                   <span className="font-bold text-gray-900">
                     {SHIPPING_CARRIERS.find(c => c.id === carrier)?.name || carrier}
                   </span>
@@ -189,50 +191,50 @@ export function ShippingInfoCard({
 
               {/* Tracking Number */}
               {trackingNumber ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Takip No</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-gray-900">{trackingNumber}</span>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Takip No</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono font-bold text-gray-900 text-sm">{trackingNumber}</span>
                     {trackingUrl && (
                       <a
                         href={trackingUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Kargo Takip"
                       >
-                        <ExternalLink className="w-4 h-4 text-gray-400" />
+                        <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
                       </a>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-4 border-2 border-dashed border-gray-200 rounded-xl">
-                  <p className="text-sm text-gray-400">Takip numarası girilmemiş</p>
+                <div className="text-center py-3 border-2 border-dashed border-gray-200 rounded-lg">
+                  <p className="text-xs text-gray-400">Takip numarası girilmemiş</p>
                 </div>
               )}
 
               {/* Action Buttons */}
               {trackingNumber && (
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-2 pt-1">
                   {trackingUrl && (
                     <a
                       href={trackingUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg font-bold text-sm hover:bg-gray-200 transition-colors flex items-center justify-center gap-1.5"
                     >
-                      <ExternalLink className="w-4 h-4" />
+                      <ExternalLink className="w-3.5 h-3.5" />
                       Takip Et
                     </a>
                   )}
                   {onSendSms && (
                     <button
                       onClick={onSendSms}
-                      className="flex-1 px-4 py-2.5 bg-emerald-50 text-emerald-600 rounded-xl font-bold text-sm hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg font-bold text-sm hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1.5"
                     >
-                      <MessageSquare className="w-4 h-4" />
-                      SMS Gönder
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      SMS
                     </button>
                   )}
                 </div>
@@ -242,16 +244,16 @@ export function ShippingInfoCard({
         </div>
 
         {/* Estimated Delivery */}
-        <div className="pt-6 border-t border-gray-100">
-          <div className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-              <Calendar className="w-5 h-5 text-blue-600" />
+        <div className="pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-3">
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+              <Calendar className="w-4 h-4 text-blue-600" />
             </div>
             <div className="flex-1">
               <p className="text-xs font-bold text-blue-600 uppercase tracking-wider">
                 Tahmini Teslimat
               </p>
-              <p className="font-bold text-gray-900">
+              <p className="font-bold text-gray-900 text-sm">
                 {estDeliveryDate.toLocaleDateString("tr-TR", {
                   day: "numeric",
                   month: "long",

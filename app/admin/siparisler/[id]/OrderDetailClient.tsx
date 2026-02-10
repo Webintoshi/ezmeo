@@ -7,21 +7,17 @@ import {
     ArrowLeft,
     Printer,
     Download,
-    CreditCard,
-    CheckCircle2,
 } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
 import { OrderStatus, OrderActivityLog as OrderActivityLogType } from "@/types/order";
 import {
-    OrderTimeline,
-    OrderStatusChanger,
-    QuickActions,
+    OrderStatusSection,
     OrderActivityLog,
     CustomerInfoCard,
     ShippingInfoCard,
     InternalNotes,
     OrderItemsList,
 } from "@/components/admin/order-detail";
+import "./print.css";
 
 interface Order {
     id: string;
@@ -95,13 +91,6 @@ interface OrderDetailClientProps {
     statusConfig: { label: string; color: string };
 }
 
-const PAYMENT_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-    pending: { label: "Beklemede", color: "bg-amber-50 text-amber-600" },
-    processing: { label: "İşleniyor", color: "bg-blue-50 text-blue-600" },
-    completed: { label: "Tamamlandı", color: "bg-emerald-50 text-emerald-600" },
-    failed: { label: "Hata", color: "bg-red-50 text-red-600" },
-    refunded: { label: "İade Edildi", color: "bg-orange-50 text-orange-600" },
-};
 
 export function OrderDetailClient({
     order,
@@ -240,201 +229,138 @@ export function OrderDetailClient({
         minute: "2-digit",
     });
 
-    const paymentStatusConfig = PAYMENT_STATUS_CONFIG[order.payment_status] || PAYMENT_STATUS_CONFIG.pending;
-
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="space-y-6 animate-in fade-in duration-500">
+            {/* Print Header - Only visible when printing */}
+            <div className="hidden print:block text-center mb-6 pb-4 border-b-2 border-black">
+                <h1 className="text-2xl font-bold">EZMEO</h1>
+                <p className="text-sm mt-1">Sipariş #{order.order_number}</p>
+                <p className="text-sm text-gray-600">{formattedDate}</p>
+            </div>
+
             {/* Top Navigation & Status */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 no-print">
+                <div className="flex items-center gap-3">
                     <Link
                         href="/admin/siparisler"
-                        className="p-2.5 bg-white border border-gray-100 hover:bg-gray-50 rounded-xl shadow-sm transition-all"
+                        className="p-2 bg-white border border-gray-100 hover:bg-gray-50 rounded-xl shadow-sm transition-all"
                     >
-                        <ArrowLeft className="w-5 h-5 text-gray-500" />
+                        <ArrowLeft className="w-4 h-4 text-gray-500" />
                     </Link>
                     <div>
-                        <div className="flex items-center gap-3 mb-1">
-                            <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <h1 className="text-xl font-black text-gray-900 tracking-tight">
                                 #{order.order_number}
                             </h1>
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${statusConfig.color}`}>
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusConfig.color}`}>
                                 {statusConfig.label}
                             </span>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
                             <span>{formattedDate}</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <button
                         onClick={() => window.print()}
-                        className="h-10 px-4 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all flex items-center gap-2"
+                        className="h-9 px-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all flex items-center gap-1.5"
                     >
-                        <Printer className="w-4 h-4" />
-                        Yazdır
+                        <Printer className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Yazdır</span>
                     </button>
                     <button
                         onClick={() => {
                             // TODO: Implement invoice download
                             alert("Fatura indiriliyor...");
                         }}
-                        className="h-10 px-4 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-red-800 transition-all flex items-center gap-2"
+                        className="h-9 px-3 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-red-800 transition-all flex items-center gap-1.5"
                     >
-                        <Download className="w-4 h-4" />
-                        Fatura
+                        <Download className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Fatura</span>
                     </button>
                 </div>
             </div>
 
-            {/* Timeline & Quick Actions */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                    <OrderTimeline currentStatus={order.status} />
-                </div>
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-gray-500">Durumu Değiştir</span>
-                    </div>
-                    <OrderStatusChanger
-                        currentStatus={order.status}
-                        onStatusChange={handleStatusChange}
+            {/* Timeline & Quick Actions - Combined */}
+            <OrderStatusSection
+                currentStatus={order.status}
+                orderId={order.id}
+                orderNumber={order.order_number}
+                customerEmail={order.shipping_address?.email}
+                customerPhone={order.shipping_address?.phone}
+                onStatusChange={handleStatusChange}
+            />
+
+            {/* Order Items - Full Width */}
+            <OrderItemsList
+                items={items}
+                subtotal={order.subtotal}
+                shippingCost={order.shipping_cost}
+                discount={order.discount}
+                total={order.total}
+            />
+
+            {/* Middle Section: 2x2 Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Customer Info */}
+                {customer && (
+                    <CustomerInfoCard
+                        customer={{
+                            id: customer.id,
+                            firstName: customer.first_name,
+                            lastName: customer.last_name,
+                            email: customer.email,
+                            phone: customer.phone,
+                            totalOrders: customer.total_orders,
+                            totalSpent: customer.total_spent,
+                        }}
+                        customerOrders={customerOrders.map((o) => ({
+                            id: o.id,
+                            orderNumber: o.order_number,
+                            status: o.status,
+                            total: o.total,
+                            createdAt: o.created_at,
+                        }))}
                     />
-                    <QuickActions
-                        orderId={order.id}
-                        orderNumber={order.order_number}
-                        customerEmail={order.shipping_address?.email}
-                        customerPhone={order.shipping_address?.phone}
-                    />
-                </div>
+                )}
+
+                {/* Shipping Info */}
+                <ShippingInfoCard
+                    trackingNumber={order.tracking_number}
+                    carrier={order.shipping_carrier}
+                    estimatedDelivery={order.estimated_delivery}
+                    shippingAddress={order.shipping_address}
+                    onTrackingUpdate={handleTrackingUpdate}
+                />
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Items & Activity */}
-                <div className="lg:col-span-2 space-y-8">
-                    {/* Order Items */}
-                    <OrderItemsList
-                        items={items}
-                        subtotal={order.subtotal}
-                        shippingCost={order.shipping_cost}
-                        discount={order.discount}
-                        total={order.total}
-                    />
+            {/* Bottom Section: Activity Log & Notes */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* Activity Log */}
+                <OrderActivityLog activities={formattedLogs} />
 
-                    {/* Activity Log */}
-                    <OrderActivityLog
-                        activities={formattedLogs}
-                    />
-                </div>
+                {/* Internal Notes */}
+                <InternalNotes
+                    notes={notes.map((n) => ({
+                        id: n.id,
+                        text: n.newValue?.text || "",
+                        adminName: n.adminName,
+                        createdAt: new Date(n.createdAt),
+                    }))}
+                    customerNote={order.notes}
+                    onAddNote={handleAddNote}
+                    onUpdateNote={handleUpdateNote}
+                    onDeleteNote={handleDeleteNote}
+                    currentAdminName="Admin"
+                />
+            </div>
 
-                {/* Right Column: Customer, Shipping, Notes */}
-                <div className="space-y-8">
-                    {/* Customer Info */}
-                    {customer && (
-                        <CustomerInfoCard
-                            customer={{
-                                id: customer.id,
-                                firstName: customer.first_name,
-                                lastName: customer.last_name,
-                                email: customer.email,
-                                phone: customer.phone,
-                                totalOrders: customer.total_orders,
-                                totalSpent: customer.total_spent,
-                            }}
-                            customerOrders={customerOrders.map((o) => ({
-                                ...o,
-                                createdAt: new Date(o.created_at),
-                            }))}
-                        />
-                    )}
-
-                    {/* Shipping Info */}
-                    <ShippingInfoCard
-                        trackingNumber={order.tracking_number}
-                        carrier={order.shipping_carrier}
-                        estimatedDelivery={order.estimated_delivery}
-                        shippingAddress={order.shipping_address}
-                        onTrackingUpdate={handleTrackingUpdate}
-                    />
-
-                    {/* Payment Info */}
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
-                        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <CreditCard className="w-5 h-5 text-gray-400" />
-                            Ödeme Bilgileri
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
-                                    Ödeme Yöntemi
-                                </p>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">
-                                        {order.payment_method === "cod" ? (
-                                            <span className="text-lg">🚚</span>
-                                        ) : order.payment_method === "bank_transfer" ? (
-                                            <span className="text-lg">🏦</span>
-                                        ) : (
-                                            <span className="text-lg">💳</span>
-                                        )}
-                                    </div>
-                                    <span className="font-black text-gray-900">{paymentMethodName}</span>
-                                </div>
-                            </div>
-
-                            <div className="pt-2">
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
-                                    Ödeme Durumu
-                                </p>
-                                <div
-                                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold ${paymentStatusConfig.color}`}
-                                >
-                                    <div
-                                        className={`w-2 h-2 rounded-full ${
-                                            order.payment_status === "completed"
-                                                ? "bg-emerald-500"
-                                                : order.payment_status === "failed"
-                                                  ? "bg-red-500"
-                                                  : "bg-amber-500"
-                                        }`}
-                                    />
-                                    {paymentStatusConfig.label}
-                                </div>
-                            </div>
-
-                            {order.payment_status === "completed" && (
-                                <button
-                                    onClick={() => {
-                                        // TODO: Show receipt modal
-                                        alert("Makbuz gösteriliyor...");
-                                    }}
-                                    className="w-full mt-4 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <CheckCircle2 className="w-4 h-4" />
-                                    Makbuz Göster
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Internal Notes */}
-                    <InternalNotes
-                        notes={notes.map((n) => ({
-                            id: n.id,
-                            text: n.newValue?.text || "",
-                            adminName: n.adminName,
-                            createdAt: new Date(n.createdAt),
-                        }))}
-                        customerNote={order.notes}
-                        onAddNote={handleAddNote}
-                        onUpdateNote={handleUpdateNote}
-                        onDeleteNote={handleDeleteNote}
-                        currentAdminName="Admin"
-                    />
-                </div>
+            {/* Print Footer - Only visible when printing */}
+            <div className="hidden print:block text-center mt-6 pt-4 border-t border-gray-300 text-xs text-gray-500">
+                <p>EZMEO - Doğal ve Sağlıklı Ürünler | www.ezmeo.com</p>
+                <p>Bu belge bilgisayar ortamında otomatik olarak üretilmiştir.</p>
             </div>
         </div>
     );

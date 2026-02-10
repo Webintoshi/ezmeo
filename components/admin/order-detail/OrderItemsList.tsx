@@ -5,6 +5,11 @@ import Link from "next/link";
 import { ShoppingBag, Package } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
+// Configure Next.js Image for external domains
+const imageLoader = ({ src }: { src: string }) => {
+  return src;
+};
+
 interface OrderItem {
   id: string;
   product_name: string;
@@ -89,6 +94,8 @@ export function OrderItemsList({
                     fill
                     className="object-cover"
                     sizes="80px"
+                    loader={imageLoader}
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-3xl">

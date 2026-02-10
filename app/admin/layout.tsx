@@ -13,18 +13,23 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    if (pathname !== "/admin/login") {
-      const auth = localStorage.getItem("admin_authenticated");
-      setIsAuthenticated(!!auth);
-      if (!auth) {
-        router.push("/admin/login");
+    // Only check auth on initial load, not on every pathname change
+    if (!isInitialized) {
+      if (pathname !== "/admin/login") {
+        const auth = localStorage.getItem("admin_authenticated");
+        setIsAuthenticated(!!auth);
+        if (!auth) {
+          router.push("/admin/login");
+        }
+      } else {
+        setIsAuthenticated(true);
       }
-    } else {
-      setIsAuthenticated(true);
+      setIsInitialized(true);
     }
-  }, [pathname, router]);
+  }, [pathname, router, isInitialized]);
 
   if (pathname === "/admin/login") {
     return <>{children}</>;
