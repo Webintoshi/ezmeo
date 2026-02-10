@@ -16,6 +16,10 @@ import {
     ShippingInfoCard,
     InternalNotes,
     OrderItemsList,
+    OrderDangerZone,
+    PaymentStatusCard,
+    OrderAmountEditor,
+    OrderActions,
 } from "@/components/admin/order-detail";
 import "./print.css";
 
@@ -221,6 +225,67 @@ export function OrderDetailClient({
         }
     };
 
+    // Handle payment status change
+    const handlePaymentStatusChange = async (newStatus: string) => {
+        const response = await fetch(`/api/admin/orders/${order.id}/payment-status`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentStatus: newStatus, adminName: "Admin" }),
+        });
+
+        if (response.ok) {
+            const newLog: OrderActivityLogType = {
+                id: crypto.randomUUID(),
+                orderId: order.id,
+                action: "payment_status_changed",
+                oldValue: order.payment_status,
+                newValue: newStatus,
+                adminName: "Admin",
+                createdAt: new Date(),
+            };
+            setLogs([newLog, ...logs]);
+
+            startTransition(() => {
+                router.refresh();
+            });
+        }
+    };
+
+    // Handle amount change
+    const handleAmountChange = async (discount: number, note: string) => {
+        const response = await fetch(`/api/admin/orders/${order.id}/amount`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ discount, note, adminName: "Admin" }),
+        });
+
+        if (response.ok) {
+            const newLog: OrderActivityLogType = {
+                id: crypto.randomUUID(),
+                orderId: order.id,
+                action: "note_added",
+                newValue: { text: `Tutar güncellendi: ${discount >= 0 ? "+" : ""}${discount}₺. ${note}` },
+                adminName: "Admin",
+                createdAt: new Date(),
+            };
+            setLogs([newLog, ...logs]);
+
+            startTransition(() => {
+                router.refresh();
+            });
+        }
+    };
+
+    // Handle send SMS
+    const handleSendSms = () => {
+        alert("SMS gönderme özelliği yakında eklenecek!");
+    };
+
+    // Handle duplicate order
+    const handleDuplicateOrder = () => {
+        alert("Sipariş çoğaltma özelliği yakında eklenecek!");
+    };
+
     const formattedDate = (() => {
         try {
             const date = new Date(order.created_at);
@@ -271,6 +336,15 @@ export function OrderDetailClient({
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <OrderActions
+                        orderNumber={order.order_number}
+                        customerEmail={order.shipping_address?.email}
+                        customerPhone={order.shipping_address?.phone}
+                        customerAddress={order.shipping_address}
+                        trackingNumber={order.tracking_number}
+                        onSendSms={handleSendSms}
+                        onDuplicateOrder={handleDuplicateOrder}
+                    />
                     <Link
                         href={`/admin/siparisler/${order.id}/yazdir`}
                         target="_blank"
@@ -313,6 +387,22 @@ export function OrderDetailClient({
 
             {/* Middle Section: 2x2 Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Payment Status */}
+                <PaymentStatusCard
+                    currentStatus={order.payment_status as any}
+                    paymentMethod={paymentMethodName}
+                    onStatusChange={handlePaymentStatusChange}
+                />
+
+                {/* Amount Editor */}
+                <OrderAmountEditor
+                    subtotal={order.subtotal}
+                    shippingCost={order.shipping_cost}
+                    currentDiscount={order.discount}
+                    currentTotal={order.total}
+                    onAmountChange={handleAmountChange}
+                />
+
                 {/* Customer Info */}
                 {customer && (
                     <CustomerInfoCard
@@ -370,6 +460,14 @@ export function OrderDetailClient({
             <div className="hidden print:block text-center mt-6 pt-4 border-t border-gray-300 text-xs text-gray-500">
                 <p>EZMEO - Doğal ve Sağlıklı Ürünler | www.ezmeo.com</p>
                 <p>Bu belge bilgisayar ortamında otomatik olarak üretilmiştir.</p>
+            </div>
+
+            {/* Danger Zone - Delete Order */}
+            <div className="no-print">
+                <OrderDangerZone
+                    orderId={order.id}
+                    orderNumber={order.order_number}
+                />
             </div>
         </div>
     );
