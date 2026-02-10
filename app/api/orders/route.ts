@@ -43,10 +43,10 @@ export async function GET(request: NextRequest) {
         });
 
         return NextResponse.json({ success: true, orders });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error fetching orders:", error);
         return NextResponse.json(
-            { success: false, error: error instanceof Error ? error.message : "Failed to fetch orders" },
+            { success: false, error: error?.message || "Failed to fetch orders" },
             { status: 500 }
         );
     }
@@ -69,10 +69,10 @@ export async function POST(request: NextRequest) {
         });
 
         return NextResponse.json({ success: true, order });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating order:", error);
         return NextResponse.json(
-            { success: false, error: error instanceof Error ? error.message : "Failed to create order" },
+            { success: false, error: error?.message || "Failed to create order" },
             { status: 500 }
         );
     }
@@ -100,10 +100,10 @@ export async function PATCH(request: NextRequest) {
         }
 
         return NextResponse.json({ success: true, order });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error updating order:", error);
         return NextResponse.json(
-            { success: false, error: error instanceof Error ? error.message : "Failed to update order" },
+            { success: false, error: error?.message || "Failed to update order" },
             { status: 500 }
         );
     }
@@ -124,10 +124,10 @@ export async function DELETE(request: NextRequest) {
 
         await deleteOrder(id);
         return NextResponse.json({ success: true, message: "Order deleted" });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error deleting order:", error);
         return NextResponse.json(
-            { success: false, error: error instanceof Error ? error.message : "Failed to delete order" },
+            { success: false, error: error?.message || "Failed to delete order" },
             { status: 500 }
         );
     }
