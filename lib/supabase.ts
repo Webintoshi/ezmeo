@@ -39,6 +39,11 @@ export function createServerClient() {
     });
 }
 
+// Generate UUID for new records
+export function uuid() {
+    return crypto.randomUUID();
+}
+
 
 // Type definitions for database tables
 export interface Product {

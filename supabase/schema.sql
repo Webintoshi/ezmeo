@@ -94,6 +94,10 @@ CREATE TABLE IF NOT EXISTS orders (
     payment_method TEXT,
     payment_status TEXT DEFAULT 'pending',
     notes TEXT,
+    shipping_carrier TEXT,
+    tracking_number TEXT,
+    estimated_delivery DATE,
+    internal_notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -108,6 +112,16 @@ CREATE TABLE IF NOT EXISTS order_items (
     price DECIMAL(10, 2) NOT NULL,
     quantity INTEGER NOT NULL,
     total DECIMAL(10, 2) NOT NULL
+);
+-- Order Activity Log
+CREATE TABLE IF NOT EXISTS order_activity_log (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+    action TEXT NOT NULL,
+    old_value JSONB,
+    new_value JSONB,
+    admin_id UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 -- =====================================================
 -- COUPONS
@@ -174,6 +188,8 @@ CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);
 CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_number ON orders(order_number);
+CREATE INDEX IF NOT EXISTS idx_order_activity_log_order ON order_activity_log(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_activity_log_created ON order_activity_log(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_blog_posts_slug ON blog_posts(slug);
 CREATE INDEX IF NOT EXISTS idx_blog_posts_status ON blog_posts(status);
 -- =====================================================
@@ -187,6 +203,7 @@ ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE addresses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_activity_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coupons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE blog_posts ENABLE ROW LEVEL SECURITY;
@@ -210,6 +227,7 @@ CREATE POLICY "Service role has full access to customers" ON customers FOR ALL U
 CREATE POLICY "Service role has full access to addresses" ON addresses FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "Service role has full access to orders" ON orders FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "Service role has full access to order_items" ON order_items FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role has full access to order_activity_log" ON order_activity_log FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "Service role has full access to coupons" ON coupons FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "Service role has full access to settings" ON settings FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "Service role has full access to blog_posts" ON blog_posts FOR ALL USING (auth.role() = 'service_role');
