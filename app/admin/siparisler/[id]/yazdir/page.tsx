@@ -2,6 +2,7 @@ import { createServerClient } from "@/lib/supabase";
 import { ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { OrderStatus } from "@/types/order";
+import "./print.css";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -83,12 +84,12 @@ export default async function PrintOrderPage({ params }: PageProps) {
           <ArrowLeft className="w-4 h-4" />
           Geri Dön
         </a>
-        <button
-          onClick={() => window.print()}
+        <a
+          href="javascript:window.print()"
           className="px-6 py-2 bg-primary text-white rounded-lg font-bold hover:bg-red-800"
         >
           Yazdır
-        </button>
+        </a>
       </div>
 
       {/* Invoice */}
@@ -260,22 +261,6 @@ export default async function PrintOrderPage({ params }: PageProps) {
           <p className="mt-1">{new Date().toLocaleDateString("tr-TR")} {new Date().toLocaleTimeString("tr-TR")}</p>
         </div>
       </div>
-
-      {/* Print Styles */}
-      <style jsx global>{`
-        @media print {
-          body {
-            background: white !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          @page {
-            margin: 1cm;
-            size: A4;
-          }
-        }
-      `}</style>
     </div>
   );
 }
