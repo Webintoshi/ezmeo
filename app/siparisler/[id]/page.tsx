@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { formatPrice } from "@/lib/utils";
 import { Check, ChevronRight, Loader2, ShoppingBag, Truck, MapPin, Calendar, CreditCard } from "lucide-react";
 import { toast } from "sonner";
@@ -52,8 +52,6 @@ export default function OrderSuccessPage() {
     useEffect(() => {
         const fetchOrder = async () => {
             try {
-                const supabase = createClient();
-
                 // Fetch order
                 const { data: orderData, error: orderError } = await supabase
                     .from("orders")
