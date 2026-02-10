@@ -1,13 +1,9 @@
 
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase";
 import { formatPrice } from "@/lib/utils";
-import { Check, ChevronRight, Loader2, ShoppingBag, Truck, MapPin, Calendar, CreditCard } from "lucide-react";
-import { toast } from "sonner";
+import { Check, ChevronRight, ShoppingBag, MapPin, Calendar, CreditCard } from "lucide-react";
+import Link from "next/link";
+import OrderSuccessToast from "@/components/order-success-toast";
 
 interface OrderItem {
     id: string;
@@ -35,67 +31,25 @@ interface Order {
     payment_method: string;
 }
 
-export default function OrderSuccessPage() {
-    const params = useParams();
-    const searchParams = useSearchParams();
-    const [order, setOrder] = useState<Order | null>(null);
-    const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-    const [loading, setLoading] = useState(true);
+export default async function OrderSuccessPage({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ new?: string }>;
+}) {
+    const { id } = await params;
+    const supabase = createServerClient();
 
-    // Show success toast if "new=true" is presnet
-    useEffect(() => {
-        if (searchParams.get("new") === "true") {
-            toast.success("Siparişiniz başarıyla oluşturuldu!");
-        }
-    }, [searchParams]);
+    // Fetch order
+    const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-    useEffect(() => {
-        const fetchOrder = async () => {
-            try {
-                // Fetch order
-                const { data: orderData, error: orderError } = await supabase
-                    .from("orders")
-                    .select("*")
-                    .eq("id", params.id)
-                    .single();
-
-                if (orderError) throw orderError;
-                setOrder(orderData);
-
-                // Fetch order items with product details
-                const { data: itemsData, error: itemsError } = await supabase
-                    .from("order_items")
-                    .select(`
-            *,
-            product:products(images, category)
-          `)
-                    .eq("order_id", params.id);
-
-                if (itemsError) throw itemsError;
-                setOrderItems(itemsData || []);
-
-            } catch (error) {
-                console.error("Error fetching order:", error);
-                toast.error("Sipariş detayları yüklenirken bir hata oluştu.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (params.id) {
-            fetchOrder();
-        }
-    }, [params.id]);
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        );
-    }
-
-    if (!order) {
+    if (orderError || !order) {
+        console.error("Error fetching order:", orderError);
         return (
             <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center justify-center p-4 text-center">
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Sipariş Bulunamadı</h1>
@@ -110,8 +64,24 @@ export default function OrderSuccessPage() {
         );
     }
 
+    // Fetch order items with product details
+    const { data: orderItems, error: itemsError } = await supabase
+        .from("order_items")
+        .select(`
+      *,
+      product:products(images, category)
+    `)
+        .eq("order_id", id);
+
+    if (itemsError) {
+        console.error("Error fetching items:", itemsError);
+    }
+
+    const items: OrderItem[] = orderItems || [];
+
     return (
         <div className="min-h-screen bg-[#FAFAFA] pb-20 pt-8">
+            <OrderSuccessToast />
             <div className="container mx-auto max-w-[800px] px-4">
 
                 {/* Success Header */}
@@ -157,10 +127,10 @@ export default function OrderSuccessPage() {
                             Sipariş İçeriği
                         </h3>
                         <div className="space-y-6">
-                            {orderItems.map((item) => (
+                            {items.map((item) => (
                                 <div key={item.id} className="flex gap-4 items-center">
                                     <div className="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center text-2xl border border-gray-100 shrink-0">
-                                        {/* Fallback emoji based on category logic simply */}
+                                        {/* Fallback emoji based on category logic */}
                                         {item.product?.category === "fistik-ezmesi" ? "🥜" :
                                             item.product?.category === "findik-ezmesi" ? "🌰" : "🥔"}
                                     </div>
@@ -231,8 +201,8 @@ export default function OrderSuccessPage() {
                         </h3>
                         <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                {order.payment_method === 'bank_transfer' ? <tspan className="text-xl">🏦</tspan> :
-                                    order.payment_method === 'cod' ? <tspan className="text-xl">🚚</tspan> : <tspan className="text-xl">💳</tspan>}
+                                {order.payment_method === 'bank_transfer' ? <span className="text-xl">🏦</span> :
+                                    order.payment_method === 'cod' ? <span className="text-xl">🚚</span> : <span className="text-xl">💳</span>}
                             </div>
                             <div>
                                 <p className="font-bold text-gray-900 text-sm">
