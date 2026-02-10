@@ -41,12 +41,15 @@ export default async function OrderSuccessPage({
     const { id } = await params;
     const supabase = createServerClient();
 
-    // Fetch order
-    const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", id)
-        .single();
+    // Parallel fetch: order and payment settings
+    const [orderResponse, settingsResponse] = await Promise.all([
+        supabase.from("orders").select("*").eq("id", id).single(),
+        supabase.from("settings").select("value").eq("key", "payment_gateways").single(),
+    ]);
+
+    const order: Order | null = orderResponse.data;
+    const orderError = orderResponse.error;
+    const paymentGateways = settingsResponse.data?.value || [];
 
     if (orderError || !order) {
         console.error("Error fetching order:", orderError);
@@ -62,6 +65,37 @@ export default async function OrderSuccessPage({
                 </Link>
             </div>
         );
+    }
+
+    // Determine Payment Method Name & Icon
+    let paymentMethodName = "Ödeme Yöntemi";
+    let PaymentIcon = <CreditCard className="h-5 w-5 text-gray-400" />;
+    let MethodIconDisplay = <span className="text-xl">💳</span>;
+
+    // Find matching gateway config
+    const gatewayConfig = paymentGateways.find((g: any) => g.id === order.payment_method);
+
+    if (gatewayConfig) {
+        paymentMethodName = gatewayConfig.name;
+        if (gatewayConfig.gateway === 'cod') {
+            MethodIconDisplay = <span className="text-xl">🚚</span>;
+        } else if (gatewayConfig.gateway === 'bank_transfer') {
+            MethodIconDisplay = <span className="text-xl">🏦</span>;
+        }
+    } else {
+        // Fallback for direct type IDs (legacy support)
+        if (order.payment_method === 'cod') {
+            paymentMethodName = 'Kapıda Ödeme';
+            MethodIconDisplay = <span className="text-xl">🚚</span>;
+        } else if (order.payment_method === 'bank_transfer') {
+            paymentMethodName = 'Havale / EFT';
+            MethodIconDisplay = <span className="text-xl">🏦</span>;
+        } else if (order.payment_method === 'credit_card') {
+            paymentMethodName = 'Kredi Kartı';
+        } else {
+            // If absolutely unknown, try to format the ID or generic
+            paymentMethodName = 'Kredi Kartı / Banka Kartı';
+        }
     }
 
     // Fetch order items with product details
@@ -90,7 +124,7 @@ export default async function OrderSuccessPage({
                         <Check className="h-10 w-10 stroke-[3]" />
                     </div>
                     <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-4 tracking-tight">
-                        Siparişiniz Alındı! 🚀
+                        Siparişiniz Alındı!
                     </h1>
                     <p className="text-gray-500 text-lg max-w-md mx-auto">
                         Teşekkür ederiz! Siparişiniz başarıyla oluşturuldu ve hazırlanmaya başlandı.
@@ -196,22 +230,21 @@ export default async function OrderSuccessPage({
                     {/* Payment Method */}
                     <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-8">
                         <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <CreditCard className="h-5 w-5 text-gray-400" />
+                            {PaymentIcon}
                             Ödeme Yöntemi
                         </h3>
                         <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                {order.payment_method === 'bank_transfer' ? <span className="text-xl">🏦</span> :
-                                    order.payment_method === 'cod' ? <span className="text-xl">🚚</span> : <span className="text-xl">💳</span>}
+                                {MethodIconDisplay}
                             </div>
                             <div>
                                 <p className="font-bold text-gray-900 text-sm">
-                                    {order.payment_method === 'bank_transfer' ? 'Havale / EFT' :
-                                        order.payment_method === 'cod' ? 'Kapıda Ödeme' : 'Kredi Kartı'}
+                                    {paymentMethodName}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                    {order.payment_method === 'bank_transfer' ? 'Ödeme bekleniyor' :
-                                        order.payment_method === 'cod' ? 'Teslimatta ödenecek' : 'Ödeme alındı'}
+                                    {gatewayConfig?.gateway === 'bank_transfer' ? 'Ödeme bekleniyor' :
+                                        gatewayConfig?.gateway === 'cod' ? 'Teslimatta ödenecek' :
+                                            'Ödeme alındı'}
                                 </p>
                             </div>
                         </div>
