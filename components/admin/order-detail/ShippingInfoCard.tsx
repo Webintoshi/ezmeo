@@ -69,7 +69,11 @@ export function ShippingInfoCard({
 
   const calculateEstimatedDelivery = () => {
     if (estimatedDelivery) {
-      return new Date(estimatedDelivery);
+      const date = new Date(estimatedDelivery);
+      // Check if date is valid
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
     }
     // Varsayılan: 2-3 iş günü
     const date = new Date();

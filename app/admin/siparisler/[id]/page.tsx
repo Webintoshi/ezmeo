@@ -97,12 +97,12 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
     const statusConfig = getStatusConfig(order.status);
 
-    // Serialize data for client component
+    // Serialize data for client component - keep dates as ISO strings or null
     const serializedOrder = {
         ...order,
-        created_at: order.created_at?.toString(),
-        updated_at: order.updated_at?.toString(),
-        estimated_delivery: order.estimated_delivery?.toString(),
+        created_at: order.created_at ? new Date(order.created_at).toISOString() : null,
+        updated_at: order.updated_at ? new Date(order.updated_at).toISOString() : null,
+        estimated_delivery: order.estimated_delivery ? new Date(order.estimated_delivery).toISOString() : null,
     };
 
     const serializedItems = items.map((item: any) => ({
