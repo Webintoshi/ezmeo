@@ -93,6 +93,21 @@ export async function getOrCreateCustomer(customerData: {
     // Check if customer exists
     const existing = await getCustomerByEmail(customerData.email);
     if (existing) {
+        // Update customer info if provided
+        const updates: any = {};
+        if (customerData.phone && !existing.phone) updates.phone = customerData.phone;
+        if (customerData.firstName && !existing.first_name) updates.first_name = customerData.firstName;
+        if (customerData.lastName && !existing.last_name) updates.last_name = customerData.lastName;
+        
+        if (Object.keys(updates).length > 0) {
+            const { data: updated, error } = await serverClient
+                .from("customers")
+                .update(updates)
+                .eq("id", existing.id)
+                .select()
+                .single();
+            if (!error) return updated;
+        }
         return existing;
     }
 
@@ -104,6 +119,7 @@ export async function getOrCreateCustomer(customerData: {
             phone: customerData.phone || null,
             first_name: customerData.firstName || null,
             last_name: customerData.lastName || null,
+            status: 'active',
         })
         .select()
         .single();

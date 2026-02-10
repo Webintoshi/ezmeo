@@ -57,9 +57,13 @@ CREATE TABLE IF NOT EXISTS customers (
     first_name TEXT,
     last_name TEXT,
     avatar TEXT,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'blocked')),
     total_orders INTEGER DEFAULT 0,
     total_spent DECIMAL(10, 2) DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    last_order_at TIMESTAMPTZ,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 -- Addresses
 CREATE TABLE IF NOT EXISTS addresses (
@@ -233,6 +237,12 @@ CREATE POLICY "Service role has full access to settings" ON settings FOR ALL USI
 CREATE POLICY "Service role has full access to blog_posts" ON blog_posts FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "Service role has full access to abandoned_carts" ON abandoned_carts FOR ALL USING (auth.role() = 'service_role');
 -- =====================================================
+-- INDEXES
+-- =====================================================
+CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(status);
+CREATE INDEX IF NOT EXISTS idx_customers_last_order ON customers(last_order_at DESC);
+
+-- =====================================================
 -- TRIGGERS
 -- =====================================================
 -- Auto-update updated_at timestamp
@@ -246,3 +256,53 @@ CREATE TRIGGER update_orders_updated_at BEFORE
 UPDATE ON orders FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_settings_updated_at BEFORE
 UPDATE ON settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_customers_updated_at BEFORE
+UPDATE ON customers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- FUNCTIONS: Customer Stats Auto-Update
+-- =====================================================
+-- Function to update customer stats when order is created
+CREATE OR REPLACE FUNCTION update_customer_on_order()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.customer_id IS NOT NULL THEN
+        UPDATE customers
+        SET 
+            total_orders = total_orders + 1,
+            total_spent = total_spent + NEW.total,
+            last_order_at = NEW.created_at,
+            updated_at = NOW()
+        WHERE id = NEW.customer_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_update_customer_on_order ON orders;
+CREATE TRIGGER trigger_update_customer_on_order
+    AFTER INSERT ON orders
+    FOR EACH ROW
+    EXECUTE FUNCTION update_customer_on_order();
+
+-- Function to update customer stats when order is deleted
+CREATE OR REPLACE FUNCTION update_customer_on_order_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.customer_id IS NOT NULL THEN
+        UPDATE customers
+        SET 
+            total_orders = GREATEST(0, total_orders - 1),
+            total_spent = GREATEST(0, total_spent - OLD.total),
+            updated_at = NOW()
+        WHERE id = OLD.customer_id;
+    END IF;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_update_customer_on_delete ON orders;
+CREATE TRIGGER trigger_update_customer_on_delete
+    BEFORE DELETE ON orders
+    FOR EACH ROW
+    EXECUTE FUNCTION update_customer_on_order_delete();

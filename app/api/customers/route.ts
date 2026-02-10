@@ -89,7 +89,18 @@ export async function PUT(request: NextRequest) {
             );
         }
 
-        const customer = await updateCustomer(id, updates);
+        // Map frontend field names to database field names
+        const dbUpdates: any = {};
+        if (updates.firstName !== undefined) dbUpdates.first_name = updates.firstName;
+        if (updates.lastName !== undefined) dbUpdates.last_name = updates.lastName;
+        if (updates.email !== undefined) dbUpdates.email = updates.email;
+        if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+        if (updates.status !== undefined) dbUpdates.status = updates.status;
+        if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+        if (updates.totalOrders !== undefined) dbUpdates.total_orders = updates.totalOrders;
+        if (updates.totalSpent !== undefined) dbUpdates.total_spent = updates.totalSpent;
+
+        const customer = await updateCustomer(id, dbUpdates);
         return NextResponse.json({ success: true, customer });
     } catch (error) {
         console.error("Error updating customer:", error);
