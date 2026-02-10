@@ -458,30 +458,7 @@ export default function CheckoutPage() {
               )}
             </AnimatePresence>
 
-            {/* Features Footer */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white p-6 rounded-2xl flex flex-col items-center text-center gap-3 shadow-sm">
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center">
-                  <Truck className="h-6 w-6" />
-                </div>
-                <h3 className="font-bold text-gray-900">Hızlı Teslimat</h3>
-                <p className="text-xs text-gray-500">Aynı gün kargo imkanı</p>
-              </div>
-              <div className="bg-white p-6 rounded-2xl flex flex-col items-center text-center gap-3 shadow-sm">
-                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center">
-                  <ShieldCheck className="h-6 w-6" />
-                </div>
-                <h3 className="font-bold text-gray-900">Güvenli Ödeme</h3>
-                <p className="text-xs text-gray-500">256-bit SSL koruması</p>
-              </div>
-              <div className="bg-white p-6 rounded-2xl flex flex-col items-center text-center gap-3 shadow-sm">
-                <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center">
-                  <RotateCcw className="h-6 w-6" />
-                </div>
-                <h3 className="font-bold text-gray-900">Kolay İade</h3>
-                <p className="text-xs text-gray-500">14 gün içinde cayma hakkı</p>
-              </div>
-            </div>
+
 
           </div>
 

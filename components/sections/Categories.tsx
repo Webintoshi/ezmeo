@@ -80,7 +80,7 @@ export function Categories() {
                     />
                     {/* Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-                    
+
                     {/* Kategori Adı - Görsel Üzerinde */}
                     <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
                       <h3 className="font-bold text-2xl mb-1 drop-shadow-lg">
@@ -118,7 +118,7 @@ export function Categories() {
         <div className={`text-center mt-12 scroll-slide ${isVisible ? "is-visible" : ""}`}>
           <Link
             href={ROUTES.products}
-            className="inline-flex items-center gap-2 px-8 py-4 premium-gradient text-white rounded-full font-semibold hover:shadow-2xl transition-all transform hover:scale-105"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-full font-semibold hover:shadow-2xl transition-all transform hover:scale-105"
           >
             Tüm Ürünleri Görüntüle
             <ArrowRight className="h-5 w-5" />
