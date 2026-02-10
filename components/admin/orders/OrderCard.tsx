@@ -10,14 +10,14 @@ import {
   Mail,
   Copy,
   MessageSquare,
-  ChevronDown,
-  Check,
   Clock,
   CheckCircle,
   Package,
   Truck,
   XCircle,
   ArrowRight,
+  MapPin,
+  Package as PackageIcon,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -44,19 +44,19 @@ export function OrderCard({
   const getStatusIcon = (status: OrderStatus) => {
     switch (status) {
       case "pending":
-        return <Clock className="w-4 h-4" />;
+        return <Clock className="w-3.5 h-3.5" />;
       case "confirmed":
-        return <CheckCircle className="w-4 h-4" />;
+        return <CheckCircle className="w-3.5 h-3.5" />;
       case "preparing":
-        return <Package className="w-4 h-4" />;
+        return <Package className="w-3.5 h-3.5" />;
       case "shipped":
-        return <Truck className="w-4 h-4" />;
+        return <Truck className="w-3.5 h-3.5" />;
       case "delivered":
-        return <CheckCircle className="w-4 h-4" />;
+        return <CheckCircle className="w-3.5 h-3.5" />;
       case "cancelled":
-        return <XCircle className="w-4 h-4" />;
+        return <XCircle className="w-3.5 h-3.5" />;
       case "refunded":
-        return <ArrowRight className="w-4 h-4" />;
+        return <ArrowRight className="w-3.5 h-3.5" />;
     }
   };
 
@@ -72,8 +72,6 @@ export function OrderCard({
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     }).format(date);
   };
 
@@ -121,7 +119,7 @@ export function OrderCard({
     },
     {
       id: "email",
-      label: "E-posta Gönder",
+      label: "E-posta",
       icon: Mail,
       onClick: handleSendEmail,
       show: !!order.shippingAddress.email,
@@ -135,7 +133,7 @@ export function OrderCard({
     },
     {
       id: "sms",
-      label: "SMS Gönder",
+      label: "SMS",
       icon: MessageSquare,
       onClick: () => {
         alert("SMS gönderme özelliği yakında eklenecek!");
@@ -145,8 +143,14 @@ export function OrderCard({
     },
   ];
 
+  const statusConfig = statusOptions.find((s) => s.value === order.status);
+
   return (
-    <div className={`p-4 hover:bg-gray-50 transition-colors ${isSelected ? "bg-blue-50" : ""}`}>
+    <div
+      className={`relative bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-all duration-200 ${
+        isSelected ? "ring-2 ring-primary ring-offset-2" : ""
+      }`}
+    >
       <div className="flex items-start gap-4">
         {/* Checkbox */}
         {onSelect && (
@@ -154,66 +158,110 @@ export function OrderCard({
             type="checkbox"
             checked={isSelected}
             onChange={() => onSelect(order.id)}
-            className="mt-1 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+            className="mt-1 w-5 h-5 rounded-lg border-gray-300 text-primary focus:ring-primary focus:ring-offset-0 cursor-pointer"
           />
         )}
 
-        {/* Order Content */}
+        {/* Main Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              {/* Order Number & Date */}
-              <div className="min-w-0 flex-1">
-                <div className="font-semibold text-gray-900 truncate">
-                  {order.orderNumber}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {formatDate(new Date(order.createdAt))}
-                </div>
-              </div>
-
-              {/* Status Badge */}
-              <span
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium shrink-0 ${
-                  statusOptions.find((s) => s.value === order.status)?.color
-                }`}
-              >
-                {getStatusIcon(order.status)}
-                {statusOptions.find((s) => s.value === order.status)?.label}
+          {/* Header Row: Order No | Date | Status | Price */}
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            {/* Left: Order No + Date */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <span className="font-bold text-gray-900 truncate">
+                {order.orderNumber}
+              </span>
+              <span className="text-sm text-gray-400">
+                {formatDate(new Date(order.createdAt))}
               </span>
             </div>
 
-            {/* Right Side Actions */}
-            <div className="flex items-center gap-2 shrink-0 ml-4">
-              {/* Total & Items */}
-              <div className="text-right">
-                <div className="text-lg font-semibold text-gray-900">
-                  {formatPrice(order.total)}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {order.items.length} ürün
-                </div>
-              </div>
-
-              {/* Delete Button */}
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                title="Sil"
+            {/* Center: Status Badge */}
+            <div className="shrink-0">
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                  statusConfig?.color || "bg-gray-100 text-gray-700"
+                }`}
               >
-                {isDeleting ? (
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Trash2 className="w-4 h-4" />
-                )}
-              </button>
+                {getStatusIcon(order.status)}
+                <span>{statusConfig?.label || order.status}</span>
+              </span>
+            </div>
+
+            {/* Right: Price */}
+            <div className="shrink-0 text-right">
+              <span className="text-lg font-black text-gray-900">
+                {formatPrice(order.total)}
+              </span>
+            </div>
+          </div>
+
+          {/* Customer Info Row */}
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium text-gray-800">
+                {order.shippingAddress.firstName} {order.shippingAddress.lastName}
+              </span>
+              <span className="text-gray-400">•</span>
+              <div className="flex items-center gap-1 text-gray-500">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>{order.shippingAddress.city}</span>
+              </div>
+            </div>
+
+            {/* Item Count */}
+            <div className="flex items-center gap-1.5 text-sm text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+              <PackageIcon className="w-3.5 h-3.5" />
+              <span>{order.items.length} ürün</span>
+            </div>
+          </div>
+
+          {/* Notes if any */}
+          {order.notes && (
+            <div className="mb-3 p-2.5 bg-amber-50 border border-amber-100 rounded-xl">
+              <p className="text-xs text-amber-800">
+                <span className="font-semibold">Not:</span> {order.notes}
+              </p>
+            </div>
+          )}
+
+          {/* Actions Row */}
+          <div className="flex items-center justify-between gap-2">
+            {/* Status Change Dropdown */}
+            {onStatusChange && (
+              <select
+                value={order.status}
+                onChange={(e) =>
+                  onStatusChange(order.id, e.target.value as OrderStatus)
+                }
+                className="text-xs sm:text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white cursor-pointer hover:bg-gray-50 transition-colors"
+              >
+                {statusOptions
+                  .filter((s) => s.value !== "all")
+                  .map((status) => (
+                    <option key={status.value} value={status.value}>
+                      {status.label}
+                    </option>
+                  ))}
+              </select>
+            )}
+
+            {/* Right Actions */}
+            <div className="flex items-center gap-1">
+              {/* Detail Link */}
+              <Link
+                href={`/admin/siparisler/${order.id}`}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary/90 transition-colors shadow-sm"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Detay</span>
+              </Link>
 
               {/* Quick Actions Menu */}
               <div className="relative">
                 <button
                   onClick={() => setIsQuickActionsOpen(!isQuickActionsOpen)}
-                  className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 text-gray-500 hover:bg-gray-100 rounded-xl transition-colors"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
@@ -227,7 +275,7 @@ export function OrderCard({
                     />
 
                     {/* Dropdown */}
-                    <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                    <div className="absolute top-full right-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
                       {quickActions.map((action) => {
                         const Icon = action.icon;
                         return (
@@ -246,58 +294,21 @@ export function OrderCard({
                 )}
               </div>
 
-              {/* Detail Link */}
-              <Link
-                href={`/admin/siparisler/${order.id}`}
-                className="inline-flex items-center gap-2 px-3 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              {/* Delete Button */}
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors disabled:opacity-50"
+                title="Sil"
               >
-                <Eye className="w-4 h-4" />
-                <span className="hidden sm:inline">Detay</span>
-              </Link>
+                {isDeleting ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+              </button>
             </div>
           </div>
-
-          {/* Customer Info & Status Change */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-sm text-gray-600">
-              <span>
-                {order.shippingAddress.firstName}{" "}
-                {order.shippingAddress.lastName}
-              </span>
-              <span>•</span>
-              <span>{order.shippingAddress.city}</span>
-            </div>
-
-            {onStatusChange && (
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-gray-500">Durum:</label>
-                <select
-                  value={order.status}
-                  onChange={(e) =>
-                    onStatusChange(order.id, e.target.value as OrderStatus)
-                  }
-                  className="text-xs sm:text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white"
-                >
-                  {statusOptions
-                    .filter((s) => s.value !== "all")
-                    .map((status) => (
-                      <option key={status.value} value={status.value}>
-                        {status.label}
-                      </option>
-                    ))}
-                </select>
-              </div>
-            )}
-          </div>
-
-          {/* Notes */}
-          {order.notes && (
-            <div className="mt-3 p-2.5 bg-yellow-50 border border-yellow-100 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                <span className="font-medium">Not:</span> {order.notes}
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>

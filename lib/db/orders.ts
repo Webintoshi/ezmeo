@@ -1,4 +1,5 @@
 import { createServerClient, Order, OrderItem } from "@/lib/supabase";
+import { getOrCreateCustomer } from "./customers";
 
 // =====================================================
 // ORDER MUTATIONS (Server-side only - all order operations require admin)
@@ -32,6 +33,7 @@ export async function createOrder(orderData: {
     shippingCost?: number;
     discount?: number;
     notes?: string;
+    contactEmail?: string;
 }) {
     const serverClient = createServerClient();
 
@@ -41,12 +43,25 @@ export async function createOrder(orderData: {
     const discount = orderData.discount || 0;
     const total = subtotal + shippingCost - discount;
 
+    // Get or create customer if email provided
+    let customerId = orderData.customerId;
+    if (!customerId && orderData.contactEmail) {
+        const shipping = orderData.shippingAddress as any;
+        const customer = await getOrCreateCustomer({
+            email: orderData.contactEmail,
+            phone: shipping?.phone,
+            firstName: shipping?.firstName,
+            lastName: shipping?.lastName,
+        });
+        customerId = customer.id;
+    }
+
     // Create order
     const { data: order, error: orderError } = await serverClient
         .from("orders")
         .insert({
             order_number: generateOrderNumber(),
-            customer_id: orderData.customerId || null,
+            customer_id: customerId || null,
             status: "pending",
             subtotal,
             shipping_cost: shippingCost,

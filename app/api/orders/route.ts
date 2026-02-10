@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
             shippingCost: body.shippingCost,
             discount: body.discount,
             notes: body.notes,
+            contactEmail: body.contactEmail,
         });
 
         return NextResponse.json({ success: true, order });
