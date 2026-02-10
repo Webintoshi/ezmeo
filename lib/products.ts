@@ -543,7 +543,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     tags: ["kuruyemis", "kavrulmus", "kabuksuz", "findik"],
     variants: [
       {
-        id: "b2c3d4e5-f6a7-8901-2345-678901bcdef0", // UUID for kavrulmus-findik-500
+        id: "b2c3d4e5-f6a7-8901-2345-678901bcabc1", // UUID for kavrulmus-findik-500 (Unique)
         name: "500g",
         weight: 500,
         price: 671,
