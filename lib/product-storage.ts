@@ -1,11 +1,11 @@
 import { Product } from "@/types/product";
 
-const STORAGE_KEY = "ezmeo_products";
+const STORAGE_KEY = "ezmeo_products_v2";
 
 // Get products from localStorage
 export function getStoredProducts(): Product[] {
   if (typeof window === "undefined") return [];
-  
+
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -14,14 +14,14 @@ export function getStoredProducts(): Product[] {
   } catch (error) {
     console.error("Error loading products from storage:", error);
   }
-  
+
   return [];
 }
 
 // Save products to localStorage
 export function saveProducts(products: Product[]): void {
   if (typeof window === "undefined") return;
-  
+
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
   } catch (error) {
@@ -32,10 +32,10 @@ export function saveProducts(products: Product[]): void {
 // Add a single product
 export function addStoredProduct(product: Product): void {
   const products = getStoredProducts();
-  
+
   // Check if product with same slug exists
   const existingIndex = products.findIndex(p => p.slug === product.slug);
-  
+
   if (existingIndex >= 0) {
     // Update existing product
     products[existingIndex] = product;
@@ -43,17 +43,17 @@ export function addStoredProduct(product: Product): void {
     // Add new product
     products.push(product);
   }
-  
+
   saveProducts(products);
 }
 
 // Add multiple products
 export function addStoredProducts(newProducts: Product[]): void {
   const products = getStoredProducts();
-  
+
   newProducts.forEach(newProduct => {
     const existingIndex = products.findIndex(p => p.slug === newProduct.slug);
-    
+
     if (existingIndex >= 0) {
       // Update existing product
       products[existingIndex] = newProduct;
@@ -62,7 +62,7 @@ export function addStoredProducts(newProducts: Product[]): void {
       products.push(newProduct);
     }
   });
-  
+
   saveProducts(products);
 }
 
@@ -77,7 +77,7 @@ export function deleteStoredProduct(id: string): void {
 export function updateStoredProduct(id: string, updates: Partial<Product>): void {
   const products = getStoredProducts();
   const index = products.findIndex(p => p.id === id);
-  
+
   if (index >= 0) {
     products[index] = { ...products[index], ...updates };
     saveProducts(products);
@@ -93,7 +93,7 @@ export function clearStoredProducts(): void {
 // Initialize with default products if empty
 export function initializeProducts(defaultProducts: Product[]): void {
   const stored = getStoredProducts();
-  
+
   if (stored.length === 0) {
     saveProducts(defaultProducts);
   }

@@ -6,7 +6,7 @@ import { parseShopifyCSV, importProductsFromCSV } from "./csv-import";
 const DEFAULT_PRODUCTS: Product[] = [
   // Fıstık Ezmeleri
   {
-    id: "fistik-sekersiz",
+    id: "e5473489-7607-42f0-b749-0747379d21c1", // UUID for fistik-sekersiz
     name: "Şekersiz Fıstık Ezmesi",
     slug: "sekersiz-fistik-ezmesi",
     description:
@@ -22,7 +22,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     tags: ["doğal", "sekersiz", "vegan", "glutensiz", "sporcu"],
     variants: [
       {
-        id: "fistik-sekersiz-1pack",
+        id: "d1e2f3a4-b5c6-7890-1234-567890abcdef", // UUID for fistik-sekersiz-1pack
         name: "1 Adet - 450g",
         weight: 450,
         price: 321,
@@ -30,7 +30,7 @@ const DEFAULT_PRODUCTS: Product[] = [
         sku: "EZM-FS-450-1",
       },
       {
-        id: "fistik-sekersiz-2pack",
+        id: "a1b2c3d4-e5f6-7890-1234-567890abcdef", // UUID for fistik-sekersiz-2pack
         name: "2 Adet - 900g",
         weight: 900,
         price: 481.50,
@@ -39,7 +39,7 @@ const DEFAULT_PRODUCTS: Product[] = [
         sku: "EZM-FS-450-2",
       },
       {
-        id: "fistik-sekersiz-3pack",
+        id: "b2c3d4e5-f6a7-8901-2345-678901bcdef0", // UUID for fistik-sekersiz-3pack
         name: "3 Adet - 1350g",
         weight: 1350,
         price: 597.04,
@@ -65,7 +65,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     new: false,
   },
   {
-    id: "fistik-hurmali",
+    id: "c3d4e5f6-a7b8-9012-3456-789012cdef01", // UUID for fistik-hurmali
     name: "Hurmalı Fıstık Ezmesi",
     slug: "hurmali-fistik-ezmesi",
     description:
@@ -81,7 +81,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     tags: ["doğal", "hurmalı", "vegan", "glutensiz"],
     variants: [
       {
-        id: "fistik-hurmali-1pack",
+        id: "d4e5f6a7-b8c9-0123-4567-890123def012", // UUID for fistik-hurmali-1pack
         name: "1 Adet - 450g",
         weight: 450,
         price: 341,
@@ -89,7 +89,7 @@ const DEFAULT_PRODUCTS: Product[] = [
         sku: "EZM-FH-450-1",
       },
       {
-        id: "fistik-hurmali-2pack",
+        id: "e5f6a7b8-c9d0-1234-5678-901234ef0123", // UUID for fistik-hurmali-2pack
         name: "2 Adet - 900g",
         weight: 900,
         price: 511.50,
@@ -98,7 +98,7 @@ const DEFAULT_PRODUCTS: Product[] = [
         sku: "EZM-FH-450-2",
       },
       {
-        id: "fistik-hurmali-3pack",
+        id: "f6a7b8c9-d0e1-2345-6789-012345f01234", // UUID for fistik-hurmali-3pack
         name: "3 Adet - 1350g",
         weight: 1350,
         price: 631.85,
@@ -125,7 +125,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     new: false,
   },
   {
-    id: "fistik-balli",
+    id: "a7b8c9d0-e1f2-3456-7890-123456012345", // UUID for fistik-balli
     name: "Ballı Fıstık Ezmesi",
     slug: "balli-fistik-ezmesi",
     description:
@@ -141,7 +141,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     tags: ["doğal", "balli", "vegan", "glutensiz", "enerji"],
     variants: [
       {
-        id: "fistik-balli-1pack",
+        id: "b8c9d0e1-f2a3-4567-8901-234567123456", // UUID for fistik-balli-1pack
         name: "1 Adet - 450g",
         weight: 450,
         price: 341,
@@ -149,7 +149,7 @@ const DEFAULT_PRODUCTS: Product[] = [
         sku: "EZM-FB-450-1",
       },
       {
-        id: "fistik-balli-2pack",
+        id: "c9d0e1f2-a3b4-5678-9012-345678234567", // UUID for fistik-balli-2pack
         name: "2 Adet - 900g",
         weight: 900,
         price: 511.50,
@@ -158,7 +158,7 @@ const DEFAULT_PRODUCTS: Product[] = [
         sku: "EZM-FB-450-2",
       },
       {
-        id: "fistik-balli-3pack",
+        id: "d0e1f2a3-b4c5-6789-0123-456789345678", // UUID for fistik-balli-3pack
         name: "3 Adet - 1350g",
         weight: 1350,
         price: 631.85,
@@ -185,7 +185,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     new: false,
   },
   {
-    id: "fistik-klasik",
+    id: "e1f2a3b4-c5d6-7890-1234-567890456789", // UUID for fistik-klasik
     name: "Klasik Fıstık Ezmesi",
     slug: "klasik-fistik-ezmesi",
     description:
@@ -200,7 +200,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     tags: ["klasik", "amerikan", "kahvalti"],
     variants: [
       {
-        id: "fistik-klasik-1pack",
+        id: "f2a3b4c5-d6e7-8901-2345-678901567890", // UUID for fistik-klasik-1pack
         name: "1 Adet - 450g",
         weight: 450,
         price: 331,
@@ -208,7 +208,7 @@ const DEFAULT_PRODUCTS: Product[] = [
         sku: "EZM-FK-450-1",
       },
       {
-        id: "fistik-klasik-2pack",
+        id: "a3b4c5d6-e7f8-9012-3456-789012678901", // UUID for fistik-klasik-2pack
         name: "2 Adet - 900g",
         weight: 900,
         price: 496.50,
@@ -217,7 +217,7 @@ const DEFAULT_PRODUCTS: Product[] = [
         sku: "EZM-FK-450-2",
       },
       {
-        id: "fistik-klasik-3pack",
+        id: "b4c5d6e7-f8a9-0123-4567-890123789012", // UUID for fistik-klasik-3pack
         name: "3 Adet - 1350g",
         weight: 1350,
         price: 613.85,
@@ -246,7 +246,7 @@ const DEFAULT_PRODUCTS: Product[] = [
 
   // Fındık Ezmeleri
   {
-    id: "sutlu-findik-kremasi",
+    id: "c5d6e7f8-a9b0-1234-5678-901234890123", // UUID for sutlu-findik-kremasi
     name: "Sütlü Fındık Kreması",
     slug: "sutlu-findik-kremasi",
     description:
@@ -262,7 +262,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     tags: ["sutlu", "kahvalti", "cocuklar"],
     variants: [
       {
-        id: "sutlu-findik-1pack",
+        id: "d6e7f8a9-b0c1-2345-6789-012345901234", // UUID for sutlu-findik-1pack
         name: "1 Adet - 450g",
         weight: 450,
         price: 241,
@@ -270,7 +270,7 @@ const DEFAULT_PRODUCTS: Product[] = [
         sku: "EZM-SFK-450-1",
       },
       {
-        id: "sutlu-findik-2pack",
+        id: "e7f8a9b0-c1d2-3456-7890-123456012345", // UUID for sutlu-findik-2pack
         name: "2 Adet - 900g",
         weight: 900,
         price: 361.50,
@@ -279,7 +279,7 @@ const DEFAULT_PRODUCTS: Product[] = [
         sku: "EZM-SFK-450-2",
       },
       {
-        id: "sutlu-findik-3pack",
+        id: "f8a9b0c1-d2e3-4567-8901-234567123456", // UUID for sutlu-findik-3pack
         name: "3 Adet - 1350g",
         weight: 1350,
         price: 446.85,
@@ -306,7 +306,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     new: false,
   },
   {
-    id: "kakaolu-findik",
+    id: "a9b0c1d2-e3f4-5678-9012-345678234567", // UUID for kakaolu-findik
     name: "Kakaolu Fındık Ezmesi",
     slug: "kakaolu-findik-ezmesi",
     description:
@@ -322,7 +322,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     tags: ["doğal", "kakaolu", "vegan", "glutensiz", "cikolata"],
     variants: [
       {
-        id: "kakaolu-findik-1pack",
+        id: "b0c1d2e3-f4a5-6789-0123-456789345678", // UUID for kakaolu-findik-1pack
         name: "1 Adet - 450g",
         weight: 450,
         price: 371,
@@ -330,7 +330,7 @@ const DEFAULT_PRODUCTS: Product[] = [
         sku: "EZM-KF-450-1",
       },
       {
-        id: "kakaolu-findik-2pack",
+        id: "c1d2e3f4-a5b6-7890-1234-567890456789", // UUID for kakaolu-findik-2pack
         name: "2 Adet - 900g",
         weight: 900,
         price: 556.50,
@@ -339,7 +339,7 @@ const DEFAULT_PRODUCTS: Product[] = [
         sku: "EZM-KF-450-2",
       },
       {
-        id: "kakaolu-findik-3pack",
+        id: "d2e3f4a5-b6c7-8901-2345-678901567890", // UUID for kakaolu-findik-3pack
         name: "3 Adet - 1350g",
         weight: 1350,
         price: 687.35,
@@ -368,7 +368,7 @@ const DEFAULT_PRODUCTS: Product[] = [
 
   // Kuruyemişler
   {
-    id: "yer-fistigi",
+    id: "e3f4a5b6-c7d8-9012-3456-789012678901", // UUID for yer-fistigi
     name: "Yer Fıstığı",
     slug: "yer-fistigi",
     description:
@@ -383,7 +383,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     tags: ["kuruyemis", "kavrulmus", "kabuksuz"],
     variants: [
       {
-        id: "yer-fistigi-500",
+        id: "f4a5b6c7-d8e9-0123-4567-890123789012", // UUID for yer-fistigi-500
         name: "500g",
         weight: 500,
         price: 249,
@@ -408,7 +408,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     new: false,
   },
   {
-    id: "cig-badem",
+    id: "a5b6c7d8-e9f0-1234-5678-901234890123", // UUID for cig-badem
     name: "Çiğ Badem",
     slug: "cig-badem",
     description:
@@ -423,7 +423,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     tags: ["kuruyemis", "cig", "kabuksuz", "badem"],
     variants: [
       {
-        id: "cig-badem-500",
+        id: "b6c7d8e9-f0a1-2345-6789-012345901234", // UUID for cig-badem-500
         name: "500g",
         weight: 500,
         price: 321,
@@ -448,7 +448,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     new: false,
   },
   {
-    id: "cig-findik-ic",
+    id: "c7d8e9f0-a1b2-3456-7890-123456012345", // UUID for cig-findik-ic
     name: "Çiğ Fındık İçi",
     slug: "cig-findik-ic",
     description:
@@ -463,7 +463,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     tags: ["kuruyemis", "cig", "kabuksuz", "findik"],
     variants: [
       {
-        id: "cig-findik-500",
+        id: "d8e9f0a1-b2c3-4567-8901-234567123456", // UUID for cig-findik-500
         name: "500g",
         weight: 500,
         price: 371,
@@ -488,7 +488,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     new: false,
   },
   {
-    id: "cig-ceviz-ic",
+    id: "e9f0a1b2-c3d4-5678-9012-345678234567", // UUID for cig-ceviz-ic
     name: "Çiğ Ceviz İçi",
     slug: "cig-ceviz-ic",
     description:
@@ -503,7 +503,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     tags: ["kuruyemis", "cig", "kabuksuz", "ceviz", "omega3"],
     variants: [
       {
-        id: "cig-ceviz-500",
+        id: "f0a1b2c3-d4e5-6789-0123-456789345678", // UUID for cig-ceviz-500
         name: "500g",
         weight: 500,
         price: 411,
@@ -528,7 +528,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     new: false,
   },
   {
-    id: "kavrulmus-findik",
+    id: "a1b2c3d4-e5f6-7890-1234-567890abcdef", // UUID for kavrulmus-findik
     name: "Kavrulmuş Fındık",
     slug: "kavrulmus-findik",
     description:
@@ -543,7 +543,7 @@ const DEFAULT_PRODUCTS: Product[] = [
     tags: ["kuruyemis", "kavrulmus", "kabuksuz", "findik"],
     variants: [
       {
-        id: "kavrulmus-findik-500",
+        id: "b2c3d4e5-f6a7-8901-2345-678901bcdef0", // UUID for kavrulmus-findik-500
         name: "500g",
         weight: 500,
         price: 671,
