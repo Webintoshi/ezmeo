@@ -221,13 +221,21 @@ export function OrderDetailClient({
         }
     };
 
-    const formattedDate = new Date(order.created_at).toLocaleDateString("tr-TR", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    const formattedDate = (() => {
+        try {
+            const date = new Date(order.created_at);
+            if (isNaN(date.getTime())) return "Bilinmiyor";
+            return date.toLocaleDateString("tr-TR", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+            });
+        } catch {
+            return "Bilinmiyor";
+        }
+    })();
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">

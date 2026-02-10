@@ -36,6 +36,10 @@ type FilterType = "all" | OrderActivityAction;
 // Simple time formatter
 function formatTime(dateString: string | Date): string {
   const date = typeof dateString === "string" ? new Date(dateString) : dateString;
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    return "Bilinmiyor";
+  }
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);

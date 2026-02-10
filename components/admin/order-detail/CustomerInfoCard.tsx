@@ -167,18 +167,21 @@ export function CustomerInfoCard({
                       #{order.orderNumber}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {typeof order.createdAt === 'string'
-                        ? new Date(order.createdAt).toLocaleDateString("tr-TR", {
+                      {(() => {
+                        try {
+                          const date = typeof order.createdAt === 'string'
+                            ? new Date(order.createdAt)
+                            : order.createdAt;
+                          if (!date || isNaN(new Date(date).getTime())) return "Bilinmiyor";
+                          return new Date(date).toLocaleDateString("tr-TR", {
                             day: "2-digit",
                             month: "short",
                             year: "numeric",
-                          })
-                        : order.createdAt?.toLocaleDateString("tr-TR", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })
-                      }
+                          });
+                        } catch {
+                          return "Bilinmiyor";
+                        }
+                      })()}
                     </p>
                   </div>
                   <div className="text-right">
