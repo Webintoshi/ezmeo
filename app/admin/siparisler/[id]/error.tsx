@@ -1,3 +1,5 @@
+"use client";
+
 export default function Error({ error }: { error: Error & { digest?: string } }) {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen py-20 bg-gray-50">
