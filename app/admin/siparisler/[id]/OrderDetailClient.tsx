@@ -263,13 +263,14 @@ export function OrderDetailClient({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => window.print()}
+                    <Link
+                        href={`/admin/siparisler/${order.id}/yazdir`}
+                        target="_blank"
                         className="h-9 px-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-50 transition-all flex items-center gap-1.5"
                     >
                         <Printer className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Yazdır</span>
-                    </button>
+                    </Link>
                     <button
                         onClick={() => {
                             // TODO: Implement invoice download

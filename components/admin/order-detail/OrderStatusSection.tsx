@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { OrderStatus, ORDER_TIMELINE_STEPS, ORDER_STATUS_CONFIG } from "@/types/order";
 import { Clock, CheckCircle, Package, Truck, Mail, MessageSquare, FileText, RefreshCw, Printer, Download } from "lucide-react";
 import { OrderStatusChanger } from "./OrderStatusChanger";
@@ -104,7 +105,7 @@ export function OrderStatusSection({
       icon: Printer,
       color: "bg-gray-50 text-gray-600 hover:bg-gray-100",
       onClick: () => handleAction("print", () => {
-        window.print();
+        window.open(`/admin/siparisler/${orderId}/yazdir`, "_blank");
       }),
     },
     {
