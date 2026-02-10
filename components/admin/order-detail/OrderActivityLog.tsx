@@ -66,12 +66,31 @@ export function OrderActivityLogComponent({ activities, className = "" }: OrderA
     new Set(activities.map(a => a.action))
   ) as OrderActivityAction[];
 
+  // Status translations
+  const statusLabels: Record<string, string> = {
+    pending: "Beklemede",
+    confirmed: "Onaylandı",
+    preparing: "Hazırlanıyor",
+    shipped: "Kargolandı",
+    delivered: "Teslim Edildi",
+    cancelled: "İptal",
+    refunded: "İade Edildi",
+  };
+
+  const paymentStatusLabels: Record<string, string> = {
+    pending: "Beklemede",
+    processing: "İşleniyor",
+    completed: "Tamamlandı",
+    failed: "Başarısız",
+    refunded: "İade Edildi",
+  };
+
   const formatActivityDescription = (activity: OrderActivityLog): string => {
     switch (activity.action) {
       case "status_changed":
-        return `"${activity.oldValue}" → "${activity.newValue}"`;
+        return `"${statusLabels[activity.oldValue] || activity.oldValue}" → "${statusLabels[activity.newValue] || activity.newValue}"`;
       case "payment_status_changed":
-        return `"${activity.oldValue}" → "${activity.newValue}"`;
+        return `"${paymentStatusLabels[activity.oldValue] || activity.oldValue}" → "${paymentStatusLabels[activity.newValue] || activity.newValue}"`;
       case "shipping_updated":
         return activity.newValue?.trackingNumber
           ? `${activity.newValue.trackingNumber}`
