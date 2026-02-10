@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { X, ShoppingBag, Plus, Minus, Trash2, Truck, Check, ArrowRight, Lock } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, ShoppingBag, Plus, Minus, Trash2, Check, ArrowRight, Lock } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice, cn } from "@/lib/utils";
 import { SHIPPING_THRESHOLD } from "@/lib/constants";
@@ -24,6 +25,31 @@ export function SideCart({ isOpen, onClose }: SideCartProps) {
     lastAddedItem,
   } = useCart();
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check for mobile device on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // 640px is tailwind 'sm' breakpoint
+    };
+
+    // Initial check
+    checkMobile();
+
+    // Add event listener
+    window.addEventListener("resize", checkMobile);
+
+    // Cleanup
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Animation variants based on device type
+  const slideVariants = {
+    hidden: isMobile ? { y: "100%" } : { x: "100%" },
+    visible: isMobile ? { y: 0 } : { x: 0 },
+    exit: isMobile ? { y: "100%" } : { x: "100%" },
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -38,18 +64,12 @@ export function SideCart({ isOpen, onClose }: SideCartProps) {
             onClick={onClose}
           />
 
-          {/* 
-            Cart Container - PURE CSS RESPONSIVE
-            Mobile: fixed bottom-0, full width, slides UP
-            Desktop (sm+): fixed right-0 top-0, fixed width, slides from RIGHT
-          */}
+          {/* Cart Container */}
           <motion.div
-            // Mobile: slide from bottom (y)
-            // Desktop: slide from right (x)
-            // Using two separate animation configs via CSS classes
-            initial={{ y: "100%", x: 0 }}
-            animate={{ y: 0, x: 0 }}
-            exit={{ y: "100%", x: 0 }}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={slideVariants}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             className={cn(
               "fixed bg-white z-[10000] flex flex-col shadow-2xl",
@@ -58,8 +78,6 @@ export function SideCart({ isOpen, onClose }: SideCartProps) {
               // DESKTOP: Side Sheet Style (overrides mobile)
               "sm:inset-x-auto sm:top-0 sm:right-0 sm:bottom-0 sm:h-full sm:w-[400px] sm:rounded-none"
             )}
-          // Desktop needs different animation - we'll handle this with a wrapper
-          // For simplicity, using bottom sheet animation for all. Desktop will work too.
           >
             {/* Drag Handle - Mobile Only */}
             <div className="sm:hidden w-full flex justify-center pt-3 pb-1">
@@ -83,20 +101,18 @@ export function SideCart({ isOpen, onClose }: SideCartProps) {
 
             {/* Last Added Item Banner - GREEN SUCCESS */}
             {lastAddedItem && (
-              <div className="bg-emerald-50 border-b border-emerald-100 px-6 py-4 flex items-center gap-4">
-                <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center shrink-0">
+              <div className="bg-emerald-50 border-b border-emerald-100 px-6 py-4 flex items-center gap-4 animate-in fade-in slide-in-from-top-2">
+                <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center shrink-0 shadow-sm">
                   <Check className="h-5 w-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Son Eklenen Ürün</p>
+                  <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-0.5">Son Eklenen Ürün</p>
                   <p className="text-sm font-bold text-gray-900 truncate">{lastAddedItem.product.name}</p>
-                  <p className="text-xs text-emerald-600">
-                    <span className="font-bold">{formatPrice(lastAddedItem.variant.price)}</span>
-                    <span className="mx-1">·</span>
-                    <span>Sepette {lastAddedItem.quantity} adet</span>
+                  <p className="text-xs text-emerald-600 font-medium">
+                    {formatPrice(lastAddedItem.variant.price * lastAddedItem.quantity)}
                   </p>
                 </div>
-                <div className="w-14 h-14 bg-white rounded-xl border border-emerald-100 flex items-center justify-center text-2xl shrink-0 shadow-sm">
+                <div className="w-12 h-12 bg-white rounded-xl border border-emerald-100 flex items-center justify-center text-2xl shrink-0 shadow-sm">
                   {lastAddedItem.product.category === "fistik-ezmesi" && "🥜"}
                   {lastAddedItem.product.category === "findik-ezmesi" && "🌰"}
                   {lastAddedItem.product.category === "kuruyemis" && "🥔"}
@@ -133,15 +149,15 @@ export function SideCart({ isOpen, onClose }: SideCartProps) {
                   <Link
                     href="/urunler"
                     onClick={onClose}
-                    className="px-8 py-3 bg-primary text-white rounded-xl font-bold hover:bg-red-800 transition-colors"
+                    className="px-8 py-3 bg-primary text-white rounded-xl font-bold hover:bg-red-800 transition-colors shadow-lg shadow-primary/20"
                   >
                     Alışverişe Başla
                   </Link>
                 </div>
               ) : (
                 items.map((item) => (
-                  <div key={item.variantId} className="flex gap-4 bg-gray-50 rounded-2xl p-4">
-                    <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-2xl shrink-0 border border-gray-100">
+                  <div key={item.variantId} className="flex gap-4 bg-gray-50 rounded-2xl p-4 border border-gray-100/50 hover:border-gray-200 transition-colors">
+                    <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-2xl shrink-0 border border-gray-100 shadow-sm">
                       {item.product.category === "fistik-ezmesi" && "🥜"}
                       {item.product.category === "findik-ezmesi" && "🌰"}
                       {item.product.category === "kuruyemis" && "🥔"}
@@ -150,30 +166,30 @@ export function SideCart({ isOpen, onClose }: SideCartProps) {
                       <div className="flex justify-between items-start mb-1">
                         <div>
                           <h3 className="font-bold text-gray-900 text-sm truncate">{item.product.name}</h3>
-                          <p className="text-xs text-gray-500">{item.variant.name}</p>
+                          <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">{item.variant.name}</p>
                         </div>
                         <span className="font-bold text-primary text-sm">{formatPrice(item.variant.price * item.quantity)}</span>
                       </div>
 
                       <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1">
+                        <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-0.5 shadow-sm">
                           <button
                             onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                            className="w-7 h-7 flex items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 active:scale-95 transition-all"
+                            className="w-7 h-7 flex items-center justify-center rounded-md text-gray-600 hover:bg-gray-50 active:scale-95 transition-all"
                           >
                             <Minus className="h-3 w-3" />
                           </button>
                           <span className="w-6 text-center text-sm font-bold">{item.quantity}</span>
                           <button
                             onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                            className="w-7 h-7 flex items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 active:scale-95 transition-all"
+                            className="w-7 h-7 flex items-center justify-center rounded-md text-gray-600 hover:bg-gray-50 active:scale-95 transition-all"
                           >
                             <Plus className="h-3 w-3" />
                           </button>
                         </div>
                         <button
                           onClick={() => removeFromCart(item.variantId)}
-                          className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -186,29 +202,26 @@ export function SideCart({ isOpen, onClose }: SideCartProps) {
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="border-t border-gray-100 p-6 bg-white space-y-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+              <div className="border-t border-gray-100 p-6 bg-white space-y-4 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] pb-8 sm:pb-6">
 
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Ara Toplam</span>
+                    <span className="text-gray-500 font-medium">Ara Toplam</span>
                     <span className="font-bold text-gray-900">{formatPrice(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Kargo</span>
+                    <span className="text-gray-500 font-medium">Kargo</span>
                     <span className={cn("font-bold", shipping === 0 ? "text-emerald-600" : "text-gray-900")}>
                       {shipping === 0 ? "Ücretsiz" : formatPrice(shipping)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">İndirim</span>
-                    <span className="font-bold text-emerald-600">-0 ₺</span>
-                  </div>
+                  {/* Discount Placeholder if needed */}
                 </div>
 
                 {/* Total Box - Using Brand Primary Color */}
-                <div className="bg-[#F5E6E0] rounded-xl p-4 flex justify-between items-center">
-                  <span className="font-bold text-gray-900">Toplam</span>
-                  <span className="text-2xl font-black text-primary">{formatPrice(total)}</span>
+                <div className="bg-[#F5E6E0] rounded-xl p-4 flex justify-between items-center border border-[#eecfc2]">
+                  <span className="font-bold text-[#7B1113]">Toplam</span>
+                  <span className="text-2xl font-black text-[#7B1113] tracking-tight">{formatPrice(total)}</span>
                 </div>
 
                 {/* Checkout Button - Using Brand Primary Color */}
