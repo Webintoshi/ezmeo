@@ -18,9 +18,15 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
+  // Debug: Log images
+  console.log('ImageGallery - Raw images:', images);
+  
+  // Filter valid images - allow any non-empty string URL
   const displayImages = images.filter(img => 
-    img && typeof img === 'string' && (img.startsWith('http') || img.startsWith('/'))
+    img && typeof img === 'string' && img.trim() !== ''
   );
+  
+  console.log('ImageGallery - Filtered images:', displayImages);
 
   if (displayImages.length === 0) {
     return (
@@ -31,6 +37,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" strokeWidth="2"/>
         </svg>
         <p className="text-sm font-medium text-gray-500">Henüz görsel eklenmemiş</p>
+        <p className="text-xs text-gray-400 mt-2">Debug: {images?.length || 0} raw, {displayImages.length} valid</p>
       </div>
     );
   }
