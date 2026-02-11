@@ -155,9 +155,9 @@ export function ProductDetailClient({ slug, initialProduct, initialRelatedProduc
             {/* Main Product Section */}
             <section className="py-6 lg:py-10">
                 <div className="container mx-auto px-4">
-                    <div className="grid lg:grid-cols-2 gap-6 lg:gap-12">
+                    <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-start">
                         {/* Left: Image Gallery */}
-                        <div>
+                        <div className="w-full">
                             <ImageGallery images={product.images} productName={product.name} />
 
                             {/* Trust badges - Desktop */}

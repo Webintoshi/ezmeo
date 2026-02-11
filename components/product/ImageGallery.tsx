@@ -85,7 +85,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
   return (
     <div className="space-y-4">
       {/* Main Image */}
-      <div className="relative group">
+      <div className="relative group w-full">
         <div
           className="relative aspect-square bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm"
           onTouchStart={handleTouchStart}
@@ -158,7 +158,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           )}
 
           {/* Pagination Dots */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full">
+          <div className="absolute bottom-4 left-4 lg:left-1/2 lg:-translate-x-1/2 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full justify-start lg:justify-center">
             {displayImages.map((_, index) => (
               <button
                 key={index}
@@ -177,12 +177,12 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
 
       {/* Thumbnails */}
       {displayImages.length > 1 && (
-        <div className="grid grid-cols-5 gap-2 md:gap-3">
+        <div className="grid grid-cols-5 gap-2 md:gap-3 w-full justify-items-start">
           {displayImages.slice(0, 5).map((image, index) => (
             <button
               key={index}
               onClick={() => setSelectedIndex(index)}
-              className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${
+              className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all w-full ${
                 index === selectedIndex
                   ? "border-primary ring-2 ring-primary/20"
                   : "border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100"
