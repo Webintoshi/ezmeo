@@ -246,6 +246,8 @@ export default function ProductForm({ productId }: ProductFormProps) {
         });
 
         const result = await response.json();
+        
+        console.log('ProductForm - Upload result:', result);
 
         if (result.success && result.url) {
           return { success: true, url: result.url };

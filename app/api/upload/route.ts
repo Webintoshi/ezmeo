@@ -36,8 +36,14 @@ export async function POST(request: NextRequest) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
+        // Debug: Log environment
+        console.log('Upload API - R2_PUBLIC_URL:', process.env.R2_PUBLIC_URL);
+        console.log('Upload API - CLOUDFLARE_ACCOUNT_ID:', process.env.CLOUDFLARE_ACCOUNT_ID ? 'Set' : 'Not set');
+        
         // Upload to R2
         const result = await uploadToR2(buffer, file.name, file.type, folder);
+        
+        console.log('Upload API - Result:', result);
 
         if (result.success) {
             return NextResponse.json({
