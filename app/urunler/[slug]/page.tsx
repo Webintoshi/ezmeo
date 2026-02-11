@@ -67,26 +67,28 @@ export default async function ProductDetailPage({
 }) {
   const { slug } = await params;
 
-  // 1. First try to get from static data (fastest)
-  let product = getProductBySlug(slug);
+  let product = null;
   let relatedProducts: any[] = [];
 
-  // 2. If not in static data, try Supabase
-  if (!product) {
-    try {
-      const supabase = createServerClient();
-      const { data: dbProduct } = await supabase
-        .from("products")
-        .select("*, variants:product_variants(*)")
-        .eq("slug", slug)
-        .single();
+  // 1. FIRST: Check Supabase (always has latest data with images)
+  try {
+    const supabase = createServerClient();
+    const { data: dbProduct } = await supabase
+      .from("products")
+      .select("*, variants:product_variants(*)")
+      .eq("slug", slug)
+      .single();
 
-      if (dbProduct) {
-        product = dbProduct as any;
-      }
-    } catch (error) {
-      console.error("Failed to fetch product from Supabase:", error);
+    if (dbProduct) {
+      product = dbProduct as any;
     }
+  } catch (error) {
+    console.error("Failed to fetch product from Supabase:", error);
+  }
+
+  // 2. SECOND: Fallback to static data if Supabase fails
+  if (!product) {
+    product = getProductBySlug(slug);
   }
 
   // 3. If still no product, return 404
