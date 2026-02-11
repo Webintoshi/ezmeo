@@ -3,14 +3,36 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
-import { getFeaturedProducts } from "@/lib/products";
 import { ROUTES } from "@/lib/constants";
 import { useEffect, useRef, useState } from "react";
+import { Product } from "@/types/product";
 
 export function FeaturedProducts() {
-  const featuredProducts = getFeaturedProducts(3);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    async function loadFeatured() {
+      try {
+        const { createServerClient } = await import("@/lib/supabase");
+        const supabase = createServerClient();
+        const { data } = await supabase
+          .from("products")
+          .select("*, variants:product_variants(*)")
+          .eq("is_featured", true)
+          .limit(3);
+        
+        if (data) setFeaturedProducts(data);
+      } catch (err) {
+        console.error("Failed to load featured products:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadFeatured();
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -32,6 +54,9 @@ export function FeaturedProducts() {
       }
     };
   }, []);
+
+  // Ürün yoksa section'ı gizle
+  if (!loading && featuredProducts.length === 0) return null;
 
   return (
     <section className="py-20 md:py-28 bg-white relative overflow-hidden">
@@ -57,11 +82,19 @@ export function FeaturedProducts() {
         </div>
 
         {/* Products Grid */}
-        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 scroll-slide ${isVisible ? "is-visible" : ""}`}>
-          {featuredProducts.map((product, index) => (
-            <ProductCard key={product.id} product={product} index={index} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="aspect-[3/4] bg-gray-100 rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 scroll-slide ${isVisible ? "is-visible" : ""}`}>
+            {featuredProducts.map((product, index) => (
+              <ProductCard key={product.id} product={product} index={index} />
+            ))}
+          </div>
+        )}
 
         {/* Mobile & Desktop View All Button */}
         <div className={`mt-12 text-center scroll-slide ${isVisible ? "is-visible" : ""}`}>

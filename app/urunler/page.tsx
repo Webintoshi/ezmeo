@@ -24,10 +24,10 @@ export default function AllProductsPage() {
           .select("*, variants:product_variants(*)");
         
         if (error) throw error;
-        setProducts(data || getAllProducts());
+        setProducts(data || []);
       } catch (err) {
         console.error("Failed to fetch products:", err);
-        setProducts(getAllProducts());
+        setProducts([]);
       } finally {
         setLoading(false);
       }

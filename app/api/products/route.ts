@@ -48,15 +48,32 @@ export async function GET(request: NextRequest) {
                 .eq("slug", slug)
                 .single();
             if (error) {
-                // Fallback to static data if not found in Supabase
-                products = await getProductBySlug(slug);
-                return NextResponse.json({ success: true, product: products });
+                return NextResponse.json({ 
+                    success: false, 
+                    error: error.message 
+                }, { status: 404 });
             }
             return NextResponse.json({ success: true, product: data });
         } else if (featured === "true") {
-            products = await getFeaturedProducts();
+            const { createServerClient } = await import("@/lib/supabase");
+            const supabase = createServerClient();
+            const { data, error } = await supabase
+                .from("products")
+                .select("*, variants:product_variants(*)")
+                .eq("is_featured", true)
+                .limit(10);
+            if (error) throw error;
+            products = data || [];
         } else if (bestseller === "true") {
-            products = await getBestsellerProducts();
+            const { createServerClient } = await import("@/lib/supabase");
+            const supabase = createServerClient();
+            const { data, error } = await supabase
+                .from("products")
+                .select("*, variants:product_variants(*)")
+                .eq("is_bestseller", true)
+                .limit(10);
+            if (error) throw error;
+            products = data || [];
         } else if (category) {
             // Fetch products by category from Supabase with pagination
             const { createServerClient } = await import("@/lib/supabase");
@@ -88,7 +105,15 @@ export async function GET(request: NextRequest) {
                 }
             });
         } else if (search) {
-            products = await searchProducts(search);
+            const { createServerClient } = await import("@/lib/supabase");
+            const supabase = createServerClient();
+            const { data, error } = await supabase
+                .from("products")
+                .select("*, variants:product_variants(*)")
+                .or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+                .limit(20);
+            if (error) throw error;
+            products = data || [];
         } else {
             // Fetch all products from Supabase with pagination
             const { createServerClient } = await import("@/lib/supabase");
@@ -106,11 +131,7 @@ export async function GET(request: NextRequest) {
                 .range(offset, offset + limit - 1)
                 .order("created_at", { ascending: false });
 
-            if (error) {
-                // Fallback to static data
-                products = await getProducts();
-                return NextResponse.json({ success: true, products });
-            }
+            if (error) throw error;
 
             return NextResponse.json({
                 success: true,

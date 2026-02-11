@@ -3,15 +3,37 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
-import { getProductsByCategory } from "@/lib/products";
 import { ROUTES } from "@/lib/constants";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { Product } from "@/types/product";
 
 export function NutsListing() {
-    const nutsProducts = getProductsByCategory("kuruyemis").slice(0, 3);
+    const [nutsProducts, setNutsProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
     const sectionRef = useRef<HTMLDivElement>(null);
     const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        async function loadNuts() {
+            try {
+                const { createServerClient } = await import("@/lib/supabase");
+                const supabase = createServerClient();
+                const { data } = await supabase
+                    .from("products")
+                    .select("*, variants:product_variants(*)")
+                    .eq("category", "kuruyemis")
+                    .limit(3);
+                
+                if (data) setNutsProducts(data);
+            } catch (err) {
+                console.error("Failed to load nuts products:", err);
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadNuts();
+    }, []);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -34,6 +56,9 @@ export function NutsListing() {
             }
         };
     }, []);
+
+    // Ürün yoksa section'ı gizle
+    if (!loading && nutsProducts.length === 0) return null;
 
     return (
         <section className="py-20 md:py-28 bg-gradient-to-b from-white to-gray-50/50 relative overflow-hidden">
@@ -64,11 +89,19 @@ export function NutsListing() {
                 </motion.div>
 
                 {/* Products Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                    {nutsProducts.map((product, index) => (
-                        <ProductCard key={product.id} product={product} index={index} />
-                    ))}
-                </div>
+                {loading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className="aspect-[3/4] bg-gray-100 rounded-2xl animate-pulse" />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                        {nutsProducts.map((product, index) => (
+                            <ProductCard key={product.id} product={product} index={index} />
+                        ))}
+                    </div>
+                )}
 
                 {/* View All Button */}
                 <motion.div

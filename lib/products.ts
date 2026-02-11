@@ -574,54 +574,44 @@ if (typeof window !== "undefined") {
   initializeProducts(DEFAULT_PRODUCTS);
 }
 
-// Get all products (from storage or default)
+// Get all products - Only from Supabase (no static fallback)
 export function getAllProducts(): Product[] {
-  if (typeof window === "undefined") return DEFAULT_PRODUCTS;
-  const stored = getStoredProducts();
-  return stored.length > 0 ? stored : DEFAULT_PRODUCTS;
+  return []; // Sadece Supabase'den çek
 }
 
-export const PRODUCTS = getAllProducts();
+export const PRODUCTS: Product[] = [];
 
 export function getProductSlug(): string[] {
-  return getAllProducts().map((p) => p.slug);
+  return []; // Sadece Supabase'den çek
 }
 
-// Yardımcı Fonksiyonlar
+// Yardımcı Fonksiyonlar - Sadece Supabase'den çek
 export function getProductBySlug(slug: string): Product | undefined {
-  return getAllProducts().find((p) => p.slug === slug);
+  return undefined; // Sadece Supabase'den çek
 }
 
 export function getProductsByCategory(category: string): Product[] {
-  return getAllProducts().filter((p) => p.category === category);
+  return []; // Sadece Supabase'den çek
 }
 
 export function getFeaturedProducts(limit = 8): Product[] {
-  return getAllProducts().filter((p) => p.featured).slice(0, limit);
+  return []; // Sadece Supabase'den çek
 }
 
 export function getNewProducts(limit = 4): Product[] {
-  return getAllProducts().filter((p) => p.new).slice(0, limit);
+  return []; // Sadece Supabase'den çek
 }
 
 export function searchProducts(query: string): Product[] {
-  const q = query.toLowerCase();
-  return getAllProducts().filter(
-    (p) =>
-      p.name.toLowerCase().includes(q) ||
-      p.description.toLowerCase().includes(q) ||
-      p.tags.some((t) => t.toLowerCase().includes(q))
-  );
+  return []; // Sadece Supabase'den çek
 }
 
 export function getRelatedProducts(product: Product, limit = 4): Product[] {
-  return getAllProducts().filter(
-    (p) => p.category === product.category && p.id !== product.id
-  ).slice(0, limit);
+  return []; // Sadece Supabase'den çek
 }
 
 export function getProductsByCategorySlug(slug: string): Product[] {
-  return getAllProducts().filter((p) => p.category === slug);
+  return []; // Sadece Supabase'den çek
 }
 
 export function addProduct(product: Product): void {
