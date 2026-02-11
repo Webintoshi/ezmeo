@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Plus,
   Upload,
@@ -20,7 +21,6 @@ import {
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Product, ProductVariant, NutritionalInfo, ProductCategory, ProductSubcategory } from "@/types/product";
-import { addProduct, updateProduct } from "@/lib/products";
 
 const CATEGORIES: { value: ProductCategory; label: string; subcategories: { value: ProductSubcategory; label: string }[] }[] = [
   {
@@ -344,44 +344,63 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
     setSaving(true);
 
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    const productData: Partial<Product> = {
-      name: formData.name,
-      slug: formData.slug,
-      description: formData.description,
-      shortDescription: formData.shortDescription,
-      category: formData.category as ProductCategory,
-      subcategory: formData.subcategory as ProductSubcategory,
-      variants: variants,
-      // If images changed, use them. For new products we might auto-generate paths if not provided
-      images: images.length > 0 ? images : images.map((_, i) => `/images/products/${formData.slug}-${i + 1}.jpg`),
-      tags: formData.tags,
-      nutritionalInfo: formData.nutritionalInfo,
-      vegan: formData.vegan,
-      glutenFree: formData.glutenFree,
-      sugarFree: formData.sugarFree,
-      highProtein: formData.highProtein,
-      rating: formData.rating,
-      reviewCount: formData.reviewCount,
-      featured: formData.featured,
-      new: formData.new,
-    };
-
-    if (productId) {
-      updateProduct(productId, productData);
-    } else {
-      const newProduct: Product = {
-        id: `product-${Date.now()}`,
-        ...productData as Omit<Product, "id">,
-        // Explicitly handle images for new products if empty to match previous logic or keep what's uploaded
-        images: images
+    try {
+      // API için ürün verisi hazırla
+      const productData = {
+        name: formData.name,
+        slug: formData.slug,
+        description: formData.description,
+        short_description: formData.shortDescription,
+        category: formData.category,
+        subcategory: formData.subcategory,
+        images: images.length > 0 ? images : [],
+        tags: formData.tags,
+        is_featured: formData.featured,
+        is_new: formData.new,
+        rating: formData.rating,
+        review_count: formData.reviewCount,
+        // Varyantları API formatına çevir
+        variants: variants.map(v => ({
+          id: v.id,
+          name: v.name,
+          weight: v.weight,
+          price: v.price,
+          original_price: v.originalPrice || null,
+          stock: v.stock,
+          sku: v.sku,
+        })),
       };
-      addProduct(newProduct);
-    }
 
-    setSaving(false);
-    router.push('/admin/urunler');
+      // API'ye gönder
+      const url = '/api/products';
+      const method = productId ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: productId,
+          ...productData,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Ürün kaydedilemedi');
+      }
+
+      toast.success(productId ? 'Ürün başarıyla güncellendi!' : 'Ürün başarıyla eklendi!');
+      router.push('/admin/urunler');
+      router.refresh();
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error(error instanceof Error ? error.message : 'Bir hata oluştu');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
