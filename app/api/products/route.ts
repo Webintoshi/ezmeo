@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
                 subcategory: productData.subcategory || null,
                 tags: productData.tags || [],
                 is_featured: productData.is_featured || false,
-                is_new: productData.is_new || false,
+                is_bestseller: productData.is_new || false,  // is_new yerine is_bestseller kullan
                 rating: productData.rating || 5,
                 review_count: productData.review_count || 0,
             })
@@ -160,7 +160,7 @@ export async function PUT(request: NextRequest) {
                 subcategory: updates.subcategory,
                 tags: updates.tags,
                 is_featured: updates.is_featured,
-                is_new: updates.is_new,
+                is_bestseller: updates.is_new,  // is_new yerine is_bestseller kullan
                 rating: updates.rating,
                 review_count: updates.review_count,
             })
