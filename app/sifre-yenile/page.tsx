@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { Lock, ArrowRight, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Lock, ArrowRight, Eye, EyeOff, CheckCircle, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function ResetPasswordPage() {
@@ -24,13 +24,13 @@ export default function ResetPasswordPage() {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("Şifreler eşleşmiyor");
+      setError("Sifreler eslesmiyor");
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      setError("Şifre en az 6 karakter olmalıdır");
+      setError("Sifre en az 6 karakter olmalidir");
       setLoading(false);
       return;
     }
@@ -60,11 +60,12 @@ export default function ResetPasswordPage() {
             <CheckCircle className="w-8 h-8 text-emerald-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Şifre Güncellendi! ✅
+            Sifre Guncellendi
           </h2>
           <p className="text-gray-600 mb-6">
-            Şifreniz başarıyla değiştirildi. Giriş sayfasına yönlendiriliyorsunuz...
+            Sifreniz basariyla degistirildi. Giris sayfasina yonlendiriliyorsunuz...
           </p>
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
         </motion.div>
       </div>
     );
@@ -91,11 +92,16 @@ export default function ResetPasswordPage() {
           transition={{ delay: 0.1 }}
           className="bg-white rounded-2xl shadow-xl p-8"
         >
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Yeni Şifre Belirle 🔐
-          </h2>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <Shield className="w-5 h-5 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Yeni Sifre Belirle
+            </h2>
+          </div>
           <p className="text-gray-500 mb-6">
-            Yeni şifrenizi oluşturun
+            Yeni sifrenizi olusturun
           </p>
 
           {error && (
@@ -108,7 +114,7 @@ export default function ResetPasswordPage() {
             {/* New Password */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Yeni Şifre
+                Yeni Sifre
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -134,7 +140,7 @@ export default function ResetPasswordPage() {
             {/* Confirm Password */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Şifre Tekrar
+                Sifre Tekrar
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -144,7 +150,7 @@ export default function ResetPasswordPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  placeholder="••••••••"
+                  placeholder="Sifrenizi tekrar girin"
                 />
               </div>
             </div>
@@ -158,11 +164,11 @@ export default function ResetPasswordPage() {
               {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Güncelleniyor...
+                  Guncelleniyor...
                 </>
               ) : (
                 <>
-                  Şifremi Değiştir
+                  Sifremi Degistir
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
@@ -172,7 +178,7 @@ export default function ResetPasswordPage() {
           {/* Back to Login */}
           <div className="mt-6 text-center text-gray-600">
             <Link href="/giris" className="text-primary font-bold hover:underline">
-              ← Giriş Sayfasına Dön
+              Giris Sayfasina Don
             </Link>
           </div>
         </motion.div>
@@ -188,7 +194,7 @@ export default function ResetPasswordPage() {
             href="/" 
             className="text-sm text-gray-500 hover:text-primary transition-colors"
           >
-            ← Ana Sayfaya Dön
+            Ana Sayfaya Don
           </Link>
         </motion.div>
       </div>

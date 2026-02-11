@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { Mail, Lock, ArrowRight, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { CaptchaProtection } from "@/components/auth/CaptchaProtection";
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Shield, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function LoginPage() {
@@ -17,14 +18,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [verified, setVerified] = useState(false);
-
-  // Check if user just verified their email
-  useEffect(() => {
-    if (searchParams.get("verified") === "true") {
-      setVerified(true);
-    }
-  }, [searchParams]);
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+  const [captchaError, setCaptchaError] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -37,15 +32,20 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setCaptchaError(false);
+
+    // Captcha validation
+    if (!isCaptchaVerified) {
+      setCaptchaError(true);
+      setLoading(false);
+      return;
+    }
 
     const { error: authError } = await signIn(email, password);
 
     if (authError) {
-      // Translate common errors to Turkish
       if (authError.message.includes("Invalid login credentials")) {
-        setError("E-posta veya şifre hatalı");
-      } else if (authError.message.includes("Email not confirmed")) {
-        setError("E-posta adresiniz henüz doğrulanmamış. Lütfen e-postanızı kontrol edin.");
+        setError("E-posta adresi veya sifre hatali");
       } else {
         setError(authError.message);
       }
@@ -76,23 +76,17 @@ export default function LoginPage() {
           transition={{ delay: 0.1 }}
           className="bg-white rounded-2xl shadow-xl p-8"
         >
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Hoş Geldiniz 👋
-          </h2>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <Shield className="w-5 h-5 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Giris Yap
+            </h2>
+          </div>
           <p className="text-gray-500 mb-6">
-            Hesabınıza giriş yapın
+            Hesabiniza giris yapin
           </p>
-
-          {verified && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mb-4 p-4 bg-emerald-50 text-emerald-700 rounded-xl flex items-center gap-3"
-            >
-              <CheckCircle className="w-5 h-5 shrink-0" />
-              <span className="text-sm font-medium">E-posta adresiniz başarıyla doğrulandı. Giriş yapabilirsiniz.</span>
-            </motion.div>
-          )}
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl text-sm">
@@ -122,7 +116,7 @@ export default function LoginPage() {
             {/* Password */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Şifre
+                Sifre
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -150,8 +144,16 @@ export default function LoginPage() {
                 href="/sifremi-unuttum"
                 className="text-sm text-primary hover:underline font-medium"
               >
-                Şifremi Unuttum
+                Sifremi Unuttum
               </Link>
+            </div>
+
+            {/* Bot Protection */}
+            <div className="pt-2">
+              <CaptchaProtection
+                onVerify={setIsCaptchaVerified}
+                error={captchaError}
+              />
             </div>
 
             {/* Submit Button */}
@@ -163,11 +165,11 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Giriş Yapılıyor...
+                  Giris Yapiliyor...
                 </>
               ) : (
                 <>
-                  Giriş Yap
+                  Giris Yap
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
@@ -176,9 +178,9 @@ export default function LoginPage() {
 
           {/* Register Link */}
           <div className="mt-6 text-center text-gray-600">
-            Hesabınız yok mu?{" "}
+            Hesabiniz yok mu?{" "}
             <Link href="/kayit" className="text-primary font-bold hover:underline">
-              Kayıt Ol
+              Kayit Ol
             </Link>
           </div>
         </motion.div>
@@ -194,7 +196,7 @@ export default function LoginPage() {
             href="/" 
             className="text-sm text-gray-500 hover:text-primary transition-colors"
           >
-            ← Ana Sayfaya Dön
+            Ana Sayfaya Don
           </Link>
         </motion.div>
       </div>

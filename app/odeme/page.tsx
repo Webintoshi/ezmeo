@@ -259,7 +259,7 @@ export default function CheckoutPage() {
 
       if (result.success) {
         toast.success(createAccount 
-          ? "Siparişiniz alındı! Hesabınız oluşturuldu, lütfen e-postanızı doğrulayın." 
+          ? "Siparişiniz alındı! Hesabınız başarıyla oluşturuldu." 
           : "Siparişiniz başarıyla alındı!"
         );
         clearCart();

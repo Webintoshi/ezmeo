@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { Mail, Lock, User, Phone, ArrowRight, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { CaptchaProtection } from "@/components/auth/CaptchaProtection";
+import { Mail, Lock, User, Phone, ArrowRight, Eye, EyeOff, UserPlus, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function RegisterPage() {
@@ -25,6 +26,8 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
+  const [captchaError, setCaptchaError] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -37,28 +40,36 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setCaptchaError(false);
+
+    // Captcha validation
+    if (!isCaptchaVerified) {
+      setCaptchaError(true);
+      setLoading(false);
+      return;
+    }
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError("Şifreler eşleşmiyor");
+      setError("Sifreler eslesmiyor");
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError("Şifre en az 6 karakter olmalıdır");
+      setError("Sifre en az 6 karakter olmalidir");
       setLoading(false);
       return;
     }
 
     if (!formData.agreeToTerms) {
-      setError("Devam etmek için kullanım koşullarını kabul etmelisiniz");
+      setError("Devam etmek icin kullanim kosullarini kabul etmelisiniz");
       setLoading(false);
       return;
     }
 
-    // Register with Supabase
-    const { error: authError } = await signUp(
+    // Register with Supabase (NO email verification required)
+    const { error: authError, data } = await signUp(
       formData.email,
       formData.password,
       {
@@ -70,17 +81,39 @@ export default function RegisterPage() {
     );
 
     if (authError) {
-      // Translate common errors
       if (authError.message.includes("User already registered")) {
-        setError("Bu e-posta adresi zaten kayıtlı");
+        setError("Bu e-posta adresi zaten kayitli");
       } else if (authError.message.includes("Password should be")) {
-        setError("Şifre en az 6 karakter olmalıdır");
+        setError("Sifre en az 6 karakter olmalidir");
       } else {
         setError(authError.message);
       }
       setLoading(false);
-    } else {
+    } else if (data.user) {
+      // Success! Auto-login and redirect
       setSuccess(true);
+      
+      // Create customer record
+      try {
+        await fetch("/api/customers/create-from-auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: formData.email,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            phone: formData.phone,
+            user_id: data.user.id,
+          }),
+        });
+      } catch (err) {
+        console.error("Customer creation error:", err);
+      }
+
+      // Redirect to account page after short delay
+      setTimeout(() => {
+        router.push("/hesap");
+      }, 1000);
     }
   };
 
@@ -96,20 +129,12 @@ export default function RegisterPage() {
             <CheckCircle className="w-8 h-8 text-emerald-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Kayıt Başarılı! 🎉
+            Kayit Basarili
           </h2>
-          <p className="text-gray-600 mb-2">
-            E-posta adresinize doğrulama linki gönderdik.
+          <p className="text-gray-600 mb-6">
+            Hesabiniz olusturuldu. Hesabiniza yonlendiriliyorsunuz...
           </p>
-          <p className="text-sm text-gray-500 mb-6">
-            Lütfen e-postanızı kontrol edip hesabınızı doğrulayın.
-          </p>
-          <Link
-            href="/giris"
-            className="inline-block bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-[#7B1113] transition-colors"
-          >
-            Giriş Sayfasına Git
-          </Link>
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
         </motion.div>
       </div>
     );
@@ -136,11 +161,16 @@ export default function RegisterPage() {
           transition={{ delay: 0.1 }}
           className="bg-white rounded-2xl shadow-xl p-8"
         >
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Hesap Oluştur 🚀
-          </h2>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <UserPlus className="w-5 h-5 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Hesap Olustur
+            </h2>
+          </div>
           <p className="text-gray-500 mb-6">
-            EZMEO ailesine katılın
+            EZMEO ailesine katilin
           </p>
 
           {error && (
@@ -180,7 +210,7 @@ export default function RegisterPage() {
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                     required
                     className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                    placeholder="Yılmaz"
+                    placeholder="Yilmaz"
                   />
                 </div>
               </div>
@@ -224,7 +254,7 @@ export default function RegisterPage() {
             {/* Password */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Şifre
+                Sifre
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -250,7 +280,7 @@ export default function RegisterPage() {
             {/* Confirm Password */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Şifre Tekrar
+                Sifre Tekrar
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -260,9 +290,17 @@ export default function RegisterPage() {
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   required
                   className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                  placeholder="••••••••"
+                  placeholder="Sifrenizi tekrar girin"
                 />
               </div>
+            </div>
+
+            {/* Bot Protection */}
+            <div className="pt-2">
+              <CaptchaProtection
+                onVerify={setIsCaptchaVerified}
+                error={captchaError}
+              />
             </div>
 
             {/* Terms */}
@@ -276,13 +314,13 @@ export default function RegisterPage() {
               />
               <label htmlFor="terms" className="text-sm text-gray-600 leading-relaxed">
                 <Link href="/kullanim-kosullari" className="text-primary hover:underline font-medium">
-                  Kullanım Koşulları
+                  Kullanim Kosullari
                 </Link>
                 {" "}ve{" "}
                 <Link href="/gizlilik-politikasi" className="text-primary hover:underline font-medium">
-                  Gizlilik Politikası
+                  Gizlilik Politikasi
                 </Link>
-                {" "}nı okudum ve kabul ediyorum.
+                {" "}ni okudum ve kabul ediyorum.
               </label>
             </div>
 
@@ -299,7 +337,7 @@ export default function RegisterPage() {
                 </>
               ) : (
                 <>
-                  Kayıt Ol
+                  Kayit Ol
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
@@ -308,9 +346,9 @@ export default function RegisterPage() {
 
           {/* Login Link */}
           <div className="mt-6 text-center text-gray-600">
-            Zaten hesabınız var mı?{" "}
+            Zaten hesabiniz var mi?{" "}
             <Link href="/giris" className="text-primary font-bold hover:underline">
-              Giriş Yap
+              Giris Yap
             </Link>
           </div>
         </motion.div>
@@ -326,7 +364,7 @@ export default function RegisterPage() {
             href="/" 
             className="text-sm text-gray-500 hover:text-primary transition-colors"
           >
-            ← Ana Sayfaya Dön
+            Ana Sayfaya Don
           </Link>
         </motion.div>
       </div>

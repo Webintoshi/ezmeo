@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { Mail, ArrowRight, CheckCircle } from "lucide-react";
+import { Mail, ArrowRight, CheckCircle, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function ForgotPasswordPage() {
@@ -42,19 +42,19 @@ export default function ForgotPasswordPage() {
             <CheckCircle className="w-8 h-8 text-emerald-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            E-posta Gönderildi! 📧
+            E-posta Gonderildi
           </h2>
           <p className="text-gray-600 mb-2">
-            Şifre sıfırlama linki e-posta adresinize gönderildi.
+            Sifre sifirlama linki e-posta adresinize gonderildi.
           </p>
           <p className="text-sm text-gray-500 mb-6">
-            Lütfen gelen kutunuzu kontrol edin ve linke tıklayarak şifrenizi sıfırlayın.
+            Lutfen gelen kutunuzu kontrol edin ve linke tiklayarak sifrenizi sifirlayin.
           </p>
           <Link
             href="/giris"
             className="inline-block bg-primary text-white px-8 py-3 rounded-xl font-bold hover:bg-[#7B1113] transition-colors"
           >
-            Giriş Sayfasına Git
+            Giris Sayfasina Git
           </Link>
         </motion.div>
       </div>
@@ -82,11 +82,16 @@ export default function ForgotPasswordPage() {
           transition={{ delay: 0.1 }}
           className="bg-white rounded-2xl shadow-xl p-8"
         >
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Şifremi Unuttum 🔐
-          </h2>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <Shield className="w-5 h-5 text-primary" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Sifremi Unuttum
+            </h2>
+          </div>
           <p className="text-gray-500 mb-6">
-            E-posta adresinizi girin, şifre sıfırlama linki gönderelim.
+            E-posta adresinizi girin, sifre sifirlama linki gonderelim.
           </p>
 
           {error && (
@@ -123,11 +128,11 @@ export default function ForgotPasswordPage() {
               {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Gönderiliyor...
+                  Gonderiliyor...
                 </>
               ) : (
                 <>
-                  Sıfırlama Linki Gönder
+                  Sifirlama Linki Gonder
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
@@ -137,7 +142,7 @@ export default function ForgotPasswordPage() {
           {/* Back to Login */}
           <div className="mt-6 text-center text-gray-600">
             <Link href="/giris" className="text-primary font-bold hover:underline">
-              ← Giriş Sayfasına Dön
+              Giris Sayfasina Don
             </Link>
           </div>
         </motion.div>
@@ -153,7 +158,7 @@ export default function ForgotPasswordPage() {
             href="/" 
             className="text-sm text-gray-500 hover:text-primary transition-colors"
           >
-            ← Ana Sayfaya Dön
+            Ana Sayfaya Don
           </Link>
         </motion.div>
       </div>
