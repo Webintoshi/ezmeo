@@ -13,8 +13,12 @@ import {
   Truck,
   User,
   ShoppingBag,
+  HelpCircle,
+  Phone,
+  Instagram,
+  Facebook,
 } from "lucide-react";
-import { SITE_NAME, NAV_LINKS, ROUTES, CATEGORIES } from "@/lib/constants";
+import { SITE_NAME, NAV_LINKS, ROUTES, CATEGORIES, CONTACT_INFO, SOCIAL_LINKS } from "@/lib/constants";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 
@@ -457,6 +461,83 @@ export function Header() {
                         </Link>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Auth Buttons - Guest only */}
+                  {!user && (
+                    <div className="px-6 pb-6">
+                      <div className="flex gap-3">
+                        <Link 
+                          href="/giris" 
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex-1 py-3 bg-primary text-white rounded-xl font-bold text-center"
+                        >
+                          Giriş Yap
+                        </Link>
+                        <Link 
+                          href="/kayit" 
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex-1 py-3 border-2 border-primary text-primary rounded-xl font-bold text-center"
+                        >
+                          Kayıt Ol
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer Section */}
+                  <div className="border-t border-gray-100 bg-gray-50 px-6 py-6">
+                    <div className="space-y-3 mb-6">
+                      <Link
+                        href="/sss"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center justify-between p-3 rounded-xl hover:bg-white transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <HelpCircle className="w-5 h-5 text-gray-500" />
+                          <span className="text-sm font-medium text-gray-700">Sıkça Sorulan Sorular</span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                      </Link>
+                      
+                      <a
+                        href={`tel:${CONTACT_INFO.phone}`}
+                        className="flex items-center justify-between p-3 rounded-xl hover:bg-white transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Phone className="w-5 h-5 text-gray-500" />
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">Müşteri Hizmetleri</span>
+                            <p className="text-xs text-gray-500">{CONTACT_INFO.phone}</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                      </a>
+                    </div>
+
+                    {/* Social Links */}
+                    <div className="flex items-center justify-center gap-4 py-4 border-t border-gray-200">
+                      <a href={SOCIAL_LINKS.instagram} target="_blank" className="w-10 h-10 bg-gray-200 hover:bg-[#E4405F] hover:text-white rounded-full flex items-center justify-center transition-all">
+                        <Instagram className="w-5 h-5" />
+                      </a>
+                      <a href={SOCIAL_LINKS.facebook} target="_blank" className="w-10 h-10 bg-gray-200 hover:bg-[#1877F2] hover:text-white rounded-full flex items-center justify-center transition-all">
+                        <Facebook className="w-5 h-5" />
+                      </a>
+                    </div>
+
+                    {/* Logout Button */}
+                    {user && (
+                      <button
+                        onClick={handleLogout}
+                        className="w-full mt-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        Çıkış Yap
+                      </button>
+                    )}
+
+                    <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-4">
+                      © {new Date().getFullYear()} EZMEO Premium
+                    </p>
                   </div>
 
                 </div>
