@@ -68,8 +68,9 @@ export function Header() {
     prevCartCountRef.current = cartItemCount;
   }, [cartItemCount, cartControls]);
 
+  // SAĞDAN AÇILAN MENU
   const menuVariants = {
-    closed: { x: "-100%", transition: { type: "spring" as const, stiffness: 400, damping: 40 } },
+    closed: { x: "100%", transition: { type: "spring" as const, stiffness: 400, damping: 40 } },
     open: { x: 0, transition: { type: "spring" as const, stiffness: 400, damping: 40 } },
   };
 
@@ -97,23 +98,14 @@ export function Header() {
       </div>
 
       <div className="container mx-auto px-4">
-        <div className="flex h-16 lg:h-20 items-center justify-between">
-          {/* Mobile Menu Toggle */}
-          <button
-            className="lg:hidden p-2 -ml-2 hover:bg-primary/5 rounded-xl transition-colors"
-            onClick={() => setIsMenuOpen(true)}
-            aria-label="Menüyü aç"
-          >
-            <Menu className="h-6 w-6 text-primary" />
-          </button>
-
-          {/* Logo */}
+        <div className="flex h-16 lg:h-20 items-center gap-4">
+          {/* LOGO - EN SOLA */}
           <Link href={ROUTES.home} className="flex items-center gap-2 transform hover:scale-105 transition-transform duration-300">
             <img src="/logo.webp" alt={SITE_NAME} className="h-10 lg:h-12 w-auto" />
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-10">
+          {/* Desktop Navigation - ORTA (sadece desktop) */}
+          <nav className="hidden lg:flex items-center gap-10 flex-1 justify-center">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
@@ -126,8 +118,17 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1 sm:gap-3">
+          {/* Actions - EN SAĞA */}
+          <div className="flex items-center gap-1 sm:gap-3 ml-auto">
+            {/* Mobile Menu Toggle - EN SAĞA TAŞINDI */}
+            <button
+              className="lg:hidden p-2.5 hover:bg-primary/5 rounded-xl transition-all"
+              onClick={() => setIsMenuOpen(true)}
+              aria-label="Menüyü aç"
+            >
+              <Menu className="h-5 w-5 text-gray-700" />
+            </button>
+
             <button
               className="p-2.5 hover:bg-primary/5 rounded-xl transition-all group"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -169,7 +170,6 @@ export function Header() {
               className="relative p-2.5 bg-primary/5 hover:bg-primary/10 rounded-xl transition-all group"
               aria-label="Sepet"
             >
-              {/* Premium Shopping Bag Icon Redesign */}
               <div className="relative">
                 <svg
                   viewBox="0 0 24 24"
@@ -274,8 +274,6 @@ export function Header() {
       <AnimatePresence>
         {isMenuOpen && (
           <>
-            {/* Backdrop removed for 100% opacity full-screen menu */}
-
             <motion.div
               variants={menuVariants}
               initial="closed"
