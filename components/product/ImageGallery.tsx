@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { ChevronLeft, ChevronRight, ZoomIn, X } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 
 interface ImageGalleryProps {
   images: string[];
@@ -11,18 +12,17 @@ interface ImageGalleryProps {
 
 export function ImageGallery({ images, productName }: ImageGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [isZoomed, setIsZoomed] = useState(false);
-  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
-  const mainImageRef = useRef<HTMLDivElement>(null);
-  const [imageLoadStates, setImageLoadStates] = useState<Record<number, "loading" | "loaded" | "error">>({});
-  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
-  // Filter out any invalid images (base64, empty strings, etc.)
-  const displayImages = images.filter(img =>
-    img && typeof img === 'string' && img.startsWith('http')
+  // Filter valid images
+  const displayImages = images.filter(img => 
+    img && typeof img === 'string' && (img.startsWith('http') || img.startsWith('/'))
   );
 
-  // Görsel yoksa boş durum göster
   if (displayImages.length === 0) {
     return (
       <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl border border-gray-200 flex flex-col items-center justify-center">
@@ -36,63 +36,92 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
     );
   }
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     setSelectedIndex((prev) => (prev === 0 ? displayImages.length - 1 : prev - 1));
-  };
+  }, [displayImages.length]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     setSelectedIndex((prev) => (prev === displayImages.length - 1 ? 0 : prev + 1));
-  };
+  }, [displayImages.length]);
 
   const handleImageLoad = (index: number) => {
-    setImageLoadStates(prev => ({ ...prev, [index]: "loaded" }));
-    setImageErrors(prev => ({ ...prev, [index]: false }));
+    setLoadedImages(prev => new Set([...prev, index]));
+    setFailedImages(prev => {
+      const next = new Set(prev);
+      next.delete(index);
+      return next;
+    });
   };
 
   const handleImageError = (index: number) => {
-    setImageLoadStates(prev => ({ ...prev, [index]: "error" }));
-    setImageErrors(prev => ({ ...prev, [index]: true }));
+    setFailedImages(prev => new Set([...prev, index]));
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!mainImageRef.current) return;
-    const rect = mainImageRef.current.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setZoomPosition({ x, y });
+  // Mobile touch handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowLeft") handlePrevious();
-    if (e.key === "ArrowRight") handleNext();
-    if (e.key === "Escape") setIsZoomed(false);
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
   };
+
+  const handleTouchEnd = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    const threshold = 50;
+    
+    if (Math.abs(diff) > threshold) {
+      if (diff > 0) {
+        handleNext();
+      } else {
+        handlePrevious();
+      }
+    }
+  };
+
+  const isLoaded = loadedImages.has(selectedIndex);
+  const isFailed = failedImages.has(selectedIndex);
 
   return (
-    <div className="space-y-4" onKeyDown={handleKeyDown} tabIndex={0}>
+    <div className="space-y-4">
+      {/* Main Image */}
       <div className="relative group">
         <div
-          ref={mainImageRef}
-          className="relative aspect-square bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm cursor-zoom-in"
-          onMouseMove={handleMouseMove}
-          onMouseEnter={() => setIsZoomed(true)}
-          onMouseLeave={() => setIsZoomed(false)}
-          onClick={() => setIsZoomed(!isZoomed)}
+          className="relative aspect-square bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
+          {/* Skeleton Loading State */}
+          {!isLoaded && !isFailed && (
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
+          )}
+
+          {/* Main Image with Next.js Image */}
           <AnimatePresence mode="wait">
-            {imageLoadStates[selectedIndex] !== "error" ? (
-              <motion.img
+            {!isFailed ? (
+              <motion.div
                 key={selectedIndex}
-                src={displayImages[selectedIndex]}
-                alt={`${productName} - Görsel ${selectedIndex + 1}`}
-                className="w-full h-full object-contain"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: imageLoadStates[selectedIndex] === "loaded" ? 1 : 0.5 }}
+                animate={{ opacity: isLoaded ? 1 : 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                onLoad={() => handleImageLoad(selectedIndex)}
-                onError={() => handleImageError(selectedIndex)}
-              />
+                className="w-full h-full cursor-pointer"
+                onClick={() => setIsLightboxOpen(true)}
+              >
+                <Image
+                  src={displayImages[selectedIndex]}
+                  alt={`${productName} - Görsel ${selectedIndex + 1}`}
+                  fill
+                  priority={selectedIndex === 0}
+                  loading={selectedIndex === 0 ? "eager" : "lazy"}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
+                  className="object-contain"
+                  onLoad={() => handleImageLoad(selectedIndex)}
+                  onError={() => handleImageError(selectedIndex)}
+                  quality={85}
+                />
+              </motion.div>
             ) : (
               <motion.div
                 key="error"
@@ -108,33 +137,19 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
             )}
           </AnimatePresence>
 
-          {isZoomed && (
-            <div
-              className="absolute inset-0 bg-no-repeat pointer-events-none hidden lg:block"
-              style={{
-                backgroundImage: `url(${displayImages[selectedIndex]})`,
-                backgroundSize: "200%",
-                backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
-              }}
-            />
-          )}
-
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <ZoomIn className="w-5 h-5 text-gray-600" />
-          </div>
-
+          {/* Navigation Arrows */}
           {displayImages.length > 1 && (
             <>
               <button
-                onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:scale-110"
+                onClick={handlePrevious}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:scale-110 focus:opacity-100"
                 aria-label="Önceki görsel"
               >
                 <ChevronLeft className="w-5 h-5 text-gray-700" />
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); handleNext(); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:scale-110"
+                onClick={handleNext}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:scale-110 focus:opacity-100"
                 aria-label="Sonraki görsel"
               >
                 <ChevronRight className="w-5 h-5 text-gray-700" />
@@ -142,15 +157,16 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
             </>
           )}
 
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+          {/* Pagination Dots */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full">
             {displayImages.map((_, index) => (
               <button
                 key={index}
-                onClick={(e) => { e.stopPropagation(); setSelectedIndex(index); }}
+                onClick={() => setSelectedIndex(index)}
                 className={`w-2 h-2 rounded-full transition-all ${
                   index === selectedIndex
                     ? "bg-primary w-6"
-                    : "bg-gray-300 hover:bg-gray-400"
+                    : "bg-gray-400 hover:bg-gray-600"
                 }`}
                 aria-label={`Görsel ${index + 1}`}
               />
@@ -159,8 +175,9 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
         </div>
       </div>
 
+      {/* Thumbnails */}
       {displayImages.length > 1 && (
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-5 gap-2 md:gap-3">
           {displayImages.slice(0, 5).map((image, index) => (
             <button
               key={index}
@@ -168,44 +185,56 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
               className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${
                 index === selectedIndex
                   ? "border-primary ring-2 ring-primary/20"
-                  : "border-transparent hover:border-gray-200"
+                  : "border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100"
               }`}
             >
-              <img
+              <Image
                 src={image}
                 alt={`${productName} - Küçük görsel ${index + 1}`}
-                className="w-full h-full object-cover"
+                fill
                 loading="lazy"
+                sizes="100px"
+                className="object-cover"
+                quality={60}
               />
-              {index === selectedIndex && (
-                <div className="absolute inset-0 bg-primary/10" />
-              )}
             </button>
           ))}
         </div>
       )}
 
+      {/* Mobile Lightbox */}
       <AnimatePresence>
-        {isZoomed && (
+        {isLightboxOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 lg:hidden"
-            onClick={() => setIsZoomed(false)}
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+            onClick={() => setIsLightboxOpen(false)}
           >
             <button
-              className="absolute top-4 right-4 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center"
-              onClick={() => setIsZoomed(false)}
+              className="absolute top-4 right-4 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center z-10"
+              onClick={() => setIsLightboxOpen(false)}
             >
               <X className="w-6 h-6 text-white" />
             </button>
 
-            <img
-              src={displayImages[selectedIndex]}
-              alt={productName}
-              className="max-w-full max-h-full object-contain"
-            />
+            <div 
+              className="relative w-full h-full flex items-center justify-center p-4"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <Image
+                src={displayImages[selectedIndex]}
+                alt={productName}
+                fill
+                className="object-contain"
+                sizes="100vw"
+                priority
+                quality={90}
+              />
+            </div>
 
             {displayImages.length > 1 && (
               <>
@@ -223,6 +252,18 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
                 </button>
               </>
             )}
+
+            {/* Lightbox pagination */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2">
+              {displayImages.map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    index === selectedIndex ? "bg-white w-6" : "bg-white/50"
+                  }`}
+                />
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

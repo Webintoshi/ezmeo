@@ -1,18 +1,20 @@
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { ProductDetailClient } from "@/components/product/ProductDetailClient";
 import { getProductBySlug, getProductSlug } from "@/lib/products";
 import { createServerClient } from "@/lib/supabase";
 
-// Generate metadata on the server side using database SEO fields
+// Generate metadata on the server side
 export async function generateMetadata({
   params
 }: {
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params;
-
-  // Check if product exists in static data first
+  
+  // Get product from static data (fastest)
   const product = getProductBySlug(slug);
+  
   if (!product) {
     return {
       title: "Ürün Bulunamadı | Ezmeo",
@@ -20,23 +22,8 @@ export async function generateMetadata({
     };
   }
 
-  // Try to fetch SEO data from database
-  let seoTitle = `${product.name} | Ezmeo`;
-  let seoDescription = product.shortDescription;
-
-  try {
-    const supabase = createServerClient();
-    const { data: dbProduct } = await supabase
-      .from("products")
-      .select("seo_title, seo_description")
-      .eq("slug", slug)
-      .single();
-
-    if (dbProduct?.seo_title) seoTitle = dbProduct.seo_title;
-    if (dbProduct?.seo_description) seoDescription = dbProduct.seo_description;
-  } catch {
-    // Use static data as fallback
-  }
+  const seoTitle = `${product.name} | Ezmeo`;
+  const seoDescription = product.shortDescription;
 
   return {
     title: seoTitle,
@@ -62,17 +49,17 @@ export async function generateMetadata({
   };
 }
 
-// Generate static paths for all products
+// Generate static paths for all products at build time
 export async function generateStaticParams() {
-  // Get all product slugs from static data
   const allSlugs = getProductSlug();
   return allSlugs.map((slug) => ({ slug }));
 }
 
-// ISR: Revalidate every 60 seconds
-export const revalidate = 60;
+// Static rendering with ISR
+export const revalidate = 3600; // 1 saat
+export const dynamic = 'force-static';
 
-// Server component that wraps the client component with JSON-LD Schema
+// Server component
 export default async function ProductDetailPage({
   params
 }: {
@@ -80,72 +67,51 @@ export default async function ProductDetailPage({
 }) {
   const { slug } = await params;
 
-  // Try to fetch full product data from Supabase
-  let initialProduct = null;
-  let relatedProducts = [];
+  // 1. First try to get from static data (fastest)
+  let product = getProductBySlug(slug);
+  let relatedProducts: any[] = [];
 
-  try {
-    const supabase = createServerClient();
-    const { data: dbProduct } = await supabase
-      .from("products")
-      .select("*, variants:product_variants(*)")
-      .eq("slug", slug)
-      .single();
+  // 2. If not in static data, try Supabase
+  if (!product) {
+    try {
+      const supabase = createServerClient();
+      const { data: dbProduct } = await supabase
+        .from("products")
+        .select("*, variants:product_variants(*)")
+        .eq("slug", slug)
+        .single();
 
-    if (dbProduct) {
-      initialProduct = dbProduct;
-
-      // Fetch related products from same category (parallel fetch)
-      const [{ data: related }, { data: seoData }] = await Promise.all([
-        supabase
-          .from("products")
-          .select("*, variants:product_variants(*)")
-          .eq("category", dbProduct.category)
-          .neq("slug", slug)
-          .limit(4),
-        supabase
-          .from("products")
-          .select("seo_title, seo_description")
-          .eq("slug", slug)
-          .single()
-      ]);
-
-      relatedProducts = related || [];
-
-      // Update SEO if database data exists
-      if (seoData?.seo_title || seoData?.seo_description) {
-        initialProduct = {
-          ...dbProduct,
-          seo_title: seoData.seo_title,
-          seo_description: seoData.seo_description,
-        };
+      if (dbProduct) {
+        product = dbProduct as any;
       }
+    } catch (error) {
+      console.error("Failed to fetch product from Supabase:", error);
     }
-  } catch (error) {
-    console.error("Failed to fetch product from Supabase:", error);
   }
 
-  // Fallback to static data if Supabase fails
-  if (!initialProduct) {
-    const staticProduct = getProductBySlug(slug);
-    if (!staticProduct) {
-      return <ProductDetailClient slug={slug} initialProduct={null} initialRelatedProducts={[]} />;
-    }
-    initialProduct = staticProduct;
+  // 3. If still no product, return 404
+  if (!product) {
+    notFound();
   }
 
-  const product = initialProduct;
-  const seoTitle = product.seo_title || `${product.name} | Ezmeo`;
-  const seoDescription = product.seo_description || product.short_description;
+  // 4. Get related products from same category (from static data - faster)
+  try {
+    // Try to get related products from static data first
+    const { getRelatedProducts } = await import("@/lib/products");
+    relatedProducts = getRelatedProducts(product, 4);
+  } catch {
+    // Fallback: empty array
+    relatedProducts = [];
+  }
 
   // Generate JSON-LD Schema
-  const variant = product.variants[0];
-  const jsonLd = {
+  const variant = product.variants?.[0];
+  const jsonLd = variant ? {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: seoTitle.split(" | ")[0] || product.name, // Use SEO title prefix if available
-    description: seoDescription,
-    image: product.images,
+    name: product.name,
+    description: product.shortDescription || product.description?.slice(0, 160),
+    image: product.images?.[0],
     url: `https://ezmeo.com/urunler/${slug}`,
     brand: {
       "@type": "Brand",
@@ -165,16 +131,15 @@ export default async function ProductDetailPage({
         name: "Ezmeo",
       },
     },
-    aggregateRating: {
+    aggregateRating: product.rating ? {
       "@type": "AggregateRating",
       ratingValue: product.rating,
-      reviewCount: product.reviewCount,
-    },
+      reviewCount: product.reviewCount || 0,
+    } : undefined,
     sku: variant.sku,
     category: product.category,
-  };
+  } : null;
 
-  // Breadcrumb JSON-LD
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -202,17 +167,19 @@ export default async function ProductDetailPage({
 
   return (
     <>
-      {/* JSON-LD Schema for Product */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      {/* JSON-LD Schema for Breadcrumb */}
+      {/* JSON-LD Schema */}
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
-      {/* Client Component for Product Detail with initial data */}
+      
+      {/* Product Detail Client Component */}
       <ProductDetailClient
         slug={slug}
         initialProduct={product}
