@@ -93,10 +93,10 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             />
           </button>
 
-          {/* Quick Add Button - Show on Hover */}
+          {/* Quick Add Button - Always visible on mobile, hover on desktop */}
           <button
             onClick={handleAddToCart}
-            className="absolute bottom-3 left-3 right-3 py-2 bg-primary text-primary-foreground rounded-lg font-medium opacity-0 group-hover:opacity-100 transition-opacity shadow-lg flex items-center justify-center gap-2"
+            className="absolute bottom-3 left-3 right-3 py-2.5 lg:py-2 bg-primary text-white rounded-lg font-medium shadow-lg flex items-center justify-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 lg:transition-all z-10 active:scale-95"
             aria-label="Sepete ekle"
           >
             <ShoppingCart className="h-4 w-4" />
