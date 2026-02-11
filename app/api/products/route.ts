@@ -133,6 +133,10 @@ export async function PUT(request: NextRequest) {
         const body = await request.json();
         const { id, variants, ...updates } = body;
 
+        console.log("PUT /api/products - ID:", id);
+        console.log("PUT /api/products - Updates:", updates);
+        console.log("PUT /api/products - Variants:", variants);
+
         if (!id) {
             return NextResponse.json(
                 { success: false, error: "Product ID is required" },
@@ -164,15 +168,25 @@ export async function PUT(request: NextRequest) {
             .select()
             .single();
 
-        if (productError) throw productError;
+        if (productError) {
+            console.error("Product update error:", productError);
+            throw new Error(`Product update failed: ${productError.message}`);
+        }
 
         // 2. Varyantları güncelle
         if (variants && Array.isArray(variants)) {
+            console.log("Updating variants, count:", variants.length);
+            
             // Mevcut variant'ları sil
-            await supabase
+            const { error: deleteError } = await supabase
                 .from("product_variants")
                 .delete()
                 .eq("product_id", id);
+
+            if (deleteError) {
+                console.error("Variants delete error:", deleteError);
+                throw new Error(`Variants delete failed: ${deleteError.message}`);
+            }
 
             // Yeni variant'ları ekle
             if (variants.length > 0) {
@@ -186,20 +200,29 @@ export async function PUT(request: NextRequest) {
                     sku: v.sku,
                 }));
 
+                console.log("Inserting variants:", variantsToInsert);
+
                 const { error: variantsError } = await supabase
                     .from("product_variants")
                     .insert(variantsToInsert);
 
-                if (variantsError) throw variantsError;
+                if (variantsError) {
+                    console.error("Variants insert error:", variantsError);
+                    throw new Error(`Variants insert failed: ${variantsError.message}`);
+                }
             }
         }
 
         // 3. Güncellenmiş ürünü variant'larla birlikte döndür
-        const { data: fullProduct } = await supabase
+        const { data: fullProduct, error: fetchError } = await supabase
             .from("products")
             .select("*, variants:product_variants(*)")
             .eq("id", id)
             .single();
+
+        if (fetchError) {
+            console.error("Fetch updated product error:", fetchError);
+        }
 
         return NextResponse.json({ success: true, product: fullProduct });
     } catch (error) {

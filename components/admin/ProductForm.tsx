@@ -359,15 +359,14 @@ export default function ProductForm({ productId }: ProductFormProps) {
         is_new: formData.new,
         rating: formData.rating,
         review_count: formData.reviewCount,
-        // Varyantları API formatına çevir
+        // Varyantları API formatına çevir (id hariç - Supabase otomatik atar)
         variants: variants.map(v => ({
-          id: v.id,
           name: v.name,
-          weight: v.weight,
-          price: v.price,
-          original_price: v.originalPrice || null,
-          stock: v.stock,
-          sku: v.sku,
+          weight: Number(v.weight),
+          price: Number(v.price),
+          original_price: v.originalPrice ? Number(v.originalPrice) : null,
+          stock: Number(v.stock) || 0,
+          sku: v.sku || null,
         })),
       };
 
