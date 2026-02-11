@@ -149,23 +149,16 @@ export function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-1 sm:gap-3 ml-auto">
-            {/* Mobile Menu Toggle */}
+            {/* 1. Search - Desktop only */}
             <button
-              className="lg:hidden p-2.5 hover:bg-primary/5 rounded-xl transition-all"
-              onClick={() => setIsMenuOpen(true)}
-              aria-label="Menüyü aç"
-            >
-              <Menu className="h-5 w-5 text-gray-700" />
-            </button>
-
-            <button
-              className="p-2.5 hover:bg-primary/5 rounded-xl transition-all group"
+              className="hidden sm:flex p-2.5 hover:bg-primary/5 rounded-xl transition-all group"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
               aria-label="Ara"
             >
               <Search className="h-5 w-5 text-gray-700 group-hover:text-primary transition-colors" />
             </button>
 
+            {/* 2. Favorites - Desktop only */}
             <Link
               href="/favoriler"
               className="hidden sm:flex p-2.5 hover:bg-primary/5 rounded-xl transition-all group"
@@ -174,6 +167,7 @@ export function Header() {
               <Heart className="h-5 w-5 text-gray-700 group-hover:text-primary transition-colors" />
             </Link>
 
+            {/* 3. Account - Desktop only */}
             {user ? (
               <Link
                 href="/hesap"
@@ -192,6 +186,7 @@ export function Header() {
               </Link>
             )}
 
+            {/* 4. Cart - Always visible */}
             <motion.button
               onClick={() => setIsCartOpen(true)}
               animate={cartControls}
@@ -224,6 +219,15 @@ export function Header() {
                 )}
               </div>
             </motion.button>
+
+            {/* 5. Mobile Menu Toggle - En sağda */}
+            <button
+              className="lg:hidden p-2.5 hover:bg-primary/5 rounded-xl transition-all"
+              onClick={() => setIsMenuOpen(true)}
+              aria-label="Menüyü aç"
+            >
+              <Menu className="h-5 w-5 text-gray-700" />
+            </button>
           </div>
         </div>
 
