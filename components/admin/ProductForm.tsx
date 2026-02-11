@@ -332,9 +332,21 @@ export default function ProductForm({ productId }: ProductFormProps) {
   };
 
   const generateSlug = (name: string) => {
+    const turkishToEnglish: Record<string, string> = {
+      'ş': 's', 'Ş': 's',
+      'ı': 'i', 'İ': 'i',
+      'ğ': 'g', 'Ğ': 'g',
+      'ü': 'u', 'Ü': 'u',
+      'ö': 'o', 'Ö': 'o',
+      'ç': 'c', 'Ç': 'c',
+    };
+    
     return name
+      .split('')
+      .map(char => turkishToEnglish[char] || char)
+      .join('')
       .toLowerCase()
-      .replace(/[^a-z0-9ğüşıöç]/g, '-')
+      .replace(/[^a-z0-9]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
   };
