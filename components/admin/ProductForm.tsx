@@ -211,24 +211,31 @@ export default function ProductForm({ productId }: ProductFormProps) {
     }
 
     setSaving(true);
-    let uploadedCount = 0;
+    setUploadProgress(10);
 
-    for (const file of fileArray) {
+    // Validate files first
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    const validFiles = fileArray.filter(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} dosya boyutu çok büyük (maksimum 5MB)`);
+        return false;
+      }
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`${file.name} formatı desteklenmiyor (JPG, PNG, WEBP, GIF)`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) {
+      setSaving(false);
+      setUploadProgress(0);
+      return;
+    }
+
+    // Parallel upload with Promise.all
+    const uploadPromises = validFiles.map(async (file) => {
       try {
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error(`${file.name} dosya boyutu çok büyük (maksimum 5MB)`);
-          continue;
-        }
-
-        // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-        if (!allowedTypes.includes(file.type)) {
-          toast.error(`${file.name} formatı desteklenmiyor (JPG, PNG, WEBP, GIF)`);
-          continue;
-        }
-
-        // Upload to R2 via API
         const formData = new FormData();
         formData.append('file', file);
         formData.append('folder', 'products');
@@ -241,31 +248,42 @@ export default function ProductForm({ productId }: ProductFormProps) {
         const result = await response.json();
 
         if (result.success && result.url) {
-          setImages(prev => {
-            if (prev.length < 6) {
-              return [...prev, result.url];
-            }
-            return prev;
-          });
-          uploadedCount++;
-        } else {
-          toast.error(result.error || 'Görsel yüklenemedi');
+          return { success: true, url: result.url };
         }
+        return { success: false, error: result.error || 'Görsel yüklenemedi' };
       } catch (error) {
         console.error('Upload error:', error);
-        toast.error('Görsel yüklenirken hata oluştu');
+        return { success: false, error: 'Görsel yüklenirken hata oluştu' };
       }
+    });
 
-      // Update progress
-      setUploadProgress(Math.min((uploadedCount / fileArray.length) * 100, 100));
+    // Wait for all uploads to complete
+    const results = await Promise.all(uploadPromises);
+
+    // Add successful uploads to images
+    const newImages = results.filter(r => r.success).map(r => (r as { success: true; url: string }).url);
+    const failedCount = results.filter(r => !r.success).length;
+
+    setImages(prev => {
+      const updated = [...prev, ...newImages];
+      return updated.slice(0, 6); // Limit to 6 images
+    });
+
+    setUploadProgress(100);
+
+    if (newImages.length > 0) {
+      toast.success(`${newImages.length} görsel başarıyla yüklendi`);
     }
 
-    setSaving(false);
-    setUploadProgress(0);
-
-    if (uploadedCount > 0) {
-      toast.success(`${uploadedCount} görsel başarıyla yüklendi`);
+    if (failedCount > 0) {
+      toast.error(`${failedCount} görsel yüklenemedi`);
     }
+
+    // Reset progress after a short delay
+    setTimeout(() => {
+      setUploadProgress(0);
+      setSaving(false);
+    }, 500);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

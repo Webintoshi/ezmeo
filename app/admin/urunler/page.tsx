@@ -73,14 +73,27 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(false);
   const [sortBy, setSortBy] = useState<"name" | "price" | "stock" | "newest">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0
+  });
 
-  const loadProducts = async () => {
+  const loadProducts = async (page: number = pagination.page) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/products");
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: pagination.limit.toString(),
+      });
+      const res = await fetch(`/api/products?${params}`);
       const data = await res.json();
       if (data.success && data.products) {
         setProducts(data.products.map(transformProduct));
+        if (data.pagination) {
+          setPagination(data.pagination);
+        }
       }
     } catch (error) {
       console.error("Failed to load products:", error);
@@ -641,7 +654,7 @@ export default function ProductsPage() {
       )}
 
       {/* Empty State */}
-      {sortedProducts.length === 0 && (
+      {sortedProducts.length === 0 && !loading && (
         <div className="bg-white rounded-3xl shadow-lg border border-gray-200 p-16 text-center">
           <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <Package className="w-12 h-12 text-gray-400" />
@@ -658,6 +671,67 @@ export default function ProductsPage() {
             <Plus className="w-4 h-4" />
             İlk Ürünü Ekle
           </Link>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!loading && pagination.totalPages > 1 && sortedProducts.length > 0 && (
+        <div className="mt-8 flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
+          <div className="text-sm text-gray-600">
+            Toplam <span className="font-bold text-gray-900">{pagination.total}</span> ürün
+            • Sayfa <span className="font-bold text-gray-900">{pagination.page}</span> / {pagination.totalPages}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (pagination.page > 1) loadProducts(pagination.page - 1);
+              }}
+              disabled={pagination.page <= 1}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium text-gray-700"
+            >
+              Önceki
+            </button>
+
+            <div className="flex gap-1">
+              {Array.from({ length: Math.min(pagination.totalPages, 5) }, (_, i) => {
+                let pageNum;
+                if (pagination.totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (pagination.page <= 3) {
+                  pageNum = i + 1;
+                } else if (pagination.page >= pagination.totalPages - 2) {
+                  pageNum = pagination.totalPages - 4 + i;
+                } else {
+                  pageNum = pagination.page - 2 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => loadProducts(pageNum)}
+                    className={`w-10 h-10 rounded-lg font-medium transition-all ${
+                      pagination.page === pageNum
+                        ? "bg-primary text-white shadow-md"
+                        : "bg-white border border-gray-200 hover:bg-gray-50 text-gray-700"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => {
+                if (pagination.page < pagination.totalPages) loadProducts(pagination.page + 1);
+              }}
+              disabled={pagination.page >= pagination.totalPages}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium text-gray-700"
+            >
+              Sonraki
+            </button>
+          </div>
         </div>
       )}
     </div>

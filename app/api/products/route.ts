@@ -21,6 +21,9 @@ export async function GET(request: NextRequest) {
         const category = searchParams.get("category");
         const slug = searchParams.get("slug");
         const search = searchParams.get("search");
+        const page = parseInt(searchParams.get("page") || "1");
+        const limit = parseInt(searchParams.get("limit") || "20");
+        const offset = (page - 1) * limit;
 
         let products;
 
@@ -55,19 +58,70 @@ export async function GET(request: NextRequest) {
         } else if (bestseller === "true") {
             products = await getBestsellerProducts();
         } else if (category) {
-            // Fetch products by category from Supabase
+            // Fetch products by category from Supabase with pagination
             const { createServerClient } = await import("@/lib/supabase");
             const supabase = createServerClient();
+
+            // Get total count
+            const { count } = await supabase
+                .from("products")
+                .select("*", { count: "exact", head: true })
+                .eq("category", category);
+
+            // Get paginated data
             const { data, error } = await supabase
                 .from("products")
                 .select("*, variants:product_variants(*)")
-                .eq("category", category);
+                .eq("category", category)
+                .range(offset, offset + limit - 1)
+                .order("created_at", { ascending: false });
+
             if (error) throw error;
-            return NextResponse.json({ success: true, products: data || [] });
+            return NextResponse.json({
+                success: true,
+                products: data || [],
+                pagination: {
+                    page,
+                    limit,
+                    total: count || 0,
+                    totalPages: Math.ceil((count || 0) / limit)
+                }
+            });
         } else if (search) {
             products = await searchProducts(search);
         } else {
-            products = await getProducts();
+            // Fetch all products from Supabase with pagination
+            const { createServerClient } = await import("@/lib/supabase");
+            const supabase = createServerClient();
+
+            // Get total count
+            const { count } = await supabase
+                .from("products")
+                .select("*", { count: "exact", head: true });
+
+            // Get paginated data
+            const { data, error } = await supabase
+                .from("products")
+                .select("*, variants:product_variants(*)")
+                .range(offset, offset + limit - 1)
+                .order("created_at", { ascending: false });
+
+            if (error) {
+                // Fallback to static data
+                products = await getProducts();
+                return NextResponse.json({ success: true, products });
+            }
+
+            return NextResponse.json({
+                success: true,
+                products: data || [],
+                pagination: {
+                    page,
+                    limit,
+                    total: count || 0,
+                    totalPages: Math.ceil((count || 0) / limit)
+                }
+            });
         }
 
         return NextResponse.json({ success: true, products });
