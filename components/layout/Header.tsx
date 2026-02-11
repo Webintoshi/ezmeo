@@ -15,13 +15,31 @@ import {
   HelpCircle,
   Truck,
   User,
+  ShoppingBag,
+  Phone,
+  MapPin,
 } from "lucide-react";
 import { SITE_NAME, NAV_LINKS, ROUTES, CATEGORIES, CONTACT_INFO, SOCIAL_LINKS } from "@/lib/constants";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { searchProducts } from "@/lib/products";
 import { Product } from "@/types/product";
+
+// Stagger animations
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, x: 20 },
+  show: { opacity: 1, x: 0 }
+};
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -29,10 +47,15 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const { getTotalItems, setIsOpen: setIsCartOpen } = useCart();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const cartItemCount = getTotalItems();
   const cartControls = useAnimation();
   const prevCartCountRef = useRef(cartItemCount);
+  
+  // Premium menu states
+  const [customerName, setCustomerName] = useState("");
+  const [ordersCount, setOrdersCount] = useState(0);
+  const [favoritesCount, setFavoritesCount] = useState(0);
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -44,6 +67,54 @@ export function Header() {
       document.body.style.overflow = "";
     };
   }, [isMenuOpen]);
+
+  // Load user data for premium menu
+  useEffect(() => {
+    if (user && isMenuOpen) {
+      const loadUserData = async () => {
+        // Get customer info
+        const { data: customer } = await supabase
+          .from("customers")
+          .select("first_name")
+          .eq("user_id", user.id)
+          .single();
+        
+        if (customer) {
+          setCustomerName(customer.first_name);
+        }
+
+        // Get orders count
+        const { count: orders } = await supabase
+          .from("orders")
+          .select("*", { count: "exact", head: true })
+          .eq("customer_id", customer?.id);
+        
+        setOrdersCount(orders || 0);
+      };
+      loadUserData();
+    }
+  }, [user, isMenuOpen]);
+
+  // Load favorites count
+  useEffect(() => {
+    const loadFavorites = () => {
+      try {
+        const stored = localStorage.getItem("ezmeo_favorites");
+        if (stored) {
+          const favorites = JSON.parse(stored);
+          setFavoritesCount(Array.isArray(favorites) ? favorites.length : 0);
+        }
+      } catch {
+        setFavoritesCount(0);
+      }
+    };
+    loadFavorites();
+    
+    // Listen for favorites changes
+    const handleStorage = () => loadFavorites();
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   // AJAX Search Logic
   useEffect(() => {
@@ -68,30 +139,24 @@ export function Header() {
     prevCartCountRef.current = cartItemCount;
   }, [cartItemCount, cartControls]);
 
-  // SAĞDAN AÇILAN MENU
-  const menuVariants = {
-    closed: { x: "100%", transition: { type: "spring" as const, stiffness: 400, damping: 40 } },
-    open: { x: 0, transition: { type: "spring" as const, stiffness: 400, damping: 40 } },
+  const handleLogout = async () => {
+    await signOut();
+    setIsMenuOpen(false);
   };
 
-  const backdropVariants = {
-    closed: { opacity: 0 },
-    open: { opacity: 1 },
-  };
-
-  const mobileMenuLinks = [
-    { name: "Ana Sayfa", href: "/", icon: Home },
-    { name: "Tüm Ürünler", href: "/urunler", icon: Package },
-    { name: "SSS", href: "/sss", icon: HelpCircle },
-    ...(user 
-      ? [{ name: "Hesabım", href: "/hesap", icon: User }]
-      : [{ name: "Giriş Yap", href: "/giris", icon: User }]
-    ),
+  // Menu items for navigation
+  const menuItems = [
+    { icon: Home, label: "Ana Sayfa", href: "/" },
+    { icon: Package, label: "Tüm Ürünler", href: "/urunler" },
+    { icon: ShoppingBag, label: "Siparişlerim", href: "/hesap?tab=orders", badge: ordersCount },
+    { icon: Heart, label: "Favorilerim", href: "/favoriler", badge: favoritesCount },
+    { icon: MapPin, label: "Adreslerim", href: "/hesap?tab=addresses" },
+    { icon: User, label: "Hesabım", href: "/hesap" },
   ];
 
   return (
     <header className="sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
-      {/* Optional Top Bar - Minimalist */}
+      {/* Top Bar */}
       <div className="bg-primary/5 border-b border-primary/5 text-[10px] font-bold text-primary uppercase tracking-[0.2em] py-1.5 flex justify-center items-center gap-2">
         <Truck className="h-3 w-3" />
         <span>500 ₺ Üzeri Siparişlerde Ücretsiz Kargo</span>
@@ -99,12 +164,12 @@ export function Header() {
 
       <div className="container mx-auto px-4">
         <div className="flex h-16 lg:h-20 items-center gap-4">
-          {/* LOGO - EN SOLA */}
+          {/* LOGO */}
           <Link href={ROUTES.home} className="flex items-center gap-2 transform hover:scale-105 transition-transform duration-300">
             <img src="/logo.webp" alt={SITE_NAME} className="h-10 lg:h-12 w-auto" />
           </Link>
 
-          {/* Desktop Navigation - ORTA (sadece desktop) */}
+          {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-10 flex-1 justify-center">
             {NAV_LINKS.map((link) => (
               <Link
@@ -118,9 +183,9 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Actions - EN SAĞA */}
+          {/* Actions */}
           <div className="flex items-center gap-1 sm:gap-3 ml-auto">
-            {/* Mobile Menu Toggle - EN SAĞA TAŞINDI */}
+            {/* Mobile Menu Toggle */}
             <button
               className="lg:hidden p-2.5 hover:bg-primary/5 rounded-xl transition-all"
               onClick={() => setIsMenuOpen(true)}
@@ -145,7 +210,6 @@ export function Header() {
               <Heart className="h-5 w-5 text-gray-700 group-hover:text-primary transition-colors" />
             </Link>
 
-            {/* Account Links */}
             {user ? (
               <Link
                 href="/hesap"
@@ -228,7 +292,6 @@ export function Header() {
                   )}
                 </div>
 
-                {/* AJAX Search Results Dropdown */}
                 <AnimatePresence>
                   {searchResults.length > 0 && (
                     <motion.div
@@ -271,155 +334,299 @@ export function Header() {
         </AnimatePresence>
       </div>
 
+      {/* PREMIUM MOBILE MENU */}
       <AnimatePresence>
         {isMenuOpen && (
           <>
             <motion.div
-              variants={menuVariants}
-              initial="closed"
-              animate="open"
-              exit="closed"
-              className="fixed inset-0 w-full h-screen z-[9999] lg:hidden flex flex-col items-stretch"
-              style={{ backgroundColor: '#FFF5F5', opacity: 1 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMenuOpen(false)}
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] lg:hidden"
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed inset-y-0 right-0 w-full max-w-sm bg-white z-[9999] lg:hidden flex flex-col shadow-2xl"
             >
-              <div className="flex items-center justify-between px-6 py-6 border-b border-[#7B1113]/5">
+              {/* Sticky Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white sticky top-0 z-10">
                 <Link href="/" onClick={() => setIsMenuOpen(false)}>
-                  <img src="/logo.webp" alt={SITE_NAME} className="h-8 w-auto" />
+                  <img src="/logo.webp" alt={SITE_NAME} className="h-7 w-auto" />
                 </Link>
-                <button
-                  className="p-2 -mr-2 hover:bg-[#7B1113]/5 rounded-full transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <X className="h-6 w-6 text-[#7B1113]" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <Link href="/favoriler" onClick={() => setIsMenuOpen(false)} className="relative p-2">
+                    <Heart className="w-5 h-5 text-gray-700" />
+                    {favoritesCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                        {favoritesCount}
+                      </span>
+                    )}
+                  </Link>
+                  <button onClick={() => { setIsCartOpen(true); setIsMenuOpen(false); }} className="relative p-2">
+                    <ShoppingBag className="w-5 h-5 text-gray-700" />
+                    {cartItemCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                        {cartItemCount}
+                      </span>
+                    )}
+                  </button>
+                  <Link href="/hesap" onClick={() => setIsMenuOpen(false)} className="p-2">
+                    <User className="w-5 h-5 text-gray-700" />
+                  </Link>
+                  <button
+                    onClick={() => setIsMenuOpen(false)}
+                    className="p-2 ml-1"
+                  >
+                    <X className="h-6 w-6 text-gray-700" />
+                  </button>
+                </div>
               </div>
 
-              {/* Minimalist Search Area */}
-              <div className="px-6 pt-8 pb-4 relative">
-                <div className="relative border-b border-[#7B1113]/20 pb-2 transition-colors focus-within:border-[#7B1113]">
-                  <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7B1113]" />
-                  <input
-                    type="search"
-                    placeholder="SİTEDE ARA"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-4 bg-transparent focus:outline-none text-[11px] font-black tracking-[0.2em] text-[#7B1113] placeholder:text-[#7B1113]/30"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 p-2"
-                    >
-                      <X className="h-4 w-4 text-[#7B1113]/40" />
-                    </button>
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto">
+                {/* Welcome Section */}
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="px-6 pt-6 pb-4"
+                >
+                  {user ? (
+                    <>
+                      <p className="text-xs text-primary font-bold uppercase tracking-widest mb-1">Tekrar Hoş Geldiniz</p>
+                      <h2 className="text-2xl font-black text-gray-900">{customerName || 'Değerli Misafirimiz'}</h2>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xs text-primary font-bold uppercase tracking-widest mb-1">EZMEO Ailesine Katılın</p>
+                      <h2 className="text-xl font-black text-gray-900">Giriş Yap veya Kayıt Ol</h2>
+                      <div className="flex gap-3 mt-4">
+                        <Link 
+                          href="/giris" 
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex-1 py-3 bg-primary text-white rounded-xl font-bold text-center"
+                        >
+                          Giriş Yap
+                        </Link>
+                        <Link 
+                          href="/kayit" 
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex-1 py-3 border-2 border-primary text-primary rounded-xl font-bold text-center"
+                        >
+                          Kayıt Ol
+                        </Link>
+                      </div>
+                    </>
                   )}
+                </motion.div>
+
+                {/* Integrated Search */}
+                <div className="px-6 pb-4">
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="search"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Ürün, kategori veya ara..."
+                      className="w-full pl-12 pr-12 py-4 bg-white border-2 border-gray-100 focus:border-primary rounded-2xl focus:outline-none focus:ring-0 transition-all text-base"
+                    />
+                    {searchQuery && (
+                      <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-gray-100 rounded-full">
+                        <X className="w-4 h-4 text-gray-500" />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Search Results */}
+                  <AnimatePresence>
+                    {searchResults.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden max-h-[300px] overflow-y-auto"
+                      >
+                        <div className="p-2">
+                          {searchResults.slice(0, 5).map((product) => (
+                            <Link
+                              key={product.id}
+                              href={ROUTES.product(product.slug)}
+                              className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-colors"
+                              onClick={() => {
+                                setIsMenuOpen(false);
+                                setSearchQuery("");
+                              }}
+                            >
+                              <img src={product.images[0]} alt={product.name} className="w-12 h-12 rounded-lg object-cover bg-gray-100" />
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-gray-900 text-sm truncate">{product.name}</h4>
+                                <p className="text-xs text-gray-500">{product.variants[0].price} ₺</p>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-gray-400" />
+                            </Link>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
-                {/* Mobile Search Results */}
-                <AnimatePresence>
-                  {searchResults.length > 0 && isMenuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute top-full left-6 right-6 z-[10000] mt-2 bg-[#FFF5F5] rounded-2xl shadow-xl border border-[#7B1113]/10 overflow-hidden max-h-[300px] overflow-y-auto"
-                    >
-                      <div className="p-2">
-                        {searchResults.map((product) => (
-                          <Link
-                            key={product.id}
-                            href={ROUTES.product(product.slug)}
-                            className="flex items-center gap-3 p-3 hover:bg-[#7B1113]/5 rounded-xl transition-colors active:opacity-60"
-                            onClick={() => {
-                              setIsMenuOpen(false);
-                              setSearchQuery("");
-                            }}
-                          >
-                            <img src={product.images[0]} alt={product.name} className="w-10 h-10 rounded-lg object-cover bg-white" />
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-[11px] font-black text-[#7B1113] uppercase tracking-wider truncate">{product.name}</h4>
-                              <p className="text-[10px] font-bold text-[#7B1113]/60">{product.variants[0].price} ₺</p>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Clean Navigation Area */}
-              <div className="flex-1 overflow-y-auto px-6 py-8">
-                <nav className="space-y-12">
-                  {/* Primary Links - Vertical List */}
-                  <div className="flex flex-col space-y-6">
-                    {mobileMenuLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className="flex items-center justify-between group active:opacity-60 transition-all pl-2 -ml-2 border-l-2 border-transparent hover:border-[#7B1113]"
+                {/* Quick Actions */}
+                {user && (
+                  <div className="px-6 pb-6">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Link 
+                        href="/hesap?tab=orders"
                         onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl border border-primary/10 active:scale-95 transition-all"
                       >
-                        <span className="text-[15px] font-black text-[#7B1113] uppercase tracking-[0.15em]">
-                          {link.name}
+                        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+                          <Package className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-900">Siparişlerim</p>
+                          <p className="text-xs text-gray-500">{ordersCount} sipariş</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
+                      </Link>
+
+                      <Link 
+                        href="/favoriler"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl border border-red-100 active:scale-95 transition-all"
+                      >
+                        <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center">
+                          <Heart className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-900">Favorilerim</p>
+                          <p className="text-xs text-gray-500">{favoritesCount} ürün</p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {/* Navigation Links */}
+                <nav className="px-6 pb-6 space-y-1">
+                  {menuItems.map((item, index) => (
+                    <motion.div
+                      key={item.href}
+                      variants={itemVariants}
+                      initial="hidden"
+                      animate="show"
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <Link
+                        href={item.href}
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                            <item.icon className="w-5 h-5" />
+                          </div>
+                          <span className="text-base font-semibold text-gray-900">{item.label}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {item.badge ? (
+                            <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-bold rounded-lg">
+                              {item.badge}
+                            </span>
+                          ) : null}
+                          <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-primary transition-colors" />
+                        </div>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </nav>
+
+                {/* Compact Categories Grid */}
+                <div className="px-6 pb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Kategoriler</h3>
+                    <Link href="/urunler" onClick={() => setIsMenuOpen(false)} className="text-xs text-primary font-semibold">
+                      Tümünü Gör
+                    </Link>
+                  </div>
+                  
+                  <div className="grid grid-cols-4 gap-2">
+                    {CATEGORIES.slice(0, 8).map((category) => (
+                      <Link
+                        key={category.id}
+                        href={ROUTES.category(category.slug)}
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
+                      >
+                        <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-xl">
+                          {category.icon}
+                        </div>
+                        <span className="text-[10px] font-bold text-gray-700 text-center leading-tight line-clamp-2">
+                          {category.name}
                         </span>
-                        <ChevronRight className="h-4 w-4 text-[#7B1113]/20 group-hover:text-[#7B1113] transition-colors" />
                       </Link>
                     ))}
                   </div>
+                </div>
 
-                  {/* Collections - Refined List with Thumbnails */}
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between border-b border-[#7B1113]/10 pb-4">
-                      <span className="text-[10px] font-black text-[#7B1113] uppercase tracking-[0.25em]">Koleksiyonlar</span>
-                    </div>
-                    <div className="grid grid-cols-1 gap-6">
-                      {CATEGORIES.map((category) => (
-                        <Link
-                          key={category.id}
-                          href={ROUTES.category(category.slug)}
-                          className="flex items-center gap-5 group active:opacity-60 transition-opacity"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <div className="w-12 h-12 bg-white/40 rounded-lg flex items-center justify-center text-2xl filter grayscale group-hover:grayscale-0 transition-all shadow-sm">
-                            {category.icon}
-                          </div>
-                          <div className="flex-1 border-b border-[#7B1113]/5 pb-2 flex items-center justify-between">
-                            <span className="text-[13px] font-black text-[#7B1113] uppercase tracking-widest leading-none">
-                              {category.name}
-                            </span>
-                            <span className="text-[9px] font-black text-[#7B1113] opacity-40 uppercase tracking-widest">{category.productCount}</span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </nav>
-              </div>
-
-              {/* Simple Utility Footer */}
-              <div className="p-8 border-t border-[#7B1113]/10 bg-[#7B1113]/5">
-                <div className="flex flex-col gap-8">
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[10px] font-black text-[#7B1113]/40 uppercase tracking-[0.2em]">Yardım ve Destek</span>
-                    <a href={`tel:${CONTACT_INFO.phone}`} className="text-sm font-black text-[#7B1113] tracking-wider hover:opacity-80 transition-opacity">
-                      {CONTACT_INFO.phone}
+                {/* Footer Section */}
+                <div className="border-t border-gray-100 bg-gray-50 px-6 py-6 mt-auto">
+                  <div className="space-y-3 mb-6">
+                    <Link
+                      href="/sss"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center justify-between p-3 rounded-xl hover:bg-white transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <HelpCircle className="w-5 h-5 text-gray-500" />
+                        <span className="text-sm font-medium text-gray-700">Sıkça Sorulan Sorular</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    </Link>
+                    
+                    <a
+                      href={`tel:${CONTACT_INFO.phone}`}
+                      className="flex items-center justify-between p-3 rounded-xl hover:bg-white transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Phone className="w-5 h-5 text-gray-500" />
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Müşteri Hizmetleri</span>
+                          <p className="text-xs text-gray-500">{CONTACT_INFO.phone}</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
                     </a>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="flex gap-6">
-                      <a href={SOCIAL_LINKS.instagram} target="_blank" className="text-[#7B1113]/40 hover:text-[#7B1113] transition-all hover:scale-110">
-                        <Instagram className="h-5 w-5" />
-                      </a>
-                      <a href={SOCIAL_LINKS.facebook} target="_blank" className="text-[#7B1113]/40 hover:text-[#7B1113] transition-all hover:scale-110">
-                        <Facebook className="h-5 w-5" />
-                      </a>
-                    </div>
-                    <span className="text-[9px] font-black text-[#7B1113]/30 uppercase tracking-[0.2em]">
-                      &copy; {SITE_NAME} PREMİUM
-                    </span>
+                  {/* Social Links */}
+                  <div className="flex items-center justify-center gap-4 py-4 border-t border-gray-200">
+                    <a href={SOCIAL_LINKS.instagram} target="_blank" className="w-10 h-10 bg-gray-200 hover:bg-[#E4405F] hover:text-white rounded-full flex items-center justify-center transition-all">
+                      <Instagram className="w-5 h-5" />
+                    </a>
+                    <a href={SOCIAL_LINKS.facebook} target="_blank" className="w-10 h-10 bg-gray-200 hover:bg-[#1877F2] hover:text-white rounded-full flex items-center justify-center transition-all">
+                      <Facebook className="w-5 h-5" />
+                    </a>
                   </div>
+
+                  {/* Logout Button */}
+                  {user && (
+                    <button
+                      onClick={handleLogout}
+                      className="w-full mt-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      Çıkış Yap
+                    </button>
+                  )}
+
+                  <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-4">
+                    © {new Date().getFullYear()} EZMEO Premium
+                  </p>
                 </div>
               </div>
             </motion.div>
