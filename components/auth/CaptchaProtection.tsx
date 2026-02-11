@@ -14,7 +14,6 @@ export function CaptchaProtection({ onVerify, error }: CaptchaProtectionProps) {
   const [userAnswer, setUserAnswer] = useState("");
   const [isVerified, setIsVerified] = useState(false);
 
-  // Generate new numbers
   const generateNumbers = () => {
     const n1 = Math.floor(Math.random() * 10) + 1;
     const n2 = Math.floor(Math.random() * 10) + 1;
@@ -25,7 +24,6 @@ export function CaptchaProtection({ onVerify, error }: CaptchaProtectionProps) {
     onVerify(false);
   };
 
-  // Initialize
   useEffect(() => {
     generateNumbers();
   }, []);
@@ -33,12 +31,10 @@ export function CaptchaProtection({ onVerify, error }: CaptchaProtectionProps) {
   const handleVerify = () => {
     const answer = parseInt(userAnswer);
     const correctAnswer = num1 + num2;
-
     if (isNaN(answer)) {
       onVerify(false);
       return;
     }
-
     const isValid = answer === correctAnswer;
     setIsVerified(isValid);
     onVerify(isValid);
@@ -47,8 +43,6 @@ export function CaptchaProtection({ onVerify, error }: CaptchaProtectionProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUserAnswer(value);
-    
-    // Auto-verify when 1-2 digits entered
     if (value.length >= 1 && value.length <= 2) {
       const answer = parseInt(value);
       const correctAnswer = num1 + num2;
@@ -64,9 +58,11 @@ export function CaptchaProtection({ onVerify, error }: CaptchaProtectionProps) {
         Bot Korumasi
       </label>
       
-      <div className="flex items-center gap-3">
-        {/* Math Problem */}
-        <div className="flex items-center gap-2 bg-gray-50 px-4 py-3 rounded-xl border border-gray-200">
+      {/* Mobil: Dikey, Desktop: Yatay */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+        
+        {/* Matematik Problemi - Ortalanmis */}
+        <div className="flex items-center justify-center gap-2 bg-gray-50 px-4 py-3 rounded-xl border border-gray-200 min-w-[140px]">
           <span className="text-lg font-bold text-gray-700">{num1}</span>
           <span className="text-lg font-bold text-gray-400">+</span>
           <span className="text-lg font-bold text-gray-700">{num2}</span>
@@ -74,21 +70,21 @@ export function CaptchaProtection({ onVerify, error }: CaptchaProtectionProps) {
           <span className="text-lg font-bold text-primary">?</span>
         </div>
 
-        {/* Answer Input */}
+        {/* Cevap Input - Mobilde tam genislik */}
         <input
           type="number"
           value={userAnswer}
           onChange={handleChange}
           placeholder="Cevap"
-          className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary transition-all text-center font-bold text-lg"
+          className="w-full sm:flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary transition-all text-center font-bold text-lg"
           disabled={isVerified}
         />
 
-        {/* Refresh Button */}
+        {/* Refresh Button - Mobilde tam genislik */}
         <button
           type="button"
           onClick={generateNumbers}
-          className="p-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+          className="w-full sm:w-auto p-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors flex items-center justify-center"
           title="Yeni soru"
         >
           <RotateCcw className="w-5 h-5 text-gray-600" />
