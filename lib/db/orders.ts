@@ -26,6 +26,7 @@ export async function createOrder(orderData: {
         variantName: string;
         price: number;
         quantity: number;
+        category?: string;
     }[];
     shippingAddress: Record<string, unknown>;
     billingAddress?: Record<string, unknown>;
@@ -34,6 +35,7 @@ export async function createOrder(orderData: {
     discount?: number;
     notes?: string;
     contactEmail?: string;
+    saveAddress?: boolean;
 }) {
     const serverClient = createServerClient();
 
@@ -95,6 +97,79 @@ export async function createOrder(orderData: {
         .insert(orderItems);
 
     if (itemsError) throw itemsError;
+
+    // Save address to customer_addresses
+    if (customerId && orderData.saveAddress !== false) {
+        const shipping = orderData.shippingAddress as any;
+        
+        // Check if address already exists
+        const { data: existingAddresses } = await serverClient
+            .from("customer_addresses")
+            .select("*")
+            .eq("customer_id", customerId)
+            .limit(1);
+
+        const isFirstAddress = !existingAddresses || existingAddresses.length === 0;
+
+        // Insert new address
+        await serverClient
+            .from("customer_addresses")
+            .insert({
+                customer_id: customerId,
+                title: "Varsayılan Adres",
+                first_name: shipping.firstName || "",
+                last_name: shipping.lastName || "",
+                phone: shipping.phone || "",
+                address: shipping.address || "",
+                city: shipping.city || "",
+                district: shipping.district || "",
+                postal_code: shipping.postalCode || "",
+                is_default: isFirstAddress,
+            });
+    }
+
+    // Track customer preferred products
+    if (customerId) {
+        for (const item of orderData.items) {
+            // Check if product already in preferences
+            const { data: existingPref } = await serverClient
+                .from("customer_preferred_products")
+                .select("*")
+                .eq("customer_id", customerId)
+                .eq("product_id", item.productId)
+                .eq("variant_id", item.variantId)
+                .single();
+
+            if (existingPref) {
+                // Update existing preference
+                await serverClient
+                    .from("customer_preferred_products")
+                    .update({
+                        purchase_count: existingPref.purchase_count + 1,
+                        total_quantity: existingPref.total_quantity + item.quantity,
+                        total_spent: existingPref.total_spent + (item.price * item.quantity),
+                        last_purchased_at: new Date().toISOString(),
+                    })
+                    .eq("id", existingPref.id);
+            } else {
+                // Insert new preference
+                await serverClient
+                    .from("customer_preferred_products")
+                    .insert({
+                        customer_id: customerId,
+                        product_id: item.productId,
+                        variant_id: item.variantId,
+                        product_name: item.productName,
+                        variant_name: item.variantName || "",
+                        category: item.category || "",
+                        purchase_count: 1,
+                        total_quantity: item.quantity,
+                        total_spent: item.price * item.quantity,
+                        last_purchased_at: new Date().toISOString(),
+                    });
+            }
+        }
+    }
 
     return { ...order, items: orderItems };
 }

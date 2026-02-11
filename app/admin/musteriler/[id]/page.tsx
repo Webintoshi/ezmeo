@@ -87,13 +87,26 @@ interface OrderItem {
   total: number;
 }
 
+interface PreferredProduct {
+  id: string;
+  product_id: string;
+  product_name: string;
+  variant_name: string | null;
+  category: string | null;
+  purchase_count: number;
+  total_quantity: number;
+  total_spent: number;
+  last_purchased_at: string;
+}
+
 export default function CustomerDetailPage({ params }: CustomerDetailPageProps) {
   const router = useRouter();
   const [id, setId] = useState<string>("");
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [preferredProducts, setPreferredProducts] = useState<PreferredProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "addresses">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "addresses" | "preferences">("overview");
 
   useEffect(() => {
     params.then((p) => setId(p.id));
@@ -120,6 +133,14 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
         
         if (ordersData.success && ordersData.orders) {
           setOrders(ordersData.orders);
+        }
+
+        // Fetch preferred products
+        const prefRes = await fetch(`/api/admin/customers/${id}/preferences`);
+        const prefData = await prefRes.json();
+        
+        if (prefData.success && prefData.products) {
+          setPreferredProducts(prefData.products);
         }
       }
     } catch (error) {
@@ -401,6 +422,16 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
             }`}
           >
             Adresler ({customer.addresses?.length || 0})
+          </button>
+          <button
+            onClick={() => setActiveTab("preferences")}
+            className={`pb-3 text-sm font-bold border-b-2 transition-colors ${
+              activeTab === "preferences"
+                ? "border-primary text-primary"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Tercih Edilen Ürünler ({preferredProducts.length})
           </button>
         </div>
       </div>
@@ -707,6 +738,66 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
             <div className="col-span-full p-12 text-center text-gray-500 bg-white rounded-2xl border border-gray-100">
               <MapPin className="w-16 h-16 mx-auto mb-4 text-gray-300" />
               <p className="text-lg font-medium">Kayıtlı adres yok.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "preferences" && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900">Tercih Edilen Ürünler</h3>
+            <div className="text-sm text-gray-500">
+              Müşterinin sipariş verdiği ürünler
+            </div>
+          </div>
+          
+          {preferredProducts.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">
+              <Star className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <p className="text-lg font-medium">Henüz tercih edilen ürün yok.</p>
+              <p className="text-sm">Müşterinin ilk siparişinden sonra burada görünecektir.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {preferredProducts.map((pref) => (
+                <div key={pref.id} className="p-6 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-12 h-12 bg-primary/5 rounded-xl flex items-center justify-center text-2xl">
+                        {pref.category === "fistik-ezmesi" ? "🥜" :
+                         pref.category === "findik-ezmesi" ? "🌰" :
+                         pref.category === "kuruyemis" ? "🥔" : "📦"}
+                      </div>
+                      
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-bold text-gray-900">{pref.product_name}</h4>
+                          {pref.variant_name && (
+                            <span className="text-sm text-gray-500">- {pref.variant_name}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <span>{pref.purchase_count} sipariş</span>
+                          <span>•</span>
+                          <span>Toplam {pref.total_quantity} adet</span>
+                          <span>•</span>
+                          <span className="font-bold text-primary">
+                            {formatPrice(pref.total_spent)} harcama
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500 mb-1">Son Sipariş</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {formatDate(pref.last_purchased_at)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

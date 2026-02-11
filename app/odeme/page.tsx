@@ -236,7 +236,8 @@ export default function CheckoutPage() {
           variantName: item.variant.name,
           price: item.variant.price,
           quantity: item.quantity,
-          total: item.variant.price * item.quantity
+          total: item.variant.price * item.quantity,
+          category: item.product.category
         })),
         shippingAddress: shippingInfo,
         billingAddress: shippingInfo,
