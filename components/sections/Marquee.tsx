@@ -1,7 +1,7 @@
 "use client";
 
-import { Star, Truck, ShieldCheck, Heart } from "lucide-react";
 import { useState } from "react";
+import { Star, Truck, ShieldCheck, Heart } from "lucide-react";
 
 export function Marquee() {
   const [isPaused, setIsPaused] = useState(false);
@@ -14,42 +14,27 @@ export function Marquee() {
   ];
 
   return (
-    <div className="premium-gradient overflow-hidden py-5 relative group">
-      {/* Glow Effect */}
-      <div className="absolute inset-0 bg-white/5"></div>
-
-      {/* Pause Button - Her zaman görünür */}
-      <button
-        onClick={() => setIsPaused(!isPaused)}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 bg-white hover:bg-gray-100 rounded-full shadow-lg border border-gray-200"
-        aria-label={isPaused ? "Başlat" : "Durdur"}
-      >
-        {isPaused ? (
-          <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        ) : (
-          <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-          </svg>
-        )}
-      </button>
-
-      {/* CSS Animation - Daha performanslı */}
+    <div 
+      className="overflow-hidden py-5 relative"
+      style={{ backgroundColor: '#7B1113' }}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {/* CSS Animation */}
       <div 
-        className={`flex gap-8 whitespace-nowrap relative z-10 ${isPaused ? 'pause-animation' : ''}`}
+        className={`flex gap-8 whitespace-nowrap ${isPaused ? 'pause-animation' : ''}`}
         style={{
           animation: 'marquee 20s linear infinite',
           WebkitAnimation: 'marquee 20s linear infinite',
         }}
       >
-        {[...items, ...items].map((item, index) => (
+        {[...items, ...items, ...items].map((item, index) => (
           <span
             key={index}
-            className="text-primary-foreground text-base md:text-lg font-semibold flex items-center gap-2 inline-flex"
+            className="text-white text-base md:text-lg font-semibold flex items-center gap-2 inline-flex"
           >
             <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
-              <Star className="w-3 h-3 md:w-4 md:h-4 fill-primary-foreground text-primary-foreground" />
+              <Star className="w-3 h-3 md:w-4 md:h-4 fill-white text-white" />
               {item.icon}
               <span>{item.text}</span>
             </div>
