@@ -86,33 +86,49 @@ export default async function ProductDetailPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
 
-  if (!product) {
-    return <ProductDetailClient slug={slug} />;
-  }
-
-  // Fetch SEO data from database for JSON-LD
-  let seoTitle = `${product.name} | Ezmeo`;
-  let seoDescription = product.shortDescription;
+  // Try to fetch full product data from Supabase first
+  let initialProduct = null;
+  let relatedProducts = [];
 
   try {
-    const supabase = createClient();
+    const supabase = createServerClient();
     const { data: dbProduct } = await supabase
       .from("products")
-      .select("seo_title, seo_description")
+      .select("*, variants:product_variants(*)")
       .eq("slug", slug)
       .single();
 
-    if (dbProduct?.seo_title) {
-      seoTitle = dbProduct.seo_title;
+    if (dbProduct) {
+      initialProduct = dbProduct;
+
+      // Fetch related products from same category
+      const { data: related } = await supabase
+        .from("products")
+        .select("*, variants:product_variants(*)")
+        .eq("category", dbProduct.category)
+        .neq("slug", slug)
+        .limit(4);
+
+      relatedProducts = related || [];
     }
-    if (dbProduct?.seo_description) {
-      seoDescription = dbProduct.seo_description;
-    }
-  } catch {
-    // Use static data as fallback
+  } catch (error) {
+    console.error("Failed to fetch product from Supabase:", error);
   }
+
+  // Fallback to static data if Supabase fails
+  const staticProduct = getProductBySlug(slug);
+
+  if (!initialProduct && !staticProduct) {
+    return <ProductDetailClient slug={slug} initialProduct={null} initialRelatedProducts={[]} />;
+  }
+
+  // Use Supabase data if available, otherwise static data
+  const product = initialProduct || staticProduct;
+
+  // Fetch SEO data from database for JSON-LD
+  let seoTitle = `${product.name} | Ezmeo`;
+  let seoDescription = product.short_description || product.shortDescription;
 
   // Generate JSON-LD Schema
   const variant = product.variants[0];
@@ -188,8 +204,12 @@ export default async function ProductDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
-      {/* Client Component for Product Detail */}
-      <ProductDetailClient slug={slug} />
+      {/* Client Component for Product Detail with initial data */}
+      <ProductDetailClient
+        slug={slug}
+        initialProduct={product}
+        initialRelatedProducts={relatedProducts}
+      />
     </>
   );
 }

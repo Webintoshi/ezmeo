@@ -19,12 +19,14 @@ type TabType = "details" | "nutrition" | "reviews";
 
 interface ProductDetailClientProps {
     slug: string;
+    initialProduct?: Product | null;
+    initialRelatedProducts?: Product[];
 }
 
-export function ProductDetailClient({ slug }: ProductDetailClientProps) {
-    const [product, setProduct] = useState<Product | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+export function ProductDetailClient({ slug, initialProduct, initialRelatedProducts = [] }: ProductDetailClientProps) {
+    const [product, setProduct] = useState<Product | null>(initialProduct || null);
+    const [loading, setLoading] = useState(!initialProduct);
+    const [relatedProducts, setRelatedProducts] = useState<Product[]>(initialRelatedProducts);
 
     const [selectedVariant, setSelectedVariant] = useState(0);
     const [quantity, setQuantity] = useState(1);
@@ -35,16 +37,20 @@ export function ProductDetailClient({ slug }: ProductDetailClientProps) {
 
     const { addToCart } = useCart();
 
-    // Fetch product from API (Supabase)
+    // Fetch product from API (Supabase) - only if no initial data or for freshness
     useEffect(() => {
+        // If we have initial product, no need to show loading
+        // Just fetch in background for freshness
+        if (initialProduct && loading) {
+            setLoading(false);
+        }
+
         async function fetchProduct() {
             try {
                 const response = await fetch(`/api/products?slug=${slug}`);
                 const data = await response.json();
 
                 if (data.success && data.product) {
-                    console.log('Product from API:', data.product);
-                    console.log('Images from API:', data.product.images);
                     setProduct(data.product);
 
                     // Fetch related products

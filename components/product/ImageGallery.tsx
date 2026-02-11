@@ -22,10 +22,6 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
     img && typeof img === 'string' && img.startsWith('http')
   );
 
-  // Debug: Log received images
-  console.log('ImageGallery - Raw images:', images);
-  console.log('ImageGallery - Display images:', displayImages);
-
   // Görsel yoksa boş durum göster
   if (displayImages.length === 0) {
     return (
