@@ -13,6 +13,15 @@ const r2Client = new S3Client({
 const BUCKET_NAME = process.env.R2_BUCKET_NAME || "ezmeo-assets";
 const PUBLIC_URL = process.env.R2_PUBLIC_URL || "";
 
+// R2 public URL fallback (if custom domain not set)
+const R2_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || "";
+const R2_FALLBACK_URL = R2_ACCOUNT_ID 
+    ? `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${BUCKET_NAME}`
+    : ""; 
+
+// Use custom domain if set, otherwise use R2 default URL
+const getPublicUrl = () => PUBLIC_URL || R2_FALLBACK_URL;
+
 export interface UploadResult {
     success: boolean;
     url?: string;
@@ -44,7 +53,14 @@ export async function uploadToR2(
 
         await r2Client.send(command);
 
-        const url = `${PUBLIC_URL}/${key}`;
+        const baseUrl = getPublicUrl();
+        if (!baseUrl) {
+            return {
+                success: false,
+                error: "R2_PUBLIC_URL or CLOUDFLARE_ACCOUNT_ID environment variable is not set"
+            };
+        }
+        const url = `${baseUrl}/${key}`;
 
         return {
             success: true,
@@ -90,7 +106,8 @@ export async function listR2Files(folder: string = "products"): Promise<string[]
 
         const response = await r2Client.send(command);
 
-        return (response.Contents || []).map(item => `${PUBLIC_URL}/${item.Key}`);
+        const baseUrl = getPublicUrl();
+        return (response.Contents || []).map(item => `${baseUrl}/${item.Key}`);
     } catch (error) {
         console.error("R2 list error:", error);
         return [];
@@ -101,7 +118,7 @@ export async function listR2Files(folder: string = "products"): Promise<string[]
  * Get public URL for a key
  */
 export function getR2PublicUrl(key: string): string {
-    return `${PUBLIC_URL}/${key}`;
+    return `${getPublicUrl()}/${key}`;
 }
 
 export { r2Client, BUCKET_NAME, PUBLIC_URL };
