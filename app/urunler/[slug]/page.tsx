@@ -11,7 +11,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
 
-  // First check if product exists in static data
+  // Check if product exists in static data first
   const product = getProductBySlug(slug);
   if (!product) {
     return {
@@ -21,6 +21,9 @@ export async function generateMetadata({
   }
 
   // Try to fetch SEO data from database
+  let seoTitle = `${product.name} | Ezmeo`;
+  let seoDescription = product.shortDescription;
+
   try {
     const supabase = createServerClient();
     const { data: dbProduct } = await supabase
@@ -29,55 +32,45 @@ export async function generateMetadata({
       .eq("slug", slug)
       .single();
 
-    // Use database SEO if available, otherwise use static data
-    const seoTitle = dbProduct?.seo_title || `${product.name} | Ezmeo`;
-    const seoDescription = dbProduct?.seo_description || product.shortDescription;
+    if (dbProduct?.seo_title) seoTitle = dbProduct.seo_title;
+    if (dbProduct?.seo_description) seoDescription = dbProduct.seo_description;
+  } catch {
+    // Use static data as fallback
+  }
 
-    return {
+  return {
+    title: seoTitle,
+    description: seoDescription,
+    openGraph: {
       title: seoTitle,
       description: seoDescription,
-      openGraph: {
-        title: seoTitle,
-        description: seoDescription,
-        images: product.images?.[0] ? [product.images[0]] : [],
-        type: "website",
-        locale: "tr_TR",
-        siteName: "Ezmeo",
-        url: `https://ezmeo.com/urunler/${slug}`,
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: seoTitle,
-        description: seoDescription,
-        images: product.images?.[0] ? [product.images[0]] : [],
-      },
-      alternates: {
-        canonical: `https://ezmeo.com/urunler/${slug}`,
-      },
-    };
-  } catch {
-    // Fallback to static data if database fails
-    return {
-      title: `${product.name} | Ezmeo`,
-      description: product.shortDescription,
-      openGraph: {
-        title: `${product.name} | Ezmeo`,
-        description: product.shortDescription,
-        images: product.images?.[0] ? [product.images[0]] : [],
-        type: "website",
-        locale: "tr_TR",
-        siteName: "Ezmeo",
-      },
-    };
-  }
+      images: product.images?.[0] ? [product.images[0]] : [],
+      type: "website",
+      locale: "tr_TR",
+      siteName: "Ezmeo",
+      url: `https://ezmeo.com/urunler/${slug}`,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: seoTitle,
+      description: seoDescription,
+      images: product.images?.[0] ? [product.images[0]] : [],
+    },
+    alternates: {
+      canonical: `https://ezmeo.com/urunler/${slug}`,
+    },
+  };
 }
 
 // Generate static paths for all products
 export async function generateStaticParams() {
-  // Get all product slugs
+  // Get all product slugs from static data
   const allSlugs = getProductSlug();
   return allSlugs.map((slug) => ({ slug }));
 }
+
+// ISR: Revalidate every 60 seconds
+export const revalidate = 60;
 
 // Server component that wraps the client component with JSON-LD Schema
 export default async function ProductDetailPage({
@@ -87,7 +80,7 @@ export default async function ProductDetailPage({
 }) {
   const { slug } = await params;
 
-  // Try to fetch full product data from Supabase first
+  // Try to fetch full product data from Supabase
   let initialProduct = null;
   let relatedProducts = [];
 
@@ -102,33 +95,48 @@ export default async function ProductDetailPage({
     if (dbProduct) {
       initialProduct = dbProduct;
 
-      // Fetch related products from same category
-      const { data: related } = await supabase
-        .from("products")
-        .select("*, variants:product_variants(*)")
-        .eq("category", dbProduct.category)
-        .neq("slug", slug)
-        .limit(4);
+      // Fetch related products from same category (parallel fetch)
+      const [{ data: related }, { data: seoData }] = await Promise.all([
+        supabase
+          .from("products")
+          .select("*, variants:product_variants(*)")
+          .eq("category", dbProduct.category)
+          .neq("slug", slug)
+          .limit(4),
+        supabase
+          .from("products")
+          .select("seo_title, seo_description")
+          .eq("slug", slug)
+          .single()
+      ]);
 
       relatedProducts = related || [];
+
+      // Update SEO if database data exists
+      if (seoData?.seo_title || seoData?.seo_description) {
+        initialProduct = {
+          ...dbProduct,
+          seo_title: seoData.seo_title,
+          seo_description: seoData.seo_description,
+        };
+      }
     }
   } catch (error) {
     console.error("Failed to fetch product from Supabase:", error);
   }
 
   // Fallback to static data if Supabase fails
-  const staticProduct = getProductBySlug(slug);
-
-  if (!initialProduct && !staticProduct) {
-    return <ProductDetailClient slug={slug} initialProduct={null} initialRelatedProducts={[]} />;
+  if (!initialProduct) {
+    const staticProduct = getProductBySlug(slug);
+    if (!staticProduct) {
+      return <ProductDetailClient slug={slug} initialProduct={null} initialRelatedProducts={[]} />;
+    }
+    initialProduct = staticProduct;
   }
 
-  // Use Supabase data if available, otherwise static data
-  const product = initialProduct || staticProduct;
-
-  // Fetch SEO data from database for JSON-LD
-  let seoTitle = `${product.name} | Ezmeo`;
-  let seoDescription = product.short_description || product.shortDescription;
+  const product = initialProduct;
+  const seoTitle = product.seo_title || `${product.name} | Ezmeo`;
+  const seoDescription = product.seo_description || product.short_description;
 
   // Generate JSON-LD Schema
   const variant = product.variants[0];
