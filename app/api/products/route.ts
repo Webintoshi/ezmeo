@@ -64,22 +64,60 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
+        const { variants, ...productData } = body;
 
-        const product = await createProduct({
-            name: body.name,
-            slug: body.slug,
-            description: body.description || null,
-            short_description: body.shortDescription || null,
-            images: body.images || [],
-            category: body.category || null,
-            tags: body.tags || [],
-            is_featured: body.isFeatured || false,
-            is_bestseller: body.isBestseller || false,
-            seo_title: body.seoTitle || null,
-            seo_description: body.seoDescription || null,
-        });
+        const { createServerClient } = await import("@/lib/supabase");
+        const supabase = createServerClient();
 
-        return NextResponse.json({ success: true, product });
+        // 1. Ana ürünü oluştur
+        const { data: product, error: productError } = await supabase
+            .from("products")
+            .insert({
+                name: productData.name,
+                slug: productData.slug,
+                description: productData.description || null,
+                short_description: productData.short_description || null,
+                images: productData.images || [],
+                category: productData.category || null,
+                subcategory: productData.subcategory || null,
+                tags: productData.tags || [],
+                is_featured: productData.is_featured || false,
+                is_new: productData.is_new || false,
+                rating: productData.rating || 5,
+                review_count: productData.review_count || 0,
+            })
+            .select()
+            .single();
+
+        if (productError) throw productError;
+
+        // 2. Varyantları ekle
+        if (variants && Array.isArray(variants) && variants.length > 0) {
+            const variantsToInsert = variants.map((v: any) => ({
+                product_id: product.id,
+                name: v.name,
+                weight: v.weight,
+                price: v.price,
+                original_price: v.original_price || null,
+                stock: v.stock,
+                sku: v.sku,
+            }));
+
+            const { error: variantsError } = await supabase
+                .from("product_variants")
+                .insert(variantsToInsert);
+
+            if (variantsError) throw variantsError;
+        }
+
+        // 3. Tam ürünü döndür
+        const { data: fullProduct } = await supabase
+            .from("products")
+            .select("*, variants:product_variants(*)")
+            .eq("id", product.id)
+            .single();
+
+        return NextResponse.json({ success: true, product: fullProduct });
     } catch (error) {
         console.error("Error creating product:", error);
         return NextResponse.json(
@@ -93,7 +131,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
     try {
         const body = await request.json();
-        const { id, ...updates } = body;
+        const { id, variants, ...updates } = body;
 
         if (!id) {
             return NextResponse.json(
@@ -102,8 +140,68 @@ export async function PUT(request: NextRequest) {
             );
         }
 
-        const product = await updateProduct(id, updates);
-        return NextResponse.json({ success: true, product });
+        const { createServerClient } = await import("@/lib/supabase");
+        const supabase = createServerClient();
+
+        // 1. Ana ürünü güncelle (variants olmadan)
+        const { data: product, error: productError } = await supabase
+            .from("products")
+            .update({
+                name: updates.name,
+                slug: updates.slug,
+                description: updates.description,
+                short_description: updates.short_description,
+                images: updates.images,
+                category: updates.category,
+                subcategory: updates.subcategory,
+                tags: updates.tags,
+                is_featured: updates.is_featured,
+                is_new: updates.is_new,
+                rating: updates.rating,
+                review_count: updates.review_count,
+            })
+            .eq("id", id)
+            .select()
+            .single();
+
+        if (productError) throw productError;
+
+        // 2. Varyantları güncelle
+        if (variants && Array.isArray(variants)) {
+            // Mevcut variant'ları sil
+            await supabase
+                .from("product_variants")
+                .delete()
+                .eq("product_id", id);
+
+            // Yeni variant'ları ekle
+            if (variants.length > 0) {
+                const variantsToInsert = variants.map((v: any) => ({
+                    product_id: id,
+                    name: v.name,
+                    weight: v.weight,
+                    price: v.price,
+                    original_price: v.original_price || null,
+                    stock: v.stock,
+                    sku: v.sku,
+                }));
+
+                const { error: variantsError } = await supabase
+                    .from("product_variants")
+                    .insert(variantsToInsert);
+
+                if (variantsError) throw variantsError;
+            }
+        }
+
+        // 3. Güncellenmiş ürünü variant'larla birlikte döndür
+        const { data: fullProduct } = await supabase
+            .from("products")
+            .select("*, variants:product_variants(*)")
+            .eq("id", id)
+            .single();
+
+        return NextResponse.json({ success: true, product: fullProduct });
     } catch (error) {
         console.error("Error updating product:", error);
         return NextResponse.json(
