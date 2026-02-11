@@ -18,18 +18,18 @@ export function Marquee() {
       {/* Glow Effect */}
       <div className="absolute inset-0 bg-white/5"></div>
 
-      {/* Pause Button - Hover&apos;da görünür */}
+      {/* Pause Button - Her zaman görünür */}
       <button
         onClick={() => setIsPaused(!isPaused)}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity p-2 bg-white/80 hover:bg-white rounded-full shadow-lg backdrop-blur-sm"
+        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 bg-white hover:bg-gray-100 rounded-full shadow-lg border border-gray-200"
         aria-label={isPaused ? "Başlat" : "Durdur"}
       >
         {isPaused ? (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
             <path d="M8 5v14l11-7z" />
           </svg>
         ) : (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
             <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
           </svg>
         )}
