@@ -18,7 +18,6 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
-  // Filter valid images
   const displayImages = images.filter(img => 
     img && typeof img === 'string' && (img.startsWith('http') || img.startsWith('/'))
   );
@@ -46,18 +45,12 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
 
   const handleImageLoad = (index: number) => {
     setLoadedImages(prev => new Set([...prev, index]));
-    setFailedImages(prev => {
-      const next = new Set(prev);
-      next.delete(index);
-      return next;
-    });
   };
 
   const handleImageError = (index: number) => {
     setFailedImages(prev => new Set([...prev, index]));
   };
 
-  // Mobile touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -68,21 +61,15 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
 
   const handleTouchEnd = () => {
     const diff = touchStartX.current - touchEndX.current;
-    const threshold = 50;
-    
-    if (Math.abs(diff) > threshold) {
-      if (diff > 0) {
-        handleNext();
-      } else {
-        handlePrevious();
-      }
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? handleNext() : handlePrevious();
     }
   };
 
   const isLoaded = loadedImages.has(selectedIndex);
   const isFailed = failedImages.has(selectedIndex);
 
-  // TEK GÖRSEL - Sadece ana görsel göster
+  // TEK GÖRSEL
   if (displayImages.length === 1) {
     return (
       <div className="w-full">
@@ -93,7 +80,6 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           {!isLoaded && !isFailed && (
             <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
           )}
-          
           {!isFailed ? (
             <Image
               src={displayImages[0]}
@@ -116,7 +102,6 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           )}
         </div>
 
-        {/* Lightbox */}
         <AnimatePresence>
           {isLightboxOpen && (
             <motion.div
@@ -144,18 +129,17 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
     );
   }
 
-  // ÇOKLU GÖRSEL - Sol thumbnails, Sağ ana görsel
+  // ÇOKLU GÖRSEL - Sol thumbnails, Sağ ana görsel (Tüm cihazlar)
   return (
     <div className="w-full">
-      {/* Desktop: Grid layout - Sol thumbnails, Sağ ana görsel */}
-      <div className="hidden lg:grid grid-cols-[100px_1fr] gap-4">
+      <div className="grid grid-cols-[80px_1fr] sm:grid-cols-[100px_1fr] gap-3 sm:gap-4">
         {/* Sol: Dikey Thumbnails */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2 sm:gap-3">
           {displayImages.slice(0, 5).map((image, index) => (
             <button
               key={index}
               onClick={() => setSelectedIndex(index)}
-              className={`relative aspect-square w-full rounded-xl overflow-hidden border-2 transition-all ${
+              className={`relative aspect-square w-full rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all ${
                 index === selectedIndex
                   ? "border-primary ring-2 ring-primary/20"
                   : "border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100"
@@ -163,7 +147,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
             >
               <Image
                 src={image}
-                alt={`${productName} - Küçük görsel ${index + 1}`}
+                alt={`${productName} - ${index + 1}`}
                 fill
                 loading="lazy"
                 sizes="100px"
@@ -198,7 +182,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
                   alt={`${productName} - Görsel ${selectedIndex + 1}`}
                   fill
                   priority={selectedIndex === 0}
-                  sizes="600px"
+                  sizes="(max-width: 768px) 100vw, 600px"
                   className="object-contain"
                   onLoad={() => handleImageLoad(selectedIndex)}
                   onError={() => handleImageError(selectedIndex)}
@@ -220,36 +204,32 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
             )}
           </AnimatePresence>
 
-          {/* Navigation Arrows */}
           {displayImages.length > 1 && (
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 hover:opacity-100 transition-all hover:bg-white hover:scale-110"
-                aria-label="Önceki görsel"
+                aria-label="Önceki"
               >
                 <ChevronLeft className="w-5 h-5 text-gray-700" />
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); handleNext(); }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 hover:opacity-100 transition-all hover:bg-white hover:scale-110"
-                aria-label="Sonraki görsel"
+                aria-label="Sonraki"
               >
                 <ChevronRight className="w-5 h-5 text-gray-700" />
               </button>
             </>
           )}
 
-          {/* Pagination Dots */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full">
             {displayImages.map((_, index) => (
               <button
                 key={index}
                 onClick={(e) => { e.stopPropagation(); setSelectedIndex(index); }}
                 className={`w-2 h-2 rounded-full transition-all ${
-                  index === selectedIndex
-                    ? "bg-primary w-6"
-                    : "bg-gray-400 hover:bg-gray-600"
+                  index === selectedIndex ? "bg-primary w-6" : "bg-gray-400 hover:bg-gray-600"
                 }`}
                 aria-label={`Görsel ${index + 1}`}
               />
@@ -258,101 +238,6 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
         </div>
       </div>
 
-      {/* Mobil: Ana görsel üstte, thumbnails altta */}
-      <div className="lg:hidden space-y-4">
-        {/* Ana Görsel */}
-        <div
-          className="relative aspect-square bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onClick={() => setIsLightboxOpen(true)}
-        >
-          {!isLoaded && !isFailed && (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
-          )}
-
-          <AnimatePresence mode="wait">
-            {!isFailed ? (
-              <motion.div
-                key={selectedIndex}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: isLoaded ? 1 : 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="w-full h-full"
-              >
-                <Image
-                  src={displayImages[selectedIndex]}
-                  alt={`${productName} - Görsel ${selectedIndex + 1}`}
-                  fill
-                  priority
-                  sizes="100vw"
-                  className="object-contain"
-                  onLoad={() => handleImageLoad(selectedIndex)}
-                  onError={() => handleImageError(selectedIndex)}
-                  quality={85}
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="error"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200"
-              >
-                <svg className="w-16 h-16 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l4.586-4.586a2 2 0 012.828 0L20 14M10 4v4m0 0H4m6 0h6" />
-                </svg>
-                <p className="text-sm text-gray-500">Görsel yüklenemedi</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Pagination Dots */}
-          <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full">
-            {displayImages.map((_, index) => (
-              <button
-                key={index}
-                onClick={(e) => { e.stopPropagation(); setSelectedIndex(index); }}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  index === selectedIndex
-                    ? "bg-primary w-6"
-                    : "bg-gray-400 hover:bg-gray-600"
-                }`}
-                aria-label={`Görsel ${index + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Mobil Thumbnails - Yatay scroll */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {displayImages.map((image, index) => (
-            <button
-              key={index}
-              onClick={() => setSelectedIndex(index)}
-              className={`relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
-                index === selectedIndex
-                  ? "border-primary ring-2 ring-primary/20"
-                  : "border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100"
-              }`}
-            >
-              <Image
-                src={image}
-                alt={`${productName} - Küçük görsel ${index + 1}`}
-                fill
-                loading="lazy"
-                sizes="80px"
-                className="object-cover"
-                quality={60}
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Lightbox */}
       <AnimatePresence>
         {isLightboxOpen && (
           <motion.div
