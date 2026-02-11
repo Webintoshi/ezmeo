@@ -82,22 +82,107 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
   const isLoaded = loadedImages.has(selectedIndex);
   const isFailed = failedImages.has(selectedIndex);
 
-  return (
-    <div className="space-y-4 w-full">
-      {/* Main Image */}
-      <div className="relative group w-full">
+  // TEK GÖRSEL - Sadece ana görsel göster
+  if (displayImages.length === 1) {
+    return (
+      <div className="w-full">
         <div
-          className="relative aspect-square bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          className="relative aspect-square bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm cursor-pointer"
+          onClick={() => setIsLightboxOpen(true)}
         >
-          {/* Skeleton Loading State */}
+          {!isLoaded && !isFailed && (
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
+          )}
+          
+          {!isFailed ? (
+            <Image
+              src={displayImages[0]}
+              alt={productName}
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 600px"
+              className="object-contain"
+              onLoad={() => handleImageLoad(0)}
+              onError={() => handleImageError(0)}
+              quality={85}
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+              <svg className="w-16 h-16 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l4.586-4.586a2 2 0 012.828 0L20 14M10 4v4m0 0H4m6 0h6" />
+              </svg>
+              <p className="text-sm text-gray-500">Görsel yüklenemedi</p>
+            </div>
+          )}
+        </div>
+
+        {/* Lightbox */}
+        <AnimatePresence>
+          {isLightboxOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+              onClick={() => setIsLightboxOpen(false)}
+            >
+              <button className="absolute top-4 right-4 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center z-10">
+                <X className="w-6 h-6 text-white" />
+              </button>
+              <Image
+                src={displayImages[0]}
+                alt={productName}
+                fill
+                className="object-contain p-4"
+                sizes="100vw"
+                priority
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  // ÇOKLU GÖRSEL - Sol thumbnails, Sağ ana görsel
+  return (
+    <div className="w-full">
+      {/* Desktop: Grid layout - Sol thumbnails, Sağ ana görsel */}
+      <div className="hidden lg:grid grid-cols-[100px_1fr] gap-4">
+        {/* Sol: Dikey Thumbnails */}
+        <div className="flex flex-col gap-3">
+          {displayImages.slice(0, 5).map((image, index) => (
+            <button
+              key={index}
+              onClick={() => setSelectedIndex(index)}
+              className={`relative aspect-square w-full rounded-xl overflow-hidden border-2 transition-all ${
+                index === selectedIndex
+                  ? "border-primary ring-2 ring-primary/20"
+                  : "border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100"
+              }`}
+            >
+              <Image
+                src={image}
+                alt={`${productName} - Küçük görsel ${index + 1}`}
+                fill
+                loading="lazy"
+                sizes="100px"
+                className="object-cover"
+                quality={60}
+              />
+            </button>
+          ))}
+        </div>
+
+        {/* Sağ: Ana Görsel */}
+        <div
+          className="relative aspect-square bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm cursor-pointer"
+          onClick={() => setIsLightboxOpen(true)}
+        >
           {!isLoaded && !isFailed && (
             <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
           )}
 
-          {/* Main Image with Next.js Image */}
           <AnimatePresence mode="wait">
             {!isFailed ? (
               <motion.div
@@ -106,16 +191,14 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
                 animate={{ opacity: isLoaded ? 1 : 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="w-full h-full cursor-pointer"
-                onClick={() => setIsLightboxOpen(true)}
+                className="w-full h-full"
               >
                 <Image
                   src={displayImages[selectedIndex]}
                   alt={`${productName} - Görsel ${selectedIndex + 1}`}
                   fill
                   priority={selectedIndex === 0}
-                  loading={selectedIndex === 0 ? "eager" : "lazy"}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
+                  sizes="600px"
                   className="object-contain"
                   onLoad={() => handleImageLoad(selectedIndex)}
                   onError={() => handleImageError(selectedIndex)}
@@ -141,15 +224,15 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           {displayImages.length > 1 && (
             <>
               <button
-                onClick={handlePrevious}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:scale-110 focus:opacity-100"
+                onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 hover:opacity-100 transition-all hover:bg-white hover:scale-110"
                 aria-label="Önceki görsel"
               >
                 <ChevronLeft className="w-5 h-5 text-gray-700" />
               </button>
               <button
-                onClick={handleNext}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:scale-110 focus:opacity-100"
+                onClick={(e) => { e.stopPropagation(); handleNext(); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 hover:opacity-100 transition-all hover:bg-white hover:scale-110"
                 aria-label="Sonraki görsel"
               >
                 <ChevronRight className="w-5 h-5 text-gray-700" />
@@ -158,11 +241,11 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           )}
 
           {/* Pagination Dots */}
-          <div className="absolute bottom-4 left-4 lg:left-1/2 lg:-translate-x-1/2 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full justify-start lg:justify-center">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full">
             {displayImages.map((_, index) => (
               <button
                 key={index}
-                onClick={() => setSelectedIndex(index)}
+                onClick={(e) => { e.stopPropagation(); setSelectedIndex(index); }}
                 className={`w-2 h-2 rounded-full transition-all ${
                   index === selectedIndex
                     ? "bg-primary w-6"
@@ -175,14 +258,81 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
         </div>
       </div>
 
-      {/* Thumbnails */}
-      {displayImages.length > 1 && (
-        <div className="grid grid-cols-5 gap-2 md:gap-3 w-full justify-items-start">
-          {displayImages.slice(0, 5).map((image, index) => (
+      {/* Mobil: Ana görsel üstte, thumbnails altta */}
+      <div className="lg:hidden space-y-4">
+        {/* Ana Görsel */}
+        <div
+          className="relative aspect-square bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onClick={() => setIsLightboxOpen(true)}
+        >
+          {!isLoaded && !isFailed && (
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
+          )}
+
+          <AnimatePresence mode="wait">
+            {!isFailed ? (
+              <motion.div
+                key={selectedIndex}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: isLoaded ? 1 : 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="w-full h-full"
+              >
+                <Image
+                  src={displayImages[selectedIndex]}
+                  alt={`${productName} - Görsel ${selectedIndex + 1}`}
+                  fill
+                  priority
+                  sizes="100vw"
+                  className="object-contain"
+                  onLoad={() => handleImageLoad(selectedIndex)}
+                  onError={() => handleImageError(selectedIndex)}
+                  quality={85}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200"
+              >
+                <svg className="w-16 h-16 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l4.586-4.586a2 2 0 012.828 0L20 14M10 4v4m0 0H4m6 0h6" />
+                </svg>
+                <p className="text-sm text-gray-500">Görsel yüklenemedi</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Pagination Dots */}
+          <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full">
+            {displayImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={(e) => { e.stopPropagation(); setSelectedIndex(index); }}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  index === selectedIndex
+                    ? "bg-primary w-6"
+                    : "bg-gray-400 hover:bg-gray-600"
+                }`}
+                aria-label={`Görsel ${index + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Mobil Thumbnails - Yatay scroll */}
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {displayImages.map((image, index) => (
             <button
               key={index}
               onClick={() => setSelectedIndex(index)}
-              className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all w-full ${
+              className={`relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
                 index === selectedIndex
                   ? "border-primary ring-2 ring-primary/20"
                   : "border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100"
@@ -193,16 +343,16 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
                 alt={`${productName} - Küçük görsel ${index + 1}`}
                 fill
                 loading="lazy"
-                sizes="100px"
+                sizes="80px"
                 className="object-cover"
                 quality={60}
               />
             </button>
           ))}
         </div>
-      )}
+      </div>
 
-      {/* Mobile Lightbox */}
+      {/* Lightbox */}
       <AnimatePresence>
         {isLightboxOpen && (
           <motion.div
@@ -253,7 +403,6 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
               </>
             )}
 
-            {/* Lightbox pagination */}
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2">
               {displayImages.map((_, index) => (
                 <div
