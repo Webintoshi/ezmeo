@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   Search,
@@ -334,125 +335,115 @@ export function Header() {
         </AnimatePresence>
       </div>
 
-      {/* PREMIUM MOBILE MENU */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMenuOpen(false)}
-              className="fixed inset-0 bg-black/40 z-[9998] lg:hidden"
-            />
-            {/* Menu Panel */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 right-0 w-full max-w-sm bg-white z-[9999] lg:hidden flex flex-col shadow-2xl overflow-hidden"
-              style={{ backgroundColor: '#ffffff' }}
-            >
-              {/* Sticky Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white sticky top-0 z-10">
-                <Link href="/" onClick={() => setIsMenuOpen(false)}>
-                  <img src="/logo.webp" alt={SITE_NAME} className="h-7 w-auto" />
-                </Link>
-                <div className="flex items-center gap-1">
-                  <Link href="/favoriler" onClick={() => setIsMenuOpen(false)} className="relative p-2">
-                    <Heart className="w-5 h-5 text-gray-700" />
-                    {favoritesCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-bold">
-                        {favoritesCount}
-                      </span>
-                    )}
+      {/* PREMIUM MOBILE MENU - Portal to body */}
+      {isMenuOpen && typeof window !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {isMenuOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMenuOpen(false)}
+                className="fixed inset-0 bg-black/50 z-[99998] lg:hidden"
+              />
+              {/* Menu Panel */}
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                className="fixed inset-y-0 right-0 w-full max-w-sm bg-white z-[99999] lg:hidden flex flex-col shadow-2xl overflow-hidden"
+              >
+                {/* Sticky Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white shrink-0">
+                  <Link href="/" onClick={() => setIsMenuOpen(false)}>
+                    <img src="/logo.webp" alt={SITE_NAME} className="h-7 w-auto" />
                   </Link>
-                  <button onClick={() => { setIsCartOpen(true); setIsMenuOpen(false); }} className="relative p-2">
-                    <ShoppingBag className="w-5 h-5 text-gray-700" />
-                    {cartItemCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-bold">
-                        {cartItemCount}
-                      </span>
-                    )}
-                  </button>
-                  <Link href="/hesap" onClick={() => setIsMenuOpen(false)} className="p-2">
-                    <User className="w-5 h-5 text-gray-700" />
-                  </Link>
-                  <button
-                    onClick={() => setIsMenuOpen(false)}
-                    className="p-2 ml-1"
-                  >
-                    <X className="h-6 w-6 text-gray-700" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <Link href="/favoriler" onClick={() => setIsMenuOpen(false)} className="relative p-2">
+                      <Heart className="w-5 h-5 text-gray-700" />
+                      {favoritesCount > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                          {favoritesCount}
+                        </span>
+                      )}
+                    </Link>
+                    <button onClick={() => { setIsCartOpen(true); setIsMenuOpen(false); }} className="relative p-2">
+                      <ShoppingBag className="w-5 h-5 text-gray-700" />
+                      {cartItemCount > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                          {cartItemCount}
+                        </span>
+                      )}
+                    </button>
+                    <Link href="/hesap" onClick={() => setIsMenuOpen(false)} className="p-2">
+                      <User className="w-5 h-5 text-gray-700" />
+                    </Link>
+                    <button
+                      onClick={() => setIsMenuOpen(false)}
+                      className="p-2 ml-1"
+                    >
+                      <X className="h-6 w-6 text-gray-700" />
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto bg-white">
-                {/* Welcome Section */}
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="px-6 pt-6 pb-4"
-                >
-                  {user ? (
-                    <>
-                      <p className="text-xs text-primary font-bold uppercase tracking-widest mb-1">Tekrar Hoş Geldiniz</p>
-                      <h2 className="text-2xl font-black text-gray-900">{customerName || 'Değerli Misafirimiz'}</h2>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-xs text-primary font-bold uppercase tracking-widest mb-1">EZMEO Ailesine Katılın</p>
-                      <h2 className="text-xl font-black text-gray-900">Giriş Yap veya Kayıt Ol</h2>
-                      <div className="flex gap-3 mt-4">
-                        <Link 
-                          href="/giris" 
-                          onClick={() => setIsMenuOpen(false)}
-                          className="flex-1 py-3 bg-primary text-white rounded-xl font-bold text-center"
-                        >
-                          Giriş Yap
-                        </Link>
-                        <Link 
-                          href="/kayit" 
-                          onClick={() => setIsMenuOpen(false)}
-                          className="flex-1 py-3 border-2 border-primary text-primary rounded-xl font-bold text-center"
-                        >
-                          Kayıt Ol
-                        </Link>
-                      </div>
-                    </>
-                  )}
-                </motion.div>
-
-                {/* Integrated Search */}
-                <div className="px-6 pb-4">
-                  <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="search"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Ürün, kategori veya ara..."
-                      className="w-full pl-12 pr-12 py-4 bg-white border-2 border-gray-100 focus:border-primary rounded-2xl focus:outline-none focus:ring-0 transition-all text-base"
-                    />
-                    {searchQuery && (
-                      <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-gray-100 rounded-full">
-                        <X className="w-4 h-4 text-gray-500" />
-                      </button>
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto bg-white">
+                  {/* Welcome Section */}
+                  <div className="px-6 pt-6 pb-4">
+                    {user ? (
+                      <>
+                        <p className="text-xs text-primary font-bold uppercase tracking-widest mb-1">Tekrar Hoş Geldiniz</p>
+                        <h2 className="text-2xl font-black text-gray-900">{customerName || 'Değerli Misafirimiz'}</h2>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs text-primary font-bold uppercase tracking-widest mb-1">EZMEO Ailesine Katılın</p>
+                        <h2 className="text-xl font-black text-gray-900">Giriş Yap veya Kayıt Ol</h2>
+                        <div className="flex gap-3 mt-4">
+                          <Link 
+                            href="/giris" 
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex-1 py-3 bg-primary text-white rounded-xl font-bold text-center"
+                          >
+                            Giriş Yap
+                          </Link>
+                          <Link 
+                            href="/kayit" 
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex-1 py-3 border-2 border-primary text-primary rounded-xl font-bold text-center"
+                          >
+                            Kayıt Ol
+                          </Link>
+                        </div>
+                      </>
                     )}
                   </div>
-                  
-                  {/* Search Results */}
-                  <AnimatePresence>
+
+                  {/* Integrated Search */}
+                  <div className="px-6 pb-4">
+                    <div className="relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Ürün, kategori veya ara..."
+                        className="w-full pl-12 pr-12 py-4 bg-white border-2 border-gray-100 focus:border-primary rounded-2xl focus:outline-none focus:ring-0 transition-all text-base"
+                      />
+                      {searchQuery && (
+                        <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 bg-gray-100 rounded-full">
+                          <X className="w-4 h-4 text-gray-500" />
+                        </button>
+                      )}
+                    </div>
+                    
+                    {/* Search Results */}
                     {searchResults.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden max-h-[300px] overflow-y-auto"
-                      >
+                      <div className="mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden max-h-[300px] overflow-y-auto">
                         <div className="p-2">
                           {searchResults.slice(0, 5).map((product) => (
                             <Link
@@ -473,59 +464,52 @@ export function Header() {
                             </Link>
                           ))}
                         </div>
-                      </motion.div>
+                      </div>
                     )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Quick Actions */}
-                {user && (
-                  <div className="px-6 pb-6">
-                    <div className="grid grid-cols-2 gap-3">
-                      <Link 
-                        href="/hesap?tab=orders"
-                        onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl border border-primary/10 active:scale-95 transition-all"
-                      >
-                        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                          <Package className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-gray-900">Siparişlerim</p>
-                          <p className="text-xs text-gray-500">{ordersCount} sipariş</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-                      </Link>
-
-                      <Link 
-                        href="/favoriler"
-                        onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center gap-3 p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl border border-red-100 active:scale-95 transition-all"
-                      >
-                        <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center">
-                          <Heart className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-gray-900">Favorilerim</p>
-                          <p className="text-xs text-gray-500">{favoritesCount} ürün</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-                      </Link>
-                    </div>
                   </div>
-                )}
 
-                {/* Navigation Links */}
-                <nav className="px-6 pb-6 space-y-1">
-                  {menuItems.map((item, index) => (
-                    <motion.div
-                      key={item.href}
-                      variants={itemVariants}
-                      initial="hidden"
-                      animate="show"
-                      transition={{ delay: index * 0.05 }}
-                    >
+                  {/* Quick Actions */}
+                  {user && (
+                    <div className="px-6 pb-6">
+                      <div className="grid grid-cols-2 gap-3">
+                        <Link 
+                          href="/hesap?tab=orders"
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex items-center gap-3 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl border border-primary/10 active:scale-95 transition-all"
+                        >
+                          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+                            <Package className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-gray-900">Siparişlerim</p>
+                            <p className="text-xs text-gray-500">{ordersCount} sipariş</p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
+                        </Link>
+
+                        <Link 
+                          href="/favoriler"
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex items-center gap-3 p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl border border-red-100 active:scale-95 transition-all"
+                        >
+                          <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center">
+                            <Heart className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-gray-900">Favorilerim</p>
+                            <p className="text-xs text-gray-500">{favoritesCount} ürün</p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Navigation Links */}
+                  <nav className="px-6 pb-6 space-y-1">
+                    {menuItems.map((item) => (
                       <Link
+                        key={item.href}
                         href={item.href}
                         onClick={() => setIsMenuOpen(false)}
                         className="flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors group"
@@ -545,97 +529,98 @@ export function Header() {
                           <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-primary transition-colors" />
                         </div>
                       </Link>
-                    </motion.div>
-                  ))}
-                </nav>
-
-                {/* Compact Categories Grid */}
-                <div className="px-6 pb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Kategoriler</h3>
-                    <Link href="/urunler" onClick={() => setIsMenuOpen(false)} className="text-xs text-primary font-semibold">
-                      Tümünü Gör
-                    </Link>
-                  </div>
-                  
-                  <div className="grid grid-cols-4 gap-2">
-                    {CATEGORIES.slice(0, 8).map((category) => (
-                      <Link
-                        key={category.id}
-                        href={ROUTES.category(category.slug)}
-                        onClick={() => setIsMenuOpen(false)}
-                        className="flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
-                      >
-                        <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-xl">
-                          {category.icon}
-                        </div>
-                        <span className="text-[10px] font-bold text-gray-700 text-center leading-tight line-clamp-2">
-                          {category.name}
-                        </span>
-                      </Link>
                     ))}
-                  </div>
-                </div>
+                  </nav>
 
-                {/* Footer Section */}
-                <div className="border-t border-gray-100 bg-gray-50 px-6 py-6 mt-auto">
-                  <div className="space-y-3 mb-6">
-                    <Link
-                      href="/sss"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center justify-between p-3 rounded-xl hover:bg-white transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <HelpCircle className="w-5 h-5 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">Sıkça Sorulan Sorular</span>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
-                    </Link>
+                  {/* Compact Categories Grid */}
+                  <div className="px-6 pb-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Kategoriler</h3>
+                      <Link href="/urunler" onClick={() => setIsMenuOpen(false)} className="text-xs text-primary font-semibold">
+                        Tümünü Gör
+                      </Link>
+                    </div>
                     
-                    <a
-                      href={`tel:${CONTACT_INFO.phone}`}
-                      className="flex items-center justify-between p-3 rounded-xl hover:bg-white transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Phone className="w-5 h-5 text-gray-500" />
-                        <div>
-                          <span className="text-sm font-medium text-gray-700">Müşteri Hizmetleri</span>
-                          <p className="text-xs text-gray-500">{CONTACT_INFO.phone}</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {CATEGORIES.slice(0, 8).map((category) => (
+                        <Link
+                          key={category.id}
+                          href={ROUTES.category(category.slug)}
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
+                        >
+                          <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-xl">
+                            {category.icon}
+                          </div>
+                          <span className="text-[10px] font-bold text-gray-700 text-center leading-tight line-clamp-2">
+                            {category.name}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Footer Section */}
+                  <div className="border-t border-gray-100 bg-gray-50 px-6 py-6">
+                    <div className="space-y-3 mb-6">
+                      <Link
+                        href="/sss"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center justify-between p-3 rounded-xl hover:bg-white transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <HelpCircle className="w-5 h-5 text-gray-500" />
+                          <span className="text-sm font-medium text-gray-700">Sıkça Sorulan Sorular</span>
                         </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
-                    </a>
+                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                      </Link>
+                      
+                      <a
+                        href={`tel:${CONTACT_INFO.phone}`}
+                        className="flex items-center justify-between p-3 rounded-xl hover:bg-white transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Phone className="w-5 h-5 text-gray-500" />
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">Müşteri Hizmetleri</span>
+                            <p className="text-xs text-gray-500">{CONTACT_INFO.phone}</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                      </a>
+                    </div>
+
+                    {/* Social Links */}
+                    <div className="flex items-center justify-center gap-4 py-4 border-t border-gray-200">
+                      <a href={SOCIAL_LINKS.instagram} target="_blank" className="w-10 h-10 bg-gray-200 hover:bg-[#E4405F] hover:text-white rounded-full flex items-center justify-center transition-all">
+                        <Instagram className="w-5 h-5" />
+                      </a>
+                      <a href={SOCIAL_LINKS.facebook} target="_blank" className="w-10 h-10 bg-gray-200 hover:bg-[#1877F2] hover:text-white rounded-full flex items-center justify-center transition-all">
+                        <Facebook className="w-5 h-5" />
+                      </a>
+                    </div>
+
+                    {/* Logout Button */}
+                    {user && (
+                      <button
+                        onClick={handleLogout}
+                        className="w-full mt-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        Çıkış Yap
+                      </button>
+                    )}
+
+                    <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-4">
+                      © {new Date().getFullYear()} EZMEO Premium
+                    </p>
                   </div>
-
-                  {/* Social Links */}
-                  <div className="flex items-center justify-center gap-4 py-4 border-t border-gray-200">
-                    <a href={SOCIAL_LINKS.instagram} target="_blank" className="w-10 h-10 bg-gray-200 hover:bg-[#E4405F] hover:text-white rounded-full flex items-center justify-center transition-all">
-                      <Instagram className="w-5 h-5" />
-                    </a>
-                    <a href={SOCIAL_LINKS.facebook} target="_blank" className="w-10 h-10 bg-gray-200 hover:bg-[#1877F2] hover:text-white rounded-full flex items-center justify-center transition-all">
-                      <Facebook className="w-5 h-5" />
-                    </a>
-                  </div>
-
-                  {/* Logout Button */}
-                  {user && (
-                    <button
-                      onClick={handleLogout}
-                      className="w-full mt-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      Çıkış Yap
-                    </button>
-                  )}
-
-                  <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-4">
-                    © {new Date().getFullYear()} EZMEO Premium
-                  </p>
                 </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </header>
   );
 }
