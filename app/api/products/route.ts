@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         let products;
 
         if (id) {
-            // Fetch single product by ID
+            // Fetch single product by ID from Supabase
             const { createServerClient } = await import("@/lib/supabase");
             const supabase = createServerClient();
             const { data, error } = await supabase
@@ -36,14 +36,34 @@ export async function GET(request: NextRequest) {
             if (error) throw error;
             return NextResponse.json({ success: true, product: data });
         } else if (slug) {
-            products = await getProductBySlug(slug);
-            return NextResponse.json({ success: true, product: products });
+            // Fetch single product by slug from Supabase
+            const { createServerClient } = await import("@/lib/supabase");
+            const supabase = createServerClient();
+            const { data, error } = await supabase
+                .from("products")
+                .select("*, variants:product_variants(*)")
+                .eq("slug", slug)
+                .single();
+            if (error) {
+                // Fallback to static data if not found in Supabase
+                products = await getProductBySlug(slug);
+                return NextResponse.json({ success: true, product: products });
+            }
+            return NextResponse.json({ success: true, product: data });
         } else if (featured === "true") {
             products = await getFeaturedProducts();
         } else if (bestseller === "true") {
             products = await getBestsellerProducts();
         } else if (category) {
-            products = await getProductsByCategory(category);
+            // Fetch products by category from Supabase
+            const { createServerClient } = await import("@/lib/supabase");
+            const supabase = createServerClient();
+            const { data, error } = await supabase
+                .from("products")
+                .select("*, variants:product_variants(*)")
+                .eq("category", category);
+            if (error) throw error;
+            return NextResponse.json({ success: true, products: data || [] });
         } else if (search) {
             products = await searchProducts(search);
         } else {

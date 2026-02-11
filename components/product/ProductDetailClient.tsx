@@ -1,11 +1,11 @@
 "use client";
 
-import { use, useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     ShoppingCart, Star, Check, Package, Truck, Shield, Heart,
     Share2, Minus, Plus, ChevronDown, Leaf, Award, Clock,
-    MessageCircle, ThumbsUp, Facebook, Twitter, Copy
+    MessageCircle, ThumbsUp, Facebook, Twitter, Copy, RefreshCw
 } from "lucide-react";
 import { getProductBySlug, getRelatedProducts } from "@/lib/products";
 import { useCart } from "@/lib/cart-context";
@@ -13,6 +13,7 @@ import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ImageGallery } from "@/components/product/ImageGallery";
 import { motion, AnimatePresence } from "framer-motion";
+import { Product } from "@/types/product";
 
 type TabType = "details" | "nutrition" | "reviews";
 
@@ -21,8 +22,9 @@ interface ProductDetailClientProps {
 }
 
 export function ProductDetailClient({ slug }: ProductDetailClientProps) {
-    const product = getProductBySlug(slug);
-    const relatedProducts = product ? getRelatedProducts(product, 4) : [];
+    const [product, setProduct] = useState<Product | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
 
     const [selectedVariant, setSelectedVariant] = useState(0);
     const [quantity, setQuantity] = useState(1);
@@ -32,6 +34,67 @@ export function ProductDetailClient({ slug }: ProductDetailClientProps) {
     const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
     const { addToCart } = useCart();
+
+    // Fetch product from API (Supabase)
+    useEffect(() => {
+        async function fetchProduct() {
+            try {
+                const response = await fetch(`/api/products?slug=${slug}`);
+                const data = await response.json();
+
+                if (data.success && data.product) {
+                    console.log('Product from API:', data.product);
+                    console.log('Images from API:', data.product.images);
+                    setProduct(data.product);
+
+                    // Fetch related products
+                    const relatedResponse = await fetch(`/api/products?category=${data.product.category}`);
+                    const relatedData = await relatedResponse.json();
+                    if (relatedData.success && relatedData.products) {
+                        setRelatedProducts(
+                            relatedData.products
+                                .filter((p: Product) => p.slug !== slug)
+                                .slice(0, 4)
+                        );
+                    }
+                } else {
+                    // Fallback to static data if API fails
+                    const staticProduct = getProductBySlug(slug);
+                    if (staticProduct) {
+                        setProduct(staticProduct);
+                        setRelatedProducts(getRelatedProducts(staticProduct, 4));
+                    } else {
+                        setProduct(null);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch product:", error);
+                // Fallback to static data on error
+                const staticProduct = getProductBySlug(slug);
+                if (staticProduct) {
+                    setProduct(staticProduct);
+                    setRelatedProducts(getRelatedProducts(staticProduct, 4));
+                } else {
+                    setProduct(null);
+                }
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchProduct();
+    }, [slug]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <RefreshCw className="w-12 h-12 text-primary animate-spin" />
+                    <p className="text-gray-600 font-medium">Ürün yükleniyor...</p>
+                </div>
+            </div>
+        );
+    }
 
     if (!product) {
         notFound();
