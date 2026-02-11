@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { 
   Mail, Lock, User, Eye, EyeOff, ShoppingBag, Heart, MapPin, 
   LogOut, Package, ChevronRight, Loader2, Edit2, Save, X,
-  Phone, Calendar, CreditCard
+  Phone, Calendar, CreditCard, Trash2
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,7 +43,7 @@ export default function AccountPage() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "profile">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "addresses" | "profile">("overview");
   
   // Edit Profile State
   const [isEditing, setIsEditing] = useState(false);
@@ -53,6 +53,21 @@ export default function AccountPage() {
     phone: "",
   });
   const [saving, setSaving] = useState(false);
+
+  // Address State
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<any>(null);
+  const [addressForm, setAddressForm] = useState({
+    title: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    address: "",
+    city: "",
+    district: "",
+    postalCode: "",
+  });
 
   // Fetch customer data and orders
   useEffect(() => {
@@ -94,6 +109,19 @@ export default function AccountPage() {
             console.error("Error fetching orders:", ordersError);
           } else {
             setOrders(ordersData || []);
+          }
+
+          // Fetch addresses
+          const { data: addressesData, error: addressesError } = await supabase
+            .from("customer_addresses")
+            .select("*")
+            .eq("customer_id", customerData.id)
+            .order("is_default", { ascending: false });
+
+          if (addressesError) {
+            console.error("Error fetching addresses:", addressesError);
+          } else {
+            setAddresses(addressesData || []);
           }
         }
       } catch (error) {
@@ -204,6 +232,7 @@ export default function AccountPage() {
             {[
               { id: "overview", label: "Genel Bakış", icon: Package },
               { id: "orders", label: "Siparişlerim", icon: ShoppingBag },
+              { id: "addresses", label: "Adreslerim", icon: MapPin },
               { id: "profile", label: "Profil", icon: User },
             ].map((tab) => (
               <button
@@ -344,9 +373,9 @@ export default function AccountPage() {
                     </div>
                   </div>
                 </Link>
-                <Link
-                  href="/adresler"
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow"
+                <button
+                  onClick={() => setActiveTab("addresses")}
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow text-left w-full"
                 >
                   <div className="flex items-center gap-3">
                     <div className="p-3 bg-blue-100 rounded-xl">
@@ -357,7 +386,7 @@ export default function AccountPage() {
                       <p className="text-sm text-gray-600">Teslimat adresleri</p>
                     </div>
                   </div>
-                </Link>
+                </button>
               </div>
             </div>
           )}
@@ -417,6 +446,270 @@ export default function AccountPage() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Addresses Tab */}
+          {activeTab === "addresses" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Adreslerim</h2>
+                  <p className="text-gray-600">Teslimat adreslerinizi yönetin</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingAddress(null);
+                    setAddressForm({
+                      title: "",
+                      firstName: customer?.first_name || "",
+                      lastName: customer?.last_name || "",
+                      phone: customer?.phone || "",
+                      address: "",
+                      city: "",
+                      district: "",
+                      postalCode: "",
+                    });
+                    setShowAddressForm(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-medium hover:bg-red-800 transition-colors"
+                >
+                  <MapPin className="w-4 h-4" />
+                  Yeni Adres
+                </button>
+              </div>
+
+              {/* Address Form */}
+              <AnimatePresence>
+                {showAddressForm && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+                  >
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                      {editingAddress ? "Adres Düzenle" : "Yeni Adres Ekle"}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Adres Başlığı</label>
+                        <input
+                          type="text"
+                          value={addressForm.title}
+                          onChange={(e) => setAddressForm({ ...addressForm, title: e.target.value })}
+                          placeholder="Örn: Ev, İş"
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Ad</label>
+                          <input
+                            type="text"
+                            value={addressForm.firstName}
+                            onChange={(e) => setAddressForm({ ...addressForm, firstName: e.target.value })}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Soyad</label>
+                          <input
+                            type="text"
+                            value={addressForm.lastName}
+                            onChange={(e) => setAddressForm({ ...addressForm, lastName: e.target.value })}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Telefon</label>
+                        <input
+                          type="tel"
+                          value={addressForm.phone}
+                          onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+                          placeholder="05XX XXX XX XX"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Adres</label>
+                        <input
+                          type="text"
+                          value={addressForm.address}
+                          onChange={(e) => setAddressForm({ ...addressForm, address: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+                          placeholder="Mahalle, Sokak, Bina No..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Şehir</label>
+                        <select
+                          value={addressForm.city}
+                          onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+                        >
+                          <option value="">Seçiniz</option>
+                          {["Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Amasya", "Ankara", "Antalya", "Artvin", "Aydın", "Balıkesir", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur", "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Edirne", "Elazığ", "Erzincan", "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkari", "Hatay", "Isparta", "Mersin", "İstanbul", "İzmir", "Kars", "Kastamonu", "Kayseri", "Kırklareli", "Kırşehir", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Kahramanmaraş", "Mardin", "Muğla", "Muş", "Nevşehir", "Niğde", "Ordu", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Şanlıurfa", "Uşak", "Van", "Yozgat", "Zonguldak", "Aksaray", "Bayburt", "Karaman", "Kırıkkale", "Batman", "Şırnak", "Bartın", "Ardahan", "Iğdır", "Yalova", "Karabük", "Kilis", "Osmaniye", "Düzce"].map(city => (
+                            <option key={city} value={city}>{city}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">İlçe</label>
+                        <input
+                          type="text"
+                          value={addressForm.district}
+                          onChange={(e) => setAddressForm({ ...addressForm, district: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Posta Kodu</label>
+                        <input
+                          type="text"
+                          value={addressForm.postalCode}
+                          onChange={(e) => setAddressForm({ ...addressForm, postalCode: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-3 mt-4">
+                      <button
+                        onClick={async () => {
+                          if (!customer) return;
+                          try {
+                            if (editingAddress) {
+                              await supabase
+                                .from("customer_addresses")
+                                .update({
+                                  title: addressForm.title,
+                                  first_name: addressForm.firstName,
+                                  last_name: addressForm.lastName,
+                                  phone: addressForm.phone,
+                                  address: addressForm.address,
+                                  city: addressForm.city,
+                                  district: addressForm.district,
+                                  postal_code: addressForm.postalCode,
+                                })
+                                .eq("id", editingAddress.id);
+                            } else {
+                              await supabase
+                                .from("customer_addresses")
+                                .insert({
+                                  title: addressForm.title,
+                                  first_name: addressForm.firstName,
+                                  last_name: addressForm.lastName,
+                                  phone: addressForm.phone,
+                                  address: addressForm.address,
+                                  city: addressForm.city,
+                                  district: addressForm.district,
+                                  postal_code: addressForm.postalCode,
+                                  customer_id: customer.id,
+                                  is_default: addresses.length === 0,
+                                });
+                            }
+                            // Refresh addresses
+                            const { data } = await supabase
+                              .from("customer_addresses")
+                              .select("*")
+                              .eq("customer_id", customer.id)
+                              .order("is_default", { ascending: false });
+                            setAddresses(data || []);
+                            setShowAddressForm(false);
+                          } catch (error) {
+                            console.error("Error saving address:", error);
+                          }
+                        }}
+                        className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-red-800 transition-colors"
+                      >
+                        <Save className="w-4 h-4" />
+                        Kaydet
+                      </button>
+                      <button
+                        onClick={() => setShowAddressForm(false)}
+                        className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                      >
+                        İptal
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Address List */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {addresses.length === 0 ? (
+                  <div className="md:col-span-2 text-center py-12 bg-gray-50 rounded-xl">
+                    <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Kayıtlı adresiniz yok</h3>
+                    <p className="text-gray-600">İlk adresinizi ekleyin</p>
+                  </div>
+                ) : (
+                  addresses.map((address) => (
+                    <div
+                      key={address.id}
+                      className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 relative"
+                    >
+                      {address.is_default && (
+                        <span className="absolute top-3 right-3 text-xs bg-primary/10 text-primary px-2 py-1 rounded-lg font-semibold">
+                          Varsayılan
+                        </span>
+                      )}
+                      <div className="flex items-start gap-3 mb-3">
+                        <MapPin className="w-5 h-5 text-primary mt-1 shrink-0" />
+                        <div className="flex-1">
+                          <p className="font-bold text-gray-900">{address.title || "Adres"}</p>
+                          <p className="text-gray-700">
+                            {address.first_name} {address.last_name}
+                          </p>
+                          <p className="text-gray-600">{address.phone}</p>
+                          <p className="text-gray-600">{address.address}</p>
+                          <p className="text-gray-600">
+                            {address.district}, {address.city} / {address.postal_code}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 pt-3 border-t border-gray-100">
+                        <button
+                          onClick={() => {
+                            setEditingAddress(address);
+                            setAddressForm({
+                              title: address.title || "",
+                              firstName: address.first_name || "",
+                              lastName: address.last_name || "",
+                              phone: address.phone || "",
+                              address: address.address || "",
+                              city: address.city || "",
+                              district: address.district || "",
+                              postalCode: address.postal_code || "",
+                            });
+                            setShowAddressForm(true);
+                          }}
+                          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          Düzenle
+                        </button>
+                        {!address.is_default && (
+                          <button
+                            onClick={async () => {
+                              await supabase
+                                .from("customer_addresses")
+                                .delete()
+                                .eq("id", address.id);
+                              setAddresses(addresses.filter(a => a.id !== address.id));
+                            }}
+                            className="px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           )}
 
