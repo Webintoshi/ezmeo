@@ -646,25 +646,7 @@ export function ProductDetailClient({ slug, initialProduct, initialRelatedProduc
                 </section>
             )}
 
-            {/* Mobile Sticky Add to Cart - Always Visible */}
-            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 z-50 shadow-lg">
-                <div className="flex items-center gap-3">
-                    <div className="shrink-0">
-                        <p className="text-xl font-bold text-primary">{variant.price} ₺</p>
-                        {variant.originalPrice && (
-                            <p className="text-xs text-gray-400 line-through">{variant.originalPrice} ₺</p>
-                        )}
-                    </div>
-                    <button
-                        onClick={handleAddToCart}
-                        className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-primary text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-all"
-                    >
-                        <ShoppingCart className="h-5 w-5" />
-                        Sepete Ekle
-                    </button>
-                </div>
-            </div>
-            <div className="lg:hidden h-20" />
+
         </div>
     );
 }
