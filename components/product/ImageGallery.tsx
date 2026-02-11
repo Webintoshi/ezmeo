@@ -14,8 +14,27 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
   const mainImageRef = useRef<HTMLDivElement>(null);
+  const [imageLoadStates, setImageLoadStates] = useState<Record<number, "loading" | "loaded" | "error">>({});
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
 
-  const displayImages = images.length > 0 ? images : ["/images/products/placeholder.jpg"];
+  // Filter out any invalid images (base64, empty strings, etc.)
+  const displayImages = images.filter(img =>
+    img && typeof img === 'string' && img.startsWith('http')
+  );
+
+  // Görsel yoksa boş durum göster
+  if (displayImages.length === 0) {
+    return (
+      <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl border border-gray-200 flex flex-col items-center justify-center">
+        <svg className="w-20 h-20 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeWidth="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5" strokeWidth="2"/>
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" strokeWidth="2"/>
+        </svg>
+        <p className="text-sm font-medium text-gray-500">Henüz görsel eklenmemiş</p>
+      </div>
+    );
+  }
 
   const handlePrevious = () => {
     setSelectedIndex((prev) => (prev === 0 ? displayImages.length - 1 : prev - 1));
@@ -23,6 +42,16 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
 
   const handleNext = () => {
     setSelectedIndex((prev) => (prev === displayImages.length - 1 ? 0 : prev + 1));
+  };
+
+  const handleImageLoad = (index: number) => {
+    setImageLoadStates(prev => ({ ...prev, [index]: "loaded" }));
+    setImageErrors(prev => ({ ...prev, [index]: false }));
+  };
+
+  const handleImageError = (index: number) => {
+    setImageLoadStates(prev => ({ ...prev, [index]: "error" }));
+    setImageErrors(prev => ({ ...prev, [index]: true }));
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -51,19 +80,32 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           onClick={() => setIsZoomed(!isZoomed)}
         >
           <AnimatePresence mode="wait">
-            <motion.img
-              key={selectedIndex}
-              src={displayImages[selectedIndex]}
-              alt={`${productName} - Görsel ${selectedIndex + 1}`}
-              className="w-full h-full object-contain"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/images/products/placeholder.jpg";
-              }}
-            />
+            {imageLoadStates[selectedIndex] !== "error" ? (
+              <motion.img
+                key={selectedIndex}
+                src={displayImages[selectedIndex]}
+                alt={`${productName} - Görsel ${selectedIndex + 1}`}
+                className="w-full h-full object-contain"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: imageLoadStates[selectedIndex] === "loaded" ? 1 : 0.5 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onLoad={() => handleImageLoad(selectedIndex)}
+                onError={() => handleImageError(selectedIndex)}
+              />
+            ) : (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200"
+              >
+                <svg className="w-16 h-16 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l4.586-4.586a2 2 0 012.828 0L20 14M10 4v4m0 0H4m6 0h6" />
+                </svg>
+                <p className="text-sm text-gray-500">Görsel yüklenemedi</p>
+              </motion.div>
+            )}
           </AnimatePresence>
 
           {isZoomed && (
@@ -133,9 +175,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
                 src={image}
                 alt={`${productName} - Küçük görsel ${index + 1}`}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/images/products/placeholder.jpg";
-                }}
+                loading="lazy"
               />
               {index === selectedIndex && (
                 <div className="absolute inset-0 bg-primary/10" />

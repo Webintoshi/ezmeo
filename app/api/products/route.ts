@@ -131,11 +131,12 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
     try {
         const body = await request.json();
-        const { id, variants, ...updates } = body;
+        const { id, variants, deleted_images, ...updates } = body;
 
         console.log("PUT /api/products - ID:", id);
         console.log("PUT /api/products - Updates:", updates);
         console.log("PUT /api/products - Variants:", variants);
+        console.log("PUT /api/products - Deleted images:", deleted_images);
 
         if (!id) {
             return NextResponse.json(
@@ -147,7 +148,29 @@ export async function PUT(request: NextRequest) {
         const { createServerClient } = await import("@/lib/supabase");
         const supabase = createServerClient();
 
-        // 1. Ana ürünü güncelle (variants olmadan)
+        // 1. Mevcut ürünü al (görselleri filtrelemek için)
+        const { data: existingProduct } = await supabase
+            .from("products")
+            .select("images")
+            .eq("id", id)
+            .single();
+
+        // 2. Silinen görselleri R2'den de sil
+        if (deleted_images && Array.isArray(deleted_images)) {
+            const { deleteFromR2 } = await import("@/lib/r2");
+            for (const key of deleted_images) {
+                // Key is in format "products/filename" from R2
+                await deleteFromR2(key);
+            }
+        }
+
+        // 3. Görselleri filtrele - silinenleri çıkar
+        let finalImages = updates.images || [];
+        if (deleted_images && Array.isArray(deleted_images) && existingProduct?.images) {
+            finalImages = finalImages.filter(img => !deleted_images.includes(img));
+        }
+
+        // 3. Ana ürünü güncelle (variants olmadan)
         const { data: product, error: productError } = await supabase
             .from("products")
             .update({
@@ -155,12 +178,12 @@ export async function PUT(request: NextRequest) {
                 slug: updates.slug,
                 description: updates.description,
                 short_description: updates.short_description,
-                images: updates.images,
+                images: finalImages,
                 category: updates.category,
                 subcategory: updates.subcategory,
                 tags: updates.tags,
                 is_featured: updates.is_featured,
-                is_bestseller: updates.is_new,  // is_new yerine is_bestseller kullan
+                is_bestseller: updates.is_new,
                 rating: updates.rating,
                 review_count: updates.review_count,
             })
@@ -173,10 +196,10 @@ export async function PUT(request: NextRequest) {
             throw new Error(`Product update failed: ${productError.message}`);
         }
 
-        // 2. Varyantları güncelle
+        // 4. Varyantları güncelle
         if (variants && Array.isArray(variants)) {
             console.log("Updating variants, count:", variants.length);
-            
+
             // Mevcut variant'ları sil
             const { error: deleteError } = await supabase
                 .from("product_variants")
@@ -213,7 +236,7 @@ export async function PUT(request: NextRequest) {
             }
         }
 
-        // 3. Güncellenmiş ürünü variant'larla birlikte döndür
+        // 5. Güncellenmiş ürünü variant'larla birlikte döndür
         const { data: fullProduct, error: fetchError } = await supabase
             .from("products")
             .select("*, variants:product_variants(*)")

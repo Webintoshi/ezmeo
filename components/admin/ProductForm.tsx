@@ -110,6 +110,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
   ]);
 
   const [images, setImages] = useState<string[]>([]);
+  const [deletedImages, setDeletedImages] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(false);
 
@@ -129,7 +130,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
             description: product.description || "",
             shortDescription: product.short_description || "",
             category: product.category || "",
-            subcategory: "",
+            subcategory: product.subcategory || "",
             tags: product.tags || [],
             nutritionalInfo: {
               calories: 0,
@@ -198,25 +199,73 @@ export default function ProductForm({ productId }: ProductFormProps) {
     }
   };
 
-  const handleFiles = (files: FileList) => {
-    const fileArray = Array.from(files);
+  const handleFiles = async (files: FileList) => {
+    const fileArray = Array.from(files).filter(f => f.type.startsWith('image/'));
 
-    fileArray.forEach((file, index) => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result as string;
+    if (fileArray.length === 0) return;
+
+    // Check if adding would exceed limit
+    if (images.length + fileArray.length > 6) {
+      toast.error('En fazla 6 görsel ekleyebilirsiniz');
+      return;
+    }
+
+    setSaving(true);
+    let uploadedCount = 0;
+
+    for (const file of fileArray) {
+      try {
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`${file.name} dosya boyutu çok büyük (maksimum 5MB)`);
+          continue;
+        }
+
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+        if (!allowedTypes.includes(file.type)) {
+          toast.error(`${file.name} formatı desteklenmiyor (JPG, PNG, WEBP, GIF)`);
+          continue;
+        }
+
+        // Upload to R2 via API
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'products');
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.url) {
           setImages(prev => {
             if (prev.length < 6) {
-              return [...prev, result];
+              return [...prev, result.url];
             }
             return prev;
           });
-          setUploadProgress(Math.min(((index + 1) / fileArray.length) * 100, 100));
-        };
-        reader.readAsDataURL(file);
+          uploadedCount++;
+        } else {
+          toast.error(result.error || 'Görsel yüklenemedi');
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast.error('Görsel yüklenirken hata oluştu');
       }
-    });
+
+      // Update progress
+      setUploadProgress(Math.min((uploadedCount / fileArray.length) * 100, 100));
+    }
+
+    setSaving(false);
+    setUploadProgress(0);
+
+    if (uploadedCount > 0) {
+      toast.success(`${uploadedCount} görsel başarıyla yüklendi`);
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,8 +274,20 @@ export default function ProductForm({ productId }: ProductFormProps) {
     }
   };
 
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+  const removeImage = async (index: number) => {
+    setImages(prev => {
+      const removedImage = prev[index];
+
+      // Extract R2 key from URL for deletion
+      // URL format: https://asset.ezmeo.com/products/timestamp-filename
+      if (removedImage.includes('asset.ezmeo.com')) {
+        const urlParts = removedImage.split('/');
+        const key = urlParts.slice(-2).join('/'); // Get "products/filename"
+        setDeletedImages(deleted => [...deleted, key]);
+      }
+
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const addVariant = () => {
@@ -353,7 +414,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
         short_description: formData.shortDescription,
         category: formData.category,
         subcategory: formData.subcategory,
-        images: images.length > 0 ? images : [],
+        images: images,
         tags: formData.tags,
         is_featured: formData.featured,
         is_new: formData.new,
@@ -373,16 +434,23 @@ export default function ProductForm({ productId }: ProductFormProps) {
       // API'ye gönder
       const url = '/api/products';
       const method = productId ? 'PUT' : 'POST';
-      
+
+      const requestBody: any = {
+        id: productId,
+        ...productData,
+      };
+
+      // Sadece güncelleme (PUT) sırasında silinen görselleri gönder
+      if (productId && deletedImages.length > 0) {
+        requestBody.deleted_images = deletedImages;
+      }
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          id: productId,
-          ...productData,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const result = await response.json();
@@ -392,6 +460,10 @@ export default function ProductForm({ productId }: ProductFormProps) {
       }
 
       toast.success(productId ? 'Ürün başarıyla güncellendi!' : 'Ürün başarıyla eklendi!');
+
+      // Form state'ini sıfırla
+      setDeletedImages([]);
+
       router.push('/admin/urunler');
       router.refresh();
     } catch (error) {
