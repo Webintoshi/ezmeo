@@ -9,21 +9,15 @@ import {
   X,
   Heart,
   ChevronRight,
-  Instagram,
-  Facebook,
   Home,
-  Package,
-  HelpCircle,
   Truck,
   User,
   ShoppingBag,
-  Phone,
-  MapPin,
 } from "lucide-react";
-import { SITE_NAME, NAV_LINKS, ROUTES, CATEGORIES, CONTACT_INFO, SOCIAL_LINKS } from "@/lib/constants";
+import { SITE_NAME, NAV_LINKS, ROUTES, CATEGORIES } from "@/lib/constants";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
-import { supabase } from "@/lib/supabase";
+
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { searchProducts } from "@/lib/products";
 import { Product } from "@/types/product";
@@ -54,8 +48,6 @@ export function Header() {
   const prevCartCountRef = useRef(cartItemCount);
   
   // Premium menu states
-  const [customerName, setCustomerName] = useState("");
-  const [ordersCount, setOrdersCount] = useState(0);
   const [favoritesCount, setFavoritesCount] = useState(0);
 
   useEffect(() => {
@@ -68,33 +60,6 @@ export function Header() {
       document.body.style.overflow = "";
     };
   }, [isMenuOpen]);
-
-  // Load user data for premium menu
-  useEffect(() => {
-    if (user && isMenuOpen) {
-      const loadUserData = async () => {
-        // Get customer info
-        const { data: customer } = await supabase
-          .from("customers")
-          .select("first_name")
-          .eq("user_id", user.id)
-          .single();
-        
-        if (customer) {
-          setCustomerName(customer.first_name);
-        }
-
-        // Get orders count
-        const { count: orders } = await supabase
-          .from("orders")
-          .select("*", { count: "exact", head: true })
-          .eq("customer_id", customer?.id);
-        
-        setOrdersCount(orders || 0);
-      };
-      loadUserData();
-    }
-  }, [user, isMenuOpen]);
 
   // Load favorites count
   useEffect(() => {
@@ -115,7 +80,7 @@ export function Header() {
     const handleStorage = () => loadFavorites();
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
-  }, []);
+  }, [isMenuOpen]);
 
   // AJAX Search Logic
   useEffect(() => {
@@ -148,10 +113,8 @@ export function Header() {
   // Menu items for navigation
   const menuItems = [
     { icon: Home, label: "Ana Sayfa", href: "/" },
-    { icon: Package, label: "Tüm Ürünler", href: "/urunler" },
-    { icon: ShoppingBag, label: "Siparişlerim", href: "/hesap?tab=orders", badge: ordersCount },
+    { icon: ShoppingBag, label: "Tüm Ürünler", href: "/urunler" },
     { icon: Heart, label: "Favorilerim", href: "/favoriler", badge: favoritesCount },
-    { icon: MapPin, label: "Adreslerim", href: "/hesap?tab=addresses" },
     { icon: User, label: "Hesabım", href: "/hesap" },
   ];
 
@@ -354,7 +317,7 @@ export function Header() {
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="fixed inset-y-0 right-0 w-full max-w-sm bg-white z-[99999] lg:hidden flex flex-col shadow-2xl overflow-hidden"
+                className="fixed inset-y-0 right-0 w-full bg-white z-[99999] lg:hidden flex flex-col shadow-2xl overflow-hidden"
               >
                 {/* Sticky Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white shrink-0">
@@ -392,37 +355,6 @@ export function Header() {
 
                 {/* Scrollable Content */}
                 <div className="flex-1 overflow-y-auto bg-white">
-                  {/* Welcome Section */}
-                  <div className="px-6 pt-6 pb-4">
-                    {user ? (
-                      <>
-                        <p className="text-xs text-primary font-bold uppercase tracking-widest mb-1">Tekrar Hoş Geldiniz</p>
-                        <h2 className="text-2xl font-black text-gray-900">{customerName || 'Değerli Misafirimiz'}</h2>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-xs text-primary font-bold uppercase tracking-widest mb-1">EZMEO Ailesine Katılın</p>
-                        <h2 className="text-xl font-black text-gray-900">Giriş Yap veya Kayıt Ol</h2>
-                        <div className="flex gap-3 mt-4">
-                          <Link 
-                            href="/giris" 
-                            onClick={() => setIsMenuOpen(false)}
-                            className="flex-1 py-3 bg-primary text-white rounded-xl font-bold text-center"
-                          >
-                            Giriş Yap
-                          </Link>
-                          <Link 
-                            href="/kayit" 
-                            onClick={() => setIsMenuOpen(false)}
-                            className="flex-1 py-3 border-2 border-primary text-primary rounded-xl font-bold text-center"
-                          >
-                            Kayıt Ol
-                          </Link>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
                   {/* Integrated Search */}
                   <div className="px-6 pb-4">
                     <div className="relative">
@@ -467,43 +399,6 @@ export function Header() {
                       </div>
                     )}
                   </div>
-
-                  {/* Quick Actions */}
-                  {user && (
-                    <div className="px-6 pb-6">
-                      <div className="grid grid-cols-2 gap-3">
-                        <Link 
-                          href="/hesap?tab=orders"
-                          onClick={() => setIsMenuOpen(false)}
-                          className="flex items-center gap-3 p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl border border-primary/10 active:scale-95 transition-all"
-                        >
-                          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                            <Package className="w-5 h-5 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-gray-900">Siparişlerim</p>
-                            <p className="text-xs text-gray-500">{ordersCount} sipariş</p>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-                        </Link>
-
-                        <Link 
-                          href="/favoriler"
-                          onClick={() => setIsMenuOpen(false)}
-                          className="flex items-center gap-3 p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-2xl border border-red-100 active:scale-95 transition-all"
-                        >
-                          <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center">
-                            <Heart className="w-5 h-5 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-gray-900">Favorilerim</p>
-                            <p className="text-xs text-gray-500">{favoritesCount} ürün</p>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-                        </Link>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Navigation Links */}
                   <nav className="px-6 pb-6 space-y-1">
@@ -560,60 +455,6 @@ export function Header() {
                     </div>
                   </div>
 
-                  {/* Footer Section */}
-                  <div className="border-t border-gray-100 bg-gray-50 px-6 py-6">
-                    <div className="space-y-3 mb-6">
-                      <Link
-                        href="/sss"
-                        onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center justify-between p-3 rounded-xl hover:bg-white transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <HelpCircle className="w-5 h-5 text-gray-500" />
-                          <span className="text-sm font-medium text-gray-700">Sıkça Sorulan Sorular</span>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
-                      </Link>
-                      
-                      <a
-                        href={`tel:${CONTACT_INFO.phone}`}
-                        className="flex items-center justify-between p-3 rounded-xl hover:bg-white transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Phone className="w-5 h-5 text-gray-500" />
-                          <div>
-                            <span className="text-sm font-medium text-gray-700">Müşteri Hizmetleri</span>
-                            <p className="text-xs text-gray-500">{CONTACT_INFO.phone}</p>
-                          </div>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
-                      </a>
-                    </div>
-
-                    {/* Social Links */}
-                    <div className="flex items-center justify-center gap-4 py-4 border-t border-gray-200">
-                      <a href={SOCIAL_LINKS.instagram} target="_blank" className="w-10 h-10 bg-gray-200 hover:bg-[#E4405F] hover:text-white rounded-full flex items-center justify-center transition-all">
-                        <Instagram className="w-5 h-5" />
-                      </a>
-                      <a href={SOCIAL_LINKS.facebook} target="_blank" className="w-10 h-10 bg-gray-200 hover:bg-[#1877F2] hover:text-white rounded-full flex items-center justify-center transition-all">
-                        <Facebook className="w-5 h-5" />
-                      </a>
-                    </div>
-
-                    {/* Logout Button */}
-                    {user && (
-                      <button
-                        onClick={handleLogout}
-                        className="w-full mt-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 transition-colors"
-                      >
-                        Çıkış Yap
-                      </button>
-                    )}
-
-                    <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-4">
-                      © {new Date().getFullYear()} EZMEO Premium
-                    </p>
-                  </div>
                 </div>
               </motion.div>
             </>
