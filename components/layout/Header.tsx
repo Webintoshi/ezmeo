@@ -338,19 +338,22 @@ export function Header() {
       <AnimatePresence>
         {isMenuOpen && (
           <>
+            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMenuOpen(false)}
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[9998] lg:hidden"
+              className="fixed inset-0 bg-black/40 z-[9998] lg:hidden"
             />
+            {/* Menu Panel */}
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 right-0 w-full max-w-sm bg-white z-[9999] lg:hidden flex flex-col shadow-2xl"
+              className="fixed inset-y-0 right-0 w-full max-w-sm bg-white z-[9999] lg:hidden flex flex-col shadow-2xl overflow-hidden"
+              style={{ backgroundColor: '#ffffff' }}
             >
               {/* Sticky Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white sticky top-0 z-10">
@@ -387,7 +390,7 @@ export function Header() {
               </div>
 
               {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto bg-white">
                 {/* Welcome Section */}
                 <motion.div 
                   initial={{ opacity: 0, y: -10 }}
