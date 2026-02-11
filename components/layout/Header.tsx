@@ -14,9 +14,11 @@ import {
   Package,
   HelpCircle,
   Truck,
+  User,
 } from "lucide-react";
 import { SITE_NAME, NAV_LINKS, ROUTES, CATEGORIES, CONTACT_INFO, SOCIAL_LINKS } from "@/lib/constants";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth-context";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { searchProducts } from "@/lib/products";
 import { Product } from "@/types/product";
@@ -27,6 +29,7 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const { getTotalItems, setIsOpen: setIsCartOpen } = useCart();
+  const { user } = useAuth();
   const cartItemCount = getTotalItems();
   const cartControls = useAnimation();
   const prevCartCountRef = useRef(cartItemCount);
@@ -79,6 +82,10 @@ export function Header() {
     { name: "Ana Sayfa", href: "/", icon: Home },
     { name: "Tüm Ürünler", href: "/urunler", icon: Package },
     { name: "SSS", href: "/sss", icon: HelpCircle },
+    ...(user 
+      ? [{ name: "Hesabım", href: "/hesap", icon: User }]
+      : [{ name: "Giriş Yap", href: "/giris", icon: User }]
+    ),
   ];
 
   return (
@@ -136,6 +143,25 @@ export function Header() {
             >
               <Heart className="h-5 w-5 text-gray-700 group-hover:text-primary transition-colors" />
             </Link>
+
+            {/* Account Links */}
+            {user ? (
+              <Link
+                href="/hesap"
+                className="hidden sm:flex items-center gap-2 p-2.5 hover:bg-primary/5 rounded-xl transition-all group"
+                aria-label="Hesabım"
+              >
+                <User className="h-5 w-5 text-gray-700 group-hover:text-primary transition-colors" />
+              </Link>
+            ) : (
+              <Link
+                href="/giris"
+                className="hidden sm:flex items-center gap-2 p-2.5 hover:bg-primary/5 rounded-xl transition-all group"
+                aria-label="Giriş Yap"
+              >
+                <User className="h-5 w-5 text-gray-700 group-hover:text-primary transition-colors" />
+              </Link>
+            )}
 
             <motion.button
               onClick={() => setIsCartOpen(true)}

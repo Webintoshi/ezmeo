@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 import { formatPrice, cn } from "@/lib/utils";
 import { TURKISH_CITIES, SHIPPING_THRESHOLD } from "@/lib/constants";
 import { getActivePaymentGateways } from "@/lib/payments";
@@ -26,13 +28,17 @@ import {
   AlertCircle,
   RotateCcw,
   Check,
-  ChevronLeft
+  ChevronLeft,
+  UserPlus,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, shipping, total, clearCart } = useCart();
+  const { user } = useAuth();
 
   const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayConfig[]>([]);
   const [isLoadingGateways, setIsLoadingGateways] = useState(true);
@@ -51,11 +57,42 @@ export default function CheckoutPage() {
     country: "Türkiye",
   });
 
+  // Account Creation State
+  const [createAccount, setCreateAccount] = useState(false);
+  const [accountPassword, setAccountPassword] = useState("");
+  const [accountPasswordConfirm, setAccountPasswordConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
   const [selectedShippingMethod, setSelectedShippingMethod] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
 
   // Step State (1: Delivery, 2: Payment)
   const [currentStep, setCurrentStep] = useState(1);
+
+  // Load user data if logged in
+  useEffect(() => {
+    if (user) {
+      // User is logged in, fetch customer data
+      const loadUserData = async () => {
+        const { data: customer } = await supabase
+          .from("customers")
+          .select("*")
+          .eq("user_id", user.id)
+          .single();
+        
+        if (customer) {
+          setContactEmail(user.email || "");
+          setShippingInfo(prev => ({
+            ...prev,
+            firstName: customer.first_name || "",
+            lastName: customer.last_name || "",
+            phone: customer.phone || "",
+          }));
+        }
+      };
+      loadUserData();
+    }
+  }, [user]);
 
   useEffect(() => {
     const initData = async () => {
@@ -110,11 +147,88 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Validate account creation fields if checked
+    if (!user && createAccount) {
+      if (!accountPassword || accountPassword.length < 6) {
+        toast.error("Şifre en az 6 karakter olmalıdır.");
+        return;
+      }
+      if (accountPassword !== accountPasswordConfirm) {
+        toast.error("Şifreler eşleşmiyor.");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
+      let customerId = null;
+      let userId = user?.id || null;
+
+      // Create account if requested and not logged in
+      if (!user && createAccount) {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: contactEmail,
+          password: accountPassword,
+          options: {
+            data: {
+              first_name: shippingInfo.firstName,
+              last_name: shippingInfo.lastName,
+              phone: shippingInfo.phone,
+            },
+            emailRedirectTo: `${window.location.origin}/giris?verified=true`,
+          },
+        });
+
+        if (authError) {
+          if (authError.message.includes("User already registered")) {
+            toast.error("Bu e-posta adresi zaten kayıtlı. Lütfen giriş yapın.");
+          } else {
+            toast.error("Hesap oluşturulurken bir hata oluştu: " + authError.message);
+          }
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (authData.user) {
+          userId = authData.user.id;
+          
+          // Create customer record linked to the new user
+          const { data: customerData, error: customerError } = await supabase
+            .from("customers")
+            .insert({
+              user_id: authData.user.id,
+              email: contactEmail,
+              first_name: shippingInfo.firstName,
+              last_name: shippingInfo.lastName,
+              phone: shippingInfo.phone,
+              status: "active",
+            })
+            .select()
+            .single();
+
+          if (customerError) {
+            console.error("Error creating customer:", customerError);
+          } else {
+            customerId = customerData.id;
+          }
+        }
+      } else if (user) {
+        // Get existing customer ID for logged-in user
+        const { data: customer } = await supabase
+          .from("customers")
+          .select("id")
+          .eq("user_id", user.id)
+          .single();
+        
+        if (customer) {
+          customerId = customer.id;
+        }
+      }
+
       const orderData = {
-        customerId: null,
+        customerId,
+        userId,
         items: items.map(item => ({
           productId: item.productId,
           variantId: item.variantId,
@@ -129,9 +243,10 @@ export default function CheckoutPage() {
         paymentMethod: selectedPaymentMethod,
         shippingCost: shipping,
         discount: 0,
-        notes: "",
+        notes: createAccount ? "Hesap oluşturuldu" : "",
         contactEmail,
-        receiveUpdates: true
+        receiveUpdates: true,
+        createAccount: !user && createAccount
       };
 
       const response = await fetch("/api/orders", {
@@ -143,7 +258,10 @@ export default function CheckoutPage() {
       const result = await response.json();
 
       if (result.success) {
-        toast.success("Siparişiniz başarıyla alındı!");
+        toast.success(createAccount 
+          ? "Siparişiniz alındı! Hesabınız oluşturuldu, lütfen e-postanızı doğrulayın." 
+          : "Siparişiniz başarıyla alındı!"
+        );
         clearCart();
         router.push(`/siparisler/${result.order.id}?new=true`);
       } else {
@@ -255,9 +373,91 @@ export default function CheckoutPage() {
                         value={contactEmail}
                         onChange={(e) => setContactEmail(e.target.value)}
                         placeholder="ornek@email.com"
-                        className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300"
+                        disabled={!!user}
+                        className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-500"
                       />
                     </div>
+
+                    {/* Account Creation - Only for non-logged in users */}
+                    {!user && (
+                      <div className="space-y-4">
+                        <label className="flex items-start gap-3 p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 cursor-pointer hover:bg-emerald-50 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={createAccount}
+                            onChange={(e) => setCreateAccount(e.target.checked)}
+                            className="mt-0.5 w-5 h-5 text-emerald-600 border-emerald-300 rounded focus:ring-emerald-500 cursor-pointer"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <UserPlus className="w-4 h-4 text-emerald-600" />
+                              <span className="font-semibold text-gray-900">Hesap Oluştur</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Sonraki alışverişlerinizde hızlı checkout için şifrenizi belirleyin
+                            </p>
+                          </div>
+                        </label>
+
+                        {/* Password Fields - Only when account creation is checked */}
+                        <AnimatePresence>
+                          {createAccount && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="space-y-4 overflow-hidden"
+                            >
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-600">Şifre Oluştur</label>
+                                <div className="relative">
+                                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                  <input
+                                    type={showPassword ? "text" : "password"}
+                                    value={accountPassword}
+                                    onChange={(e) => setAccountPassword(e.target.value)}
+                                    placeholder="En az 6 karakter"
+                                    minLength={6}
+                                    className="w-full h-12 pl-12 pr-12 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                  >
+                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-600">Şifre Tekrar</label>
+                                <div className="relative">
+                                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                  <input
+                                    type={showPassword ? "text" : "password"}
+                                    value={accountPasswordConfirm}
+                                    onChange={(e) => setAccountPasswordConfirm(e.target.value)}
+                                    placeholder="Şifrenizi tekrar girin"
+                                    className="w-full h-12 pl-12 pr-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300"
+                                  />
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                Hesap oluşturarak{" "}
+                                <Link href="/kullanim-kosullari" className="text-primary hover:underline" target="_blank">
+                                  Kullanım Koşulları
+                                </Link>
+                                {" "}ve{" "}
+                                <Link href="/gizlilik-politikasi" className="text-primary hover:underline" target="_blank">
+                                  Gizlilik Politikası
+                                </Link>
+                                {" "}nı kabul etmiş olursunuz.
+                              </p>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
 
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-600">Telefon</label>

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
+import { AuthProvider } from "@/lib/auth-context";
 import { LayoutWrapper } from "@/components/layout/LayoutWrapper";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
 import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
@@ -81,14 +82,16 @@ export default function RootLayout({
       >
         <TrackingProvider>
           <AnalyticsTracker />
-          <CartProvider>
-            <WishlistProvider>
-              <LayoutWrapper>
-                {children}
-                <Toaster position="top-right" theme="light" />
-              </LayoutWrapper>
-            </WishlistProvider>
-          </CartProvider>
+          <AuthProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <LayoutWrapper>
+                  {children}
+                  <Toaster position="top-right" theme="light" />
+                </LayoutWrapper>
+              </WishlistProvider>
+            </CartProvider>
+          </AuthProvider>
         </TrackingProvider>
       </body>
     </html>
