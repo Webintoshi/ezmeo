@@ -83,7 +83,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
   const isFailed = failedImages.has(selectedIndex);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       {/* Main Image */}
       <div className="relative group w-full">
         <div
