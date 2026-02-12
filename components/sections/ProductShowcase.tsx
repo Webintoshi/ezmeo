@@ -251,17 +251,30 @@ export function ProductShowcase() {
         let query = supabase
           .from("products")
           .select(`*, variants:product_variants(*)`)
-          .eq("is_active", true);
+          .eq("status", "active");
 
         switch (activeTab) {
           case "bestsellers":
-            query = query.eq("is_featured", true);
+            query = query.eq("is_bestseller", true);
             break;
           case "new":
             query = query.eq("is_new", true);
             break;
           case "discounted":
-            query = query.filter("variants.original_price", "gt", "variants.price");
+            const { data: allProducts } = await supabase
+              .from("products")
+              .select(`*, variants:product_variants(*)`)
+              .eq("status", "active");
+            
+            if (allProducts) {
+              const transformed = allProducts.map(transformProduct);
+              const filtered = transformed.filter(p => 
+                p.variants.some(v => v.originalPrice && v.originalPrice > v.price)
+              );
+              setProducts(filtered);
+              setLoading(false);
+              return;
+            }
             break;
         }
 
@@ -274,15 +287,7 @@ export function ProductShowcase() {
 
         if (data) {
           const transformed = data.map(transformProduct);
-          
-          if (activeTab === "discounted") {
-            const filtered = transformed.filter(p => 
-              p.variants.some(v => v.originalPrice && v.originalPrice > v.price)
-            );
-            setProducts(filtered);
-          } else {
-            setProducts(transformed);
-          }
+          setProducts(transformed);
         }
       } catch (err) {
         console.error("Failed to load products:", err);
