@@ -21,14 +21,20 @@ interface ProductDetailClientProps {
     slug: string;
     initialProduct: Product | null;
     initialRelatedProducts?: Product[];
+    initialVariantIndex?: number;
 }
 
-export function ProductDetailClient({ slug, initialProduct, initialRelatedProducts = [] }: ProductDetailClientProps) {
+export function ProductDetailClient({
+    slug,
+    initialProduct,
+    initialRelatedProducts = [],
+    initialVariantIndex = 0
+}: ProductDetailClientProps) {
     const [product, setProduct] = useState<Product | null>(initialProduct);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>(initialRelatedProducts);
     const [isLoadingRelated, setIsLoadingRelated] = useState(false);
 
-    const [selectedVariant, setSelectedVariant] = useState(0);
+    const [selectedVariant, setSelectedVariant] = useState(initialVariantIndex);
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState<TabType>("details");
     const [isWishlisted, setIsWishlisted] = useState(false);

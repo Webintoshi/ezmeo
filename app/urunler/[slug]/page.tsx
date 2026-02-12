@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ProductDetailClient } from "@/components/product/ProductDetailClient";
 import { getProductBySlug, getProductSlug } from "@/lib/products";
 import { createServerClient } from "@/lib/supabase";
+import { parseProductSlug, findVariantIndex, buildCanonicalUrl } from "@/lib/slug-parser";
 
 // Generate metadata on the server side
 export async function generateMetadata({
@@ -11,9 +12,12 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params;
-  
+
+  // Parse URL slug to extract base slug
+  const { baseSlug } = parseProductSlug(slug);
+
   // Get product from static data (fastest)
-  const product = getProductBySlug(slug);
+  const product = getProductBySlug(baseSlug);
   
   if (!product) {
     return {
@@ -44,7 +48,7 @@ export async function generateMetadata({
       images: product.images?.[0] ? [product.images[0]] : [],
     },
     alternates: {
-      canonical: `https://ezmeo.com/urunler/${slug}`,
+      canonical: buildCanonicalUrl(baseSlug),
     },
   };
 }
@@ -81,7 +85,11 @@ export default async function ProductDetailPage({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { slug } = await params;
+  const { slug: urlSlug } = await params;
+
+  // Parse URL slug to extract base product slug and variant info
+  const parsedSlug = parseProductSlug(urlSlug);
+  const { baseSlug } = parsedSlug;
 
   let product = null;
   let relatedProducts: any[] = [];
@@ -92,7 +100,7 @@ export default async function ProductDetailPage({
     const { data: dbProduct } = await supabase
       .from("products")
       .select("*, variants:product_variants(*)")
-      .eq("slug", slug)
+      .eq("slug", baseSlug)  // Use baseSlug instead of urlSlug
       .eq("is_active", true)
       .single();
 
@@ -118,7 +126,7 @@ export default async function ProductDetailPage({
 
   // 2. SECOND: Fallback to static data if Supabase fails
   if (!product) {
-    product = getProductBySlug(slug);
+    product = getProductBySlug(baseSlug);  // Use baseSlug instead of urlSlug
   }
 
   // 3. If still no product, return 404
@@ -126,7 +134,13 @@ export default async function ProductDetailPage({
     notFound();
   }
 
-  // 4. Get related products from same category (from static data - faster)
+  // 4. Determine selected variant based on URL
+  let selectedVariantIndex = 0;
+  if (product.variants && product.variants.length > 0) {
+    selectedVariantIndex = findVariantIndex(product.variants, parsedSlug);
+  }
+
+  // 5. Get related products from same category (from static data - faster)
   try {
     // Try to get related products from static data first
     const { getRelatedProducts } = await import("@/lib/products");
@@ -137,21 +151,21 @@ export default async function ProductDetailPage({
   }
 
   // Generate JSON-LD Schema
-  const variant = product.variants?.[0];
+  const variant = product.variants?.[selectedVariantIndex || 0];
   const jsonLd = variant ? {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     description: product.shortDescription || product.description?.slice(0, 160),
     image: product.images?.[0],
-    url: `https://ezmeo.com/urunler/${slug}`,
+    url: `https://ezmeo.com/urunler/${baseSlug}`,
     brand: {
       "@type": "Brand",
       name: "Ezmeo",
     },
     offers: {
       "@type": "Offer",
-      url: `https://ezmeo.com/urunler/${slug}`,
+      url: `https://ezmeo.com/urunler/${baseSlug}`,
       priceCurrency: "TRY",
       price: variant.price,
       priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
@@ -192,7 +206,7 @@ export default async function ProductDetailPage({
         "@type": "ListItem",
         position: 3,
         name: product.name,
-        item: `https://ezmeo.com/urunler/${slug}`,
+        item: `https://ezmeo.com/urunler/${baseSlug}`,
       },
     ],
   };
@@ -213,9 +227,10 @@ export default async function ProductDetailPage({
       
       {/* Product Detail Client Component */}
       <ProductDetailClient
-        slug={slug}
+        slug={baseSlug}
         initialProduct={product}
         initialRelatedProducts={relatedProducts}
+        initialVariantIndex={selectedVariantIndex}
       />
     </>
   );
