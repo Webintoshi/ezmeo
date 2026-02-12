@@ -1,7 +1,7 @@
 {
     "version": 2,
     "functions": {
-        "api/upload/route.ts": {
+        "api/upload/**": {
             "maxDuration": 60
         }
     },
