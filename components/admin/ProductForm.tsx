@@ -432,6 +432,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
     e.preventDefault();
 
     if (!validate()) {
+      toast.error('Lütfen zorunlu alanları doldurun');
       return;
     }
 
@@ -857,10 +858,13 @@ export default function ProductForm({ productId }: ProductFormProps) {
                               placeholder="Örn: 2'li Avantaj Paketi"
                               className={cn(
                                 "w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all text-sm font-bold shadow-sm",
-                                errors[`variant_${index}_name`] && "border-rose-200 bg-rose-50/30"
+                                errors[`variant_${index}_name`] && "border-rose-500 bg-rose-50/30"
                               )}
                               required
                             />
+                            {errors[`variant_${index}_name`] && (
+                              <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">{errors[`variant_${index}_name`]}</p>
+                            )}
                           </div>
                           <div className="md:col-span-2 space-y-2">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Gramaj</label>
@@ -879,9 +883,15 @@ export default function ProductForm({ productId }: ProductFormProps) {
                               step="0.01"
                               value={variant.price}
                               onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
-                              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all text-sm font-bold text-indigo-600 shadow-sm"
+                              className={cn(
+                                "w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all text-sm font-bold text-indigo-600 shadow-sm",
+                                errors[`variant_${index}_price`] && "border-rose-500 bg-rose-50/30"
+                              )}
                               required
                             />
+                            {errors[`variant_${index}_price`] && (
+                              <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">{errors[`variant_${index}_price`]}</p>
+                            )}
                           </div>
                           <div className="md:col-span-2 space-y-2">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Stok</label>
