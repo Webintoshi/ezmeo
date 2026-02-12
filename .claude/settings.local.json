@@ -1,11 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run build:*)",
-      "Bash(test:*)",
-      "Bash(ls:*)",
-      "Bash(icon \")",
-      "Bash(npm run dev:*)"
+      "Write",
+      "Read(C:\\Users\\webin\\OneDrive\\Desktop\\Ezmeo\\app\\urunler\\[slug]\\page.tsx)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\webin\\OneDrive\\Desktop\\Ezmeo\\app\\api\\admin\\customers"
     ]
+  },
+  "model": "to try Opus 4.5",
+  "enabledPlugins": {
+    "glm-plan-usage@zai-coding-plugins": true
   }
 }
