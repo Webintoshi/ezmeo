@@ -104,6 +104,12 @@ export default async function ProductDetailPage({
       .eq("is_active", true)
       .single();
 
+    console.log('=== DEBUG Product Page ===');
+    console.log('URL Slug:', urlSlug);
+    console.log('Parsed Base Slug:', baseSlug);
+    console.log('DB Product:', dbProduct);
+    console.log('========================');
+
     console.log('Product Page - dbProduct.images:', dbProduct?.images);
     console.log('Product Page - dbProduct.images count:', dbProduct?.images?.length);
     console.log('Product Page - dbProduct:', dbProduct);
