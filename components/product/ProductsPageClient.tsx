@@ -383,7 +383,7 @@ function ProductsPageContent({ initialProducts, categoryCounts }: ProductsPageCl
 
 export function ProductsPageClient({ initialProducts, categoryCounts }: ProductsPageClientProps) {
   return (
-    <Suspense fallback={
+    <React.Suspense fallback={
       <div className="min-h-screen bg-gray-50">
         <section className="bg-gradient-to-br from-primary via-primary/90 to-primary/80 py-12 md:py-16 relative overflow-hidden">
           <div className="container mx-auto px-4 relative z-10">
@@ -403,6 +403,6 @@ export function ProductsPageClient({ initialProducts, categoryCounts }: Products
       </div>
     }>
       <ProductsPageContent initialProducts={initialProducts} categoryCounts={categoryCounts} />
-    </Suspense>
+    </React.Suspense>
   );
 }
