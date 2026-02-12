@@ -55,36 +55,9 @@ export const TURKISH_CITIES = [
   "Zonguldak",
 ];
 
-// Kategoriler
-export const CATEGORIES: CategoryInfo[] = [
-  {
-    id: "fistik-ezmesi",
-    name: "Fıstık Ezmeleri",
-    slug: "fistik-ezmesi",
-    description: "Akdeniz ve Ege bölgelerinden en kaliteli yer fıstıklarından üretilen doğal ezmeler",
-    image: "/images/categories/fistik-ezmesi.jpg",
-    icon: "🥜",
-    productCount: 4,
-  },
-  {
-    id: "findik-ezmesi",
-    name: "Fındık Ezmeleri",
-    slug: "findik-ezmesi",
-    description: "Karadeniz bölgesinin en iyi fındıklarından üretilen ezmeler",
-    image: "/images/categories/findik-ezmesi.jpg",
-    icon: "🌰",
-    productCount: 2,
-  },
-  {
-    id: "kuruyemis",
-    name: "Kuruyemişler",
-    slug: "kuruyemis",
-    description: "Çiğ ve kavrulmuş doğal kuruyemişler",
-    image: "/images/categories/kuruyemisler.jpg",
-    icon: "🥔",
-    productCount: 5,
-  },
-];
+// Kategoriler - ARTIK STATİK YOK! Database'den çekiliyor.
+// Kategorileri lib/categories.ts -> fetchCategories() kullanarak çekin
+export const CATEGORIES: CategoryInfo[] = [];
 
 // URL Yolları
 export const ROUTES = {

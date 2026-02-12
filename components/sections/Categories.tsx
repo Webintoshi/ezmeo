@@ -3,19 +3,31 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import { CATEGORIES, ROUTES } from "@/lib/constants";
+import { ROUTES } from "@/lib/constants";
 import { useEffect, useRef, useState } from "react";
-
-// Kategori görselleri mapping
-const categoryImages: Record<string, string> = {
-  "fistik-ezmesi": "/fistik_ezmesi_kategori_gorsel.webp",
-  "findik-ezmesi": "/Findik_Ezmeleri_Kategorisi.webp",
-  "kuruyemis": "/KURUYEMIS_KATEGORISI_BANNER.svg",
-};
+import { fetchCategories } from "@/lib/categories";
+import { CategoryInfo } from "@/types/product";
 
 export function Categories() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [categories, setCategories] = useState<CategoryInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Database'den kategorileri çek
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const data = await fetchCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -37,6 +49,11 @@ export function Categories() {
       }
     };
   }, []);
+
+  // Kategori yoksa section'ı gösterme
+  if (!loading && categories.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-20 md:py-28 bg-gradient-to-b from-white to-secondary/30 relative overflow-hidden">
@@ -61,58 +78,65 @@ export function Categories() {
           </p>
         </div>
 
-        {/* Categories Grid */}
-        <div ref={sectionRef} className={`grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 scroll-slide ${isVisible ? "is-visible" : ""}`}>
-          {CATEGORIES.map((category, index) => (
-            <div key={category.id}>
-              <Link
-                href={ROUTES.category(category.slug)}
-                className="group block"
-              >
-                <div className="premium-card-hover bg-white rounded-3xl overflow-hidden h-full shadow-lg border border-gray-100 relative">
-                  {/* Kategori Görseli */}
-                  <div className="relative h-64 overflow-hidden">
-                    <Image
-                      src={categoryImages[category.slug] || "/placeholder.jpg"}
-                      alt={category.name}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+        {/* Loading State */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="aspect-[4/3] bg-gray-100 rounded-3xl animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          /* Categories Grid */
+          <div ref={sectionRef} className={`grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 scroll-slide ${isVisible ? "is-visible" : ""}`}>
+            {categories.map((category) => (
+              <div key={category.id}>
+                <Link
+                  href={ROUTES.category(category.slug)}
+                  className="group block"
+                >
+                  <div className="premium-card-hover bg-white rounded-3xl overflow-hidden h-full shadow-lg border border-gray-100 relative">
+                    {/* Kategori Görseli */}
+                    <div className="relative h-64 overflow-hidden">
+                      <Image
+                        src={category.image || "/placeholder.jpg"}
+                        alt={category.name}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
 
-                    {/* Kategori Adı - Görsel Üzerinde */}
-                    <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                      <h3 className="font-bold text-2xl mb-1 drop-shadow-lg">
-                        {category.name}
-                      </h3>
-                      <p className="text-sm text-white/90 drop-shadow">
-                        {category.productCount} ürün seçeneği
-                      </p>
+                      {/* Kategori Adı - Görsel Üzerinde */}
+                      <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                        <h3 className="font-bold text-2xl mb-1 drop-shadow-lg">
+                          {category.name}
+                        </h3>
+                        <p className="text-sm text-white/90 drop-shadow">
+                          {category.productCount > 0 ? `${category.productCount} ürün` : "Ürünleri keşfet"}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* İçerik Alanı */}
-                  <div className="p-6 text-center">
-                    {/* Description */}
-                    <p className="text-sm text-muted/80 mb-4 leading-relaxed">
-                      {category.name === "Fıstık Ezmeleri" && "Protein dolu, enerji verici doğal lezzet"}
-                      {category.name === "Fındık Ezmeleri" && "Karadeniz'in en kaliteli fındıklarından"}
-                      {category.name === "Kuruyemişler" && "Taze, doğal, sağlıklı atıştırmalık"}
-                    </p>
+                    {/* İçerik Alanı */}
+                    <div className="p-6 text-center">
+                      {/* Description */}
+                      <p className="text-sm text-muted/80 mb-4 leading-relaxed line-clamp-2">
+                        {category.description || `${category.name} kategorisindeki ürünleri keşfedin`}
+                      </p>
 
-                    {/* Arrow */}
-                    <div className="flex items-center justify-center text-primary opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <ArrowRight className="h-5 w-5" />
+                      {/* Arrow */}
+                      <div className="flex items-center justify-center text-primary opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                          <ArrowRight className="h-5 w-5" />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            </div>
-          ))}
-        </div>
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* View All Button */}
         <div className={`text-center mt-12 scroll-slide ${isVisible ? "is-visible" : ""}`}>

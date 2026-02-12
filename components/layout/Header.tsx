@@ -18,9 +18,10 @@ import {
   Instagram,
   Facebook,
 } from "lucide-react";
-import { SITE_NAME, NAV_LINKS, ROUTES, CATEGORIES, CONTACT_INFO, SOCIAL_LINKS } from "@/lib/constants";
+import { SITE_NAME, NAV_LINKS, ROUTES, CONTACT_INFO, SOCIAL_LINKS } from "@/lib/constants";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
+import { CategoryInfo } from "@/types/product";
 
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { searchProducts } from "@/lib/products";
@@ -45,6 +46,7 @@ export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const { getTotalItems, setIsOpen: setIsCartOpen } = useCart();
   const { user, signOut } = useAuth();
   const cartItemCount = getTotalItems();
@@ -53,6 +55,20 @@ export function Header() {
   
   // Premium menu states
   const [favoritesCount, setFavoritesCount] = useState(0);
+
+  // Load categories from Supabase
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const { fetchCategories } = await import("@/lib/categories");
+        const data = await fetchCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      }
+    }
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -445,21 +461,27 @@ export function Header() {
                     </div>
                     
                     <div className="grid grid-cols-4 gap-2">
-                      {CATEGORIES.slice(0, 8).map((category) => (
-                        <Link
-                          key={category.id}
-                          href={ROUTES.category(category.slug)}
-                          onClick={() => setIsMenuOpen(false)}
-                          className="flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
-                        >
-                          <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-xl">
-                            {category.icon}
-                          </div>
-                          <span className="text-[10px] font-bold text-gray-700 text-center leading-tight line-clamp-2">
-                            {category.name}
-                          </span>
-                        </Link>
-                      ))}
+                      {categories.length === 0 ? (
+                        <div className="col-span-4 text-center py-4 text-gray-500 text-sm">
+                          Kategori bulunamadı
+                        </div>
+                      ) : (
+                        categories.slice(0, 8).map((category) => (
+                          <Link
+                            key={category.id}
+                            href={ROUTES.category(category.slug)}
+                            onClick={() => setIsMenuOpen(false)}
+                            className="flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
+                          >
+                            <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-xl">
+                              {category.icon}
+                            </div>
+                            <span className="text-[10px] font-bold text-gray-700 text-center leading-tight line-clamp-2">
+                              {category.name}
+                            </span>
+                          </Link>
+                        ))
+                      )}
                     </div>
                   </div>
 

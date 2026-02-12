@@ -1,70 +1,194 @@
-import { CategoryInfo, ProductCategory } from "@/types/product";
-import { getProductsByCategory } from "./products";
+import { CategoryInfo } from "@/types/product";
+import { createBrowserClient } from "@supabase/ssr";
 
-export const CATEGORIES: CategoryInfo[] = [
-  {
-    id: "fistik-ezmesi",
-    name: "Fıstık Ezmesi",
-    slug: "fistik-ezmesi",
-    description: "Akdeniz ve Ege bölgelerinden en kaliteli yer fıstıklarından üretilen, doğal ve katkısız fıstık ezmeleri.",
-    image: "/images/categories/fistik-ezmesi.jpg",
-    icon: "🥜",
-    productCount: 0,
-  },
-  {
-    id: "findik-ezmesi",
-    name: "Fındık Ezmesi",
-    slug: "findik-ezmesi",
-    description: "Giresun ve Ordu'nun en kaliteli fındıklarından üretilen, kremalı ve lezzetli fındık ezmeleri.",
-    image: "/images/categories/findik-ezmesi.jpg",
-    icon: "🌰",
-    productCount: 0,
-  },
-  {
-    id: "kuruyemis",
-    name: "Kuruyemiş",
-    slug: "kuruyemis",
-    description: "Doğal ve taze kuruyemiş çeşitleri. Çiğ ve kavrulmuş seçeneklerle sağlıklı atıştırmalıklar.",
-    image: "/images/categories/kuruyemis.jpg",
-    icon: "🥜",
-    productCount: 0,
-  },
-];
+// Supabase'den kategorileri çek (Client-side)
+export async function fetchCategories(): Promise<CategoryInfo[]> {
+  try {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
-let categories: CategoryInfo[] = [...CATEGORIES];
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
 
-export function getCategories(): CategoryInfo[] {
-  return categories.map((cat) => ({
-    ...cat,
-    productCount: getProductsByCategory(cat.id).length,
-  }));
+    if (error) {
+      console.error("Error fetching categories:", error);
+      return [];
+    }
+
+    return data?.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      description: cat.description || "",
+      image: cat.image || "/placeholder.jpg",
+      icon: cat.icon || "📦",
+      productCount: 0, // Bu değer ürün sayısı hesaplanarak güncellenebilir
+    })) || [];
+  } catch (error) {
+    console.error("Failed to fetch categories:", error);
+    return [];
+  }
 }
 
-export function getCategoryById(id: string): CategoryInfo | undefined {
-  return categories.find((cat) => cat.id === id);
+// Server-side için kategori çekme
+export async function fetchCategoriesServer() {
+  try {
+    const { createServerClient } = await import("@/lib/supabase");
+    const supabase = createServerClient();
+
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching categories:", error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error("Failed to fetch categories:", error);
+    return [];
+  }
 }
 
-export function getCategoryBySlug(slug: string): CategoryInfo | undefined {
-  return categories.find((cat) => cat.slug === slug);
+// Slug'a göre kategori getir (Client-side)
+export async function fetchCategoryBySlug(slug: string): Promise<CategoryInfo | null> {
+  try {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .eq("slug", slug)
+      .eq("is_active", true)
+      .single();
+
+    if (error || !data) {
+      console.error("Error fetching category:", error);
+      return null;
+    }
+
+    return {
+      id: data.id,
+      name: data.name,
+      slug: data.slug,
+      description: data.description || "",
+      image: data.image || "/placeholder.jpg",
+      icon: data.icon || "📦",
+      productCount: 0,
+    };
+  } catch (error) {
+    console.error("Failed to fetch category:", error);
+    return null;
+  }
 }
 
-export function addCategory(category: Omit<CategoryInfo, "productCount">): void {
-  categories.push({
-    ...category,
-    productCount: 0,
+// =====================================================
+// ADMIN PANEL FONKSİYONLARI (Supabase ile)
+// =====================================================
+
+// ID'ye göre kategori getir (Admin için)
+export async function getCategoryById(id: string): Promise<CategoryInfo | undefined> {
+  try {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error || !data) return undefined;
+
+    return {
+      id: data.id,
+      name: data.name,
+      slug: data.slug,
+      description: data.description || "",
+      image: data.image || "/placeholder.jpg",
+      icon: data.icon || "📦",
+      productCount: 0,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+// Kategori ekle (Admin için)
+export async function addCategory(category: Omit<CategoryInfo, "id" | "productCount">): Promise<void> {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const { error } = await supabase.from("categories").insert({
+    name: category.name,
+    slug: category.slug,
+    description: category.description,
+    image: category.image,
+    icon: category.icon,
   });
+
+  if (error) throw error;
 }
 
-export function updateCategory(id: string, updatedCategory: Partial<CategoryInfo>): void {
-  const index = categories.findIndex((cat) => cat.id === id);
-  if (index !== -1) {
-    categories[index] = { ...categories[index], ...updatedCategory };
-  }
+// Kategori güncelle (Admin için)
+export async function updateCategory(id: string, updatedCategory: Partial<CategoryInfo>): Promise<void> {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const { error } = await supabase
+    .from("categories")
+    .update({
+      name: updatedCategory.name,
+      slug: updatedCategory.slug,
+      description: updatedCategory.description,
+      image: updatedCategory.image,
+      icon: updatedCategory.icon,
+    })
+    .eq("id", id);
+
+  if (error) throw error;
 }
 
-export function deleteCategory(id: string): void {
-  const index = categories.findIndex((cat) => cat.id === id);
-  if (index !== -1) {
-    categories.splice(index, 1);
-  }
+// Kategori sil (Admin için)
+export async function deleteCategory(id: string): Promise<void> {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const { error } = await supabase.from("categories").delete().eq("id", id);
+  if (error) throw error;
 }
+
+// ESKİ getCategories - backwards compatibility
+export function getCategories(): CategoryInfo[] {
+  console.warn("getCategories() is deprecated. Use fetchCategories() instead.");
+  return [];
+}
+
+// ESKİ getCategoryBySlug - backwards compatibility  
+export function getCategoryBySlug(slug: string): CategoryInfo | undefined {
+  console.warn("getCategoryBySlug() is deprecated. Use fetchCategoryBySlug() instead.");
+  return undefined;
+}
+
+// BOŞ CATEGORIES ARRAY - Artık statik kategori yok!
+export const CATEGORIES: CategoryInfo[] = [];
