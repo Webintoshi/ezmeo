@@ -6,6 +6,41 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { ROUTES } from "@/lib/constants";
 import { useEffect, useRef, useState } from "react";
 import { Product } from "@/types/product";
+import { createBrowserClient } from "@supabase/ssr";
+
+// Transform DB product to app Product type
+function transformProduct(dbProduct: any): Product {
+  return {
+    id: dbProduct.id,
+    name: dbProduct.name,
+    slug: dbProduct.slug,
+    description: dbProduct.description || "",
+    shortDescription: dbProduct.short_description || "",
+    category: dbProduct.category || "fistik-ezmesi",
+    subcategory: dbProduct.subcategory || "klasik",
+    images: dbProduct.images || [],
+    tags: dbProduct.tags || [],
+    variants: dbProduct.variants?.map((v: any) => ({
+      id: v.id,
+      name: v.name,
+      weight: v.weight ? parseInt(v.weight) : 250,
+      price: Number(v.price),
+      originalPrice: v.original_price ? Number(v.original_price) : undefined,
+      stock: v.stock,
+      sku: v.sku || "",
+    })) || [],
+    vegan: dbProduct.vegan,
+    glutenFree: dbProduct.gluten_free,
+    sugarFree: dbProduct.sugar_free,
+    highProtein: dbProduct.high_protein,
+    rating: Number(dbProduct.rating) || 5,
+    reviewCount: dbProduct.review_count || 0,
+    featured: dbProduct.is_featured,
+    new: dbProduct.is_new,
+    seoTitle: dbProduct.seo_title || undefined,
+    seoDescription: dbProduct.seo_description || undefined,
+  };
+}
 
 export function FeaturedProducts() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
@@ -16,15 +51,30 @@ export function FeaturedProducts() {
   useEffect(() => {
     async function loadFeatured() {
       try {
-        const { createServerClient } = await import("@/lib/supabase");
-        const supabase = createServerClient();
-        const { data } = await supabase
-          .from("products")
-          .select("*, variants:product_variants(*)")
-          .eq("is_featured", true)
-          .limit(3);
+        // Client-side Supabase kullan
+        const supabase = createBrowserClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
         
-        if (data) setFeaturedProducts(data);
+        const { data, error } = await supabase
+          .from("products")
+          .select(`
+            *,
+            variants:product_variants(*)
+          `)
+          .eq("is_featured", true)
+          .eq("is_active", true)
+          .limit(4);
+        
+        if (error) {
+          console.error("Supabase error:", error);
+          return;
+        }
+        
+        if (data) {
+          setFeaturedProducts(data.map(transformProduct));
+        }
       } catch (err) {
         console.error("Failed to load featured products:", err);
       } finally {
@@ -83,13 +133,13 @@ export function FeaturedProducts() {
 
         {/* Products Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {[...Array(3)].map((_, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+            {[...Array(4)].map((_, i) => (
               <div key={i} className="aspect-[3/4] bg-gray-100 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : (
-          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 scroll-slide ${isVisible ? "is-visible" : ""}`}>
+          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 scroll-slide ${isVisible ? "is-visible" : ""}`}>
             {featuredProducts.map((product, index) => (
               <ProductCard key={product.id} product={product} index={index} />
             ))}

@@ -179,8 +179,14 @@ export async function POST(request: NextRequest) {
                 category: productData.category || null,
                 subcategory: productData.subcategory || null,
                 tags: productData.tags || [],
+                is_active: productData.is_active !== false, // Varsayılan true
                 is_featured: productData.is_featured || false,
-                is_bestseller: productData.is_new || false,  // is_new yerine is_bestseller kullan
+                is_bestseller: productData.is_bestseller || false,
+                is_new: productData.is_new || false,
+                vegan: productData.vegan || false,
+                gluten_free: productData.gluten_free || false,
+                sugar_free: productData.sugar_free || false,
+                high_protein: productData.high_protein || false,
                 rating: productData.rating || 5,
                 review_count: productData.review_count || 0,
             })
@@ -284,8 +290,14 @@ export async function PUT(request: NextRequest) {
                 category: updates.category,
                 subcategory: updates.subcategory,
                 tags: updates.tags,
-                is_featured: updates.is_featured,
-                is_bestseller: updates.is_new,
+                is_active: updates.is_active !== false,
+                is_featured: updates.is_featured || false,
+                is_bestseller: updates.is_bestseller || false,
+                is_new: updates.is_new || false,
+                vegan: updates.vegan || false,
+                gluten_free: updates.gluten_free || false,
+                sugar_free: updates.sugar_free || false,
+                high_protein: updates.high_protein || false,
                 rating: updates.rating,
                 review_count: updates.review_count,
             })
