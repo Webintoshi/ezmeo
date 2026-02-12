@@ -95,26 +95,41 @@ export default async function ProductDetailPage({
   let relatedProducts: any[] = [];
 
   // 1. FIRST: Check Supabase (always has latest data with images)
+  let supabaseError = null;
   try {
     const supabase = createServerClient();
-    const { data: dbProduct } = await supabase
+    
+    // Once urunu cek
+    const { data: dbProduct, error: productError } = await supabase
       .from("products")
-      .select("*, variants:product_variants(*)")
-      .eq("slug", baseSlug)  // Use baseSlug instead of urlSlug
+      .select("*")
+      .eq("slug", baseSlug)
       .eq("is_active", true)
       .single();
+    
+    if (productError) {
+      console.error('Product fetch error:', productError);
+      supabaseError = productError;
+    } else if (dbProduct) {
+      // Ayri olarak varyantlari cek (RLS sorunu varsa burada yakalariz)
+      const { data: variants, error: variantsError } = await supabase
+        .from("product_variants")
+        .select("*")
+        .eq("product_id", dbProduct.id);
+      
+      if (variantsError) {
+        console.error('Variants fetch error:', variantsError);
+        supabaseError = variantsError;
+      }
+      
+      console.log('=== DEBUG Product Page ===');
+      console.log('URL Slug:', urlSlug);
+      console.log('Base Slug:', baseSlug);
+      console.log('Product ID:', dbProduct.id);
+      console.log('Variants count:', variants?.length || 0);
+      console.log('Variants:', variants);
+      console.log('========================');
 
-    console.log('=== DEBUG Product Page ===');
-    console.log('URL Slug:', urlSlug);
-    console.log('Parsed Base Slug:', baseSlug);
-    console.log('DB Product:', dbProduct);
-    console.log('========================');
-
-    console.log('Product Page - dbProduct.images:', dbProduct?.images);
-    console.log('Product Page - dbProduct.images count:', dbProduct?.images?.length);
-    console.log('Product Page - dbProduct:', dbProduct);
-
-    if (dbProduct) {
       // Transform images_v2 to images format
       let images: string[] = [];
       
@@ -130,7 +145,7 @@ export default async function ProductDetailPage({
       product = {
         ...dbProduct,
         images,
-        variants: dbProduct.variants?.map((v: any) => ({
+        variants: variants?.map((v: any) => ({
           ...v,
           originalPrice: v.original_price,
         })) || [],
@@ -138,6 +153,7 @@ export default async function ProductDetailPage({
     }
   } catch (error) {
     console.error("Failed to fetch product from Supabase:", error);
+    supabaseError = error;
   }
 
   // 2. SECOND: Fallback to static data if Supabase fails
