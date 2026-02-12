@@ -1,10 +1,5 @@
 {
     "version": 2,
-    "functions": {
-        "api/upload/**": {
-            "maxDuration": 60
-        }
-    },
     "headers": [
         {
             "source": "/(.*)",
