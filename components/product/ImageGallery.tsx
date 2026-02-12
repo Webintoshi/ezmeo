@@ -90,16 +90,12 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
             <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
           )}
           {!isFailed ? (
-            <Image
+            <img
               src={displayImages[0]}
               alt={productName}
-              fill
-              priority
-              sizes="(max-width: 768px) 100vw, 600px"
-              className="object-contain"
+              className="w-full h-full object-contain"
               onLoad={() => handleImageLoad(0)}
               onError={() => handleImageError(0)}
-              quality={85}
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
@@ -123,13 +119,10 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
               <button className="absolute top-4 right-4 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center z-10">
                 <X className="w-6 h-6 text-white" />
               </button>
-              <Image
+              <img
                 src={displayImages[0]}
                 alt={productName}
-                fill
-                className="object-contain p-4"
-                sizes="100vw"
-                priority
+                className="max-w-full max-h-full object-contain p-4"
               />
             </motion.div>
           )}
