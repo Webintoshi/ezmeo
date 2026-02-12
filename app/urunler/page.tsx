@@ -1,8 +1,8 @@
 import { createServerClient } from "@/lib/supabase";
-import { Suspense } from "react";
 import { Product } from "@/types/product";
 import { ProductsPageClient } from "@/components/product/ProductsPageClient";
-import { ProductCardSkeleton } from "@/components/ui/skeleton";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Tüm Ürünler | Ezmeo",
@@ -127,17 +127,7 @@ async function getCategoryCounts() {
   }
 }
 
-function ProductsLoading() {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
-      {[...Array(8)].map((_, i) => (
-        <ProductCardSkeleton key={i} />
-      ))}
-    </div>
-  );
-}
-
-async function ProductsContent() {
+export default async function AllProductsPage() {
   const [products, categoryCounts] = await Promise.all([
     getProducts(),
     getCategoryCounts(),
@@ -148,27 +138,5 @@ async function ProductsContent() {
       initialProducts={products} 
       categoryCounts={categoryCounts}
     />
-  );
-}
-
-export default function AllProductsPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50">
-        <section className="bg-gradient-to-br from-primary via-primary/90 to-primary/80 py-12 md:py-16 relative overflow-hidden">
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-4xl mx-auto text-center">
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Tüm Ürünler</h1>
-              <p className="text-lg text-white/90">Doğal ve katkısız ürünlerimizi keşfedin</p>
-            </div>
-          </div>
-        </section>
-        <div className="container mx-auto px-4 py-8">
-          <ProductsLoading />
-        </div>
-      </div>
-    }>
-      <ProductsContent />
-    </Suspense>
   );
 }

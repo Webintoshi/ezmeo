@@ -1,7 +1,8 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import * as React from "react";
-import { Product, ProductSortOption } from "@/types/product";
+import { Product } from "@/types/product";
 import { ProductCard } from "@/components/product/ProductCard";
 import { FilterSidebar, FilterState, ActiveFilters } from "@/components/product/FilterSidebar";
 import { FilterDrawer } from "@/components/product/FilterDrawer";
@@ -28,22 +29,58 @@ const SORT_OPTIONS = [
 
 const ITEMS_PER_PAGE = 12;
 
-export function ProductsPageClient({ initialProducts, categoryCounts }: ProductsPageClientProps) {
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [sortOption, setSortOption] = React.useState<ProductSortOption>("featured");
-  const [filters, setFilters] = React.useState<FilterState>({
-    categories: [],
-    priceRange: [0, 500],
-    vegan: false,
-    sugarFree: false,
-    highProtein: false,
-    glutenFree: false,
-    inStock: false,
-    onSale: false,
-    isNew: false,
-  });
-  const [currentPage, setCurrentPage] = React.useState(1);
+type ProductSortOption = "featured" | "newest" | "price-asc" | "price-desc" | "rating" | "popular";
+
+function parseFiltersFromParams(searchParams: URLSearchParams): {
+  filters: FilterState;
+  sort: ProductSortOption;
+  search: string;
+  page: number;
+} {
+  const categories = searchParams.get("categories")?.split(",").filter(Boolean) || [];
+  const priceMin = Number(searchParams.get("priceMin")) || 0;
+  const priceMax = Number(searchParams.get("priceMax")) || 500;
+  
+  return {
+    filters: {
+      categories,
+      priceRange: [priceMin, priceMax] as [number, number],
+      vegan: searchParams.get("vegan") === "true",
+      sugarFree: searchParams.get("sugarFree") === "true",
+      highProtein: searchParams.get("highProtein") === "true",
+      glutenFree: searchParams.get("glutenFree") === "true",
+      inStock: searchParams.get("inStock") === "true",
+      onSale: searchParams.get("onSale") === "true",
+      isNew: searchParams.get("isNew") === "true",
+    },
+    sort: (searchParams.get("sort") as ProductSortOption) || "featured",
+    search: searchParams.get("q") || "",
+    page: Number(searchParams.get("page")) || 1,
+  };
+}
+
+function ProductsPageContent({ initialProducts, categoryCounts }: ProductsPageClientProps) {
+  const searchParams = useSearchParams();
+  const [isInitialized, setIsInitialized] = React.useState(false);
+
+  const initialState = React.useMemo(() => parseFiltersFromParams(searchParams), [searchParams]);
+
+  const [searchQuery, setSearchQuery] = React.useState(initialState.search);
+  const [sortOption, setSortOption] = React.useState<ProductSortOption>(initialState.sort);
+  const [filters, setFilters] = React.useState<FilterState>(initialState.filters);
+  const [currentPage, setCurrentPage] = React.useState(initialState.page);
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
+
+  React.useEffect(() => {
+    setIsInitialized(true);
+  }, []);
+
+  React.useEffect(() => {
+    setSearchQuery(initialState.search);
+    setSortOption(initialState.sort);
+    setFilters(initialState.filters);
+    setCurrentPage(initialState.page);
+  }, [initialState]);
 
   const filteredProducts = React.useMemo(() => {
     let products = [...initialProducts];
@@ -128,12 +165,21 @@ export function ProductsPageClient({ initialProducts, categoryCounts }: Products
     currentPage * ITEMS_PER_PAGE
   );
 
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, filters, sortOption]);
-
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
+
+  const handleSortChange = (newSort: string) => {
+    setSortOption(newSort as ProductSortOption);
+  };
+
+  const handleSearchChange = (newSearch: string) => {
+    setSearchQuery(newSearch);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const getPageNumbers = () => {
@@ -192,7 +238,7 @@ export function ProductsPageClient({ initialProducts, categoryCounts }: Products
               <SearchInput
                 placeholder="Ürün ara..."
                 value={searchQuery}
-                onSearch={setSearchQuery}
+                onSearch={handleSearchChange}
               />
             </div>
 
@@ -201,7 +247,7 @@ export function ProductsPageClient({ initialProducts, categoryCounts }: Products
                 <Select
                   options={SORT_OPTIONS}
                   value={sortOption}
-                  onChange={(value) => setSortOption(value as ProductSortOption)}
+                  onChange={handleSortChange}
                   placeholder="Sırala"
                 />
               </div>
@@ -239,7 +285,7 @@ export function ProductsPageClient({ initialProducts, categoryCounts }: Products
             <Select
               options={SORT_OPTIONS}
               value={sortOption}
-              onChange={(value) => setSortOption(value as ProductSortOption)}
+              onChange={handleSortChange}
               placeholder="Sırala"
             />
           </div>
@@ -293,7 +339,7 @@ export function ProductsPageClient({ initialProducts, categoryCounts }: Products
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
                     >
                       <ChevronLeft className="w-4 h-4" />
@@ -309,7 +355,7 @@ export function ProductsPageClient({ initialProducts, categoryCounts }: Products
                           key={page}
                           variant={currentPage === page ? "primary" : "outline"}
                           size="sm"
-                          onClick={() => setCurrentPage(page)}
+                          onClick={() => handlePageChange(page)}
                         >
                           {page}
                         </Button>
@@ -319,7 +365,7 @@ export function ProductsPageClient({ initialProducts, categoryCounts }: Products
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
                     >
                       <ChevronRight className="w-4 h-4" />
@@ -332,5 +378,31 @@ export function ProductsPageClient({ initialProducts, categoryCounts }: Products
         </div>
       </div>
     </div>
+  );
+}
+
+export function ProductsPageClient({ initialProducts, categoryCounts }: ProductsPageClientProps) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50">
+        <section className="bg-gradient-to-br from-primary via-primary/90 to-primary/80 py-12 md:py-16 relative overflow-hidden">
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="max-w-4xl mx-auto text-center">
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Tüm Ürünler</h1>
+              <p className="text-lg text-white/90">Doğal ve katkısız ürünlerimizi keşfedin</p>
+            </div>
+          </div>
+        </section>
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+            {[...Array(8)].map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      </div>
+    }>
+      <ProductsPageContent initialProducts={initialProducts} categoryCounts={categoryCounts} />
+    </Suspense>
   );
 }

@@ -309,6 +309,13 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
         ingredients: formData.nutritionSettings.ingredients,
         storage_conditions: formData.nutritionSettings.storageConditions,
         shelf_life_days: formData.nutritionSettings.shelfLifeDays,
+        // Makro besin değerleri
+        calories: formData.nutritionalInfo.calories,
+        protein: formData.nutritionalInfo.protein,
+        carbs: formData.nutritionalInfo.carbs,
+        fat: formData.nutritionalInfo.fat,
+        fiber: formData.nutritionalInfo.fiber,
+        sugar: formData.nutritionalInfo.sugar,
         status: publish ? "published" : formData.status,
         is_draft: !publish,
         published_at: publish ? new Date().toISOString() : formData.publishedAt,

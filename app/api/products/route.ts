@@ -219,6 +219,15 @@ export async function POST(request: NextRequest) {
                 ingredients: productData.ingredients || null,
                 storage_conditions: productData.storage_conditions || null,
                 shelf_life_days: productData.shelf_life_days || null,
+                // Makro besin değerleri
+                calories: productData.calories || 0,
+                protein: productData.protein || 0,
+                carbs: productData.carbs || 0,
+                fat: productData.fat || 0,
+                fiber: productData.fiber || 0,
+                sugar: productData.sugar || 0,
+                saturated_fat: productData.saturated_fat || 0,
+                sodium: productData.sodium || 0,
             })
             .select()
             .single();
@@ -368,6 +377,15 @@ export async function PUT(request: NextRequest) {
                 ingredients: updates.ingredients || null,
                 storage_conditions: updates.storage_conditions || null,
                 shelf_life_days: updates.shelf_life_days || null,
+                // Makro besin değerleri
+                calories: updates.calories || 0,
+                protein: updates.protein || 0,
+                carbs: updates.carbs || 0,
+                fat: updates.fat || 0,
+                fiber: updates.fiber || 0,
+                sugar: updates.sugar || 0,
+                saturated_fat: updates.saturated_fat || 0,
+                sodium: updates.sodium || 0,
             })
             .eq("id", id)
             .select()

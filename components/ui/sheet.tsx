@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Dialog, DialogPanel, DialogBackdrop, DialogTitle } from "@headlessui/react";
+import { Dialog, DialogBackdrop, DialogTitle } from "@headlessui/react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +14,7 @@ interface SheetProps {
 export function Sheet({ open, onOpenChange, children }: SheetProps) {
   return (
     <Dialog open={open} onClose={onOpenChange} className="relative z-50">
-      <DialogBackdrop className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+      <DialogBackdrop className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" />
       {children}
     </Dialog>
   );
@@ -34,31 +34,28 @@ export function SheetContent({ side = "right", className, children }: SheetConte
     bottom: "bottom-0 left-0 w-full border-t",
   };
 
+  const transformClasses = {
+    left: "-translate-x-full",
+    right: "translate-x-full",
+    top: "-translate-y-full",
+    bottom: "translate-y-full",
+  };
+
   return (
-    <div className="fixed inset-0 overflow-hidden">
-      <div className="absolute inset-0 overflow-hidden">
+    <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden pointer-events-auto">
         <div
           className={cn(
-            "fixed inset-y-0 bg-white p-6 shadow-xl transform transition-transform duration-300 ease-out",
+            "fixed inset-y-0 bg-white p-6 shadow-xl transform transition-transform duration-300 ease-out pointer-events-auto",
             sideClasses[side],
-            side === "left" && "-translate-x-full data-[open]:translate-x-0",
-            side === "right" && "translate-x-full data-[open]:translate-x-0",
+            transformClasses[side],
+            side === "left" && "data-[enter]:translate-x-0",
+            side === "right" && "data-[enter]:translate-x-0",
+            side === "top" && "data-[enter]:translate-y-0",
+            side === "bottom" && "data-[enter]:translate-y-0",
             className
           )}
-          data-open={true}
         >
-          <button
-            onClick={() => {
-              const dialog = document.querySelector('[data-headlessui-state]')?.closest('[role="dialog"]');
-              if (dialog) {
-                const closeButton = dialog.querySelector('[data-headlessui-state="closed"]') as HTMLButtonElement;
-                closeButton?.click();
-              }
-            }}
-            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
           {children}
         </div>
       </div>
@@ -78,6 +75,11 @@ export function SheetTitle({ className, children }: { className?: string; childr
   );
 }
 
-export function SheetTrigger({ asChild, children }: { asChild?: boolean; children: React.ReactNode }) {
+interface SheetTriggerProps {
+  asChild?: boolean;
+  children: React.ReactNode;
+}
+
+export function SheetTrigger({ asChild, children }: SheetTriggerProps) {
   return <>{children}</>;
 }
