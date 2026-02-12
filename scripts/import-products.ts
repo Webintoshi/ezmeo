@@ -1,4 +1,4 @@
-import { Product, ProductVariant } from "@/types/product";
+import { Product, ProductVariant, ProductCategory, ProductSubcategory } from "@/types/product";
 
 export async function importProductsFromCSV(): Promise<Product[]> {
   try {
@@ -24,7 +24,7 @@ export async function importProductsFromCSV(): Promise<Product[]> {
     const variantSKUIdx = headers.findIndex(h => h.toLowerCase().includes('variant sku'));
     const variantGramsIdx = headers.findIndex(h => h.toLowerCase().includes('variant grams'));
     
-    const productMap = new Map<string, any>();
+    const productMap = new Map<string, Partial<Product>>();
     
     for (let i = 1; i < lines.length; i++) {
       if (!lines[i].trim()) continue;
@@ -42,7 +42,7 @@ export async function importProductsFromCSV(): Promise<Product[]> {
         const imageSrc = cols[imageSrcIdx] || '';
         
         // Map category
-        let category: any = 'fistik-ezmesi';
+        let category: string = 'fistik-ezmesi';
         const typeLower = type.toLowerCase();
         if (typeLower.includes('fındık') || typeLower.includes('findik') || typeLower.includes('hazelnut')) {
           category = 'findik-ezmesi';
@@ -51,7 +51,7 @@ export async function importProductsFromCSV(): Promise<Product[]> {
         }
         
         // Map subcategory
-        let subcategory: any = 'klasik';
+        let subcategory: string = 'klasik';
         const tagsLower = tags.toLowerCase();
         if (tagsLower.includes('şekersiz') || tagsLower.includes('sekersiz')) {
           subcategory = 'sekersiz';
@@ -75,8 +75,8 @@ export async function importProductsFromCSV(): Promise<Product[]> {
           slug: handle,
           description: body.replace(/<[^>]*>/g, ''),
           shortDescription: body.replace(/<[^>]*>/g, '').substring(0, 150),
-          category,
-          subcategory,
+          category: category as ProductCategory,
+          subcategory: subcategory as ProductSubcategory,
           images: imageSrc ? [imageSrc] : [],
           tags: tags.split(',').map(t => t.trim()).filter(t => t),
           vegan: tagsLower.includes('vegan'),
@@ -95,8 +95,8 @@ export async function importProductsFromCSV(): Promise<Product[]> {
         const imagePosition = cols[imagePositionIdx] || '';
         
         if (imageSrc && imagePosition) {
-          const product = productMap.get(handle)!;
-          if (!product.images.includes(imageSrc)) {
+          const product = productMap.get(handle);
+          if (product && product.images && !product.images.includes(imageSrc)) {
             product.images.push(imageSrc);
           }
         }
@@ -104,6 +104,8 @@ export async function importProductsFromCSV(): Promise<Product[]> {
       
       // Add variant
       const product = productMap.get(handle);
+      if (!product || !product.variants) continue;
+      
       const option1Value = cols[option1ValueIdx] || '';
       const price = parseFloat(cols[variantPriceIdx]) || 0;
       const comparePrice = cols[variantCompareIdx] ? parseFloat(cols[variantCompareIdx]) : undefined;
@@ -125,7 +127,7 @@ export async function importProductsFromCSV(): Promise<Product[]> {
       }
     }
     
-    return Array.from(productMap.values());
+    return Array.from(productMap.values()) as Product[];
   } catch (error) {
     console.error('Error importing products:', error);
     return [];

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
     getPaymentGatewayById,
+    getPaymentGateways,
     updatePaymentGateway,
     testPaymentGatewayConnection,
     validatePaymentGatewayConfig,

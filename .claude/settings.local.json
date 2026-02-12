@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Write",
-      "Read(C:\\Users\\webin\\OneDrive\\Desktop\\Ezmeo\\app\\urunler\\[slug]\\page.tsx)"
+      "Read(C:\\Users\\webin\\OneDrive\\Desktop\\Ezmeo\\app\\urunler\\[slug]\\page.tsx)",
+      "Bash(git checkout:*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\webin\\OneDrive\\Desktop\\Ezmeo\\app\\api\\admin\\customers"

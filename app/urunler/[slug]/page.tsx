@@ -17,7 +17,7 @@ export async function generateMetadata({
   const { baseSlug } = parseProductSlug(slug);
 
   // Get product from static data (fastest)
-  const product = getProductBySlug(baseSlug);
+  const product = await getProductBySlug(baseSlug);
   
   if (!product) {
     return {
@@ -71,7 +71,7 @@ export async function generateStaticParams() {
   }
   
   // Fallback to static data
-  const allSlugs = getProductSlug();
+  const allSlugs = await getProductSlug();
   return allSlugs.map((slug) => ({ slug }));
 }
 

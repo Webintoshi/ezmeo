@@ -1,6 +1,6 @@
 import { Discount, DiscountFormData } from "@/types/discount";
 
-let discounts: Discount[] = [];
+const discounts: Discount[] = [];
 
 export function getDiscounts(): Discount[] {
   return discounts;

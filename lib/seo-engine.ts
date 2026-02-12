@@ -107,8 +107,8 @@ export function saveSeoRules(rules: KeywordRule[]) {
 // Generate default rules from existing products
 import { getAllProducts } from "./products";
 
-export function generateDefaultRulesFromProducts(): KeywordRule[] {
-    const products = getAllProducts();
+export async function generateDefaultRulesFromProducts(): Promise<KeywordRule[]> {
+    const products = await getAllProducts();
     const rules: KeywordRule[] = [];
 
     products.forEach(p => {

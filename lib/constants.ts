@@ -1,4 +1,4 @@
-import { CategoryInfo, ProductCategory } from "@/types/product";
+import { CategoryInfo } from "@/types/product";
 
 // Site Bilgileri
 export const SITE_NAME = "Ezmeo";

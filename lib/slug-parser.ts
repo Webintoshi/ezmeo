@@ -1,3 +1,5 @@
+import { ProductVariant } from "@/types/product";
+
 export interface ParsedSlug {
   baseSlug: string;
   variantWeight?: string;
@@ -54,7 +56,7 @@ export function parseProductSlug(slug: string): ParsedSlug {
  * @returns Index of matching variant, or 0 if no match
  */
 export function findVariantIndex(
-  variants: any[],
+  variants: ProductVariant[],
   parsedSlug: ParsedSlug
 ): number {
   if (!variants || variants.length === 0) return 0;

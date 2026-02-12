@@ -6,6 +6,13 @@ import {
 } from "@/types/abandoned-cart";
 import { getAllProducts } from "@/lib/products";
 
+export type {
+  AbandonedCart,
+  AbandonedCartItem,
+  AbandonedCartFilters,
+  AbandonedCartSort,
+} from "@/types/abandoned-cart";
+
 let abandonedCarts: AbandonedCart[] = [];
 
 export function initializeAbandonedCarts() {
@@ -104,7 +111,7 @@ export function getAbandonedCartById(id: string): AbandonedCart | undefined {
 }
 
 // Add abandoned cart (this would be called from the frontend)
-export function addAbandonedCart(data: {
+export async function addAbandonedCart(data: {
   userId?: string;
   email?: string;
   phone?: string;
@@ -121,8 +128,8 @@ export function addAbandonedCart(data: {
     originalPrice?: number;
     quantity: number;
   }[];
-}): AbandonedCart {
-  const products = getAllProducts();
+}): Promise<AbandonedCart> {
+  const products = await getAllProducts();
 
   const cartItems: AbandonedCartItem[] = data.items.map(item => {
     const product = products.find(p => p.id === item.productId);

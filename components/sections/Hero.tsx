@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pause, Play, ArrowRight } from "lucide-react";
 
 interface HeroSlide {
   id: number;
@@ -61,8 +61,9 @@ export function Hero() {
   const [loading, setLoading] = useState(true);
   const [autoPlay, setAutoPlay] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
-  const progressRef = useRef<NodeJS.Timeout>();
+  const progressRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -108,15 +109,14 @@ export function Hero() {
     };
   }, []);
 
-  // Auto-play with progress
   useEffect(() => {
-    if (!isVisible || !autoPlay) {
+    if (!isVisible || !autoPlay || isHovered) {
       setProgress(0);
       return;
     }
 
-    const duration = 5000; // 5 seconds
-    const interval = 50; // Update every 50ms
+    const duration = 5000;
+    const interval = 50;
     const step = 100 / (duration / interval);
 
     progressRef.current = setInterval(() => {
@@ -134,7 +134,7 @@ export function Hero() {
         clearInterval(progressRef.current);
       }
     };
-  }, [isVisible, autoPlay, slides.length, currentSlide]);
+  }, [isVisible, autoPlay, slides.length, currentSlide, isHovered]);
 
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
@@ -156,132 +156,170 @@ export function Hero() {
   return (
     <section
       ref={sectionRef}
-      className="relative h-[500px] sm:h-[600px] md:h-[700px] lg:h-[800px] overflow-hidden bg-gray-100"
+      className="relative h-[500px] sm:h-[600px] md:h-[700px] lg:h-[850px] overflow-hidden bg-gray-900"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {isVisible || !loading ? (
         <>
-          {/* Slider Images */}
           <div className="absolute inset-0">
             <AnimatePresence mode="wait">
               {slides.map((slide, index) =>
                 index === currentSlide ? (
                   <motion.div
                     key={slide.id}
-                    initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ duration: 0.8 }}
                     className="absolute inset-0"
                   >
-                    {/* Desktop Image */}
-                    <Image
-                      src={slide.desktop}
-                      alt={slide.alt}
-                      fill
-                      className="object-cover object-center hidden md:block"
-                      priority={index === 0}
-                      sizes="100vw"
-                    />
-                    {/* Mobile Image */}
-                    <Image
-                      src={slide.mobile}
-                      alt={slide.alt}
-                      fill
-                      className="object-cover object-center md:hidden"
-                      priority={index === 0}
-                      sizes="100vw"
-                    />
+                    <motion.div
+                      className="absolute inset-0"
+                      initial={{ scale: 1.1 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 8, ease: "linear" }}
+                    >
+                      <Image
+                        src={slide.desktop}
+                        alt={slide.alt}
+                        fill
+                        className="object-cover object-center hidden md:block"
+                        priority={index === 0}
+                        sizes="100vw"
+                        quality={90}
+                      />
+                      <Image
+                        src={slide.mobile}
+                        alt={slide.alt}
+                        fill
+                        className="object-cover object-center md:hidden"
+                        priority={index === 0}
+                        sizes="100vw"
+                        quality={85}
+                      />
+                    </motion.div>
 
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
                   </motion.div>
                 ) : null
               )}
             </AnimatePresence>
           </div>
 
-          {/* Overlay Content */}
           {currentOverlay && (
-            <div className="absolute inset-0 flex items-end pb-20 sm:pb-24 md:pb-32">
+            <div className="absolute inset-0 flex items-center">
               <div className="container mx-auto px-4 sm:px-6">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={currentSlide}
-                    initial={{ opacity: 0, y: 30 }}
+                    initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                     className="max-w-2xl"
                   >
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 leading-tight">
-                      {currentOverlay.title}
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2, duration: 0.5 }}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full mb-6 border border-white/20"
+                    >
+                      <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                      <span className="text-sm font-medium text-white/90">Taze & Doğal</span>
+                    </motion.div>
+
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-6 leading-tight">
+                      <motion.span
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1, duration: 0.5 }}
+                        className="block"
+                      >
+                        {currentOverlay.title}
+                      </motion.span>
                     </h1>
-                    <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 max-w-xl">
+                    
+                    <motion.p
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2, duration: 0.5 }}
+                      className="text-lg sm:text-xl md:text-2xl text-white/85 mb-8 sm:mb-10 max-w-xl leading-relaxed"
+                    >
                       {currentOverlay.subtitle}
-                    </p>
-                    <div className="flex flex-wrap gap-3 sm:gap-4">
+                    </motion.p>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3, duration: 0.5 }}
+                      className="flex flex-wrap gap-4"
+                    >
                       <Link
                         href={currentOverlay.ctaLink}
-                        className="px-6 sm:px-8 py-3 sm:py-4 bg-white text-gray-900 rounded-full font-semibold text-sm sm:text-base hover:scale-105 transition-transform shadow-xl"
+                        className="group inline-flex items-center gap-3 px-8 py-4 bg-white text-gray-900 rounded-full font-semibold text-base hover:shadow-2xl transition-all duration-300 hover:scale-105"
                       >
                         {currentOverlay.ctaText}
+                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                       </Link>
                       <Link
                         href="/urunler"
-                        className="px-6 sm:px-8 py-3 sm:py-4 bg-white/10 backdrop-blur-md text-white border border-white/30 rounded-full font-semibold text-sm sm:text-base hover:bg-white/20 transition-colors"
+                        className="inline-flex items-center gap-3 px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/30 rounded-full font-semibold text-base hover:bg-white/20 transition-all duration-300"
                       >
                         Tüm Ürünler
                       </Link>
-                    </div>
+                    </motion.div>
                   </motion.div>
                 </AnimatePresence>
               </div>
             </div>
           )}
 
-          {/* Controls */}
           {slides.length > 1 && (
             <>
-              {/* Navigation Buttons */}
-              <button
+              <motion.button
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
                 onClick={prevSlide}
-                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all z-10"
+                className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 z-10 group"
                 aria-label="Önceki slayt"
               >
-                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-800" />
-              </button>
+                <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7 text-white group-hover:scale-110 transition-transform" />
+              </motion.button>
 
-              <button
+              <motion.button
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
                 onClick={nextSlide}
-                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all z-10"
+                className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 z-10 group"
                 aria-label="Sonraki slayt"
               >
-                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-800" />
-              </button>
+                <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 text-white group-hover:scale-110 transition-transform" />
+              </motion.button>
 
-              {/* Bottom Bar */}
-              <div className="absolute bottom-4 sm:bottom-6 left-0 right-0 px-4 sm:px-6">
+              <div className="absolute bottom-6 sm:bottom-10 left-0 right-0 px-4 sm:px-6">
                 <div className="container mx-auto flex items-center justify-between">
-                  {/* Dots Navigation */}
                   <div className="flex items-center gap-2">
                     {slides.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => goToSlide(index)}
-                        className={`h-2 rounded-full transition-all ${
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
                           index === currentSlide
-                            ? "bg-white w-6 sm:w-8"
-                            : "bg-white/50 w-2 hover:bg-white/80"
+                            ? "bg-white w-8 sm:w-12"
+                            : "bg-white/40 w-2 hover:bg-white/70"
                         }`}
                         aria-label={`Slayt ${index + 1}`}
                       />
                     ))}
                   </div>
 
-                  {/* Auto-play Toggle */}
                   <button
                     onClick={() => setAutoPlay(!autoPlay)}
-                    className="p-2 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors"
+                    className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors border border-white/20"
                     aria-label={autoPlay ? "Durdur" : "Oynat"}
                   >
                     {autoPlay ? (
@@ -292,8 +330,7 @@ export function Hero() {
                   </button>
                 </div>
 
-                {/* Progress Bar */}
-                <div className="mt-3 h-1 bg-white/20 rounded-full overflow-hidden">
+                <div className="mt-4 h-0.5 bg-white/20 rounded-full overflow-hidden">
                   <motion.div
                     className="h-full bg-white"
                     style={{ width: `${progress}%` }}
@@ -303,9 +340,11 @@ export function Hero() {
               </div>
             </>
           )}
+
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
         </>
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 animate-pulse" />
       )}
     </section>
   );

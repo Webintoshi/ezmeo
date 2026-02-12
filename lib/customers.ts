@@ -1,8 +1,8 @@
-import { Customer, CustomerFormData, CustomerSegment } from "@/types/customer";
+import { Customer, CustomerFormData } from "@/types/customer";
 import { Order } from "@/types/order";
 import { getOrders } from "./orders";
 
-let customers: Customer[] = [];
+const customers: Customer[] = [];
 
 export function getCustomers(): Customer[] {
   return customers;

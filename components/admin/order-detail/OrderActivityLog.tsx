@@ -86,20 +86,26 @@ export function OrderActivityLogComponent({ activities, className = "" }: OrderA
   };
 
   const formatActivityDescription = (activity: OrderActivityLog): string => {
+    const oldVal = activity.oldValue as string;
+    const newVal = activity.newValue as string;
+    
     switch (activity.action) {
       case "status_changed":
-        return `"${statusLabels[activity.oldValue] || activity.oldValue}" → "${statusLabels[activity.newValue] || activity.newValue}"`;
+        return `"${statusLabels[oldVal] || oldVal}" → "${statusLabels[newVal] || newVal}"`;
       case "payment_status_changed":
-        return `"${paymentStatusLabels[activity.oldValue] || activity.oldValue}" → "${paymentStatusLabels[activity.newValue] || activity.newValue}"`;
+        return `"${paymentStatusLabels[oldVal] || oldVal}" → "${paymentStatusLabels[newVal] || newVal}"`;
       case "shipping_updated":
-        return activity.newValue?.trackingNumber
-          ? `${activity.newValue.trackingNumber}`
+        const newValueObj = activity.newValue as { trackingNumber?: string } | null;
+        return newValueObj?.trackingNumber
+          ? `${newValueObj.trackingNumber}`
           : "Kargo bilgisi güncellendi";
       case "note_added":
       case "note_updated":
-        return activity.newValue?.text || "";
+        const noteValue = activity.newValue as { text?: string } | null;
+        return noteValue?.text || "";
       case "customer_notified":
-        return activity.newValue?.type === "email"
+        const notifyValue = activity.newValue as { type?: string } | null;
+        return notifyValue?.type === "email"
           ? "E-posta gönderildi"
           : "SMS gönderildi";
       default:

@@ -152,7 +152,7 @@ export function OrderActions({
                 <button
                   key={action.id}
                   onClick={() => {
-                    action.onClick();
+                    action.onClick?.();
                     if (action.id.startsWith("copy")) {
                       // Keep open for copy actions to show feedback
                     } else {

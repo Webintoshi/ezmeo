@@ -1,4 +1,4 @@
-import { createServerClient, Setting } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase";
 
 // =====================================================
 // SETTINGS OPERATIONS

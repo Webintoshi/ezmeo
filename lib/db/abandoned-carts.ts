@@ -1,4 +1,4 @@
-import { createServerClient, AbandonedCart } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase";
 
 // =====================================================
 // ABANDONED CART OPERATIONS

@@ -63,7 +63,7 @@ const SEGMENTS: CustomerSegment[] = [
   },
 ];
 
-let segmentsList: CustomerSegment[] = [...SEGMENTS];
+const segmentsList: CustomerSegment[] = [...SEGMENTS];
 
 function evaluateSegment(segment: CustomerSegment, customers: Customer[]): number {
   let count = 0;

@@ -1,53 +1,48 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { CartItem, Cart, CartContextType } from "@/types/cart";
+import { CartItem, CartContextType } from "@/types/cart";
 import { Product, ProductVariant } from "@/types/product";
 import { SHIPPING_THRESHOLD, SHIPPING_COST } from "@/lib/constants";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
+function loadCartFromStorage(): CartItem[] {
+  if (typeof window === "undefined") return [];
+  
+  const savedCart = localStorage.getItem("ezmeo_cart");
+  if (!savedCart) return [];
+  
+  try {
+    const parsedCart: CartItem[] = JSON.parse(savedCart);
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const hasInvalidIds = parsedCart.some(
+      item => !uuidRegex.test(item.productId) || !uuidRegex.test(item.variantId)
+    );
 
-  // Load cart from localStorage
-  // Load cart from localStorage
-  useEffect(() => {
-    const savedCart = localStorage.getItem("ezmeo_cart");
-    if (savedCart) {
-      try {
-        const parsedCart: CartItem[] = JSON.parse(savedCart);
-
-        // Validate IDs - if any item has a non-UUID ID (legacy data), clear the cart
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        const hasInvalidIds = parsedCart.some(
-          item => !uuidRegex.test(item.productId) || !uuidRegex.test(item.variantId)
-        );
-
-        if (hasInvalidIds) {
-          console.warn("Legacy cart data detected (invalid UUIDs). Clearing cart.");
-          setItems([]);
-          localStorage.removeItem("ezmeo_cart");
-        } else {
-          setItems(parsedCart);
-        }
-      } catch (e) {
-        console.error("Failed to parse cart data", e);
-        setItems([]);
-      }
+    if (hasInvalidIds) {
+      console.warn("Legacy cart data detected (invalid UUIDs). Clearing cart.");
+      localStorage.removeItem("ezmeo_cart");
+      return [];
     }
-    setIsLoaded(true);
-  }, []);
+    
+    return parsedCart;
+  } catch (e) {
+    console.error("Failed to parse cart data", e);
+    return [];
+  }
+}
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>(loadCartFromStorage);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(true);
+  const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
 
   // Save cart to localStorage whenever items change
   useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem("ezmeo_cart", JSON.stringify(items));
-    }
-  }, [items, isLoaded]);
+    localStorage.setItem("ezmeo_cart", JSON.stringify(items));
+  }, [items]);
 
   const addToCart = (product: Product, variant: ProductVariant, quantity: number = 1) => {
     const newItem: CartItem = {

@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
         }
 
         // 4. Get Fresh Data from Codebase
-        const products = getAllProducts();
+        const products = await getAllProducts();
         console.log(`seeding ${products.length} products...`);
 
         // 5. Insert Products & Variants

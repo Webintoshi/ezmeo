@@ -3,7 +3,7 @@ export type TimeRange = "today" | "week" | "month" | "quarter" | "year";
 export interface AnalyticsEvent {
   id?: string;
   type: "page_view" | "add_to_cart" | "purchase" | "user_signup" | "search" | "filter" | "category_view";
-  data: any;
+  data: Record<string, unknown>;
   timestamp?: Date;
 }
 

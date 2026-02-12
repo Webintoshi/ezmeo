@@ -54,7 +54,7 @@ export function OrderExport({ orders }: OrderExportProps) {
         order.shippingAddress.city,
         order.items.length.toString(),
         formatPrice(order.subtotal),
-        formatPrice(order.shippingCost),
+        formatPrice(order.shipping),
         order.discount !== 0 ? formatPrice(order.discount) : "0",
         formatPrice(order.total),
         order.status,
@@ -125,7 +125,7 @@ export function OrderExport({ orders }: OrderExportProps) {
             <td>${order.shippingAddress.city}</td>
             <td>${order.items.length}</td>
             <td>${formatPrice(order.subtotal)}</td>
-            <td>${formatPrice(order.shippingCost)}</td>
+            <td>${formatPrice(order.shipping)}</td>
             <td>${order.discount !== 0 ? formatPrice(order.discount) : "-"}</td>
             <td><strong>${formatPrice(order.total)}</strong></td>
             <td>${order.status}</td>

@@ -1,4 +1,4 @@
-import { createServerClient, Order, OrderItem } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase";
 import { getOrCreateCustomer } from "./customers";
 
 // =====================================================

@@ -2,7 +2,7 @@ import { getAllProducts } from '@/lib/products';
 
 export async function GET() {
     const baseUrl = 'https://ezmeo.com';
-    const products = getAllProducts();
+    const products = await getAllProducts();
     const lastMod = new Date().toISOString();
 
     const productUrls = products.map((product) => ({

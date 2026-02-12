@@ -1,5 +1,6 @@
 import { CartItem } from "./cart";
 import { Address } from "./user";
+import { LucideIcon } from "lucide-react";
 
 // Sipariş Durumu
 export type OrderStatus =
@@ -16,7 +17,7 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatus, {
   label: string;
   description: string;
   color: string;
-  icon: string;
+  icon: LucideIcon;
   stepIndex: number;
 }> = {
   pending: {
@@ -106,8 +107,8 @@ export interface OrderActivityLog {
   id: string;
   orderId: string;
   action: OrderActivityAction;
-  oldValue?: any;
-  newValue?: any;
+  oldValue?: unknown;
+  newValue?: unknown;
   adminId?: string;
   adminName?: string;
   createdAt: Date;
@@ -164,6 +165,7 @@ export interface Order {
   id: string;
   orderNumber: string; // "EZM-2024-000123"
   userId: string;
+  customerEmail?: string;
   items: OrderItem[];
   subtotal: number;
   discount: number;

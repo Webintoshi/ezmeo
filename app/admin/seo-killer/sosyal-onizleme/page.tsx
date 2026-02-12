@@ -17,14 +17,14 @@ export default function SocialPreviewPage() {
     const [activeTab, setActiveTab] = useState<"facebook" | "twitter" | "whatsapp" | "linkedin">("facebook");
 
     // Load from mock existing logic logic or helper
-    const fetchMetadata = () => {
+    const fetchMetadata = async () => {
         if (!url) return;
         setLoading(true);
 
         // Simulate fetching metadata from the URL (In a real app, this needs a server-side scraper)
         // Here we will try to match the URL to our internal products for demo purposes.
-        setTimeout(() => {
-            const products = getAllProducts();
+        setTimeout(async () => {
+            const products = await getAllProducts();
             const slug = url.split("/").pop(); // highly naive
             const found = products.find(p => p.slug === slug || url.includes(p.slug));
 

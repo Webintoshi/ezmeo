@@ -314,10 +314,10 @@ export default function CustomersPage() {
                       <div className="text-xs text-gray-500">{customer.totalOrders} sipariş</div>
                     </td>
                     <td className="px-6 py-4 text-gray-500">
-                      {customer.lastOrderAt ? (
+                      {customer.lastOrderDate ? (
                         <div className="flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5" />
-                          {format(new Date(customer.lastOrderAt), 'd MMM yyyy', { locale: tr })}
+                          {format(new Date(customer.lastOrderDate), 'd MMM yyyy', { locale: tr })}
                         </div>
                       ) : '-'}
                     </td>

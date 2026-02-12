@@ -1,5 +1,4 @@
-import type { User, Address, UserRole } from "./user";
-
+import type { Address } from "./user";
 export type { User, Address, UserRole } from "./user";
 
 export interface Customer {

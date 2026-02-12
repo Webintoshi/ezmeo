@@ -7,7 +7,7 @@ import { ChevronDown, Check } from "lucide-react";
 
 interface OrderStatusChangerProps {
   currentStatus: OrderStatus;
-  onStatusChange: (newStatus: OrderStatus) => Promise<void>;
+  onStatusChange: (newStatus: OrderStatus) => void | Promise<void>;
   disabled?: boolean;
   className?: string;
 }

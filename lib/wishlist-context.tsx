@@ -14,25 +14,27 @@ interface WishlistContextType {
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
-export function WishlistProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<Product[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+function loadWishlistFromStorage(): Product[] {
+  if (typeof window === "undefined") return [];
+  
+  const savedWishlist = localStorage.getItem("ezmeo_wishlist");
+  if (!savedWishlist) return [];
+  
+  try {
+    return JSON.parse(savedWishlist);
+  } catch {
+    return [];
+  }
+}
 
-  // Load wishlist from localStorage
-  useEffect(() => {
-    const savedWishlist = localStorage.getItem("ezmeo_wishlist");
-    if (savedWishlist) {
-      setItems(JSON.parse(savedWishlist));
-    }
-    setIsLoaded(true);
-  }, []);
+export function WishlistProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<Product[]>(loadWishlistFromStorage);
+  const [isLoaded, setIsLoaded] = useState(true);
 
   // Save wishlist to localStorage whenever items change
   useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem("ezmeo_wishlist", JSON.stringify(items));
-    }
-  }, [items, isLoaded]);
+    localStorage.setItem("ezmeo_wishlist", JSON.stringify(items));
+  }, [items]);
 
   const addToWishlist = (product: Product) => {
     setItems((prev) => {

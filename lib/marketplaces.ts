@@ -155,7 +155,7 @@ export async function syncProductsToMarketplace(id: string): Promise<SyncResult>
     };
   }
 
-  const products = getAllProducts();
+  const products = await getAllProducts();
   const result: SyncResult = {
     marketplaceId: id,
     type: "products",
@@ -281,7 +281,7 @@ export async function syncInventory(id: string): Promise<SyncResult> {
     };
   }
 
-  const products = getAllProducts();
+  const products = await getAllProducts();
   const result: SyncResult = {
     marketplaceId: id,
     type: "inventory",

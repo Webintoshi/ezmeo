@@ -69,10 +69,10 @@ export default function InternalLinkingPage() {
         setMessage({ type: "success", text: "Kural silindi." });
     };
 
-    const handleGenerateFromProducts = () => {
+    const handleGenerateFromProducts = async () => {
         if (!confirm("Mağazadaki tüm ürün isimlerini robota öğretmek istiyor musun?")) return;
 
-        const defaults = generateDefaultRulesFromProducts();
+        const defaults = await generateDefaultRulesFromProducts();
         const currentKeywords = new Set(rules.map(r => r.keyword.toLowerCase()));
         const newRules = defaults.filter(r => !currentKeywords.has(r.keyword.toLowerCase()));
 
@@ -87,15 +87,15 @@ export default function InternalLinkingPage() {
         setMessage({ type: "success", text: `Harika! Robot ${newRules.length} yeni ürün öğrendi! 🚀` });
     };
 
-    const handleRunAutoLinker = () => {
+    const handleRunAutoLinker = async () => {
         if (!confirm("Hazır mısın? Robot tüm ürün açıklamalarını okuyacak ve bildiği kelimelere link ekleyecek. Başlayalım mı? 🤖")) return;
 
         setProcessing(true);
         setMessage(null);
 
-        setTimeout(() => {
+        setTimeout(async () => {
             try {
-                const products = getAllProducts();
+                const products = await getAllProducts();
                 let updateCount = 0;
 
                 products.forEach(product => {

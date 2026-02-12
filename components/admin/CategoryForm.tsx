@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getCategoryById, addCategory, updateCategory } from "@/lib/categories";
-import { CategoryFormData } from "@/types/category";
+import { CategoryFormData, CategoryInfo } from "@/types/category";
 import { ArrowLeft, Save, X, Plus } from "lucide-react";
 import Link from "next/link";
 
@@ -13,7 +13,13 @@ interface CategoryFormProps {
 
 export default function CategoryForm({ categoryId }: CategoryFormProps) {
   const router = useRouter();
-  const existingCategory = categoryId ? getCategoryById(categoryId) : null;
+  const [existingCategory, setExistingCategory] = useState<CategoryInfo | null>(null);
+
+  useEffect(() => {
+    if (categoryId) {
+      getCategoryById(categoryId).then(cat => setExistingCategory(cat || null));
+    }
+  }, [categoryId]);
 
   const [formData, setFormData] = useState<CategoryFormData>({
     id: existingCategory?.id || "",

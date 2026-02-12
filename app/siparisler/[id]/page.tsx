@@ -69,7 +69,7 @@ export default async function OrderSuccessPage({
 
     // Determine Payment Method Name & Icon
     let paymentMethodName = "Ödeme Yöntemi";
-    let PaymentIcon = <CreditCard className="h-5 w-5 text-gray-400" />;
+    const PaymentIcon = <CreditCard className="h-5 w-5 text-gray-400" />;
     let MethodIconDisplay = <span className="text-xl">💳</span>;
 
     // Find matching gateway config

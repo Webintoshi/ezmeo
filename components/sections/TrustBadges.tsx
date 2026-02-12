@@ -58,7 +58,7 @@ export function TrustBadges() {
             >
               <div
                 className={cn(
-                  "w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-md mb-3",
+                  "w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-linear-to-br flex items-center justify-center shadow-md mb-3",
                   "group-hover:scale-110 group-hover:shadow-lg transition-all duration-300",
                   badge.color
                 )}

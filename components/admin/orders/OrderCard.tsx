@@ -98,7 +98,7 @@ export function OrderCard({
 
   const handleSendEmail = () => {
     window.open(
-      `mailto:${order.shippingAddress.email}?subject=Sipariş ${order.orderNumber} Hakkında`,
+      `mailto:${order.customerEmail}?subject=Sipariş ${order.orderNumber} Hakkında`,
       "_blank"
     );
     setIsQuickActionsOpen(false);
@@ -122,7 +122,7 @@ export function OrderCard({
       label: "E-posta",
       icon: Mail,
       onClick: handleSendEmail,
-      show: !!order.shippingAddress.email,
+      show: !!order.customerEmail,
     },
     {
       id: "copy",

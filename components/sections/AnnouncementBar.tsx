@@ -30,7 +30,7 @@ export function AnnouncementBar({
 
       <div className="container mx-auto px-4 py-2.5 relative">
         <div className="flex items-center justify-center gap-2 sm:gap-4">
-          <Sparkles className="w-4 h-4 flex-shrink-0" />
+          <Sparkles className="w-4 h-4 shrink-0" />
           <p className="text-xs sm:text-sm font-medium text-center">
             {message}
             <Link

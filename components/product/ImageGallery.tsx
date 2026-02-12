@@ -35,7 +35,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
 
   if (displayImages.length === 0) {
     return (
-      <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl border border-gray-200 flex flex-col items-center justify-center">
+      <div className="relative aspect-square bg-linear-to-br from-gray-100 to-gray-200 rounded-2xl border border-gray-200 flex flex-col items-center justify-center">
         <svg className="w-20 h-20 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeWidth="2"/>
           <circle cx="8.5" cy="8.5" r="1.5" strokeWidth="2"/>
@@ -90,7 +90,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           onClick={() => setIsLightboxOpen(true)}
         >
           {!isLoaded && !isFailed && (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
+            <div className="absolute inset-0 bg-linear-to-br from-gray-100 to-gray-200 animate-pulse" />
           )}
           {!isFailed ? (
             <img
@@ -192,7 +192,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
                 key="error"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200"
+                className="w-full h-full flex flex-col items-center justify-center bg-linear-to-br from-gray-100 to-gray-200"
               >
                 <svg className="w-16 h-16 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l4.586-4.586a2 2 0 012.828 0L20 14M10 4v4m0 0H4m6 0h6" />

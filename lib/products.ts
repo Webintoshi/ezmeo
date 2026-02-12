@@ -2,6 +2,8 @@ import { Product } from "@/types/product";
 import { getStoredProducts, addStoredProduct, addStoredProducts, deleteStoredProduct, updateStoredProduct, initializeProducts } from "./product-storage";
 import { parseShopifyCSV, importProductsFromCSV } from "./csv-import";
 
+export type { Product } from "@/types/product";
+
 // Default Ürün Verileri
 const DEFAULT_PRODUCTS: Product[] = [
   // Fıstık Ezmeleri
@@ -664,8 +666,9 @@ export function deleteProduct(id: string): void {
   deleteStoredProduct(id);
 }
 
-export function getProductById(id: string): Product | undefined {
-  return getAllProducts().find((p) => p.id === id);
+export async function getProductById(id: string): Promise<Product | undefined> {
+  const products = await getAllProducts();
+  return products.find((p) => p.id === id);
 }
 
 export function importProductsFromCSVFile(csvContent: string): {

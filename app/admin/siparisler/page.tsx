@@ -40,7 +40,7 @@ function transformOrder(dbOrder: Record<string, unknown>): Order {
     total: Number(dbOrder.total) || 0,
     status: (dbOrder.status as OrderStatus) || "pending",
     paymentStatus: (dbOrder.payment_status as Order["paymentStatus"]) || "pending",
-    paymentMethod: (dbOrder.payment_method as string) || "credit-card",
+    paymentMethod: (dbOrder.payment_method as Order["paymentMethod"]) || "credit-card",
     shippingAddress: (dbOrder.shipping_address as Order["shippingAddress"]) || {
       firstName: "",
       lastName: "",
@@ -101,7 +101,7 @@ export default function OrdersPage() {
       const matchesSearch =
         order.orderNumber.toLowerCase().includes(searchLower) ||
         `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`.toLowerCase().includes(searchLower) ||
-        order.shippingAddress.email?.toLowerCase().includes(searchLower);
+        order.customerEmail?.toLowerCase().includes(searchLower);
       const matchesStatus = statusFilter === "all" || order.status === statusFilter;
       return matchesSearch && matchesStatus;
     })
@@ -193,7 +193,7 @@ export default function OrdersPage() {
     return icons[method] || "💳";
   };
 
-  const getPaymentMethodName = (method: string) => {
+  const getPaymentMethodName = (method: string | undefined) => {
     const names: Record<string, string> = {
       cod: "Kapıda Ödeme",
       bank_transfer: "Havale/EFT",
@@ -202,7 +202,7 @@ export default function OrdersPage() {
       iyzico: "İyzico",
       stripe: "Stripe",
     };
-    return names[method] || method;
+    return names[method || ''] || method || 'Bilinmiyor';
   };
 
   return (
