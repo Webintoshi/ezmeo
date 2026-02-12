@@ -18,12 +18,15 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
+  // Ensure images is an array
+  const safeImages = Array.isArray(images) ? images : [];
+  
   // Debug: Log images with details
-  console.log('ImageGallery - Raw images:', JSON.stringify(images));
-  console.log('ImageGallery - First image URL:', images?.[0]);
+  console.log('ImageGallery - Raw images:', JSON.stringify(safeImages));
+  console.log('ImageGallery - First image URL:', safeImages?.[0]);
   
   // Filter valid images - allow any non-empty string URL
-  const displayImages = images.filter(img => 
+  const displayImages = safeImages.filter(img => 
     img && typeof img === 'string' && img.trim() !== ''
   );
   

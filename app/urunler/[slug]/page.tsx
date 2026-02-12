@@ -116,14 +116,24 @@ export default async function ProductDetailPage({
 
     if (dbProduct) {
       // Transform images_v2 to images format
-      const images = dbProduct.images_v2?.map((img: any) => img.url) || dbProduct.images || [];
+      let images: string[] = [];
+      
+      if (dbProduct.images_v2 && Array.isArray(dbProduct.images_v2) && dbProduct.images_v2.length > 0) {
+        images = dbProduct.images_v2.map((img: any) => img?.url).filter(Boolean);
+      }
+      
+      // Fallback to images column if images_v2 is empty
+      if (images.length === 0 && dbProduct.images && Array.isArray(dbProduct.images)) {
+        images = dbProduct.images.filter((img: any) => typeof img === 'string' && img.length > 0);
+      }
+      
       product = {
         ...dbProduct,
         images,
         variants: dbProduct.variants?.map((v: any) => ({
           ...v,
           originalPrice: v.original_price,
-        })),
+        })) || [],
       } as any;
     }
   } catch (error) {

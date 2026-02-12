@@ -81,7 +81,20 @@ export function ProductDetailClient({
         notFound();
     }
 
-    const variant = product.variants[selectedVariant];
+    // Safety check for variants
+    const variants = product.variants || [];
+    const variant = variants[selectedVariant] || variants[0] || null;
+    
+    if (!variant) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <h1 className="text-xl font-bold text-gray-900 mb-2">Ürün Bilgisi Eksik</h1>
+                    <p className="text-gray-600">Bu ürün için varyant bilgisi bulunamadı.</p>
+                </div>
+            </div>
+        );
+    }
     const discountPercent = variant.originalPrice
         ? Math.round((1 - variant.price / variant.originalPrice) * 100)
         : 0;
@@ -264,13 +277,13 @@ export function ProductDetailClient({
                                 </p>
 
                                 {/* Variants */}
-                                {product.variants.length > 1 && (
+                                {variants.length > 1 && (
                                     <div className="mb-5">
                                         <label className="block text-sm font-semibold text-gray-900 mb-2">
                                             Boyut Seçin
                                         </label>
                                         <div className="grid grid-cols-3 gap-2">
-                                            {product.variants.map((v, index) => (
+                                            {variants.map((v, index) => (
                                                 <button
                                                     key={v.id}
                                                     onClick={() => setSelectedVariant(index)}
