@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ImageIcon, Upload, X, Star, GripVertical, ZoomIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ProductImage } from "@/types/product";
-import { Dialog } from "@headlessui/react";
+
+// Dynamic import for Dialog to avoid hydration issues
+import dynamic from "next/dynamic";
+const Dialog = dynamic(() => import("@headlessui/react").then((mod) => mod.Dialog), { ssr: false });
 
 interface StepImagesProps {
   images: ProductImage[];
@@ -15,11 +18,16 @@ interface StepImagesProps {
 
 const MAX_IMAGES = 20;
 
-export function StepImages({ images, onChange, errors }: StepImagesProps) {
+export function StepImages({ images = [], onChange, errors }: StepImagesProps) {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -325,20 +333,22 @@ export function StepImages({ images, onChange, errors }: StepImagesProps) {
       )}
 
       {/* Preview Modal */}
-      <Dialog open={!!previewImage} onClose={() => setPreviewImage(null)} className="relative z-50">
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setPreviewImage(null)} />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="max-w-5xl w-full">
-            {previewImage && (
-              <img
-                src={previewImage}
-                alt="Görsel önizleme"
-                className="w-full h-auto rounded-2xl shadow-2xl"
-              />
-            )}
-          </Dialog.Panel>
-        </div>
-      </Dialog>
+      {mounted && (
+        <Dialog open={!!previewImage} onClose={() => setPreviewImage(null)} className="relative z-50">
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setPreviewImage(null)} />
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <Dialog.Panel className="max-w-5xl w-full">
+              {previewImage && (
+                <img
+                  src={previewImage}
+                  alt="Görsel önizleme"
+                  className="w-full h-auto rounded-2xl shadow-2xl"
+                />
+              )}
+            </Dialog.Panel>
+          </div>
+        </Dialog>
+      )}
     </div>
   );
 }
