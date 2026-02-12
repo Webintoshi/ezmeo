@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-import { ChevronLeft, ChevronRight, Pause, Play, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 
 interface HeroSlide {
   id: number;
@@ -13,12 +12,6 @@ interface HeroSlide {
   mobile: string;
   alt: string;
   link?: string;
-  overlay?: {
-    title: string;
-    subtitle: string;
-    ctaText: string;
-    ctaLink: string;
-  };
 }
 
 interface HeroSettings {
@@ -32,12 +25,6 @@ const DEFAULT_SLIDES: HeroSlide[] = [
     mobile: "/Mobil_Hero_banner_2_s.jpg",
     alt: "Ezmeo - Doğal Fıstık Ezmeleri",
     link: "/urunler",
-    overlay: {
-      title: "Doğal Lezzetin",
-      subtitle: "Tamamen organik, katkısız fıstık ezmeleri",
-      ctaText: "Keşfet",
-      ctaLink: "/urunler",
-    },
   },
   {
     id: 2,
@@ -45,12 +32,6 @@ const DEFAULT_SLIDES: HeroSlide[] = [
     mobile: "/Mobil_hero banner_fistik_ezmesi.jpg",
     alt: "Ezmeo - Fıstık Ezmeleri",
     link: "/urunler",
-    overlay: {
-      title: "Sağlıklı Yaşam",
-      subtitle: "Protein kaynağı, doğal enerji",
-      ctaText: "İncele",
-      ctaLink: "/urunler",
-    },
   },
 ];
 
@@ -115,7 +96,7 @@ export function Hero() {
       return;
     }
 
-    const duration = 5000;
+    const duration = 8000;
     const interval = 50;
     const step = 100 / (duration / interval);
 
@@ -150,8 +131,6 @@ export function Hero() {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
     setProgress(0);
   };
-
-  const currentOverlay = slides[currentSlide]?.overlay;
 
   return (
     <section
@@ -199,82 +178,11 @@ export function Hero() {
                         quality={85}
                       />
                     </motion.div>
-
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
                   </motion.div>
                 ) : null
               )}
             </AnimatePresence>
           </div>
-
-          {currentOverlay && (
-            <div className="absolute inset-0 flex items-center">
-              <div className="container mx-auto px-4 sm:px-6">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentSlide}
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className="max-w-2xl"
-                  >
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2, duration: 0.5 }}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full mb-6 border border-white/20"
-                    >
-                      <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                      <span className="text-sm font-medium text-white/90">Taze & Doğal</span>
-                    </motion.div>
-
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 sm:mb-6 leading-tight">
-                      <motion.span
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1, duration: 0.5 }}
-                        className="block"
-                      >
-                        {currentOverlay.title}
-                      </motion.span>
-                    </h1>
-                    
-                    <motion.p
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2, duration: 0.5 }}
-                      className="text-lg sm:text-xl md:text-2xl text-white/85 mb-8 sm:mb-10 max-w-xl leading-relaxed"
-                    >
-                      {currentOverlay.subtitle}
-                    </motion.p>
-
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3, duration: 0.5 }}
-                      className="flex flex-wrap gap-4"
-                    >
-                      <Link
-                        href={currentOverlay.ctaLink}
-                        className="group inline-flex items-center gap-3 px-8 py-4 bg-white text-gray-900 rounded-full font-semibold text-base hover:shadow-2xl transition-all duration-300 hover:scale-105"
-                      >
-                        {currentOverlay.ctaText}
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </Link>
-                      <Link
-                        href="/urunler"
-                        className="inline-flex items-center gap-3 px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/30 rounded-full font-semibold text-base hover:bg-white/20 transition-all duration-300"
-                      >
-                        Tüm Ürünler
-                      </Link>
-                    </motion.div>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
-          )}
 
           {slides.length > 1 && (
             <>
