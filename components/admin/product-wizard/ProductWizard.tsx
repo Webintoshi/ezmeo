@@ -317,11 +317,16 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
       const url = "/api/products";
       const method = productId ? "PUT" : "POST";
 
+      console.log("Sending product data:", JSON.stringify(productData, null, 2));
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(productData),
       });
+
+      console.log("Response status:", response.status);
+      console.log("Response ok:", response.ok);
 
       const result = await response.json();
       console.log("API Response:", result);
