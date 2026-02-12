@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
+// Using native img tag to avoid R2 CORS issues with Next.js Image optimization
 
 interface ImageGalleryProps {
   images: string[];
@@ -154,14 +154,11 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
                   : "border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100"
               }`}
             >
-              <Image
+              <img
                 src={image}
                 alt={`${productName} - ${index + 1}`}
-                fill
+                className="w-full h-full object-cover"
                 loading="lazy"
-                sizes="100px"
-                className="object-cover"
-                quality={60}
               />
             </button>
           ))}
@@ -186,16 +183,12 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
                 transition={{ duration: 0.2 }}
                 className="w-full h-full"
               >
-                <Image
+                <img
                   src={displayImages[selectedIndex]}
                   alt={`${productName} - Görsel ${selectedIndex + 1}`}
-                  fill
-                  priority={selectedIndex === 0}
-                  sizes="(max-width: 768px) 100vw, 600px"
-                  className="object-contain"
+                  className="w-full h-full object-contain"
                   onLoad={() => handleImageLoad(selectedIndex)}
                   onError={() => handleImageError(selectedIndex)}
-                  quality={85}
                 />
               </motion.div>
             ) : (
@@ -269,14 +262,10 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              <Image
+              <img
                 src={displayImages[selectedIndex]}
                 alt={productName}
-                fill
-                className="object-contain"
-                sizes="100vw"
-                priority
-                quality={90}
+                className="max-w-full max-h-full object-contain"
               />
             </div>
 

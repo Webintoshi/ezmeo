@@ -4,7 +4,8 @@
       "Bash(npm run build:*)",
       "Bash(test:*)",
       "Bash(ls:*)",
-      "Bash(icon \")"
+      "Bash(icon \")",
+      "Bash(npm run dev:*)"
     ]
   }
 }
