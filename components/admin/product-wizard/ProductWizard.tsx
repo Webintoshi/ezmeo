@@ -324,8 +324,10 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
       });
 
       const result = await response.json();
+      console.log("API Response:", result);
 
       if (!result.success) {
+        console.error("API Error:", result.error, result.code);
         throw new Error(result.error || "Ürün kaydedilemedi");
       }
 
@@ -343,9 +345,10 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
       if (publish || !productId) {
         router.push("/admin/urunler");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Save error:", error);
-      toast.error(error instanceof Error ? error.message : "Bir hata oluştu");
+      const errorMessage = error?.response?.data?.error || error?.message || "Bir hata oluştu";
+      toast.error(`Hata: ${errorMessage}`);
     } finally {
       setSaving(false);
     }

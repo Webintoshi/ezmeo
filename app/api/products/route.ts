@@ -259,10 +259,11 @@ export async function POST(request: NextRequest) {
             .single();
 
         return NextResponse.json({ success: true, product: fullProduct });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating product:", error);
+        console.error("Error details:", error?.details, error?.message, error?.code);
         return NextResponse.json(
-            { success: false, error: error instanceof Error ? error.message : "Failed to create product" },
+            { success: false, error: error?.message || error?.details || "Failed to create product", code: error?.code },
             { status: 500 }
         );
     }
