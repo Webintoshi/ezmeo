@@ -17,7 +17,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     // Get current order for activity log
     const { data: currentOrder } = await serverClient
       .from("orders")
-      .select("shipping_carrier, tracking_number")
+      .select("status, shipping_carrier, tracking_number")
       .eq("id", id)
       .single();
 

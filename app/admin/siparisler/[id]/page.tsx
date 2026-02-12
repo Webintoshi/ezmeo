@@ -69,7 +69,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
     // Get customer data
     let customer = null;
-    let customerOrders = [];
+    let customerOrders: any[] = [];
     if (order.customer_id) {
         const [customerResponse, ordersResponse] = await Promise.all([
             supabase.from("customers").select("*").eq("id", order.customer_id).single(),

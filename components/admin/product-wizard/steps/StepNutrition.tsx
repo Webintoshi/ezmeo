@@ -2,7 +2,7 @@
 
 import { Apple, AlertTriangle, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { NutritionalInfo, NutritionSettings } from "@/types/product";
+import { NutritionalInfo, NutritionSettings, Allergen } from "@/types/product";
 
 interface StepNutritionProps {
   nutritionalInfo: NutritionalInfo;
@@ -45,8 +45,9 @@ export function StepNutrition({
   onNutritionSettingsChange,
   onFeaturesChange,
 }: StepNutritionProps) {
-  const toggleAllergen = (allergen: string) => {
+  const toggleAllergen = (allergenId: string) => {
     const current = nutritionSettings.allergens;
+    const allergen = allergenId as Allergen;
     const updated = current.includes(allergen)
       ? current.filter((a) => a !== allergen)
       : [...current, allergen];
@@ -242,12 +243,12 @@ export function StepNutrition({
                   onClick={() => toggleAllergen(allergen.id)}
                   className={cn(
                     "px-4 py-2 rounded-xl text-sm font-bold transition-all",
-                    nutritionSettings.allergens.includes(allergen.id)
+                    nutritionSettings.allergens.includes(allergen.id as Allergen)
                       ? "bg-rose-100 border border-rose-300 text-rose-700"
                       : "bg-white border border-gray-200 text-gray-500 hover:border-gray-300"
                   )}
                 >
-                  {nutritionSettings.allergens.includes(allergen.id) && (
+                  {nutritionSettings.allergens.includes(allergen.id as Allergen) && (
                     <Check className="w-3 h-3 inline mr-1" />
                   )}
                   {allergen.label}

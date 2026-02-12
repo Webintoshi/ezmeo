@@ -17,10 +17,10 @@ interface TestimonialWithPhoto {
   verified: boolean;
 }
 
-const ENHANCED_TESTIMONIALS: TestimonialWithPhoto[] = TESTIMONIALS.map((t, i) => ({
+const ENHANCED_TESTIMONIALS = TESTIMONIALS.map((t, i) => ({
   ...t,
   verified: true,
-  photoUrl: `/testimonial-${i + 1}.jpg`,
+  photoUrl: t.image || `/testimonial-${i + 1}.jpg`,
 }));
 
 export function Testimonials() {

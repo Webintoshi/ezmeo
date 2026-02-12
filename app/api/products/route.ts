@@ -313,7 +313,7 @@ export async function PUT(request: NextRequest) {
         console.log('PUT /api/products - finalImages:', finalImages);
 
         if (deleted_images && Array.isArray(deleted_images) && existingProduct?.images) {
-            finalImages = finalImages.filter(img => !deleted_images.includes(img));
+            finalImages = finalImages.filter((img: string) => !deleted_images.includes(img));
         }
 
         // 3. Ana ürünü güncelle (variants olmadan)

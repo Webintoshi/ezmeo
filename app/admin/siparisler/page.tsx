@@ -25,6 +25,8 @@ function transformOrder(dbOrder: Record<string, unknown>): Order {
   return {
     id: dbOrder.id as string,
     orderNumber: dbOrder.order_number as string,
+    userId: dbOrder.user_id as string || "",
+    customerEmail: dbOrder.customer_email as string || "",
     items: ((dbOrder.items as Record<string, unknown>[]) || []).map((item) => ({
       productId: item.product_id as string,
       variantId: item.variant_id as string,
@@ -50,6 +52,12 @@ function transformOrder(dbOrder: Record<string, unknown>): Order {
       city: "",
       district: "",
       postalCode: "",
+    },
+    shippingInfo: {
+      method: "standard",
+      company: "",
+      trackingNumber: "",
+      cost: 0,
     },
     createdAt: new Date(dbOrder.created_at as string),
     updatedAt: new Date(dbOrder.updated_at as string),
