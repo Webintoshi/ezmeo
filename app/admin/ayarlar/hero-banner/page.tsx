@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Image as ImageIcon, Loader2, Save, GripVertical, Trash2, Plus } from "lucide-react";
+import { Image as ImageIcon, Loader2, Save, GripVertical, Trash2, Plus, Smartphone } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -433,21 +433,4 @@ export default function HeroBannerSettingsPage() {
             </div>
         </div>
     );
-}
-
-function Smartphone(props: React.SVGProps<SVGSVGElement>) {
-    return (
-        <svg
-            {...props}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-            <path d="M12 18h.01" />
-        </svg>
-    )
 }
