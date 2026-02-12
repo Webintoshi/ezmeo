@@ -55,9 +55,9 @@ export async function generateStaticParams() {
   return allSlugs.map((slug) => ({ slug }));
 }
 
-// Static rendering with ISR
-export const revalidate = 3600; // 1 saat
-export const dynamic = 'force-static';
+// Dynamic rendering for fresh data
+export const revalidate = 0; // No cache - always fresh
+export const dynamic = 'force-dynamic';
 
 // Server component
 export default async function ProductDetailPage({
