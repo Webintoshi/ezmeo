@@ -1,6 +1,6 @@
 import { CartItem } from "./cart";
 import { Address } from "./user";
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, Clock, CheckCircle, Package, Truck, XCircle, ArrowLeft } from "lucide-react";
 
 // Sipariş Durumu
 export type OrderStatus =
@@ -24,49 +24,49 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatus, {
     label: "Beklemede",
     description: "Sipariş alındı, onay bekliyor",
     color: "yellow",
-    icon: "clock",
+    icon: Clock,
     stepIndex: 0,
   },
   confirmed: {
     label: "Onaylandı",
     description: "Sipariş onaylandı, hazırlanıyor",
     color: "blue",
-    icon: "check-circle",
+    icon: CheckCircle,
     stepIndex: 1,
   },
   preparing: {
     label: "Hazırlanıyor",
     description: "Ürünler paketleniyor",
     color: "purple",
-    icon: "package",
+    icon: Package,
     stepIndex: 2,
   },
   shipped: {
     label: "Kargolandı",
     description: "Kargo firmasına teslim edildi",
     color: "indigo",
-    icon: "truck",
+    icon: Truck,
     stepIndex: 3,
   },
   delivered: {
     label: "Teslim Edildi",
     description: "Müşteriye teslim edildi",
     color: "green",
-    icon: "check-circle",
+    icon: CheckCircle,
     stepIndex: 4,
   },
   cancelled: {
     label: "İptal",
     description: "Sipariş iptal edildi",
     color: "red",
-    icon: "x-circle",
+    icon: XCircle,
     stepIndex: -1,
   },
   refunded: {
     label: "İade",
     description: "İade edildi",
     color: "orange",
-    icon: "arrow-left",
+    icon: ArrowLeft,
     stepIndex: -1,
   },
 };

@@ -35,7 +35,7 @@ function transformOrder(dbOrder: Record<string, unknown>): Order {
       total: Number(item.total) || 0,
     })),
     subtotal: Number(dbOrder.subtotal) || 0,
-    shippingCost: Number(dbOrder.shipping_cost) || 0,
+    shipping: Number(dbOrder.shipping_cost) || 0,
     discount: Number(dbOrder.discount) || 0,
     total: Number(dbOrder.total) || 0,
     status: (dbOrder.status as OrderStatus) || "pending",

@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
-  const [captchaError, setCaptchaError] = useState(false);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -32,11 +32,11 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setCaptchaError(false);
+    setCaptchaError(null);
 
     // Captcha validation
     if (!isCaptchaVerified) {
-      setCaptchaError(true);
+      setCaptchaError("Doğrulama gereklidir");
       setLoading(false);
       return;
     }

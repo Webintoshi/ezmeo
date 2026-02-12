@@ -1,12 +1,8 @@
 import { Metadata } from "next";
 import { Hero } from "@/components/sections/Hero";
-import { Categories } from "@/components/sections/Categories";
-import { Marquee } from "@/components/sections/Marquee";
 import { ProductShowcase } from "@/components/sections/ProductShowcase";
 import { Testimonials } from "@/components/sections/Testimonials";
-import { TrustBadges } from "@/components/sections/TrustBadges";
 import { AnnouncementBar } from "@/components/sections/AnnouncementBar";
-import { Benefits } from "@/components/sections/Benefits";
 
 export const metadata: Metadata = {
   title: "Ezmeo - Doğal Fıstık Ezmesi ve Kuruyemiş | Organik & Katkısız",
@@ -19,10 +15,6 @@ export const metadata: Metadata = {
     locale: "tr_TR",
     siteName: "Ezmeo",
   },
-  other: {
-    "og:image:width": "1200",
-    "og:image:height": "630",
-  },
 };
 
 export default function Home() {
@@ -30,10 +22,6 @@ export default function Home() {
     <>
       <AnnouncementBar />
       <Hero />
-      <TrustBadges />
-      <Benefits />
-      <Marquee />
-      <Categories />
       <ProductShowcase />
       <Testimonials />
       

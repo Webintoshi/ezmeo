@@ -159,6 +159,7 @@ export interface Product {
   reviewCount: number;
   featured?: boolean;
   new?: boolean;
+  isActive?: boolean;
   seoTitle?: string;
   seoDescription?: string;
   discount?: number;

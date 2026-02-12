@@ -27,7 +27,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
-  const [captchaError, setCaptchaError] = useState(false);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -40,11 +40,11 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    setCaptchaError(false);
+    setCaptchaError(null);
 
     // Captcha validation
     if (!isCaptchaVerified) {
-      setCaptchaError(true);
+      setCaptchaError("Doğrulama gereklidir");
       setLoading(false);
       return;
     }
@@ -89,7 +89,7 @@ export default function RegisterPage() {
         setError(authError.message);
       }
       setLoading(false);
-    } else if (data.user) {
+    } else if (data?.user) {
       // Success! Auto-login and redirect
       setSuccess(true);
       
@@ -103,7 +103,7 @@ export default function RegisterPage() {
             first_name: formData.firstName,
             last_name: formData.lastName,
             phone: formData.phone,
-            user_id: data.user.id,
+            user_id: data?.user?.id,
           }),
         });
       } catch (err) {

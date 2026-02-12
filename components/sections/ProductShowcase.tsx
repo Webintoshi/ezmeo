@@ -215,6 +215,7 @@ export function ProductShowcase() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     const observer = new IntersectionObserver(

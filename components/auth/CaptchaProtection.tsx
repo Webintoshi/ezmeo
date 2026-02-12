@@ -5,7 +5,7 @@ import { RotateCcw, Check } from "lucide-react";
 
 interface CaptchaProtectionProps {
   onVerify: (isValid: boolean) => void;
-  error?: string;
+  error?: string | null;
 }
 
 export function CaptchaProtection({ onVerify, error }: CaptchaProtectionProps) {

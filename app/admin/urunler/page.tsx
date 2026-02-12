@@ -203,7 +203,7 @@ export default function ProductsPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={loadProducts}
+            onClick={() => loadProducts()}
             className="p-2.5 bg-white border border-gray-100 text-gray-400 hover:text-gray-900 rounded-xl hover:bg-gray-50 transition-all shadow-sm"
             title="Yenile"
           >

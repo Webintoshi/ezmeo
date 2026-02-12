@@ -538,7 +538,7 @@ export default function CustomerDetailPage({ params }: CustomerDetailPageProps) 
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-gray-900 font-medium">{customer.phone}</span>
                       <button
-                        onClick={() => copyToClipboard(customer.phone)}
+                        onClick={() => customer.phone && copyToClipboard(customer.phone)}
                         className="p-1 hover:bg-gray-100 rounded transition-colors"
                         title="Kopyala"
                       >

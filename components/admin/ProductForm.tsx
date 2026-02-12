@@ -95,6 +95,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
     reviewCount: 0,
     featured: false,
     new: true,
+    isActive: true,
   });
 
   // Use a stable ID for the initial variant to avoid hydration mismatch
@@ -147,7 +148,8 @@ export default function ProductForm({ productId }: ProductFormProps) {
             rating: 5,
             reviewCount: 0,
             featured: product.is_featured || false,
-            new: false,
+            new: product.is_new || false,
+            isActive: product.is_active !== false,
           });
 
           // Map variants from database format
@@ -451,6 +453,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
         tags: formData.tags,
         is_featured: formData.featured,
         is_new: formData.new,
+        is_active: formData.isActive,
         rating: formData.rating,
         review_count: formData.reviewCount,
         // Varyantları API formatına çevir (id hariç - Supabase otomatik atar)
@@ -935,6 +938,23 @@ export default function ProductForm({ productId }: ProductFormProps) {
                 </div>
               </div>
               <div className="p-8 space-y-4">
+                <div className="flex items-center justify-between p-4 bg-green-50 rounded-2xl hover:bg-green-100 transition-colors cursor-pointer group/toggle"
+                  onClick={() => setFormData(prev => ({ ...prev, isActive: !prev.isActive }))}>
+                  <div className="flex items-center gap-3">
+                    <div className={cn("w-2 h-2 rounded-full", formData.isActive ? "bg-green-600 animate-pulse" : "bg-gray-300")} />
+                    <span className="text-sm font-bold text-gray-700">Ürünü Aktif Et</span>
+                  </div>
+                  <div className={cn(
+                    "w-12 h-6 rounded-full transition-all relative",
+                    formData.isActive ? "bg-green-600 shadow-inner" : "bg-gray-200"
+                  )}>
+                    <div className={cn(
+                      "absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all",
+                      formData.isActive ? "translate-x-6" : "translate-x-0"
+                    )} />
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors cursor-pointer group/toggle"
                   onClick={() => setFormData(prev => ({ ...prev, featured: !prev.featured }))}>
                   <div className="flex items-center gap-3">
