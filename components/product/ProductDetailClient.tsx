@@ -30,6 +30,15 @@ export function ProductDetailClient({
     initialRelatedProducts = [],
     initialVariantIndex = 0
 }: ProductDetailClientProps) {
+    // DEBUG: Initial product log
+    console.log('=== CLIENT DEBUG ===');
+    console.log('Initial Product:', initialProduct);
+    console.log('Product Name:', initialProduct?.name);
+    console.log('Product Variants:', initialProduct?.variants);
+    console.log('Variants Count:', initialProduct?.variants?.length);
+    console.log('Variants is Array:', Array.isArray(initialProduct?.variants));
+    console.log('====================');
+
     const [product, setProduct] = useState<Product | null>(initialProduct);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>(initialRelatedProducts);
     const [isLoadingRelated, setIsLoadingRelated] = useState(false);
@@ -666,7 +675,7 @@ export function ProductDetailClient({
                         {isLoadingRelated ? (
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                 {[...Array(4)].map((_, i) => (
-                                    <div key={i} className="aspect-[3/4] bg-gray-100 rounded-xl animate-pulse" />
+                                    <div key={i} className="aspect-3/4 bg-gray-100 rounded-xl animate-pulse" />
                                 ))}
                             </div>
                         ) : (
