@@ -1,20 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Save, Info, Globe, Mail, Phone, MapPin, Store } from "lucide-react";
+import { toast } from "sonner";
+
+interface StoreInfo {
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    currency: string;
+    timezone: string;
+    socialInstagram?: string;
+    socialTwitter?: string;
+}
+
+const DEFAULT_STORE_INFO: StoreInfo = {
+    name: "Ezmeo",
+    email: "iletisim@ezmeo.com",
+    phone: "+90 555 123 4567",
+    address: "",
+    currency: "TRY",
+    timezone: "Europe/Istanbul",
+    socialInstagram: "",
+    socialTwitter: "",
+};
 
 export default function GeneralSettingsPage() {
     const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({
-        storeName: "Ezmeo",
-        storeEmail: "iletisim@ezmeo.com",
-        storePhone: "+90 555 123 4567",
-        currency: "TRY",
-        timezone: "Europe/Istanbul",
-        address: "Organize Sanayi Bölgesi, 1. Cadde, No: 5, Gaziantep",
-        socialInstagram: "https://instagram.com/ezmeo",
-        socialTwitter: "https://twitter.com/ezmeo",
-    });
+    const [saving, setSaving] = useState(false);
+    const [formData, setFormData] = useState<StoreInfo>(DEFAULT_STORE_INFO);
+
+    useEffect(() => {
+        fetchSettings();
+    }, []);
+
+    const fetchSettings = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch("/api/settings?type=store");
+            const data = await res.json();
+            
+            if (data.success && data.storeInfo) {
+                setFormData({
+                    ...DEFAULT_STORE_INFO,
+                    ...data.storeInfo,
+                });
+            }
+        } catch (error) {
+            console.error("Failed to fetch settings:", error);
+            toast.error("Ayarlar yüklenirken hata oluştu");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -23,12 +62,40 @@ export default function GeneralSettingsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setLoading(false);
-        alert("Ayarlar başarıyla kaydedildi.");
+        setSaving(true);
+        
+        try {
+            const res = await fetch("/api/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    type: "store",
+                    storeInfo: formData,
+                }),
+            });
+            
+            const data = await res.json();
+            
+            if (data.success) {
+                toast.success("Ayarlar başarıyla kaydedildi");
+            } else {
+                throw new Error(data.error || "Kaydetme başarısız");
+            }
+        } catch (error) {
+            console.error("Failed to save settings:", error);
+            toast.error("Ayarlar kaydedilirken hata oluştu");
+        } finally {
+            setSaving(false);
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50/50 p-6 md:p-8 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50/50 p-6 md:p-8 space-y-8 max-w-5xl mx-auto">
@@ -39,10 +106,10 @@ export default function GeneralSettingsPage() {
                 </div>
                 <button
                     onClick={handleSubmit}
-                    disabled={loading}
+                    disabled={saving}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm disabled:opacity-50"
                 >
-                    {loading ? (
+                    {saving ? (
                         <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                     ) : (
                         <Save className="w-4 h-4" />
@@ -52,10 +119,7 @@ export default function GeneralSettingsPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Form Section */}
                 <div className="lg:col-span-2 space-y-6">
-
-                    {/* Store Details Card */}
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                         <div className="p-6 border-b border-gray-100 bg-gray-50/50">
                             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
@@ -69,8 +133,8 @@ export default function GeneralSettingsPage() {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Mağaza Adı</label>
                                     <input
                                         type="text"
-                                        name="storeName"
-                                        value={formData.storeName}
+                                        name="name"
+                                        value={formData.name}
                                         onChange={handleChange}
                                         className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all text-sm"
                                     />
@@ -81,8 +145,8 @@ export default function GeneralSettingsPage() {
                                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                         <input
                                             type="email"
-                                            name="storeEmail"
-                                            value={formData.storeEmail}
+                                            name="email"
+                                            value={formData.email}
                                             onChange={handleChange}
                                             className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all text-sm"
                                         />
@@ -96,8 +160,8 @@ export default function GeneralSettingsPage() {
                                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                     <input
                                         type="tel"
-                                        name="storePhone"
-                                        value={formData.storePhone}
+                                        name="phone"
+                                        value={formData.phone}
                                         onChange={handleChange}
                                         className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all text-sm"
                                     />
@@ -120,7 +184,6 @@ export default function GeneralSettingsPage() {
                         </div>
                     </div>
 
-                    {/* Regional Settings Card */}
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                         <div className="p-6 border-b border-gray-100 bg-gray-50/50">
                             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
@@ -159,11 +222,8 @@ export default function GeneralSettingsPage() {
                             </div>
                         </div>
                     </div>
-
                 </div>
 
-
-                {/* Right Column: Info & Tips */}
                 <div className="space-y-6">
                     <div className="bg-blue-50 border border-blue-100 rounded-xl p-6">
                         <h4 className="font-semibold text-blue-900 flex items-center gap-2 mb-2">
@@ -183,8 +243,9 @@ export default function GeneralSettingsPage() {
                                 <input
                                     type="text"
                                     name="socialInstagram"
-                                    value={formData.socialInstagram}
+                                    value={formData.socialInstagram || ""}
                                     onChange={handleChange}
+                                    placeholder="https://instagram.com/ezmeo"
                                     className="w-full mt-1 px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:border-gray-900 focus:ring-0"
                                 />
                             </div>
@@ -193,8 +254,9 @@ export default function GeneralSettingsPage() {
                                 <input
                                     type="text"
                                     name="socialTwitter"
-                                    value={formData.socialTwitter}
+                                    value={formData.socialTwitter || ""}
                                     onChange={handleChange}
+                                    placeholder="https://twitter.com/ezmeo"
                                     className="w-full mt-1 px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:border-gray-900 focus:ring-0"
                                 />
                             </div>
@@ -205,4 +267,3 @@ export default function GeneralSettingsPage() {
         </div>
     );
 }
-

@@ -1,9 +1,23 @@
 import Link from "next/link";
-import { Mail, MapPin, Phone, Instagram, Linkedin, Send } from "lucide-react";
+import { Mail, MapPin, Phone, Instagram, Send } from "lucide-react";
 import { SITE_NAME, CONTACT_INFO, SOCIAL_LINKS } from "@/lib/constants";
+import { useStoreInfo } from "@/lib/store-info-context";
 
 export function Footer() {
+  const { storeInfo } = useStoreInfo();
   const currentYear = new Date().getFullYear();
+
+  const contactInfo = storeInfo ? {
+    email: storeInfo.email || CONTACT_INFO.email,
+    phone: storeInfo.phone || CONTACT_INFO.phone,
+    address: storeInfo.address || CONTACT_INFO.address,
+  } : CONTACT_INFO;
+
+  const socialLinks = storeInfo ? {
+    instagram: storeInfo.socialInstagram || SOCIAL_LINKS.instagram,
+    facebook: SOCIAL_LINKS.facebook,
+    twitter: storeInfo.socialTwitter || SOCIAL_LINKS.twitter,
+  } : SOCIAL_LINKS;
 
   return (
     <footer className="bg-neutral-900 text-white">
@@ -57,7 +71,7 @@ export function Footer() {
             {/* Social Media - Minimal */}
             <div className="flex gap-3">
               <a
-                href={SOCIAL_LINKS.instagram}
+                href={socialLinks.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 bg-white/10 hover:bg-white hover:text-neutral-900 rounded-lg flex items-center justify-center transition-all"
@@ -66,7 +80,7 @@ export function Footer() {
                 <Instagram className="w-4 h-4" />
               </a>
               <a
-                href={SOCIAL_LINKS.facebook}
+                href={socialLinks.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 bg-white/10 hover:bg-white hover:text-neutral-900 rounded-lg flex items-center justify-center transition-all"
@@ -77,7 +91,7 @@ export function Footer() {
                 </svg>
               </a>
               <a
-                href={SOCIAL_LINKS.twitter}
+                href={socialLinks.twitter}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 bg-white/10 hover:bg-white hover:text-neutral-900 rounded-lg flex items-center justify-center transition-all"
@@ -177,26 +191,26 @@ export function Footer() {
             <ul className="space-y-3">
               <li>
                 <a
-                  href={`mailto:${CONTACT_INFO.email}`}
+                  href={`mailto:${contactInfo.email}`}
                   className="flex items-start gap-2 text-white/60 hover:text-white text-sm transition-colors group"
                 >
                   <Mail className="w-4 h-4 mt-0.5 flex-shrink-0 group-hover:text-white" />
-                  <span className="break-all">{CONTACT_INFO.email}</span>
+                  <span className="break-all">{contactInfo.email}</span>
                 </a>
               </li>
               <li>
                 <a
-                  href={`tel:${CONTACT_INFO.phone}`}
+                  href={`tel:${contactInfo.phone}`}
                   className="flex items-start gap-2 text-white/60 hover:text-white text-sm transition-colors group"
                 >
                   <Phone className="w-4 h-4 mt-0.5 flex-shrink-0 group-hover:text-white" />
-                  <span>{CONTACT_INFO.phone}</span>
+                  <span>{contactInfo.phone}</span>
                 </a>
               </li>
               <li>
                 <div className="flex items-start gap-2 text-white/60 text-sm">
                   <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span className="leading-relaxed">Altınordu, Ordu</span>
+                  <span className="leading-relaxed">{contactInfo.address || "Türkiye"}</span>
                 </div>
               </li>
             </ul>

@@ -4,6 +4,7 @@ import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
 import { AuthProvider } from "@/lib/auth-context";
+import { StoreInfoProvider } from "@/lib/store-info-context";
 import { LayoutWrapper } from "@/components/layout/LayoutWrapper";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
 import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
@@ -84,16 +85,18 @@ export default function RootLayout({
       >
         <TrackingProvider>
           <AnalyticsTracker />
-          <AuthProvider>
-            <CartProvider>
-              <WishlistProvider>
-                <LayoutWrapper>
-                  {children}
-                  <Toaster position="top-right" theme="light" />
-                </LayoutWrapper>
-              </WishlistProvider>
-            </CartProvider>
-          </AuthProvider>
+          <StoreInfoProvider>
+            <AuthProvider>
+              <CartProvider>
+                <WishlistProvider>
+                  <LayoutWrapper>
+                    {children}
+                    <Toaster position="top-right" theme="light" />
+                  </LayoutWrapper>
+                </WishlistProvider>
+              </CartProvider>
+            </AuthProvider>
+          </StoreInfoProvider>
         </TrackingProvider>
       </body>
     </html>
