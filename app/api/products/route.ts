@@ -161,6 +161,9 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { variants, ...productData } = body;
 
+        console.log('POST /api/products - productData.images:', productData.images);
+        console.log('POST /api/products - body images count:', body.images?.length);
+
         const { createServerClient } = await import("@/lib/supabase");
         const supabase = createServerClient();
 
@@ -261,6 +264,10 @@ export async function PUT(request: NextRequest) {
 
         // 3. Görselleri filtrele - silinenleri çıkar
         let finalImages = updates.images || [];
+        console.log('PUT /api/products - updates.images:', updates.images);
+        console.log('PUT /api/products - existingProduct.images:', existingProduct?.images);
+        console.log('PUT /api/products - finalImages:', finalImages);
+
         if (deleted_images && Array.isArray(deleted_images) && existingProduct?.images) {
             finalImages = finalImages.filter(img => !deleted_images.includes(img));
         }

@@ -79,6 +79,10 @@ export default async function ProductDetailPage({
       .eq("slug", slug)
       .single();
 
+    console.log('Product Page - dbProduct.images:', dbProduct?.images);
+    console.log('Product Page - dbProduct.images count:', dbProduct?.images?.length);
+    console.log('Product Page - dbProduct:', dbProduct);
+
     if (dbProduct) {
       product = dbProduct as any;
     }
