@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 
 interface HeroSlide {
   id: number;
@@ -40,9 +39,7 @@ export function Hero() {
   const [isVisible, setIsVisible] = useState(false);
   const [slides, setSlides] = useState<HeroSlide[]>(DEFAULT_SLIDES);
   const [loading, setLoading] = useState(true);
-  const [autoPlay, setAutoPlay] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
   const progressRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -91,7 +88,7 @@ export function Hero() {
   }, []);
 
   useEffect(() => {
-    if (!isVisible || !autoPlay || isHovered) {
+    if (!isVisible) {
       setProgress(0);
       return;
     }
@@ -115,29 +112,12 @@ export function Hero() {
         clearInterval(progressRef.current);
       }
     };
-  }, [isVisible, autoPlay, slides.length, currentSlide, isHovered]);
-
-  const goToSlide = (index: number) => {
-    setCurrentSlide(index);
-    setProgress(0);
-  };
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-    setProgress(0);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-    setProgress(0);
-  };
+  }, [isVisible, slides.length, currentSlide]);
 
   return (
     <section
       ref={sectionRef}
       className="relative h-[500px] sm:h-[600px] md:h-[700px] lg:h-[850px] overflow-hidden bg-gray-900"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       {isVisible || !loading ? (
         <>
@@ -153,12 +133,7 @@ export function Hero() {
                     transition={{ duration: 0.8 }}
                     className="absolute inset-0"
                   >
-                    <motion.div
-                      className="absolute inset-0"
-                      initial={{ scale: 1.1 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 8, ease: "linear" }}
-                    >
+                    <div className="absolute inset-0">
                       <Image
                         src={slide.desktop}
                         alt={slide.alt}
@@ -177,7 +152,7 @@ export function Hero() {
                         sizes="100vw"
                         quality={85}
                       />
-                    </motion.div>
+                    </div>
                   </motion.div>
                 ) : null
               )}
@@ -185,68 +160,35 @@ export function Hero() {
           </div>
 
           {slides.length > 1 && (
-            <>
-              <motion.button
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
-                onClick={prevSlide}
-                className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 z-10 group"
-                aria-label="Önceki slayt"
-              >
-                <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7 text-white group-hover:scale-110 transition-transform" />
-              </motion.button>
-
-              <motion.button
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
-                onClick={nextSlide}
-                className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 bg-white/10 backdrop-blur-md hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 z-10 group"
-                aria-label="Sonraki slayt"
-              >
-                <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 text-white group-hover:scale-110 transition-transform" />
-              </motion.button>
-
-              <div className="absolute bottom-6 sm:bottom-10 left-0 right-0 px-4 sm:px-6">
-                <div className="container mx-auto flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {slides.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => goToSlide(index)}
-                        className={`h-1.5 rounded-full transition-all duration-300 ${
-                          index === currentSlide
-                            ? "bg-white w-8 sm:w-12"
-                            : "bg-white/40 w-2 hover:bg-white/70"
-                        }`}
-                        aria-label={`Slayt ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => setAutoPlay(!autoPlay)}
-                    className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-colors border border-white/20"
-                    aria-label={autoPlay ? "Durdur" : "Oynat"}
-                  >
-                    {autoPlay ? (
-                      <Pause className="w-4 h-4" />
-                    ) : (
-                      <Play className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-
-                <div className="mt-4 h-0.5 bg-white/20 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-white"
-                    style={{ width: `${progress}%` }}
-                    transition={{ duration: 0 }}
-                  />
+            <div className="absolute bottom-6 sm:bottom-10 left-0 right-0 px-4 sm:px-6">
+              <div className="container mx-auto flex items-center justify-center">
+                <div className="flex items-center gap-2">
+                  {slides.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setCurrentSlide(index);
+                        setProgress(0);
+                      }}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        index === currentSlide
+                          ? "bg-white w-8 sm:w-12"
+                          : "bg-white/40 w-2 hover:bg-white/70"
+                      }`}
+                      aria-label={`Slayt ${index + 1}`}
+                    />
+                  ))}
                 </div>
               </div>
-            </>
+
+              <div className="mt-4 h-0.5 bg-white/20 rounded-full overflow-hidden max-w-md mx-auto">
+                <motion.div
+                  className="h-full bg-white"
+                  style={{ width: `${progress}%` }}
+                  transition={{ duration: 0 }}
+                />
+              </div>
+            </div>
           )}
 
           <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
