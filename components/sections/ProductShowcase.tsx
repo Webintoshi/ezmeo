@@ -250,12 +250,11 @@ export function ProductShowcase() {
 
         let query = supabase
           .from("products")
-          .select(`*, variants:product_variants(*)`)
-          .eq("status", "active");
+          .select(`*, variants:product_variants(*)`);
 
         switch (activeTab) {
           case "bestsellers":
-            query = query.eq("is_bestseller", true);
+            query = query.eq("is_featured", true);
             break;
           case "new":
             query = query.eq("is_new", true);
@@ -263,8 +262,7 @@ export function ProductShowcase() {
           case "discounted":
             const { data: allProducts } = await supabase
               .from("products")
-              .select(`*, variants:product_variants(*)`)
-              .eq("status", "active");
+              .select(`*, variants:product_variants(*)`);
             
             if (allProducts) {
               const transformed = allProducts.map(transformProduct);
