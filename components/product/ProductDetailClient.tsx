@@ -5,7 +5,8 @@ import Link from "next/link";
 import {
     ShoppingCart, Star, Check, Package, Truck, Shield, Heart,
     Share2, Minus, Plus, ChevronDown, Leaf, Award, Clock,
-    MessageCircle, ThumbsUp, Facebook, Twitter, Copy, RefreshCw
+    MessageCircle, ThumbsUp, Facebook, Twitter, Copy, RefreshCw,
+    Loader2
 } from "lucide-react";
 import { useCart } from "@/lib/cart-context";
 import { notFound } from "next/navigation";
@@ -30,16 +31,9 @@ export function ProductDetailClient({
     initialRelatedProducts = [],
     initialVariantIndex = 0
 }: ProductDetailClientProps) {
-    // DEBUG: Initial product log
-    console.log('=== CLIENT DEBUG ===');
-    console.log('Initial Product:', initialProduct);
-    console.log('Product Name:', initialProduct?.name);
-    console.log('Product Variants:', initialProduct?.variants);
-    console.log('Variants Count:', initialProduct?.variants?.length);
-    console.log('Variants is Array:', Array.isArray(initialProduct?.variants));
-    console.log('====================');
-
     const [product, setProduct] = useState<Product | null>(initialProduct);
+    const [loading, setLoading] = useState(!initialProduct);
+    const [error, setError] = useState<string | null>(null);
     const [relatedProducts, setRelatedProducts] = useState<Product[]>(initialRelatedProducts);
     const [isLoadingRelated, setIsLoadingRelated] = useState(false);
 
@@ -51,6 +45,65 @@ export function ProductDetailClient({
     const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
     const { addToCart } = useCart();
+
+    // Fetch product from API if initialProduct is invalid
+    useEffect(() => {
+        // Check if initialProduct is valid
+        const isValidProduct = initialProduct && 
+            typeof initialProduct === 'object' && 
+            'id' in initialProduct &&
+            'name' in initialProduct;
+
+        if (!isValidProduct) {
+            console.log('Initial product invalid, fetching from API...');
+            setLoading(true);
+            fetch(`/api/products?slug=${encodeURIComponent(slug)}`)
+                .then(res => res.json())
+                .then(data => {
+                    console.log('API Response:', data);
+                    if (data.success && data.product) {
+                        // Transform API response to Product type
+                        const apiProduct: Product = {
+                            id: data.product.id,
+                            name: data.product.name,
+                            slug: data.product.slug,
+                            description: data.product.description || "",
+                            shortDescription: data.product.short_description || "",
+                            category: data.product.category || "fistik-ezmesi",
+                            subcategory: data.product.subcategory || "klasik",
+                            images: data.product.images_v2?.map((img: any) => img.url) || 
+                                    data.product.images || [],
+                            tags: data.product.tags || [],
+                            variants: data.product.variants?.map((v: any) => ({
+                                id: v.id,
+                                name: v.name,
+                                weight: v.weight ? parseInt(v.weight) : 250,
+                                price: Number(v.price),
+                                originalPrice: v.original_price ? Number(v.original_price) : undefined,
+                                stock: v.stock,
+                                sku: v.sku || "",
+                            })) || [],
+                            vegan: data.product.vegan,
+                            glutenFree: data.product.gluten_free,
+                            sugarFree: data.product.sugar_free,
+                            highProtein: data.product.high_protein,
+                            rating: Number(data.product.rating) || 5,
+                            reviewCount: data.product.review_count || 0,
+                            featured: data.product.is_featured,
+                            new: data.product.is_new,
+                        };
+                        setProduct(apiProduct);
+                    } else {
+                        setError("Ürün bulunamadı");
+                    }
+                })
+                .catch(err => {
+                    console.error('Fetch error:', err);
+                    setError("Ürün yüklenirken hata oluştu");
+                })
+                .finally(() => setLoading(false));
+        }
+    }, [slug, initialProduct]);
 
     // Load wishlist state from localStorage
     useEffect(() => {
@@ -86,8 +139,43 @@ export function ProductDetailClient({
         }
     }, [product?.category, slug, initialRelatedProducts.length]);
 
-    if (!product) {
-        notFound();
+    // Loading state
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
+                    <p className="text-gray-600">Ürün yükleniyor...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error || !product) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+                <div className="text-center max-w-md">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </div>
+                    <h1 className="text-xl font-bold text-gray-900 mb-2">
+                        {error || "Ürün Bulunamadı"}
+                    </h1>
+                    <p className="text-gray-600 mb-6">
+                        Aradığınız ürün mevcut değil veya kaldırılmış olabilir.
+                    </p>
+                    <a 
+                        href="/urunler"
+                        className="inline-block px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                    >
+                        Tüm Ürünlere Dön
+                    </a>
+                </div>
+            </div>
+        );
     }
 
     // Safety check for variants
@@ -103,12 +191,8 @@ export function ProductDetailClient({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                     </div>
-                    <h1 className="text-xl font-bold text-gray-900 mb-2">Ürün Bilgisi Eksik</h1>
-                    <p className="text-gray-600 mb-4">Bu ürün için varyant/fiyat bilgisi bulunamadı.</p>
-                    <div className="text-sm text-gray-500 bg-gray-100 rounded-lg p-3">
-                        <p className="font-medium mb-1">Sorun:</p>
-                        <p>Ürün veritabanında kayıtlı ancak varyantları eksik veya RLS politikası nedeniyle erişilemiyor.</p>
-                    </div>
+                    <h1 className="text-xl font-bold text-gray-900 mb-2">Varyant Bilgisi Eksik</h1>
+                    <p className="text-gray-600 mb-4">Bu ürün için fiyat/stok bilgisi bulunamadı.</p>
                     <div className="mt-4 flex gap-3 justify-center">
                         <button 
                             onClick={() => window.location.reload()}
@@ -127,6 +211,7 @@ export function ProductDetailClient({
             </div>
         );
     }
+
     const discountPercent = variant.originalPrice
         ? Math.round((1 - variant.price / variant.originalPrice) * 100)
         : 0;
@@ -675,7 +760,7 @@ export function ProductDetailClient({
                         {isLoadingRelated ? (
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                 {[...Array(4)].map((_, i) => (
-                                    <div key={i} className="aspect-3/4 bg-gray-100 rounded-xl animate-pulse" />
+                                    <div key={i} className="aspect-[3/4] bg-gray-100 rounded-xl animate-pulse" />
                                 ))}
                             </div>
                         ) : (
@@ -696,8 +781,6 @@ export function ProductDetailClient({
                     </div>
                 </section>
             )}
-
-
         </div>
     );
 }
