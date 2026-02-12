@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadToR2 } from "@/lib/r2";
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
+
 export async function POST(request: NextRequest) {
     try {
         const formData = await request.formData();
@@ -14,7 +22,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Validate file type
         const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
         if (!allowedTypes.includes(file.type)) {
             return NextResponse.json(
@@ -23,27 +30,18 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Validate file size (max 5MB)
-        const maxSize = 5 * 1024 * 1024;
+        const maxSize = 10 * 1024 * 1024;
         if (file.size > maxSize) {
             return NextResponse.json(
-                { success: false, error: "File too large. Maximum size: 5MB" },
+                { success: false, error: "File too large. Maximum size: 10MB" },
                 { status: 400 }
             );
         }
 
-        // Convert file to buffer
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Debug: Log environment
-        console.log('Upload API - R2_PUBLIC_URL:', process.env.R2_PUBLIC_URL);
-        console.log('Upload API - CLOUDFLARE_ACCOUNT_ID:', process.env.CLOUDFLARE_ACCOUNT_ID ? 'Set' : 'Not set');
-        
-        // Upload to R2
         const result = await uploadToR2(buffer, file.name, file.type, folder);
-        
-        console.log('Upload API - Result:', result);
 
         if (result.success) {
             return NextResponse.json({
