@@ -275,6 +275,34 @@ export default function HeroBannerSettingsPage() {
                                         </label>
                                     )}
                                 </div>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Veya URL yapıştır: https://..."
+                                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                const value = (e.target as HTMLInputElement).value;
+                                                if (value) {
+                                                    handleUpdateSlide(slide.id, "desktop", value);
+                                                }
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
+                                        onClick={(e) => {
+                                            const input = (e.target as HTMLElement).previousElementSibling as HTMLInputElement;
+                                            if (input.value) {
+                                                handleUpdateSlide(slide.id, "desktop", input.value);
+                                                input.value = '';
+                                            }
+                                        }}
+                                    >
+                                        Ekle
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Mobile Image */}
@@ -304,6 +332,34 @@ export default function HeroBannerSettingsPage() {
                                             <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, slide.id, "mobile")} />
                                         </label>
                                     )}
+                                </div>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Veya URL yapıştır: https://..."
+                                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                const value = (e.target as HTMLInputElement).value;
+                                                if (value) {
+                                                    handleUpdateSlide(slide.id, "mobile", value);
+                                                }
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
+                                        onClick={(e) => {
+                                            const input = (e.target as HTMLElement).previousElementSibling as HTMLInputElement;
+                                            if (input.value) {
+                                                handleUpdateSlide(slide.id, "mobile", input.value);
+                                                input.value = '';
+                                            }
+                                        }}
+                                    >
+                                        Ekle
+                                    </button>
                                 </div>
                             </div>
 
