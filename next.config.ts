@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'cdn.ezmeo.com',
+        pathname: '/hero-banners/**',
+      },
+      {
+        protocol: 'https',
         hostname: '**.r2.cloudflarestorage.com',
         pathname: '/**',
       },
