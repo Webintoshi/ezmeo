@@ -105,7 +105,9 @@ export function StepImages({ images, onChange, errors }: StepImagesProps) {
         newImages[0].isPrimary = true;
       }
       
-      onChange([...images, ...newImages]);
+      const updatedImages = [...images, ...newImages];
+      console.log('StepImages - onChange called with:', updatedImages);
+      onChange(updatedImages);
       toast.success(`${newImages.length} görsel yüklendi`);
     }
 

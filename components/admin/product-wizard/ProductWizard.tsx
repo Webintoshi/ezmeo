@@ -318,6 +318,8 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
       const method = productId ? "PUT" : "POST";
 
       console.log("Sending product data:", JSON.stringify(productData, null, 2));
+      console.log("formData.images:", formData.images);
+      console.log("productData.images:", productData.images);
 
       const response = await fetch(url, {
         method,
