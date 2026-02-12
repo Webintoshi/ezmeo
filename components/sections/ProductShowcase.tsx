@@ -153,10 +153,11 @@ function ProductCard({ product, index, onQuickView }: { product: Product; index:
             <div className="absolute bottom-3 left-3 right-3">
               <button
                 onClick={handleAddToCart}
-                className="w-full py-3 bg-primary text-white rounded-xl font-semibold shadow-lg flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 hover:shadow-xl active:scale-95"
+                className="w-full py-3 bg-primary text-white rounded-xl font-semibold shadow-lg flex items-center justify-center gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 transform translate-y-0 md:translate-y-2 md:group-hover:translate-y-0 hover:shadow-xl active:scale-95"
               >
                 <ShoppingCart className="w-4 h-4" />
-                Sepete Ekle
+                <span className="md:hidden lg:inline">Sepete Ekle</span>
+                <span className="hidden md:inline lg:hidden">Ekle</span>
               </button>
             </div>
           </div>
