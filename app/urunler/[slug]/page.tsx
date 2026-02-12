@@ -51,6 +51,22 @@ export async function generateMetadata({
 
 // Generate static paths for all products at build time
 export async function generateStaticParams() {
+  // Get all slugs from Supabase (including newly added products)
+  try {
+    const supabase = createServerClient();
+    const { data: products } = await supabase
+      .from("products")
+      .select("slug")
+      .eq("is_active", true);
+    
+    if (products && products.length > 0) {
+      return products.map((p) => ({ slug: p.slug }));
+    }
+  } catch (error) {
+    console.error("Failed to fetch slugs for static generation:", error);
+  }
+  
+  // Fallback to static data
   const allSlugs = getProductSlug();
   return allSlugs.map((slug) => ({ slug }));
 }
@@ -77,6 +93,7 @@ export default async function ProductDetailPage({
       .from("products")
       .select("*, variants:product_variants(*)")
       .eq("slug", slug)
+      .eq("is_active", true)
       .single();
 
     console.log('Product Page - dbProduct.images:', dbProduct?.images);
