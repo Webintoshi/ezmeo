@@ -58,7 +58,7 @@ function transformProduct(dbProduct: DBProduct): Product {
     shortDescription: dbProduct.short_description || "",
     category: (dbProduct.category as Product["category"]) || "fistik-ezmesi",
     subcategory: (dbProduct.subcategory as Product["subcategory"]) || "klasik",
-    images: dbProduct.images || [],
+    images: dbProduct.images_v2?.map((img: any) => img.url) || dbProduct.images || [],
     tags: dbProduct.tags || [],
     variants: dbProduct.variants?.map(v => ({
       id: v.id,

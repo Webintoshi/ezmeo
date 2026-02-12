@@ -101,7 +101,16 @@ export default async function ProductDetailPage({
     console.log('Product Page - dbProduct:', dbProduct);
 
     if (dbProduct) {
-      product = dbProduct as any;
+      // Transform images_v2 to images format
+      const images = dbProduct.images_v2?.map((img: any) => img.url) || dbProduct.images || [];
+      product = {
+        ...dbProduct,
+        images,
+        variants: dbProduct.variants?.map((v: any) => ({
+          ...v,
+          originalPrice: v.original_price,
+        })),
+      } as any;
     }
   } catch (error) {
     console.error("Failed to fetch product from Supabase:", error);
