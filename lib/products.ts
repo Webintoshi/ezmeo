@@ -574,20 +574,58 @@ if (typeof window !== "undefined") {
   initializeProducts(DEFAULT_PRODUCTS);
 }
 
-// Get all products - Only from Supabase (no static fallback)
-export function getAllProducts(): Product[] {
-  return []; // Sadece Supabase'den çek
+// Get all products - Fetch from Supabase
+export async function getAllProducts(): Promise<Product[]> {
+  const { createServerClient } = await import("@/lib/supabase");
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, variants:product_variants(*)")
+    .eq("is_active", true);
+
+  if (error) {
+    console.error("Error fetching products from Supabase:", error);
+    return [];
+  }
+
+  return data || [];
 }
 
 export const PRODUCTS: Product[] = [];
 
-export function getProductSlug(): string[] {
-  return []; // Sadece Supabase'den çek
+export async function getProductSlug(): Promise<string[]> {
+  const { createServerClient } = await import("@/lib/supabase");
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("slug")
+    .eq("is_active", true);
+
+  if (error) {
+    console.error("Error fetching product slugs from Supabase:", error);
+    return [];
+  }
+
+  return (data || []).map((p) => p.slug);
 }
 
-// Yardımcı Fonksiyonlar - Sadece Supabase'den çek
-export function getProductBySlug(slug: string): Product | undefined {
-  return undefined; // Sadece Supabase'den çek
+// Yardımcı Fonksiyonlar - Şimdi Supabase'den çekiyor
+export async function getProductBySlug(slug: string): Promise<Product | undefined> {
+  const { createServerClient } = await import("@/lib/supabase");
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, variants:product_variants(*)")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .single();
+
+  if (error) {
+    console.error("Error fetching product by slug from Supabase:", error);
+    return undefined;
+  }
+
+  return data;
 }
 
 export function getProductsByCategory(category: string): Product[] {
