@@ -59,30 +59,26 @@ export function AnnouncementBar() {
   if (!isVisible || !settings.enabled || loading) return null;
 
   return (
-    <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-white relative overflow-hidden">
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
-      </div>
-
-      <div className="container mx-auto px-4 py-2.5 relative">
-        <div className="flex items-center justify-center gap-2 sm:gap-4">
-          <p className="text-xs sm:text-sm font-medium text-center">
-            {settings.message}
-            <Link
-              href={settings.link}
-              className="underline underline-offset-2 ml-1 sm:ml-2 font-semibold hover:text-white/90"
-            >
-              {settings.linkText}
-            </Link>
+    <div className="bg-white/80 backdrop-blur-md border-b border-gray-100">
+      <div className="container mx-auto px-4 py-2.5">
+        <div className="flex items-center justify-center gap-3">
+          <p className="text-xs sm:text-sm text-gray-700 text-center">
+            <span className="font-medium">{settings.message}</span>
+            {settings.link && settings.linkText && (
+              <Link
+                href={settings.link}
+                className="text-primary font-semibold underline underline-offset-2 hover:text-primary/80 ml-1"
+              >
+                {settings.linkText}
+              </Link>
+            )}
           </p>
           <button
             onClick={() => setIsVisible(false)}
-            className="p-1 hover:bg-white/20 rounded-full transition-colors absolute right-2 sm:right-4 top-1/2 -translate-y-1/2"
+            className="p-1 hover:bg-gray-200 rounded-full transition-colors"
             aria-label="Kapat"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600" />
           </button>
         </div>
       </div>
