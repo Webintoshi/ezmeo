@@ -81,6 +81,7 @@ export const SETTING_KEYS = {
     SEO_SETTINGS: "seo_settings",
     EMAIL_SETTINGS: "email_settings",
     NOTIFICATION_SETTINGS: "notification_settings",
+    ANNOUNCEMENT_BAR: "announcement_bar",
 } as const;
 
 // =====================================================
@@ -156,4 +157,30 @@ export async function getStoreInfo(): Promise<StoreInfo | null> {
  */
 export async function setStoreInfo(info: StoreInfo) {
     return setSetting(SETTING_KEYS.STORE_INFO, info as unknown as Record<string, unknown>);
+}
+
+// =====================================================
+// ANNOUNCEMENT BAR SETTINGS
+// =====================================================
+
+export interface AnnouncementBarSettings {
+    message: string;
+    link: string;
+    linkText: string;
+    enabled: boolean;
+}
+
+/**
+ * Get announcement bar settings
+ */
+export async function getAnnouncementBarSettings(): Promise<AnnouncementBarSettings | null> {
+    const data = await getSetting(SETTING_KEYS.ANNOUNCEMENT_BAR);
+    return data as AnnouncementBarSettings | null;
+}
+
+/**
+ * Set announcement bar settings
+ */
+export async function setAnnouncementBarSettings(settings: AnnouncementBarSettings) {
+    return setSetting(SETTING_KEYS.ANNOUNCEMENT_BAR, settings as unknown as Record<string, unknown>);
 }

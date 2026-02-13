@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Info, Globe, Mail, Phone, MapPin, Store } from "lucide-react";
+import { Save, Info, Globe, Mail, Phone, MapPin, Store, Megaphone } from "lucide-react";
 import { toast } from "sonner";
 
 interface StoreInfo {
@@ -15,6 +15,13 @@ interface StoreInfo {
     socialTwitter?: string;
 }
 
+interface AnnouncementSettings {
+    message: string;
+    link: string;
+    linkText: string;
+    enabled: boolean;
+}
+
 const DEFAULT_STORE_INFO: StoreInfo = {
     name: "Ezmeo",
     email: "iletisim@ezmeo.com",
@@ -26,10 +33,18 @@ const DEFAULT_STORE_INFO: StoreInfo = {
     socialTwitter: "",
 };
 
+const DEFAULT_ANNOUNCEMENT: AnnouncementSettings = {
+    message: "🎉 İlk siparişinizde %10 indirim!",
+    link: "/kampanyalar",
+    linkText: "Hemen Keşfet",
+    enabled: true,
+};
+
 export default function GeneralSettingsPage() {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState<StoreInfo>(DEFAULT_STORE_INFO);
+    const [announcementData, setAnnouncementData] = useState<AnnouncementSettings>(DEFAULT_ANNOUNCEMENT);
 
     useEffect(() => {
         fetchSettings();
@@ -47,6 +62,16 @@ export default function GeneralSettingsPage() {
                     ...data.storeInfo,
                 });
             }
+
+            const announcementRes = await fetch("/api/settings?type=announcement");
+            const announcementData = await announcementRes.json();
+            
+            if (announcementData.success && announcementData.announcementSettings) {
+                setAnnouncementData({
+                    ...DEFAULT_ANNOUNCEMENT,
+                    ...announcementData.announcementSettings,
+                });
+            }
         } catch (error) {
             console.error("Failed to fetch settings:", error);
             toast.error("Ayarlar yüklenirken hata oluştu");
@@ -56,8 +81,18 @@ export default function GeneralSettingsPage() {
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value, type } = e.target;
+        if (type === 'checkbox') {
+            const checked = (e.target as HTMLInputElement).checked;
+            setAnnouncementData((prev) => ({ ...prev, [name]: checked }));
+        } else {
+            setFormData((prev) => ({ ...prev, [name]: value }));
+        }
+    };
+
+    const handleAnnouncementChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        setAnnouncementData((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -77,9 +112,24 @@ export default function GeneralSettingsPage() {
             const data = await res.json();
             
             if (data.success) {
-                toast.success("Ayarlar başarıyla kaydedildi");
+                toast.success("Mağaza ayarları başarıyla kaydedildi");
             } else {
                 throw new Error(data.error || "Kaydetme başarısız");
+            }
+
+            const announcementRes = await fetch("/api/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    type: "announcement",
+                    announcementSettings: announcementData,
+                }),
+            });
+            
+            const announcementResult = await announcementRes.json();
+            
+            if (announcementResult.success) {
+                toast.success("Duyuru çubuğu ayarları başarıyla kaydedildi");
             }
         } catch (error) {
             console.error("Failed to save settings:", error);
@@ -219,6 +269,68 @@ export default function GeneralSettingsPage() {
                                         <option value="Europe/London">Europe/London (GMT+1)</option>
                                     </select>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                        <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                                <Megaphone className="w-4 h-4 text-gray-500" />
+                                Duyuru Çubuğu
+                            </h3>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="enabled"
+                                    name="enabled"
+                                    checked={announcementData.enabled}
+                                    onChange={handleChange}
+                                    className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                                />
+                                <label htmlFor="enabled" className="text-sm font-medium text-gray-700">
+                                    Duyuru çubuğunu göster
+                                </label>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Mesaj</label>
+                                <input
+                                    type="text"
+                                    name="message"
+                                    value={announcementData.message}
+                                    onChange={handleAnnouncementChange}
+                                    disabled={!announcementData.enabled}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Link</label>
+                                <input
+                                    type="text"
+                                    name="link"
+                                    value={announcementData.link}
+                                    onChange={handleAnnouncementChange}
+                                    disabled={!announcementData.enabled}
+                                    placeholder="/kampanyalar"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Link Metni</label>
+                                <input
+                                    type="text"
+                                    name="linkText"
+                                    value={announcementData.linkText}
+                                    onChange={handleAnnouncementChange}
+                                    disabled={!announcementData.enabled}
+                                    placeholder="Hemen Keşfet"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                                />
                             </div>
                         </div>
                     </div>

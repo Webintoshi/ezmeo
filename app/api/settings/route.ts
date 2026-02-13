@@ -10,6 +10,8 @@ import {
     setShippingOptions,
     getStoreInfo,
     setStoreInfo,
+    getAnnouncementBarSettings,
+    setAnnouncementBarSettings,
     SETTING_KEYS
 } from "@/lib/db/settings";
 
@@ -36,6 +38,11 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: true, storeInfo: info });
         }
 
+        if (type === "announcement") {
+            const settings = await getAnnouncementBarSettings();
+            return NextResponse.json({ success: true, announcementSettings: settings });
+        }
+
         // Get specific setting by key
         if (key) {
             const value = await getSetting(key);
@@ -58,7 +65,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { type, key, value, paymentMethods, shippingOptions, storeInfo } = body;
+        const { type, key, value, paymentMethods, shippingOptions, storeInfo, announcementSettings } = body;
 
         // Set specific setting types
         if (type === "payment" && paymentMethods) {
@@ -74,6 +81,11 @@ export async function POST(request: NextRequest) {
         if (type === "store" && storeInfo) {
             await setStoreInfo(storeInfo);
             return NextResponse.json({ success: true, message: "Store info updated" });
+        }
+
+        if (type === "announcement" && announcementSettings) {
+            await setAnnouncementBarSettings(announcementSettings);
+            return NextResponse.json({ success: true, message: "Announcement bar updated" });
         }
 
         // Set generic setting by key
