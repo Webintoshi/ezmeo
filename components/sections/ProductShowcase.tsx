@@ -254,10 +254,7 @@ export function ProductShowcase() {
 
         switch (activeTab) {
           case "bestsellers":
-            query = query.eq("is_featured", true);
-            break;
           case "new":
-            query = query.eq("is_new", true);
             break;
           case "discounted":
             const { data: allProducts } = await supabase
