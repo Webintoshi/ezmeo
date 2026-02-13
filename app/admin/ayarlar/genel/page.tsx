@@ -34,7 +34,7 @@ const DEFAULT_STORE_INFO: StoreInfo = {
 };
 
 const DEFAULT_ANNOUNCEMENT: AnnouncementSettings = {
-    message: "🎉 İlk siparişinizde %10 indirim!",
+    message: "İlk siparişinizde %10 indirim!",
     link: "/kampanyalar",
     linkText: "Hemen Keşfet",
     enabled: true,

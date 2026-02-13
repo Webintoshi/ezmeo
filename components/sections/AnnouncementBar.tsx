@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Sparkles } from "lucide-react";
+import { X } from "lucide-react";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -13,7 +13,7 @@ interface AnnouncementSettings {
 }
 
 const DEFAULT_SETTINGS: AnnouncementSettings = {
-  message: "🎉 İlk siparişinizde %10 indirim!",
+  message: "İlk siparişinizde %10 indirim!",
   link: "/kampanyalar",
   linkText: "Hemen Keşfet",
   enabled: true,
@@ -68,7 +68,6 @@ export function AnnouncementBar() {
 
       <div className="container mx-auto px-4 py-2.5 relative">
         <div className="flex items-center justify-center gap-2 sm:gap-4">
-          <Sparkles className="w-4 h-4 shrink-0" />
           <p className="text-xs sm:text-sm font-medium text-center">
             {settings.message}
             <Link
