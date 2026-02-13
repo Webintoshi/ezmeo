@@ -1,75 +1,64 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Truck, Leaf, Clock, Shield, RotateCcw } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ShieldCheck, Truck, Leaf, Heart, Award, RefreshCw } from "lucide-react";
 
-const TRUST_BADGES = [
+const TRUST_ITEMS = [
   {
-    id: "free-shipping",
-    icon: Truck,
-    title: "Ücretsiz Kargo",
-    description: "100₺ üzeri",
-    color: "from-blue-500 to-blue-600",
+    icon: <ShieldCheck className="w-8 h-8" />,
+    title: "%100 Doğal",
+    description: "Katkısız ve katkı maddesiz",
+    color: "from-green-500 to-emerald-600"
   },
   {
-    id: "organic",
-    icon: Leaf,
-    title: "%100 Organik",
-    description: "Doğal & Katkısız",
-    color: "from-emerald-500 to-emerald-600",
-  },
-  {
-    id: "same-day",
-    icon: Clock,
+    icon: <Truck className="w-8 h-8" />,
     title: "Aynı Gün Kargo",
-    description: "15:00'e kadar",
-    color: "from-amber-500 to-amber-600",
+    description: "Siparişiniz aynı gün kargoda",
+    color: "from-blue-500 to-cyan-600"
   },
   {
-    id: "secure",
-    icon: Shield,
-    title: "Güvenli Ödeme",
-    description: "256-bit SSL",
-    color: "from-purple-500 to-purple-600",
+    icon: <Leaf className="w-8 h-8" />,
+    title: "Taze Üretim",
+    description: "Siparişte üretim",
+    color: "from-emerald-500 to-teal-600"
   },
   {
-    id: "return",
-    icon: RotateCcw,
+    icon: <Heart className="w-8 h-8" />,
+    title: "Müşteri Memnuniyeti",
+    description: "4.9/5 puan",
+    color: "from-pink-500 to-rose-600"
+  },
+  {
+    icon: <Award className="w-8 h-8" />,
+    title: "Kalite Belgeli",
+    description: "Gıda güvenliği sertifikalı",
+    color: "from-amber-500 to-orange-600"
+  },
+  {
+    icon: <RefreshCw className="w-8 h-8" />,
     title: "Kolay İade",
-    description: "14 gün içinde",
-    color: "from-rose-500 to-rose-600",
-  },
+    description: "30 gün koşulsuz iade",
+    color: "from-purple-500 to-violet-600"
+  }
 ];
 
 export function TrustBadges() {
   return (
-    <section className="border-b border-gray-100 bg-white">
-      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
-          {TRUST_BADGES.map((badge, index) => (
-            <motion.div
-              key={badge.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="flex flex-col items-center text-center group"
+    <section className="py-16 bg-white relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 to-white" />
+      
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          {TRUST_ITEMS.map((item, index) => (
+            <div
+              key={index}
+              className="group flex flex-col items-center text-center p-6 rounded-2xl hover:bg-white hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100"
             >
-              <div
-                className={cn(
-                  "w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-linear-to-br flex items-center justify-center shadow-md mb-3",
-                  "group-hover:scale-110 group-hover:shadow-lg transition-all duration-300",
-                  badge.color
-                )}
-              >
-                <badge.icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+              <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                {item.icon}
               </div>
-              <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-0.5">
-                {badge.title}
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-500">{badge.description}</p>
-            </motion.div>
+              <h3 className="font-bold text-gray-900 mb-1">{item.title}</h3>
+              <p className="text-sm text-gray-500">{item.description}</p>
+            </div>
           ))}
         </div>
       </div>

@@ -1,9 +1,14 @@
 import { Metadata } from "next";
 import { Hero } from "@/components/sections/Hero";
 import { Marquee } from "@/components/sections/Marquee";
+import { TrustBadges } from "@/components/sections/TrustBadges";
+import { CategoryShowcase } from "@/components/sections/CategoryShowcase";
 import { HeroProducts } from "@/components/sections/HeroProducts";
 import { ProductShowcase } from "@/components/sections/ProductShowcase";
+import { WhyChooseUs } from "@/components/sections/WhyChooseUs";
+import { SpecialOffer } from "@/components/sections/SpecialOffer";
 import { Testimonials } from "@/components/sections/Testimonials";
+import { Newsletter } from "@/components/sections/Newsletter";
 import { AnnouncementBar } from "@/components/sections/AnnouncementBar";
 
 export const metadata: Metadata = {
@@ -25,9 +30,14 @@ export default function Home() {
       <AnnouncementBar />
       <Hero />
       <Marquee />
+      <TrustBadges />
+      <CategoryShowcase />
       <HeroProducts />
       <ProductShowcase />
+      <WhyChooseUs />
+      <SpecialOffer />
       <Testimonials />
+      <Newsletter />
       
       <script
         type="application/ld+json"

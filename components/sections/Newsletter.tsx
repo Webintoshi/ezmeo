@@ -1,76 +1,88 @@
 "use client";
 
-import { Mail, Sparkles, Gift } from "lucide-react";
+import { useState } from "react";
+import { Mail, Send, CheckCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export function Newsletter() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email) return;
+    
+    setLoading(true);
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    setLoading(false);
+    setSubscribed(true);
+    setEmail("");
+    toast.success("Bültenimize başarıyla abone oldunuz!");
+  };
+
   return (
-    <section className="py-20 md:py-28 premium-gradient text-primary-foreground relative overflow-hidden">
-      {/* Background Glow Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+    <section className="py-20 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
+      <div className="absolute inset-0">
+        <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-secondary/5 rounded-full blur-3xl" />
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-2xl mx-auto text-center">
-          {/* Premium Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full mb-6">
-            <Gift className="w-4 h-4 text-yellow-300" />
-            <span className="text-sm font-medium">Özel Kampanyalar</span>
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-xl">
+            <Mail className="w-10 h-10 text-white" />
           </div>
 
-          {/* Icon */}
-          <div className="inline-flex p-4 bg-white/20 rounded-full mb-6 animate-float">
-            <Mail className="h-10 w-10 text-white" />
-          </div>
-
-          {/* Heading */}
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-            E-Bültene Abone Ol, %5 İndirim Kazan!
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Bültenimize Katılın
           </h2>
 
-          {/* Description */}
-          <p className="text-lg text-white/90 mb-8 leading-relaxed">
-            Yeni ürünler, özel indirimler ve sağlıklı tarifler için abone olun.
-            İlk siparişinizde geçerli %5 indirim kuponunuz hemen e-posta adresinize gönderilecek.
+          <p className="text-lg text-gray-600 mb-8">
+            Özel kampanyalar, yeni ürünler ve lezzetli tarifler için bültenimize abone olun. 
+            İlk siparişinizde <span className="font-bold text-primary">%10 indirim</span> kazanın!
           </p>
 
-          {/* Form */}
-          <form className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
-            <input
-              type="email"
-              placeholder="E-posta adresiniz"
-              className="flex-1 px-6 py-4 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white transition-all"
-              required
-            />
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-primary rounded-full font-semibold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl pulse-glow"
-            >
-              <Sparkles className="h-5 w-5" />
-              Abone Ol
-            </button>
-          </form>
+          {subscribed ? (
+            <div className="flex items-center justify-center gap-3 p-6 bg-green-50 rounded-2xl border border-green-100">
+              <CheckCircle className="w-8 h-8 text-green-500" />
+              <span className="text-green-700 font-medium">Teşekkürler! Bültenimize başarıyla abone oldunuz.</span>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
+              <div className="flex-1 relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="E-posta adresiniz"
+                  required
+                  className="w-full pl-12 pr-4 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-8 py-4 bg-primary text-white font-semibold rounded-2xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    <span>Abone Ol</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
 
-          {/* Benefits */}
-          <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <div className="flex items-center gap-2 text-white/80 text-sm">
-              <span className="w-1.5 h-1.5 bg-white/80 rounded-full"></span>
-              Ücretsiz Kupon
-            </div>
-            <div className="flex items-center gap-2 text-white/80 text-sm">
-              <span className="w-1.5 h-1.5 bg-white/80 rounded-full"></span>
-              Yeni Ürünlerden Haberdar Ol
-            </div>
-            <div className="flex items-center gap-2 text-white/80 text-sm">
-              <span className="w-1.5 h-1.5 bg-white/80 rounded-full"></span>
-              Sağlıklı Tarifler
-            </div>
-          </div>
-
-          {/* Privacy Note */}
-          <p className="text-sm text-white/60 mt-6 max-w-lg mx-auto">
-            KVKK kapsamında kişisel verileriniz korunur ve 3. kişilerle paylaşılmaz. İstediğiniz zaman abonelikten ayrılabilirsiniz.
+          <p className="text-sm text-gray-500 mt-6">
+            Abone olarak gizlilik politikamızı kabul etmiş olursunuz.
           </p>
         </div>
       </div>
