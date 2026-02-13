@@ -12,6 +12,8 @@ import {
     setStoreInfo,
     getAnnouncementBarSettings,
     setAnnouncementBarSettings,
+    getMarqueeSettings,
+    setMarqueeSettings,
     SETTING_KEYS
 } from "@/lib/db/settings";
 
@@ -43,6 +45,11 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: true, announcementSettings: settings });
         }
 
+        if (type === "marquee") {
+            const settings = await getMarqueeSettings();
+            return NextResponse.json({ success: true, marqueeSettings: settings });
+        }
+
         // Get specific setting by key
         if (key) {
             const value = await getSetting(key);
@@ -65,7 +72,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { type, key, value, paymentMethods, shippingOptions, storeInfo, announcementSettings } = body;
+        const { type, key, value, paymentMethods, shippingOptions, storeInfo, announcementSettings, marqueeSettings } = body;
 
         // Set specific setting types
         if (type === "payment" && paymentMethods) {
@@ -86,6 +93,11 @@ export async function POST(request: NextRequest) {
         if (type === "announcement" && announcementSettings) {
             await setAnnouncementBarSettings(announcementSettings);
             return NextResponse.json({ success: true, message: "Announcement bar updated" });
+        }
+
+        if (type === "marquee" && marqueeSettings) {
+            await setMarqueeSettings(marqueeSettings);
+            return NextResponse.json({ success: true, message: "Marquee settings updated" });
         }
 
         // Set generic setting by key

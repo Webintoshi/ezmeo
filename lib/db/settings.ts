@@ -82,6 +82,7 @@ export const SETTING_KEYS = {
     EMAIL_SETTINGS: "email_settings",
     NOTIFICATION_SETTINGS: "notification_settings",
     ANNOUNCEMENT_BAR: "announcement_bar",
+    MARQUEE_SETTINGS: "marquee_settings",
 } as const;
 
 // =====================================================
@@ -183,4 +184,61 @@ export async function getAnnouncementBarSettings(): Promise<AnnouncementBarSetti
  */
 export async function setAnnouncementBarSettings(settings: AnnouncementBarSettings) {
     return setSetting(SETTING_KEYS.ANNOUNCEMENT_BAR, settings as unknown as Record<string, unknown>);
+}
+
+// =====================================================
+// MARQUEE SETTINGS
+// =====================================================
+
+export type MarqueeIcon = 'leaf' | 'truck' | 'shield' | 'heart' | 'award' | 'sparkle';
+export type MarqueeSpeed = 'slow' | 'normal' | 'fast';
+export type MarqueeDirection = 'left' | 'right';
+export type MarqueeAnimation = 'marquee' | 'fade' | 'slide';
+
+export interface MarqueeItem {
+    id: string;
+    text: string;
+    icon?: MarqueeIcon;
+    badge?: string;
+    link?: string;
+}
+
+export interface MarqueeSettings {
+    items: MarqueeItem[];
+    speed?: MarqueeSpeed;
+    direction?: MarqueeDirection;
+    pauseOnHover?: boolean;
+    showStars?: boolean;
+    animation?: MarqueeAnimation;
+    enabled?: boolean;
+}
+
+const DEFAULT_MARQUEE_SETTINGS: MarqueeSettings = {
+    items: [
+        { id: '1', text: "Taze Fıstık Ezmesi", icon: "leaf", badge: "Taze" },
+        { id: '2', text: "Aynı Gün Kargo", icon: "truck", badge: "Hızlı" },
+        { id: '3', text: "Kalite Belgeli", icon: "award", badge: "Garanti" },
+        { id: '4', text: "Ev Yapımı Tarif", icon: "heart", badge: "Özel" },
+    ],
+    speed: 'normal',
+    direction: 'left',
+    pauseOnHover: true,
+    showStars: true,
+    animation: 'marquee',
+    enabled: true,
+};
+
+/**
+ * Get marquee settings
+ */
+export async function getMarqueeSettings(): Promise<MarqueeSettings> {
+    const data = await getSetting(SETTING_KEYS.MARQUEE_SETTINGS);
+    return data ? { ...DEFAULT_MARQUEE_SETTINGS, ...data as MarqueeSettings } : DEFAULT_MARQUEE_SETTINGS;
+}
+
+/**
+ * Set marquee settings
+ */
+export async function setMarqueeSettings(settings: MarqueeSettings) {
+    return setSetting(SETTING_KEYS.MARQUEE_SETTINGS, settings as unknown as Record<string, unknown>);
 }
