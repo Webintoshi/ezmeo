@@ -106,24 +106,24 @@ export default function AbandonedCartsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-3 md:px-6 py-4 md:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Sepet Terk</h1>
-            <p className="text-gray-500">Terk edilmiş sepetleri takip edin ve kurtarın</p>
+            <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-1 md:mb-2">Sepet Terk</h1>
+            <p className="text-gray-500 text-sm md:text-base">Terk edilmiş sepetleri takip edin ve kurtarın</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <button
               onClick={loadData}
-              className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition-all shadow-lg"
+              className="flex items-center gap-2 px-3 md:px-5 py-2 md:py-3 bg-white border border-gray-200 rounded-xl md:rounded-2xl hover:bg-gray-50 transition-all shadow-lg text-sm md:text-base"
             >
-              <RefreshCw className="w-5 h-5 text-gray-600" />
-              Yenile
+              <RefreshCw className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />
+              <span className="hidden sm:inline">Yenile</span>
             </button>
-            <button className="flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all shadow-lg">
-              <Download className="w-5 h-5" />
-              Dışa Aktar
+            <button className="flex items-center gap-2 px-3 md:px-5 py-2 md:py-3 bg-indigo-600 text-white rounded-xl md:rounded-2xl hover:bg-indigo-700 transition-all shadow-lg text-sm md:text-base">
+              <Download className="w-4 h-4 md:w-5 md:h-5" />
+              <span className="hidden sm:inline">Dışa Aktar</span>
             </button>
           </div>
         </div>

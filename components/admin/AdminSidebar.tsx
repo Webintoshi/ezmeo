@@ -261,9 +261,9 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "bg-[#ebebeb] border-r border-gray-200 flex flex-col fixed md:sticky top-0 h-screen z-50 transition-transform duration-300",
+        "bg-[#ebebeb] border-l border-gray-200 flex flex-col fixed md:sticky top-0 h-screen z-50 transition-transform duration-300",
         isMobile 
-          ? `${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} w-80` 
+          ? `${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'} w-80 right-0 left-auto` 
           : 'w-64'
       )}>
         {/* Admin Header */}
