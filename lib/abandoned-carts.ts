@@ -4,7 +4,7 @@ import {
   AbandonedCartFilters,
   AbandonedCartSort,
 } from "@/types/abandoned-cart";
-import { getAllProducts } from "@/lib/products";
+import { supabase } from "@/lib/supabase";
 
 export type {
   AbandonedCart,
@@ -13,208 +13,157 @@ export type {
   AbandonedCartSort,
 } from "@/types/abandoned-cart";
 
-let abandonedCarts: AbandonedCart[] = [];
+let cachedCarts: AbandonedCart[] = [];
+let lastFetch: number = 0;
+const CACHE_DURATION = 60000; // 1 minute cache
 
-export function initializeAbandonedCarts() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    const stored = localStorage.getItem("abandoned_carts");
-    if (stored) {
-      abandonedCarts = JSON.parse(stored);
-    }
-  } catch (error) {
-    console.error("Abandoned carts initialization error:", error);
-    abandonedCarts = [];
-  }
-}
-
-function saveAbandonedCarts() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    localStorage.setItem("abandoned_carts", JSON.stringify(abandonedCarts));
-  } catch (error) {
-    console.error("Abandoned carts save error:", error);
-  }
-}
-
-// Get all abandoned carts
-export function getAbandonedCarts(): AbandonedCart[] {
-  return abandonedCarts;
-}
-
-// Get filtered and sorted abandoned carts
-export function getFilteredAbandonedCarts(
+async function fetchFromAPI(
   filters?: AbandonedCartFilters,
-  sort?: AbandonedCartSort
-): AbandonedCart[] {
-  let carts = [...abandonedCarts];
+  sort?: AbandonedCartSort,
+  page = 1
+): Promise<{ carts: AbandonedCart[]; total: number }> {
+  try {
+    const params = new URLSearchParams();
+    if (filters?.status) params.set("status", filters.status);
+    if (filters?.search) params.set("search", filters.search);
+    if (sort) params.set("sort", sort);
+    params.set("page", page.toString());
+    params.set("limit", "50");
 
-  // Apply filters
-  if (filters) {
-    if (filters.isAnonymous !== undefined) {
-      carts = carts.filter(c => c.isAnonymous === filters.isAnonymous);
+    const response = await fetch(`/api/abandoned-carts?${params}`);
+    const data = await response.json();
+
+    if (data.success) {
+      return {
+        carts: data.carts || [],
+        total: data.pagination?.total || 0,
+      };
     }
-    if (filters.dateFrom) {
-      carts = carts.filter(c => c.createdAt >= filters.dateFrom!);
-    }
-    if (filters.dateTo) {
-      carts = carts.filter(c => c.createdAt <= filters.dateTo!);
-    }
-    if (filters.minTotal !== undefined) {
-      carts = carts.filter(c => c.total >= filters.minTotal!);
-    }
-    if (filters.maxTotal !== undefined) {
-      carts = carts.filter(c => c.total <= filters.maxTotal!);
-    }
-    if (filters.search) {
-      const search = filters.search.toLowerCase();
-      carts = carts.filter(c =>
-        c.firstName?.toLowerCase().includes(search) ||
-        c.lastName?.toLowerCase().includes(search) ||
-        c.email?.toLowerCase().includes(search) ||
-        c.phone?.includes(search) ||
-        c.items.some(item => item.productName.toLowerCase().includes(search))
-      );
-    }
+    return { carts: [], total: 0 };
+  } catch (error) {
+    console.error("Error fetching from API:", error);
+    return { carts: cachedCarts, total: cachedCarts.length };
+  }
+}
+
+export async function getAbandonedCarts(): Promise<AbandonedCart[]> {
+  const now = Date.now();
+  
+  if (now - lastFetch < CACHE_DURATION && cachedCarts.length > 0) {
+    return cachedCarts;
   }
 
-  // Apply sort
-  if (sort) {
-    carts.sort((a, b) => {
-      switch (sort) {
-        case "date-desc":
-          return b.createdAt.getTime() - a.createdAt.getTime();
-        case "date-asc":
-          return a.createdAt.getTime() - b.createdAt.getTime();
-        case "total-desc":
-          return b.total - a.total;
-        case "total-asc":
-          return a.total - b.total;
-        default:
-          return 0;
-      }
-    });
-  }
-
+  const { carts } = await fetchFromAPI();
+  cachedCarts = carts;
+  lastFetch = now;
+  
   return carts;
 }
 
-// Get abandoned cart by ID
-export function getAbandonedCartById(id: string): AbandonedCart | undefined {
-  return abandonedCarts.find(c => c.id === id);
+export async function getFilteredAbandonedCarts(
+  filters?: AbandonedCartFilters,
+  sort?: AbandonedCartSort
+): Promise<AbandonedCart[]> {
+  const { carts } = await fetchFromAPI(filters, sort);
+  return carts;
 }
 
-// Add abandoned cart (this would be called from the frontend)
-export async function addAbandonedCart(data: {
-  userId?: string;
-  email?: string;
-  phone?: string;
-  firstName?: string;
-  lastName?: string;
-  items: {
-    productId: string;
-    productName: string;
-    productSlug: string;
-    productImage: string;
-    variantId: string;
-    variantName: string;
-    price: number;
-    originalPrice?: number;
-    quantity: number;
-  }[];
-}): Promise<AbandonedCart> {
-  const products = await getAllProducts();
-
-  const cartItems: AbandonedCartItem[] = data.items.map(item => {
-    const product = products.find(p => p.id === item.productId);
-    const variant = product?.variants.find(v => v.id === item.variantId);
-
-    return {
-      id: `ac-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      productId: item.productId,
-      productName: item.productName,
-      productSlug: item.productSlug,
-      productImage: item.productImage,
-      variantId: item.variantId,
-      variantName: item.variantName,
-      price: item.price,
-      originalPrice: item.originalPrice,
-      quantity: item.quantity,
-      stock: variant?.stock || 0,
-    };
-  });
-
-  const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-  const newCart: AbandonedCart = {
-    id: `ac-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    userId: data.userId,
-    email: data.email,
-    phone: data.phone,
-    firstName: data.firstName,
-    lastName: data.lastName,
-    isAnonymous: !data.userId && !data.email,
-    items: cartItems,
-    total,
-    itemCount: cartItems.reduce((sum, item) => sum + item.quantity, 0),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    recovered: false,
-  };
-
-  abandonedCarts.push(newCart);
-  saveAbandonedCarts();
-
-  return newCart;
-}
-
-// Mark cart as recovered
-export function markCartAsRecovered(id: string): void {
-  const index = abandonedCarts.findIndex(c => c.id === id);
-  if (index !== -1) {
-    abandonedCarts[index].recovered = true;
-    abandonedCarts[index].recoveredAt = new Date();
-    saveAbandonedCarts();
-  }
-}
-
-// Delete abandoned cart
-export function deleteAbandonedCart(id: string): void {
-  abandonedCarts = abandonedCarts.filter(c => c.id !== id);
-  saveAbandonedCarts();
-}
-
-// Get abandoned cart stats
-export function getAbandonedCartStats() {
-  const total = abandonedCarts.length;
-  const anonymous = abandonedCarts.filter(c => c.isAnonymous).length;
-  const identified = abandonedCarts.filter(c => !c.isAnonymous).length;
-  const recovered = abandonedCarts.filter(c => c.recovered).length;
-  const totalValue = abandonedCarts.reduce((sum, c) => sum + c.total, 0);
+export async function getAbandonedCartStats(): Promise<{
+  total: number;
+  recovered: number;
+  totalValue: number;
+  avgValue: number;
+  recoveryRate: number;
+}> {
+  const carts = await getAbandonedCarts();
+  
+  const total = carts.length;
+  const recovered = carts.filter(c => c.recovered).length;
+  const totalValue = carts.reduce((sum, c) => sum + (c.total || 0), 0);
   const avgValue = total > 0 ? totalValue / total : 0;
+  const recoveryRate = total > 0 ? (recovered / total) * 100 : 0;
 
   return {
     total,
-    anonymous,
-    identified,
     recovered,
-    recoveryRate: total > 0 ? (recovered / total) * 100 : 0,
     totalValue,
     avgValue,
+    recoveryRate,
   };
 }
 
-// Clear all abandoned carts (for demo purposes)
-export function clearAbandonedCarts(): void {
-  abandonedCarts = [];
-  saveAbandonedCarts();
+export async function markCartAsRecovered(id: string): Promise<boolean> {
+  try {
+    const response = await fetch(`/api/abandoned-carts?id=${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recovered: true }),
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      cachedCarts = cachedCarts.map(cart =>
+        cart.id === id
+          ? { ...cart, recovered: true, recovered_at: new Date() }
+          : cart
+      );
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("Error marking cart as recovered:", error);
+    return false;
+  }
 }
 
-// Initialize on module load
-initializeAbandonedCarts();
+export async function deleteAbandonedCart(id: string): Promise<boolean> {
+  try {
+    const response = await fetch(`/api/abandoned-carts?id=${id}`, {
+      method: "DELETE",
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      cachedCarts = cachedCarts.filter(cart => cart.id !== id);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("Error deleting abandoned cart:", error);
+    return false;
+  }
+}
+
+export async function saveCart(data: {
+  session_id?: string;
+  customer_id?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  is_anonymous?: boolean;
+  items: AbandonedCartItem[];
+  total: number;
+  item_count: number;
+}): Promise<AbandonedCart | null> {
+  try {
+    const response = await fetch("/api/abandoned-carts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      cachedCarts = [result.cart, ...cachedCarts];
+      return result.cart;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error saving cart:", error);
+    return null;
+  }
+}

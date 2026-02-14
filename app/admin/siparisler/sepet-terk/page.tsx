@@ -44,28 +44,31 @@ export default function AbandonedCartsPage() {
     loadData();
   }, []);
 
-  const loadData = () => {
+  const loadData = async () => {
     setLoading(true);
-    setTimeout(() => {
-      const allCarts = getAbandonedCarts();
-      const filteredCarts = getFilteredAbandonedCarts(filters, sort);
-      const cartStats = getAbandonedCartStats();
+    try {
+      const allCarts = await getAbandonedCarts();
+      const filteredCarts = await getFilteredAbandonedCarts(filters, sort);
+      const cartStats = await getAbandonedCartStats();
       setCarts(filteredCarts);
       setStats(cartStats);
+    } catch (error) {
+      console.error("Error loading data:", error);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
-  const handleMarkRecovered = (id: string) => {
-    markCartAsRecovered(id);
+  const handleMarkRecovered = async (id: string) => {
+    await markCartAsRecovered(id);
     loadData();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("Bu sepeti silmek istediğinizden emin misiniz?")) {
       return;
     }
-    deleteAbandonedCart(id);
+    await deleteAbandonedCart(id);
     loadData();
   };
 
