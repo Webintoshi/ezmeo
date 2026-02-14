@@ -675,10 +675,16 @@ export default function CheckoutPage() {
                   <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                     {items.map(item => (
                       <div key={item.variantId} className="flex gap-4 group">
-                        <div className="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center text-2xl border border-gray-100 shrink-0">
-                          {item.product.category === "fistik-ezmesi" && "🥜"}
-                          {item.product.category === "findik-ezmesi" && "🌰"}
-                          {item.product.category === "kuruyemis" && "🥔"}
+                        <div className="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center text-2xl border border-gray-100 shrink-0 overflow-hidden">
+                          {item.product.images && item.product.images.length > 0 ? (
+                            <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <>
+                              {item.product.category === "fistik-ezmesi" && "🥜"}
+                              {item.product.category === "findik-ezmesi" && "🌰"}
+                              {item.product.category === "kuruyemis" && "🥔"}
+                            </>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0 py-1">
                           <h4 className="font-bold text-gray-900 text-sm truncate">{item.product.name}</h4>
