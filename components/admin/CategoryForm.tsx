@@ -85,6 +85,8 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
     try {
       setLoading(true);
       
+      console.log("Saving category:", formData);
+      
       if (categoryId) {
         await updateCategory(categoryId, formData);
       } else {
@@ -92,9 +94,9 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
       }
 
       router.push("/admin/urunler/koleksiyonlar");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving category:", error);
-      alert("Kategori kaydedilirken bir hata oluştu!");
+      alert("Kategori kaydedilirken bir hata oluştu: " + (error?.message || "Bilinmeyen hata"));
     } finally {
       setLoading(false);
     }
