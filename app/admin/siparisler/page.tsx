@@ -364,9 +364,9 @@ export default function OrdersPage() {
               const statusConfig = ORDER_STATUS_CONFIG[order.status];
               const StatusIcon = statusConfig.icon;
               
-              // Zebra striping - alternating rows
+              // Zebra striping - alternating rows (more visible)
               const isEven = index % 2 === 0;
-              const bgColor = isEven ? "bg-white" : "bg-gray-50/50";
+              const bgColor = isEven ? "bg-white" : "bg-blue-50";
 
               return (
                 <div
