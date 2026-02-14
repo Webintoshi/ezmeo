@@ -115,12 +115,12 @@ const MENU_ITEMS: MenuItem[] = [
   {
     title: "SEO Araçları",
     icon: Search,
-    href: "/admin/seo-killers",
+    href: "/admin/seo-killer",
     submenu: [
-      { title: "SEO Kontrol", href: "/admin/seo-killers" },
-      { title: "Sitemap", href: "/admin/seo-killers/sitemap" },
-      { title: "Sosyal Önizleme", href: "/admin/seo-killers/sosyal-onizleme" },
-      { title: "Hızlı İndex", href: "/admin/seo-killers/hizli-index" },
+      { title: "SEO Kontrol", href: "/admin/seo-killer" },
+      { title: "Sitemap", href: "/admin/seo-killer/sitemap" },
+      { title: "Sosyal Önizleme", href: "/admin/seo-killer/sosyal-onizleme" },
+      { title: "Hızlı İndex", href: "/admin/seo-killer/hizli-index" },
     ],
   },
   {
