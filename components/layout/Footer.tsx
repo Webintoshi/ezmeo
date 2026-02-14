@@ -239,7 +239,7 @@ export function Footer() {
                 </div>
                 <div className="h-3 w-[1px] bg-white/10 mx-0.5"></div>
                 <img 
-                  src="/webintosh logo.svg" 
+                  src="/webintosh%20logo.svg" 
                   alt="Webintosh" 
                   className="h-3 w-auto opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300"
                 />
