@@ -1,38 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Package, Sparkles, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProductWizardState, ProductCategory, ProductSubcategory } from "@/types/product";
+import { fetchCategories } from "@/lib/categories";
 
-const CATEGORIES: { value: ProductCategory; label: string; subcategories: { value: ProductSubcategory; label: string }[] }[] = [
-  {
-    value: "fistik-ezmesi",
-    label: "Fıstık Ezmesi",
-    subcategories: [
-      { value: "sekersiz", label: "Şekersiz" },
-      { value: "hurmalı", label: "Hurmalı" },
-      { value: "balli", label: "Ballı" },
-      { value: "klasik", label: "Klasik" },
-    ],
-  },
-  {
-    value: "findik-ezmesi",
-    label: "Fındık Ezmesi",
-    subcategories: [
-      { value: "sutlu-findik-kremasi", label: "Sütlü Fındık Kreması" },
-      { value: "kakaolu", label: "Kakaolu" },
-    ],
-  },
-  {
-    value: "kuruyemis",
-    label: "Kuruyemiş",
-    subcategories: [
-      { value: "cig", label: "Çiğ" },
-      { value: "kavrulmus", label: "Kavrulmuş" },
-    ],
-  },
-];
+interface CategoryOption {
+  value: string;
+  label: string;
+  subcategories: { value: string; label: string }[];
+}
 
 const PREDEFINED_TAGS = [
   "doğal", "vegan", "glutensiz", "sekersiz", "organik", "sporcu", "enerji",
@@ -48,9 +26,30 @@ interface StepBasicInfoProps {
 }
 
 export function StepBasicInfo({ data, onChange, errors }: StepBasicInfoProps) {
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [loading, setLoading] = useState(true);
   const [tagInput, setTagInput] = useState("");
 
-  const categoryOptions = CATEGORIES.find(c => c.value === data.category)?.subcategories || [];
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const cats = await fetchCategories();
+        const mapped: CategoryOption[] = cats.map(cat => ({
+          value: cat.slug,
+          label: cat.name,
+          subcategories: []
+        }));
+        setCategories(mapped);
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCategories();
+  }, []);
+
+  const categoryOptions = categories.find(c => c.value === data.category)?.subcategories || [];
 
   const generateSlug = (name: string) => {
     const turkishToEnglish: Record<string, string> = {
@@ -237,8 +236,8 @@ export function StepBasicInfo({ data, onChange, errors }: StepBasicInfoProps) {
                       errors.category ? "border-rose-300 bg-rose-50/30" : "border-gray-200"
                     )}
                   >
-                    <option value="">Seçin</option>
-                    {CATEGORIES.map(cat => (
+                    <option value="">{loading ? "Yükleniyor..." : "Seçin"}</option>
+                    {categories.map(cat => (
                       <option key={cat.value} value={cat.value}>{cat.label}</option>
                     ))}
                   </select>
