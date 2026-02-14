@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createBrowserClient } from "@supabase/ssr";
-import { Star, ArrowRight, Flame, Sparkles, TrendingUp, Filter, X, ShoppingCart, Heart, Eye } from "lucide-react";
+import { Star, ArrowRight, X, ShoppingCart, Heart, Eye } from "lucide-react";
 import { Product } from "@/types/product";
 import { formatPrice, cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
@@ -48,15 +48,7 @@ interface ProductShowcaseProps {
   onQuickView?: (product: Product) => void;
 }
 
-type TabType = "bestsellers" | "new" | "discounted";
-
-const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
-  { id: "bestsellers", label: "Çok Satanlar", icon: <TrendingUp className="w-4 h-4" /> },
-  { id: "new", label: "Yeni Gelenler", icon: <Sparkles className="w-4 h-4" /> },
-  { id: "discounted", label: "İndirimli", icon: <Flame className="w-4 h-4" /> },
-];
-
-function ProductCard({ product, index, onQuickView }: { product: Product; index: number; onQuickView?: (product: Product) => void }) {
+  const [activeTab, setActiveTab] = useState<TabType>("bestsellers");
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const isWishlisted = isInWishlist(product.id);
@@ -207,7 +199,6 @@ function ProductCard({ product, index, onQuickView }: { product: Product; index:
 }
 
 export function ProductShowcase() {
-  const [activeTab, setActiveTab] = useState<TabType>("bestsellers");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -319,27 +310,6 @@ export function ProductShowcase() {
             En taze ve kaliteli ezmelerimizi keşfedin. Doğal malzemelerle hazırlanan özel tariflerimiz.
           </p>
         </motion.div>
-
-        {/* Tabs */}
-        <div className="flex justify-center mb-10">
-          <div className="inline-flex items-center gap-1 p-1.5 bg-gray-100 rounded-2xl">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all duration-300",
-                  activeTab === tab.id
-                    ? "bg-white text-primary shadow-lg"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
-                )}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Products Grid */}
         <AnimatePresence mode="wait">

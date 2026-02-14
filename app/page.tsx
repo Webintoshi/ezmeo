@@ -7,7 +7,6 @@ import { ProductShowcase } from "@/components/sections/ProductShowcase";
 import { WhyChooseUs } from "@/components/sections/WhyChooseUs";
 import { SpecialOffer } from "@/components/sections/SpecialOffer";
 import { Testimonials } from "@/components/sections/Testimonials";
-import { Newsletter } from "@/components/sections/Newsletter";
 import { AnnouncementBar } from "@/components/sections/AnnouncementBar";
 
 export const metadata: Metadata = {
@@ -35,7 +34,6 @@ export default function Home() {
       <WhyChooseUs />
       <SpecialOffer />
       <Testimonials />
-      <Newsletter />
       
       <script
         type="application/ld+json"
