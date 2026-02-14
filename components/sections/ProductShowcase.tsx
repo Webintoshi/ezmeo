@@ -236,32 +236,10 @@ export function ProductShowcase() {
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         );
 
-        let query = supabase
+        const { data, error } = await supabase
           .from("products")
-          .select(`*, variants:product_variants(*)`);
-
-        switch (activeTab) {
-          case "bestsellers":
-          case "new":
-            break;
-          case "discounted":
-            const { data: allProducts } = await supabase
-              .from("products")
-              .select(`*, variants:product_variants(*)`);
-            
-            if (allProducts) {
-              const transformed = allProducts.map(transformProduct);
-              const filtered = transformed.filter(p => 
-                p.variants.some(v => v.originalPrice && v.originalPrice > v.price)
-              );
-              setProducts(filtered);
-              setLoading(false);
-              return;
-            }
-            break;
-        }
-
-        const { data, error } = await query.limit(8);
+          .select(`*, variants:product_variants(*)`)
+          .limit(8);
 
         if (error) {
           console.error("Supabase error:", error);
@@ -279,11 +257,7 @@ export function ProductShowcase() {
       }
     }
     loadProducts();
-  }, [activeTab]);
-
-  if (!loading && products.length === 0 && activeTab === "discounted") {
-    return null;
-  }
+  }, []);
 
   return (
     <section ref={sectionRef} className="py-20 md:py-28 bg-gradient-to-b from-white via-gray-50 to-white relative overflow-hidden">
@@ -312,21 +286,13 @@ export function ProductShowcase() {
         </motion.div>
 
         {/* Products Grid */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-          >
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="aspect-[3/4] bg-gray-100 rounded-2xl animate-pulse" />
-                ))}
-              </div>
-            ) : (
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="aspect-[3/4] bg-gray-100 rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {products.map((product, index) => (
                   <ProductCard
@@ -338,8 +304,6 @@ export function ProductShowcase() {
                 ))}
               </div>
             )}
-          </motion.div>
-        </AnimatePresence>
 
         {/* View All Button */}
         <motion.div
