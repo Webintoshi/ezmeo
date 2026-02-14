@@ -197,14 +197,14 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
           setUserEmail(user.email || "");
           const { data: profile, error } = await supabase
             .from("profiles")
-            .select("role, first_name, last_name")
+            .select("role, full_name")
             .eq("id", user.id)
             .single();
 
           if (profile && !error) {
             setRole(profile.role);
-            if (profile.first_name || profile.last_name) {
-              setUserName([profile.first_name, profile.last_name].filter(Boolean).join(" "));
+            if (profile.full_name) {
+              setUserName(profile.full_name);
             }
           } else {
             console.log("AdminSidebar: No profile found, using email");
