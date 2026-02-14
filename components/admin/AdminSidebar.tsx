@@ -21,6 +21,11 @@ import {
   FileText,
   Menu,
   X,
+  TrendingUp,
+  Store,
+  Megaphone as MarketingIcon,
+  Search,
+  Users as AdminsIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -49,9 +54,7 @@ const MENU_ITEMS: MenuItem[] = [
     href: "/admin/siparisler",
     submenu: [
       { title: "Tüm Siparişler", href: "/admin/siparisler" },
-      { title: "Yarım Kalan Siparişler", href: "/admin/siparisler/yarim-kalanlar" },
-      { title: "Kargo Etiketleri", href: "/admin/siparisler/kargo-etiketleri" },
-      { title: "İade Talepleri", href: "/admin/siparisler/iadeler" },
+      { title: "Terkedilen Sepetler", href: "/admin/siparisler/sepet-terk" },
     ],
   },
   {
@@ -69,7 +72,11 @@ const MENU_ITEMS: MenuItem[] = [
     title: "Müşteriler",
     icon: Users,
     href: "/admin/musteriler",
-    submenu: [{ title: "Segmentler", href: "/admin/musteriler/segmentler" }],
+    submenu: [
+      { title: "Tüm Müşteriler", href: "/admin/musteriler" },
+      { title: "Segmentler", href: "/admin/musteriler/segmentler" },
+      { title: "Yeni Müşteri", href: "/admin/musteriler/yeni" },
+    ],
   },
   {
     title: "İndirimler",
@@ -90,23 +97,41 @@ const MENU_ITEMS: MenuItem[] = [
     ],
   },
   {
-    title: "Kampanyalar",
-    icon: Megaphone,
-    href: "/admin/kampanyalar",
+    title: "Pazarlama",
+    icon: MarketingIcon,
+    href: "/admin/pazarlama",
     submenu: [
-      { title: "Aktif Kampanyalar", href: "/admin/kampanyalar" },
-      { title: "Yeni Kampanya", href: "/admin/kampanyalar/yeni" },
+      { title: "Kampanyalar", href: "/admin/pazarlama" },
+      { title: "E-posta", href: "/admin/pazarlama/email" },
+      { title: "SMS", href: "/admin/pazarlama/phone" },
+      { title: "WhatsApp", href: "/admin/pazarlama/whatsapp" },
     ],
   },
   {
-    title: "Raporlar",
-    icon: BarChart3,
-    href: "/admin/raporlar",
+    title: "Analizler",
+    icon: TrendingUp,
+    href: "/admin/analizler",
+  },
+  {
+    title: "SEO Araçları",
+    icon: Search,
+    href: "/admin/seo-killers",
     submenu: [
-      { title: "Satış Raporu", href: "/admin/raporlar/satis" },
-      { title: "Ürün Raporu", href: "/admin/raporlar/urunler" },
-      { title: "Müşteri Raporu", href: "/admin/raporlar/musteriler" },
+      { title: "SEO Kontrol", href: "/admin/seo-killers" },
+      { title: "Sitemap", href: "/admin/seo-killers/sitemap" },
+      { title: "Sosyal Önizleme", href: "/admin/seo-killers/sosyal-onizleme" },
+      { title: "Hızlı İndex", href: "/admin/seo-killers/hizli-index" },
     ],
+  },
+  {
+    title: "Marketplace",
+    icon: Store,
+    href: "/admin/markets",
+  },
+  {
+    title: "Yöneticiler",
+    icon: AdminsIcon,
+    href: "/admin/yoneticiler",
   },
   {
     title: "Ayarlar",
@@ -114,6 +139,9 @@ const MENU_ITEMS: MenuItem[] = [
     href: "/admin/ayarlar",
     submenu: [
       { title: "Genel Ayarlar", href: "/admin/ayarlar/genel" },
+      { title: "Kargo", href: "/admin/ayarlar/kargo" },
+      { title: "Ödeme", href: "/admin/ayarlar/odeme" },
+      { title: "Bildirimler", href: "/admin/ayarlar/bildirimler" },
       { title: "Hero Banner", href: "/admin/ayarlar/hero-banner" },
       { title: "Marquee", href: "/admin/ayarlar/marquee" },
     ],
