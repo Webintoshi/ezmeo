@@ -42,6 +42,10 @@ async function fetchFromAPI(
         recoveredAt: cart.recovered_at,
         itemCount: cart.item_count,
         isAnonymous: cart.is_anonymous,
+        items: (cart.items || []).map((item: any) => ({
+          ...item,
+          productImage: item.image || "",
+        })),
       }));
       return {
         carts: mappedCarts,
