@@ -194,18 +194,20 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
         } = await supabase.auth.getUser();
 
         if (user) {
-          setUserEmail(user.email);
-          const { data: profile } = await supabase
+          setUserEmail(user.email || "");
+          const { data: profile, error } = await supabase
             .from("profiles")
             .select("role, first_name, last_name")
             .eq("id", user.id)
             .single();
 
-          if (profile) {
+          if (profile && !error) {
             setRole(profile.role);
             if (profile.first_name || profile.last_name) {
               setUserName([profile.first_name, profile.last_name].filter(Boolean).join(" "));
             }
+          } else {
+            console.log("AdminSidebar: No profile found, using email");
           }
         }
       } catch (error) {
@@ -273,10 +275,10 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
           </div>
           <div>
             <span className="font-semibold text-gray-900 block leading-tight">
-              {userName || userEmail?.split('@')[0] || "Admin"}
+              {userName || (userEmail && userEmail.includes('@') ? userEmail.split('@')[0] : "Admin")}
             </span>
             <span className="text-xs text-gray-500 font-medium capitalize">
-              {role ? role.replace("_", " ") : userEmail ? "@" + userEmail?.split('@')[1] : "Yükleniyor..."}
+              {role ? role.replace("_", " ") : (userEmail && userEmail.includes('@') ? "@" + userEmail.split('@')[1] : "Yükleniyor...")}
             </span>
           </div>
         </div>
