@@ -33,15 +33,60 @@ function loadCartFromStorage(): CartItem[] {
   }
 }
 
+function getOrCreateSessionId(): string {
+  if (typeof window === "undefined") return "";
+  
+  let sessionId = localStorage.getItem("ezmeo_session_id");
+  if (!sessionId) {
+    sessionId = "session_" + Date.now() + "_" + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem("ezmeo_session_id", sessionId);
+  }
+  return sessionId;
+}
+
+async function saveToAbandonedCart(items: CartItem[]) {
+  if (items.length === 0) return;
+  
+  try {
+    const sessionId = getOrCreateSessionId();
+    const total = items.reduce((sum, item) => sum + (item.variant.price * item.quantity), 0);
+    
+    await fetch('/api/abandoned-carts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: sessionId,
+        items: items.map(item => ({
+          product_id: item.productId,
+          variant_id: item.variantId,
+          name: item.product.name,
+          price: item.variant.price,
+          quantity: item.quantity,
+          weight: item.variant.weight,
+          image: item.product.images?.[0] || ""
+        })),
+        total,
+        item_count: items.reduce((sum, item) => sum + item.quantity, 0),
+        is_anonymous: true,
+        status: 'active'
+      })
+    });
+  } catch (error) {
+    console.error("Failed to save abandoned cart:", error);
+  }
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(loadCartFromStorage);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(true);
   const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
 
-  // Save cart to localStorage whenever items change
+  // Save cart to localStorage and database whenever items change
   useEffect(() => {
     localStorage.setItem("ezmeo_cart", JSON.stringify(items));
+    // Also save to abandoned carts database
+    saveToAbandonedCart(items);
   }, [items]);
 
   const addToCart = (product: Product, variant: ProductVariant, quantity: number = 1) => {
