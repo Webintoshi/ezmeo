@@ -48,7 +48,7 @@ interface ProductShowcaseProps {
   onQuickView?: (product: Product) => void;
 }
 
-  const [activeTab, setActiveTab] = useState<TabType>("bestsellers");
+function ProductCard({ product, index, onQuickView }: { product: Product; index: number; onQuickView?: (product: Product) => void }) {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const isWishlisted = isInWishlist(product.id);
