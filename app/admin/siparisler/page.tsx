@@ -360,14 +360,23 @@ export default function OrdersPage() {
           </div>
         ) : paginatedOrders.length > 0 ? (
           <div className="divide-y divide-gray-100">
-            {paginatedOrders.map((order) => {
+            {paginatedOrders.map((order, index) => {
               const statusConfig = ORDER_STATUS_CONFIG[order.status];
               const StatusIcon = statusConfig.icon;
+              
+              // Alternating light blue backgrounds
+              const bgColors = [
+                "bg-blue-50/30",
+                "bg-blue-50/50", 
+                "bg-blue-50/70",
+                "bg-white",
+              ];
+              const bgColor = bgColors[index % 4];
 
               return (
                 <div
                   key={order.id}
-                  className="p-5 hover:bg-gray-50/50 transition-colors group"
+                  className={`${bgColor} p-5 hover:bg-gray-50/50 transition-colors group`}
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                     {/* Left: Order Info */}
