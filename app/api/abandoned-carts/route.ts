@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { getAuthenticatedUser } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getAuthenticatedUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const search = searchParams.get("search");
@@ -72,11 +66,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getAuthenticatedUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await request.json();
     const {
       session_id,
@@ -89,15 +78,16 @@ export async function POST(request: NextRequest) {
       items,
       total,
       item_count,
+      status,
     } = body;
 
     // Check if cart already exists for this session/customer
     let query = supabase.from("abandoned_carts");
 
     if (customer_id) {
-      query = query.select("*").eq("customer_id", customer_id).eq("status", "abandoned");
+      query = query.select("*").eq("customer_id", customer_id);
     } else if (session_id) {
-      query = query.select("*").eq("session_id", session_id).eq("status", "abandoned");
+      query = query.select("*").eq("session_id", session_id);
     }
 
     const { data: existing } = await query.single();
@@ -115,6 +105,7 @@ export async function POST(request: NextRequest) {
           email: email || existing.email,
           phone: phone || existing.phone,
           is_anonymous: is_anonymous ?? existing.is_anonymous,
+          status: status || existing.status,
           updated_at: new Date().toISOString(),
         })
         .eq("id", existing.id)
@@ -142,7 +133,7 @@ export async function POST(request: NextRequest) {
         items,
         total,
         item_count,
-        status: "abandoned",
+        status: status || "active",
       })
       .select()
       .single();
@@ -163,11 +154,6 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const user = await getAuthenticatedUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await request.json();
     const { id, status, recovered } = body;
 
@@ -206,11 +192,6 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const user = await getAuthenticatedUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
