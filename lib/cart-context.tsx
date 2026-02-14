@@ -51,7 +51,7 @@ async function saveToAbandonedCart(items: CartItem[]) {
     const sessionId = getOrCreateSessionId();
     const total = items.reduce((sum, item) => sum + (item.variant.price * item.quantity), 0);
     
-    await fetch('/api/abandoned-carts', {
+    const response = await fetch('/api/abandoned-carts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -71,6 +71,13 @@ async function saveToAbandonedCart(items: CartItem[]) {
         status: 'active'
       })
     });
+    
+    const result = await response.json();
+    console.log("Sepet kaydedildi:", result);
+    
+    if (!result.success) {
+      console.error("Sepet kaydetme hatası:", result.error);
+    }
   } catch (error) {
     console.error("Failed to save abandoned cart:", error);
   }
