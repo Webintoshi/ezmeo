@@ -46,33 +46,24 @@ export async function GET() {
             .order("created_at", { ascending: false })
             .limit(20);
 
-        // Abandoned carts (last 24 hours)
+        // Abandoned carts (last 24 hours) - from abandoned_carts table
         const { data: abandonedCarts, count: abandonedCount } = await supabase
-            .from("checkout_sessions")
+            .from("abandoned_carts")
             .select("*", { count: "exact" })
-            .eq("abandoned", true)
+            .eq("status", "active")
             .gte("created_at", oneDayAgo);
 
-        const abandonedTotal = abandonedCarts?.reduce((sum, c) => sum + Number(c.cart_total), 0) || 0;
+        const abandonedTotal = abandonedCarts?.reduce((sum, c) => sum + Number(c.total || 0), 0) || 0;
 
-        // Today's stats
+        // Today's stats - from events table
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
 
-        const { count: todayPageViews } = await supabase
-            .from("page_views")
-            .select("*", { count: "exact", head: true })
-            .gte("created_at", todayStart.toISOString());
-
-        const { count: todaySessions } = await supabase
-            .from("sessions")
-            .select("*", { count: "exact", head: true })
-            .gte("started_at", todayStart.toISOString());
-
+        // Get add_to_cart and purchase events from last 24 hours
         const { data: todayEvents } = await supabase
             .from("events")
             .select("event_type")
-            .gte("created_at", todayStart.toISOString());
+            .gte("created_at", oneDayAgo);
 
         const addToCartCount = todayEvents?.filter(e => e.event_type === "add_to_cart").length || 0;
         const purchaseCount = todayEvents?.filter(e => e.event_type === "purchase").length || 0;
@@ -98,8 +89,6 @@ export async function GET() {
                     total: abandonedTotal,
                 },
                 today: {
-                    pageViews: todayPageViews || 0,
-                    sessions: todaySessions || 0,
                     addToCart: addToCartCount,
                     purchases: purchaseCount,
                 },

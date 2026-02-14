@@ -87,6 +87,16 @@ export async function getAbandonedCartStats(): Promise<{
   totalValue: number;
   avgValue: number;
   recoveryRate: number;
+  last24h: {
+    abandoned: number;
+    lostValue: number;
+    recovered: number;
+  };
+  conversion: {
+    addedToCart: number;
+    purchased: number;
+    rate: number;
+  };
 }> {
   const carts = await getAbandonedCarts();
   
@@ -96,12 +106,68 @@ export async function getAbandonedCartStats(): Promise<{
   const avgValue = total > 0 ? totalValue / total : 0;
   const recoveryRate = total > 0 ? (recovered / total) * 100 : 0;
 
+  // Last 24 hours stats
+  const oneDayAgo = new Date();
+  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+  
+  const last24hCarts = carts.filter(c => {
+    const createdAt = c.createdAt ? new Date(c.createdAt) : null;
+    return createdAt && createdAt >= oneDayAgo;
+  });
+  
+  const last24hAbandoned = last24hCarts.filter(c => !c.recovered).length;
+  const last24hRecovered = last24hCarts.filter(c => c.recovered).length;
+  const last24hLostValue = last24hCarts
+    .filter(c => !c.recovered)
+    .reduce((sum, c) => sum + (c.total || 0), 0);
+
+  // Conversion data - compare abandoned carts vs orders
+  // Get orders from last 24 hours
+  let conversionData = { addedToCart: 0, purchased: 0, rate: 0 };
+  
+  try {
+    const response = await fetch('/api/orders?limit=1000&status=all');
+    const data = await response.json();
+    
+    if (data.success && data.orders) {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      const recentOrders = data.orders.filter((o: any) => {
+        const createdAt = new Date(o.created_at);
+        return createdAt >= oneWeekAgo;
+      });
+      
+      const purchased = recentOrders.length;
+      const addedToCart = carts.filter(c => {
+        const createdAt = c.createdAt ? new Date(c.createdAt) : null;
+        return createdAt && createdAt >= oneWeekAgo;
+      }).length;
+      
+      const rate = addedToCart > 0 ? (purchased / (purchased + addedToCart)) * 100 : 0;
+      
+      conversionData = {
+        addedToCart,
+        purchased,
+        rate: Math.min(rate, 100),
+      };
+    }
+  } catch (error) {
+    console.error("Failed to fetch conversion data:", error);
+  }
+
   return {
     total,
     recovered,
     totalValue,
     avgValue,
     recoveryRate,
+    last24h: {
+      abandoned: last24hAbandoned,
+      lostValue: last24hLostValue,
+      recovered: last24hRecovered,
+    },
+    conversion: conversionData,
   };
 }
 
