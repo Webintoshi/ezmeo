@@ -112,10 +112,20 @@ export function SideCart({ isOpen, onClose }: SideCartProps) {
                     {formatPrice(lastAddedItem.variant.price * lastAddedItem.quantity)}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-white rounded-xl border border-emerald-100 flex items-center justify-center text-2xl shrink-0 shadow-sm">
-                  {lastAddedItem.product.category === "fistik-ezmesi" && "🥜"}
-                  {lastAddedItem.product.category === "findik-ezmesi" && "🌰"}
-                  {lastAddedItem.product.category === "kuruyemis" && "🥔"}
+                <div className="w-12 h-12 bg-white rounded-xl border border-emerald-100 flex items-center justify-center text-2xl shrink-0 shadow-sm overflow-hidden">
+                  {lastAddedItem.product.images && lastAddedItem.product.images.length > 0 ? (
+                    <img 
+                      src={lastAddedItem.product.images[0]} 
+                      alt={lastAddedItem.product.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <>
+                      {lastAddedItem.product.category === "fistik-ezmesi" && "🥜"}
+                      {lastAddedItem.product.category === "findik-ezmesi" && "🌰"}
+                      {lastAddedItem.product.category === "kuruyemis" && "🥔"}
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -157,10 +167,20 @@ export function SideCart({ isOpen, onClose }: SideCartProps) {
               ) : (
                 items.map((item) => (
                   <div key={item.variantId} className="flex gap-4 bg-gray-50 rounded-2xl p-4 border border-gray-100/50 hover:border-gray-200 transition-colors">
-                    <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-2xl shrink-0 border border-gray-100 shadow-sm">
-                      {item.product.category === "fistik-ezmesi" && "🥜"}
-                      {item.product.category === "findik-ezmesi" && "🌰"}
-                      {item.product.category === "kuruyemis" && "🥔"}
+                    <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-2xl shrink-0 border border-gray-100 shadow-sm overflow-hidden">
+                      {item.product.images && item.product.images.length > 0 ? (
+                        <img 
+                          src={item.product.images[0]} 
+                          alt={item.product.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <>
+                          {item.product.category === "fistik-ezmesi" && "🥜"}
+                          {item.product.category === "findik-ezmesi" && "🌰"}
+                          {item.product.category === "kuruyemis" && "🥔"}
+                        </>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start mb-1">

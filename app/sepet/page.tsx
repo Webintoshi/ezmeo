@@ -68,9 +68,19 @@ export default function CartPage() {
                 <div className="flex gap-4">
                   {/* Product Image */}
                   <div className="w-20 h-20 md:w-24 md:h-24 bg-primary/5 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center text-4xl">
-                    {item.product.category === "fistik-ezmesi" && "🥜"}
-                    {item.product.category === "findik-ezmesi" && "🌰"}
-                    {item.product.category === "kuruyemis" && "🥔"}
+                    {item.product.images && item.product.images.length > 0 ? (
+                      <img 
+                        src={item.product.images[0]} 
+                        alt={item.product.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <>
+                        {item.product.category === "fistik-ezmesi" && "🥜"}
+                        {item.product.category === "findik-ezmesi" && "🌰"}
+                        {item.product.category === "kuruyemis" && "🥔"}
+                      </>
+                    )}
                   </div>
 
                   {/* Product Info */}
