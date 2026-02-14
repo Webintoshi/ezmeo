@@ -364,19 +364,14 @@ export default function OrdersPage() {
               const statusConfig = ORDER_STATUS_CONFIG[order.status];
               const StatusIcon = statusConfig.icon;
               
-              // Alternating light blue backgrounds
-              const bgColors = [
-                "bg-blue-50/30",
-                "bg-blue-50/50", 
-                "bg-blue-50/70",
-                "bg-white",
-              ];
-              const bgColor = bgColors[index % 4];
+              // Zebra striping - alternating rows
+              const isEven = index % 2 === 0;
+              const bgColor = isEven ? "bg-white" : "bg-gray-50/50";
 
               return (
                 <div
                   key={order.id}
-                  className={`${bgColor} p-5 hover:bg-gray-50/50 transition-colors group`}
+                  className={`${bgColor} p-5 hover:bg-gray-100 transition-colors group`}
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                     {/* Left: Order Info */}
