@@ -77,17 +77,27 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Parent category feature disabled - requires database update
-    // const categoryData = { ...formData, parent_id: parentId || null };
-    const categoryData = formData;
-
-    if (categoryId) {
-      await updateCategory(categoryId, categoryData);
-    } else {
-      await addCategory(categoryData);
+    if (!formData.name || !formData.slug) {
+      alert("Lütfen kategori adı giriniz!");
+      return;
     }
 
-    router.push("/admin/urunler/koleksiyonlar");
+    try {
+      setLoading(true);
+      
+      if (categoryId) {
+        await updateCategory(categoryId, formData);
+      } else {
+        await addCategory(formData);
+      }
+
+      router.push("/admin/urunler/koleksiyonlar");
+    } catch (error) {
+      console.error("Error saving category:", error);
+      alert("Kategori kaydedilirken bir hata oluştu!");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleImageUpload = async (file: File) => {
@@ -165,10 +175,11 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
         </div>
         <button
           type="submit"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          disabled={loading || uploading}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
-          Kaydet
+          {loading ? "Kaydediliyor..." : "Kaydet"}
         </button>
       </div>
 
