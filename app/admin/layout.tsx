@@ -36,10 +36,13 @@ export default function AdminLayout({
   }
 
   // Loading state
-  if (isAuthenticated === null) {
+  if (isAuthenticated === null || isAuthenticated === false) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-600">Yükleniyor...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+          <p className="text-gray-500 text-sm">Yükleniyor...</p>
+        </div>
       </div>
     );
   }

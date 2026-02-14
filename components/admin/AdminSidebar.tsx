@@ -132,7 +132,9 @@ export function AdminSidebar() {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth < 768);
+      }
     };
     
     checkMobile();
@@ -142,23 +144,33 @@ export function AdminSidebar() {
 
   useEffect(() => {
     async function getUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const timeout = setTimeout(() => {
+        setLoading(false);
+      }, 5000);
+      
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (user) {
-        setUserEmail(user.email);
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single();
+        if (user) {
+          setUserEmail(user.email);
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", user.id)
+            .single();
 
-        if (profile) {
-          setRole(profile.role);
+          if (profile) {
+            setRole(profile.role);
+          }
         }
+      } catch (error) {
+        console.error("AdminSidebar: Error fetching user:", error);
+      } finally {
+        clearTimeout(timeout);
+        setLoading(false);
       }
-      setLoading(false);
     }
 
     getUser();
