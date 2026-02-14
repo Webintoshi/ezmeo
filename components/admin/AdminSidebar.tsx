@@ -148,7 +148,12 @@ const MENU_ITEMS: MenuItem[] = [
   },
 ];
 
-export function AdminSidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -169,6 +174,12 @@ export function AdminSidebar() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  useEffect(() => {
+    if (isOpen !== undefined) {
+      setIsMobileMenuOpen(isOpen);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     async function getUser() {
@@ -227,8 +238,8 @@ export function AdminSidebar() {
       });
 
   const handleLinkClick = () => {
-    if (isMobile) {
-      setIsMobileMenuOpen(false);
+    if (isMobile && onClose) {
+      onClose();
     }
   };
 
@@ -236,24 +247,11 @@ export function AdminSidebar() {
 
   return (
     <>
-      {/* Mobile Menu Toggle Button */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg border border-gray-200"
-        aria-label={isMobileMenuOpen ? "Menüyü kapat" : "Menüyü aç"}
-      >
-        {isMobileMenuOpen ? (
-          <X className="w-6 h-6 text-gray-700" />
-        ) : (
-          <Menu className="w-6 h-6 text-gray-700" />
-        )}
-      </button>
-
       {/* Mobile Overlay */}
       {isMobile && isMobileMenuOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
+          onClick={() => onClose && onClose()}
         />
       )}
 
