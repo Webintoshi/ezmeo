@@ -159,6 +159,7 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | undefined>();
   const [role, setRole] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -196,12 +197,15 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
           setUserEmail(user.email);
           const { data: profile } = await supabase
             .from("profiles")
-            .select("role")
+            .select("role, first_name, last_name")
             .eq("id", user.id)
             .single();
 
           if (profile) {
             setRole(profile.role);
+            if (profile.first_name || profile.last_name) {
+              setUserName([profile.first_name, profile.last_name].filter(Boolean).join(" "));
+            }
           }
         }
       } catch (error) {
@@ -265,10 +269,12 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
         {/* Admin Header */}
         <div className="p-4 flex items-center gap-3 border-b border-gray-200/50">
           <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-            {userEmail?.[0]?.toUpperCase() || "E"}
+            {userName?.[0]?.toUpperCase() || userEmail?.[0]?.toUpperCase() || "E"}
           </div>
           <div>
-            <span className="font-semibold text-gray-900 block leading-tight">Ezmeo Admin</span>
+            <span className="font-semibold text-gray-900 block leading-tight">
+              {userName || "Ezmeo Admin"}
+            </span>
             <span className="text-xs text-gray-500 font-medium capitalize">
               {role ? role.replace("_", " ") : "Yükleniyor..."}
             </span>
