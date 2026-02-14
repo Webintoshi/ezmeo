@@ -273,10 +273,10 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
           </div>
           <div>
             <span className="font-semibold text-gray-900 block leading-tight">
-              {userName || "Ezmeo Admin"}
+              {userName || userEmail?.split('@')[0] || "Admin"}
             </span>
             <span className="text-xs text-gray-500 font-medium capitalize">
-              {role ? role.replace("_", " ") : "Yükleniyor..."}
+              {role ? role.replace("_", " ") : userEmail ? "@" + userEmail?.split('@')[1] : "Yükleniyor..."}
             </span>
           </div>
         </div>
