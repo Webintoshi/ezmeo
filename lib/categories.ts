@@ -1,15 +1,11 @@
 import { CategoryInfo } from "@/types/product";
-import { createBrowserClient } from "@supabase/ssr";
 
 // Supabase'den kategorileri çek (Client-side)
 export async function fetchCategories(): Promise<CategoryInfo[]> {
-  try {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+  const { createServerClient } = await import("@/lib/supabase");
+  const supabase = createServerClient();
 
-    const { data, error } = await supabase
+  const { data, error } = await supabase
       .from("categories")
       .select("*")
       .eq("is_active", true)
@@ -61,37 +57,30 @@ export async function fetchCategoriesServer() {
 
 // Slug'a göre kategori getir (Client-side)
 export async function fetchCategoryBySlug(slug: string): Promise<CategoryInfo | null> {
-  try {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+  const { createServerClient } = await import("@/lib/supabase");
+  const supabase = createServerClient();
 
-    const { data, error } = await supabase
-      .from("categories")
-      .select("*")
-      .eq("slug", slug)
-      .eq("is_active", true)
-      .single();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .single();
 
-    if (error || !data) {
-      console.error("Error fetching category:", error);
-      return null;
-    }
-
-    return {
-      id: data.id,
-      name: data.name,
-      slug: data.slug,
-      description: data.description || "",
-      image: data.image || "/placeholder.jpg",
-      icon: data.icon || "📦",
-      productCount: 0,
-    };
-  } catch (error) {
-    console.error("Failed to fetch category:", error);
+  if (error || !data) {
+    console.error("Error fetching category:", error);
     return null;
   }
+
+  return {
+    id: data.id,
+    name: data.name,
+    slug: data.slug,
+    description: data.description || "",
+    image: data.image || "/placeholder.jpg",
+    icon: data.icon || "📦",
+    productCount: 0,
+  };
 }
 
 // =====================================================
@@ -100,40 +89,32 @@ export async function fetchCategoryBySlug(slug: string): Promise<CategoryInfo | 
 
 // ID'ye göre kategori getir (Admin için)
 export async function getCategoryById(id: string): Promise<CategoryInfo | undefined> {
-  try {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+  const { createServerClient } = await import("@/lib/supabase");
+  const supabase = createServerClient();
 
-    const { data, error } = await supabase
-      .from("categories")
-      .select("*")
-      .eq("id", id)
-      .single();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("id", id)
+    .single();
 
-    if (error || !data) return undefined;
+  if (error || !data) return undefined;
 
-    return {
-      id: data.id,
-      name: data.name,
-      slug: data.slug,
-      description: data.description || "",
-      image: data.image || "/placeholder.jpg",
-      icon: data.icon || "📦",
-      productCount: 0,
-    };
-  } catch {
-    return undefined;
-  }
+  return {
+    id: data.id,
+    name: data.name,
+    slug: data.slug,
+    description: data.description || "",
+    image: data.image || "/placeholder.jpg",
+    icon: data.icon || "📦",
+    productCount: 0,
+  };
 }
 
 // Kategori ekle (Admin için)
 export async function addCategory(category: Omit<CategoryInfo, "id" | "productCount">): Promise<void> {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const { createServerClient } = await import("@/lib/supabase");
+  const supabase = createServerClient();
 
   const { error } = await supabase.from("categories").insert({
     name: category.name,
@@ -148,10 +129,8 @@ export async function addCategory(category: Omit<CategoryInfo, "id" | "productCo
 
 // Kategori güncelle (Admin için)
 export async function updateCategory(id: string, updatedCategory: Partial<CategoryInfo>): Promise<void> {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const { createServerClient } = await import("@/lib/supabase");
+  const supabase = createServerClient();
 
   const { error } = await supabase
     .from("categories")
@@ -169,10 +148,8 @@ export async function updateCategory(id: string, updatedCategory: Partial<Catego
 
 // Kategori sil (Admin için)
 export async function deleteCategory(id: string): Promise<void> {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const { createServerClient } = await import("@/lib/supabase");
+  const supabase = createServerClient();
 
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) throw error;
