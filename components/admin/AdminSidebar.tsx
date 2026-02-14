@@ -189,12 +189,14 @@ export function AdminSidebar() {
     router.push("/");
   };
 
-  const filteredItems = MENU_ITEMS.filter(item => {
-    if (!role) return false;
-    if (role === 'super_admin') return true;
-    if (item.title === "Ana Sayfa") return true;
-    return hasPermission(role as UserRole, item.href);
-  });
+  const filteredItems = loading 
+    ? MENU_ITEMS
+    : MENU_ITEMS.filter(item => {
+        if (!role) return true;
+        if (role === 'super_admin') return true;
+        if (item.title === "Ana Sayfa") return true;
+        return hasPermission(role as UserRole, item.href);
+      });
 
   const handleLinkClick = () => {
     if (isMobile) {
