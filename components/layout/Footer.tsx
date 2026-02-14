@@ -227,11 +227,30 @@ export function Footer() {
               © {currentYear} {SITE_NAME}. Tüm hakları saklıdır.
             </p>
             <div className="flex items-center gap-4">
-              <span className="text-xs">Güvenli Ödeme</span>
-              <div className="flex gap-2">
-                <div className="px-2 py-1 bg-white/10 rounded text-[10px] font-semibold">VISA</div>
-                <div className="px-2 py-1 bg-white/10 rounded text-[10px] font-semibold">MC</div>
-                <div className="px-2 py-1 bg-white/10 rounded text-[10px] font-semibold">AMEX</div>
+              <a 
+                href="https://webintoshi.com/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="group flex items-center gap-2 px-3 py-1 rounded-full border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-300"
+              >
+                <div className="flex flex-col items-end">
+                  <span className="text-[6px] font-medium tracking-widest text-gray-500 uppercase leading-none mb-0.5">Designed by</span>
+                  <span className="text-[8px] font-bold tracking-[0.2em] text-white leading-none group-hover:text-gray-200 transition-colors">WEBINTOSH</span>
+                </div>
+                <div className="h-3 w-[1px] bg-white/10 mx-0.5"></div>
+                <img 
+                  src="/images/webintoshi-logo.png" 
+                  alt="Webintosh" 
+                  className="h-2.5 w-auto brightness-0 invert opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300"
+                />
+              </a>
+              <div className="flex items-center gap-2 ml-4">
+                <span className="text-xs">Güvenli Ödeme</span>
+                <div className="flex gap-2">
+                  <div className="px-2 py-1 bg-white/10 rounded text-[10px] font-semibold">VISA</div>
+                  <div className="px-2 py-1 bg-white/10 rounded text-[10px] font-semibold">MC</div>
+                  <div className="px-2 py-1 bg-white/10 rounded text-[10px] font-semibold">AMEX</div>
+                </div>
               </div>
             </div>
           </div>
