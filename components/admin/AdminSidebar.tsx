@@ -275,10 +275,10 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
           </div>
           <div>
             <span className="font-semibold text-gray-900 block leading-tight">
-              {userName || (userEmail && userEmail.includes('@') ? userEmail.split('@')[0] : "Admin")}
+              Webintosh Panel
             </span>
-            <span className="text-xs text-gray-500 font-medium capitalize">
-              {role ? role.replace("_", " ") : (userEmail && userEmail.includes('@') ? "@" + userEmail.split('@')[1] : "Yükleniyor...")}
+            <span className="text-xs text-gray-500 font-medium">
+              {userName || (userEmail && userEmail.includes('@') ? userEmail.split('@')[0] : "Yükleniyor...")}
             </span>
           </div>
         </div>
