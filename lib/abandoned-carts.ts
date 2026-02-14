@@ -34,8 +34,17 @@ async function fetchFromAPI(
     const data = await response.json();
 
     if (data.success) {
+      // Map snake_case to camelCase
+      const mappedCarts = (data.carts || []).map((cart: any) => ({
+        ...cart,
+        createdAt: cart.created_at,
+        updatedAt: cart.updated_at,
+        recoveredAt: cart.recovered_at,
+        itemCount: cart.item_count,
+        isAnonymous: cart.is_anonymous,
+      }));
       return {
-        carts: data.carts || [],
+        carts: mappedCarts,
         total: data.pagination?.total || 0,
       };
     }
