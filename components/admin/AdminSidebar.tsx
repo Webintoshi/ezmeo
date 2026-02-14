@@ -90,10 +90,10 @@ const MENU_ITEMS: MenuItem[] = [
   {
     title: "İçerik",
     icon: FileText,
-    href: "/admin/icerik",
+    href: "/admin/cms",
     submenu: [
-      { title: "Blog Yazıları", href: "/admin/icerik/blog" },
-      { title: "Sayfalar", href: "/admin/icerik/sayfalar" },
+      { title: "Blog Yazıları", href: "/admin/cms/blog" },
+      { title: "Sayfalar", href: "/admin/cms/sayfalar" },
     ],
   },
   {
