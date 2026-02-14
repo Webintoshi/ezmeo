@@ -21,35 +21,13 @@ import {
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Product, ProductVariant, NutritionalInfo, ProductCategory, ProductSubcategory } from "@/types/product";
+import { fetchCategories } from "@/lib/categories";
 
-const CATEGORIES: { value: ProductCategory; label: string; subcategories: { value: ProductSubcategory; label: string }[] }[] = [
-  {
-    value: "fistik-ezmesi",
-    label: "Fıstık Ezmesi",
-    subcategories: [
-      { value: "sekersiz", label: "Şekersiz" },
-      { value: "hurmalı", label: "Hurmalı" },
-      { value: "balli", label: "Ballı" },
-      { value: "klasik", label: "Klasik" },
-    ],
-  },
-  {
-    value: "findik-ezmesi",
-    label: "Fındık Ezmesi",
-    subcategories: [
-      { value: "sutlu-findik-kremasi", label: "Sütlü Fındık Kreması" },
-      { value: "kakaolu", label: "Kakaolu" },
-    ],
-  },
-  {
-    value: "kuruyemis",
-    label: "Kuruyemiş",
-    subcategories: [
-      { value: "cig", label: "Çiğ" },
-      { value: "kavrulmus", label: "Kavrulmuş" },
-    ],
-  },
-];
+interface CategoryOption {
+  value: string;
+  label: string;
+  subcategories: { value: string; label: string }[];
+}
 
 const PREDEFINED_TAGS = [
   "doğal", "vegan", "glutensiz", "sekersiz", "organik", "sporcu", "enerji",
@@ -70,6 +48,31 @@ export default function ProductForm({ productId }: ProductFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  // Load categories from database
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const cats = await fetchCategories();
+        const mapped: CategoryOption[] = cats.map(cat => ({
+          value: cat.slug,
+          label: cat.name,
+          subcategories: []
+        }));
+        setCategories(mapped);
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    }
+    loadCategories();
+  }, []);
+
+  // Get subcategories for selected category
+  const categorySubcategories = categories.find(c => c.value === formData.category)?.subcategories || [];
 
   const [formData, setFormData] = useState({
     name: "",
@@ -178,8 +181,6 @@ export default function ProductForm({ productId }: ProductFormProps) {
   useEffect(() => {
     loadProductData();
   }, [loadProductData]);
-
-  const categoryOptions = CATEGORIES.find(c => c.value === formData.category)?.subcategories || [];
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -665,8 +666,8 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         )}
                         required
                       >
-                        <option value="">Kategori Seçin</option>
-                        {CATEGORIES.map(cat => (
+                        <option value="">{loadingCategories ? "Yükleniyor..." : "Kategori Seçin"}</option>
+                        {categories.map(cat => (
                           <option key={cat.value} value={cat.value}>{cat.label}</option>
                         ))}
                       </select>
@@ -696,7 +697,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         required
                       >
                         <option value="">{formData.category ? "Alt Kategori Seçin" : "Önce kategori seçin"}</option>
-                        {categoryOptions.map(sub => (
+                        {categorySubcategories.map(sub => (
                           <option key={sub.value} value={sub.value}>{sub.label}</option>
                         ))}
                       </select>
