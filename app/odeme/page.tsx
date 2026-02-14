@@ -63,6 +63,32 @@ export default function CheckoutPage() {
   const [accountPasswordConfirm, setAccountPasswordConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  // Update abandoned cart with customer info when they enter details
+  const updateAbandonedCartWithCustomerInfo = async (email: string, firstName: string, lastName: string, phone: string) => {
+    if (typeof window === "undefined") return;
+    
+    const sessionId = localStorage.getItem("ezmeo_session_id");
+    if (!sessionId) return;
+
+    try {
+      await fetch('/api/abandoned-carts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          phone,
+          is_anonymous: false,
+          status: 'active'
+        })
+      });
+    } catch (error) {
+      console.error("Failed to update cart with customer info:", error);
+    }
+  };
+
   const [selectedShippingMethod, setSelectedShippingMethod] = useState("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
 
@@ -350,7 +376,15 @@ export default function CheckoutPage() {
                         <input
                           type="text"
                           value={shippingInfo.firstName}
-                          onChange={(e) => setShippingInfo({ ...shippingInfo, firstName: e.target.value })}
+                          onChange={(e) => {
+                            setShippingInfo({ ...shippingInfo, firstName: e.target.value });
+                            updateAbandonedCartWithCustomerInfo(
+                              contactEmail,
+                              e.target.value,
+                              shippingInfo.lastName,
+                              shippingInfo.phone
+                            );
+                          }}
                           placeholder="Adınız"
                           className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300"
                         />
@@ -360,7 +394,15 @@ export default function CheckoutPage() {
                         <input
                           type="text"
                           value={shippingInfo.lastName}
-                          onChange={(e) => setShippingInfo({ ...shippingInfo, lastName: e.target.value })}
+                          onChange={(e) => {
+                            setShippingInfo({ ...shippingInfo, lastName: e.target.value });
+                            updateAbandonedCartWithCustomerInfo(
+                              contactEmail,
+                              shippingInfo.firstName,
+                              e.target.value,
+                              shippingInfo.phone
+                            );
+                          }}
                           placeholder="Soyadınız"
                           className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300"
                         />
@@ -372,7 +414,15 @@ export default function CheckoutPage() {
                       <input
                         type="email"
                         value={contactEmail}
-                        onChange={(e) => setContactEmail(e.target.value)}
+                        onChange={(e) => {
+                          setContactEmail(e.target.value);
+                          updateAbandonedCartWithCustomerInfo(
+                            e.target.value,
+                            shippingInfo.firstName,
+                            shippingInfo.lastName,
+                            shippingInfo.phone
+                          );
+                        }}
                         placeholder="ornek@email.com"
                         disabled={!!user}
                         className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-500"
@@ -465,7 +515,15 @@ export default function CheckoutPage() {
                       <input
                         type="tel"
                         value={shippingInfo.phone}
-                        onChange={(e) => setShippingInfo({ ...shippingInfo, phone: e.target.value })}
+                        onChange={(e) => {
+                          setShippingInfo({ ...shippingInfo, phone: e.target.value });
+                          updateAbandonedCartWithCustomerInfo(
+                            contactEmail,
+                            shippingInfo.firstName,
+                            shippingInfo.lastName,
+                            e.target.value
+                          );
+                        }}
                         placeholder="05XX XXX XX XX"
                         className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors bg-white text-gray-900 placeholder:text-gray-300"
                       />
