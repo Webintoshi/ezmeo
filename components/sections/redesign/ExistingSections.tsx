@@ -42,45 +42,7 @@ export function HeroSection({ slides }: { slides: HeroSlide[] }) {
   }, [slides.length]);
 
   if (!isLoaded || slides.length === 0) {
-    return (
-      <section className="relative h-[70vh] md:h-[80vh] bg-gradient-to-br from-red-50 via-white to-red-100 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%237B1113%22%20fill-opacity%3D%220.03%22%3E%3Cpath%20d%3D%22M36%2034h-2v-2h-2v2h-4v2h4v2h2v-2h4v-2zm-6-6h-2v-2h-2v2h-4v2h4v2h2v-2h4v-2zm-6-6h-2v-2h-2v2h-4v2h4v2h2v-2h4v-2zM36%2022h-2v-2h-2v2h-4v2h4v2h2v-2h4v-2zm-6-6h-2v-2h-2v2h-4v2h4v2h2v-2h4v-2zm-6-6h-2v-2h-2v2h-4v2h4v2h2v-2h4v-2z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-50" />
-        <div className="container mx-auto px-4 h-full flex items-center">
-          <div className="max-w-2xl">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <span className="inline-block px-4 py-1.5 bg-red-600 text-white text-sm font-medium rounded-full mb-6">
-                Yeni Sezon
-              </span>
-              <h1 className="text-5xl md:text-7xl font-black text-gray-900 mb-6 leading-tight">
-                Doğal <span className="text-red-700">Fıstık</span> Ezmesi
-              </h1>
-              <p className="text-xl text-gray-600 mb-8 max-w-lg">
-                %100 doğal, katkısız ve organik. En taze fıstık ezmesi çeşitleri kapınızda.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Link
-                  href={ROUTES.products}
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-red-700 text-white font-semibold rounded-full hover:bg-red-800 transition-all hover:scale-105 hover:shadow-xl"
-                >
-                  Ürünleri Keşfet
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-                <Link
-                  href="/hakkimizda"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-50 transition-all border border-gray-200"
-                >
-                  Detaylı Bilgi
-                </Link>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-    );
+    return null;
   }
 
   const slide = slides[current];
