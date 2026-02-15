@@ -53,7 +53,7 @@ export default function RedesignHome() {
 
   return (
     <main className="min-h-screen">
-      <HeroSection />
+      <HeroSection slides={slides} />
       
       {/* Redesign Sections */}
       <ShopByCategory />
