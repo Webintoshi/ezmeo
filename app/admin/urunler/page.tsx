@@ -69,7 +69,7 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const [loading, setLoading] = useState(false);
   const [sortBy, setSortBy] = useState<"name" | "price" | "stock" | "newest">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -304,15 +304,6 @@ export default function ProductsPage() {
               {/* View Mode */}
               <div className="flex bg-gray-50 p-1.5 rounded-2xl border border-transparent">
                 <button
-                  onClick={() => setViewMode("grid")}
-                  className={cn(
-                    "p-2 rounded-xl transition-all",
-                    viewMode === "grid" ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600"
-                  )}
-                >
-                  <Grid className="w-4 h-4" />
-                </button>
-                <button
                   onClick={() => setViewMode("table")}
                   className={cn(
                     "p-2 rounded-xl transition-all",
@@ -320,6 +311,15 @@ export default function ProductsPage() {
                   )}
                 >
                   <ListIcon className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={cn(
+                    "p-2 rounded-xl transition-all",
+                    viewMode === "grid" ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600"
+                  )}
+                >
+                  <Grid className="w-4 h-4" />
                 </button>
               </div>
             </div>
