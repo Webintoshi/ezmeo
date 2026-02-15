@@ -119,7 +119,10 @@ async function getProductsByCategory(categorySlug: string) {
       .order("created_at", { ascending: false });
     
     if (error || !products) return [];
-    return (products as DBProduct[]).map(transformProduct);
+    
+    const transformedProducts = (products as DBProduct[]).map(transformProduct);
+    
+    return transformedProducts.filter(p => p.variants && p.variants.length > 0);
   } catch {
     return [];
   }
