@@ -15,7 +15,6 @@ export async function fetchCategories(): Promise<CategoryInfo[]> {
   const { data, error } = await supabase
       .from("categories")
       .select("*")
-      .eq("is_active", true)
       .order("sort_order", { ascending: true });
 
     if (error) {
@@ -31,6 +30,11 @@ export async function fetchCategories(): Promise<CategoryInfo[]> {
       image: cat.image || "/placeholder.jpg",
       icon: cat.icon || "📦",
       productCount: 0,
+      parent_id: cat.parent_id,
+      sort_order: cat.sort_order || 0,
+      is_active: cat.is_active !== false,
+      seo_title: cat.seo_title || "",
+      seo_description: cat.seo_description || "",
     })) || [];
 }
 
@@ -117,6 +121,11 @@ export async function addCategory(category: Omit<CategoryInfo, "id" | "productCo
     description: category.description,
     image: category.image,
     icon: category.icon,
+    parent_id: (category as any).parent_id || null,
+    sort_order: (category as any).sort_order || 0,
+    is_active: (category as any).is_active !== false,
+    seo_title: (category as any).seo_title || null,
+    seo_description: (category as any).seo_description || null,
   });
 
   if (error) throw error;
@@ -134,6 +143,11 @@ export async function updateCategory(id: string, updatedCategory: Partial<Catego
       description: updatedCategory.description,
       image: updatedCategory.image,
       icon: updatedCategory.icon,
+      parent_id: (updatedCategory as any).parent_id || null,
+      sort_order: (updatedCategory as any).sort_order || 0,
+      is_active: (updatedCategory as any).is_active !== false,
+      seo_title: (updatedCategory as any).seo_title || null,
+      seo_description: (updatedCategory as any).seo_description || null,
     })
     .eq("id", id);
 

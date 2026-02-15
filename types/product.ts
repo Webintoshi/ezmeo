@@ -191,6 +191,12 @@ export interface CategoryInfo {
   image: string;
   icon: string;
   productCount: number;
+  parent_id?: string | null;
+  sort_order?: number;
+  is_active?: boolean;
+  seo_title?: string;
+  seo_description?: string;
+  children?: CategoryInfo[];
 }
 
 // Ürün Filtreleri
