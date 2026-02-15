@@ -106,7 +106,7 @@ async function fetchBestsellers(limit: number): Promise<FeaturedProduct[]> {
     .from('products')
     .select('*, variants:product_variants(*)')
     .eq('status', 'active')
-    .order('sales_count', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(limit);
 
   if (error || !data) {
