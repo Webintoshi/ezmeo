@@ -3,7 +3,7 @@ export default function PromotionalBannersPreload() {
     <>
       <link
         rel="preload"
-        href="/hero banner fıstık ezmeleri.jpg"
+        href="/hero-banner-fistik-ezmeleri.jpg"
         as="image"
         type="image/jpeg"
       />

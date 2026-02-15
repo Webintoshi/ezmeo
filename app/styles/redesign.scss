@@ -409,7 +409,7 @@
   // Scroll Track - 9:16 Vertical Banners with CSS Scroll Snap
   &__track {
     display: flex;
-    gap: 8px;
+    gap: 16px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     scroll-behavior: smooth;
@@ -423,7 +423,7 @@
       display: none;
     }
 
-    @include tablet {
+    @include desktop {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: $spacing-md;
@@ -435,7 +435,7 @@
   &__grid {
     display: none;
 
-    @include tablet {
+    @include desktop {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: $spacing-md;
@@ -554,7 +554,7 @@
     text-align: center;
     background: linear-gradient(180deg, #000000 0%, #1d1d1f 100%);
     flex-shrink: 0;
-    width: calc(92vw - 16px);
+    width: 88vw;
     scroll-snap-align: center;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08),
                 inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -583,11 +583,16 @@
       z-index: 2;
     }
 
-    @include tablet {
+    @include desktop {
       width: 100%;
       aspect-ratio: 3/4;
       border-radius: 24px;
       scroll-snap-align: none;
+    }
+
+    @media (min-width: 600px) and (max-width: 1023px) {
+      aspect-ratio: 3/4;
+      width: 70vw;
     }
 
     @media (min-width: 1200px) {

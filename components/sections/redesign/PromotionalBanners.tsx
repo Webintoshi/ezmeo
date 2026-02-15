@@ -47,7 +47,7 @@ export default function PromotionalBanners() {
           setBanners([
             {
               id: 1,
-              image: "/hero banner fıstık ezmeleri.jpg",
+              image: "/hero-banner-fistik-ezmeleri.jpg",
               title: "Doğal Fıstık Ezmesi",
               subtitle: "Her Gün Taze",
               buttonText: "İncele",
@@ -225,7 +225,7 @@ export default function PromotionalBanners() {
                     alt={banner.title}
                     fill
                     className="promo-banners__image"
-                    sizes="(max-width: 768px) 92vw, (max-width: 1024px) 33vw, 25vw"
+                    sizes="(max-width: 600px) 90vw, (max-width: 1024px) 70vw, 33vw"
                     loading={index === 0 ? "eager" : "lazy"}
                     decoding="async"
                     priority={index === 0}
