@@ -1,10 +1,10 @@
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PromoBanner {
   id: number;
@@ -19,6 +19,8 @@ interface PromoBanner {
 export default function PromotionalBanners() {
   const [banners, setBanners] = useState<PromoBanner[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function fetchBanners() {
@@ -37,7 +39,6 @@ export default function PromotionalBanners() {
         if (data?.value?.banners) {
           setBanners(data.value.banners);
         } else {
-            // Fallback default banners if DB is empty
             setBanners([
                 {
                     id: 1,
@@ -77,6 +78,27 @@ export default function PromotionalBanners() {
     fetchBanners();
   }, []);
 
+  const scroll = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const scrollAmount = scrollRef.current.offsetWidth;
+      scrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth"
+      });
+    }
+  };
+
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const scrollLeft = scrollRef.current.scrollLeft;
+      const cardWidth = scrollRef.current.offsetWidth;
+      const newIndex = Math.round(scrollLeft / cardWidth);
+      setCurrentIndex(newIndex);
+    }
+  };
+
+  const sortedBanners = banners.sort((a,b) => a.order - b.order);
+
   if (loading) {
       return <section className="redesign-section redesign-section--alt" id="promotional-banners"><div className="redesign-container"><div className="promo-banners__grid">Loading...</div></div></section>
   }
@@ -84,15 +106,29 @@ export default function PromotionalBanners() {
   return (
     <section className="redesign-section redesign-section--alt" id="promotional-banners">
       <div className="redesign-container">
-        <div className="promo-banners__grid">
-          {banners.sort((a,b) => a.order - b.order).map((banner) => (
-             <div key={banner.id} className="promo-banners__card">
+        <div className="promo-banners__carousel">
+          <button 
+            className="promo-banners__scroll-btn promo-banners__scroll-btn--left"
+            onClick={() => scroll("left")}
+            aria-label="Önceki banner"
+          >
+            <ChevronLeft size={24} />
+          </button>
+
+          <div 
+            ref={scrollRef}
+            className="promo-banners__track"
+            onScroll={handleScroll}
+          >
+            {sortedBanners.map((banner) => (
+              <div key={banner.id} className="promo-banners__card">
                 <Image
-                  src={banner.image || "/placeholder.jpg"}
+                  src={banner.image || "/placeholder.svg"}
                   alt={banner.title}
                   fill
                   className="promo-banners__image"
                   sizes="(max-width: 768px) 100vw, 33vw"
+                  unoptimized
                 />
                 <div className="promo-banners__content">
                   <span className="promo-banners__subtitle">{banner.subtitle}</span>
@@ -102,6 +138,34 @@ export default function PromotionalBanners() {
                   </Link>
                 </div>
               </div>
+            ))}
+          </div>
+
+          <button 
+            className="promo-banners__scroll-btn promo-banners__scroll-btn--right"
+            onClick={() => scroll("right")}
+            aria-label="Sonraki banner"
+          >
+            <ChevronRight size={24} />
+          </button>
+        </div>
+
+        <div className="promo-banners__dots">
+          {sortedBanners.map((_, idx) => (
+            <button
+              key={idx}
+              className={`promo-banners__dot ${idx === currentIndex ? 'promo-banners__dot--active' : ''}`}
+              onClick={() => {
+                if (scrollRef.current) {
+                  const scrollAmount = scrollRef.current.offsetWidth;
+                  scrollRef.current.scrollTo({
+                    left: idx * scrollAmount,
+                    behavior: 'smooth'
+                  });
+                }
+              }}
+              aria-label={`Banner ${idx + 1}'e git`}
+            />
           ))}
         </div>
       </div>
