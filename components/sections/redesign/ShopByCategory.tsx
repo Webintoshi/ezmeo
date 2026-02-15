@@ -9,6 +9,11 @@ import { fetchCategories } from "@/lib/categories";
 export default function ShopByCategory() {
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  const handleImageError = (categoryId: string) => {
+    setImageErrors(prev => ({ ...prev, [categoryId]: true }));
+  };
 
   useEffect(() => {
     async function loadCategories() {
@@ -81,11 +86,12 @@ export default function ShopByCategory() {
             >
               <div className="shop-by-category__image-wrapper-horizontal">
                 <Image
-                  src={cat.image || "/placeholder.jpg"}
+                  src={imageErrors[cat.id] ? "/placeholder.jpg" : (cat.image || "/placeholder.jpg")}
                   alt={cat.name}
                   fill
                   className="shop-by-category__image-horizontal"
                   sizes="(max-width: 768px) 100vw, 33vw"
+                  onError={() => handleImageError(cat.id)}
                 />
               </div>
               
