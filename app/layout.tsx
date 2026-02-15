@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
@@ -11,14 +11,16 @@ import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 import TrackingProvider from "@/components/TrackingProvider";
 import { Toaster } from "sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const quenda = localFont({
+  src: [
+    {
+      path: "./Quenda-Medium.otf",
+      weight: "500",
+      style: "normal",
+    },
+  ],
+  variable: "--font-quenda",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -80,7 +82,7 @@ export default function RootLayout({
   return (
     <html lang="tr" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${quenda.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
         <TrackingProvider>

@@ -67,8 +67,8 @@
   --radius-xl: var(--radius-xl);
   --radius-2xl: var(--radius-2xl);
 
-  --font-sans: var(--font-geist-sans), "Inter", sans-serif;
-  --font-mono: var(--font-geist-mono), monospace;
+  --font-sans: var(--font-quenda), "Inter", sans-serif;
+  --font-mono: var(--font-quenda), monospace;
 }
 
 /* Custom Utilities for Clean Luxury Design */
