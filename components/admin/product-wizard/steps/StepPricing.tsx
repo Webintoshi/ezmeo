@@ -102,8 +102,8 @@ export function StepPricing({
       {/* KDV Oranı */}
       <div className="bg-gray-50 rounded-2xl p-6">
         <label className="text-sm font-bold text-gray-700 mb-3 block">KDV Oranı</label>
-        <div className="flex items-center gap-2">
-          {[1, 8, 10, 20].map((rate) => (
+        <div className="flex items-center gap-2 flex-wrap">
+          {[0, 1, 8, 10, 20].map((rate) => (
             <button
               key={rate}
               type="button"
@@ -120,7 +120,9 @@ export function StepPricing({
           ))}
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          Fiyatlara KDV {taxRate}% olarak eklenecek
+          {taxRate === 0 
+            ? "KDV uygulanmayacak" 
+            : `Fiyatlara KDV ${taxRate}% olarak eklenecek`}
         </p>
       </div>
 

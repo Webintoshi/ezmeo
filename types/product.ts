@@ -22,7 +22,7 @@ export type ProductStatus = "draft" | "published" | "archived" | "scheduled";
 export type NutritionBasis = "per_100g" | "per_serving";
 
 // KDV Oranları
-export type TaxRate = 1 | 8 | 10 | 20;
+export type TaxRate = 0 | 1 | 8 | 10 | 20;
 
 // Alerjenler
 export type Allergen = 
