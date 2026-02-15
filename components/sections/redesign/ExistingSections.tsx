@@ -58,13 +58,26 @@ export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
           transition={{ duration: 0.7 }}
           className="absolute inset-0"
         >
-          <Image
-            src={slide.desktop}
-            alt={slide.alt}
-            fill
-            className="object-cover"
-            priority
-          />
+          <div className="absolute inset-0 hidden md:block">
+            <Image
+              src={slide.desktop}
+              alt={slide.alt}
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+          </div>
+          <div className="absolute inset-0 block md:hidden">
+            <Image
+              src={slide.mobile || slide.desktop}
+              alt={slide.alt}
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+          </div>
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
         </motion.div>
       </AnimatePresence>
