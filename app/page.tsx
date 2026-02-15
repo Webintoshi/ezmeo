@@ -1,11 +1,7 @@
 import { Metadata } from "next";
 import { Hero } from "@/components/sections/Hero";
 import { Marquee } from "@/components/sections/Marquee";
-import { HeroProducts } from "@/components/sections/HeroProducts";
-import { ProductShowcase } from "@/components/sections/ProductShowcase";
-import { WhyChooseUs } from "@/components/sections/WhyChooseUs";
-import { SpecialOffer } from "@/components/sections/SpecialOffer";
-import { Testimonials } from "@/components/sections/Testimonials";
+import { ProductGrid } from "@/components/sections/ProductGrid";
 import { AnnouncementBar } from "@/components/sections/AnnouncementBar";
 
 export const metadata: Metadata = {
@@ -27,11 +23,7 @@ export default function Home() {
       <AnnouncementBar />
       <Hero />
       <Marquee />
-      <HeroProducts />
-      <ProductShowcase />
-      <WhyChooseUs />
-      <SpecialOffer />
-      <Testimonials />
+      <ProductGrid />
       
       <script
         type="application/ld+json"

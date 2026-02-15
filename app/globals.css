@@ -84,9 +84,8 @@
 
 body {
   background: #FAFAFA;
-  /* Clean off-white background */
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: var(--font-quenda), system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
 }
 
