@@ -10,8 +10,10 @@ import { SearchInput } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ProductCardSkeleton } from "@/components/ui/skeleton";
-import { Grid3X3, List, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Grid3X3, List, SlidersHorizontal, ChevronLeft, ChevronRight, X, ShoppingCart, Heart, Star } from "lucide-react";
+import { cn, formatPrice } from "@/lib/utils";
+import Link from "next/link";
 
 interface ProductsPageClientProps {
   initialProducts: Product[];
@@ -62,6 +64,7 @@ function parseFiltersFromParams(searchParams: URLSearchParams): {
 function ProductsPageContent({ initialProducts, categoryCounts }: ProductsPageClientProps) {
   const searchParams = useSearchParams();
   const [isInitialized, setIsInitialized] = React.useState(false);
+  const [quickViewProduct, setQuickViewProduct] = React.useState<Product | null>(null);
 
   const initialState = React.useMemo(() => parseFiltersFromParams(searchParams), [searchParams]);
 
@@ -330,7 +333,7 @@ function ProductsPageContent({ initialProducts, categoryCounts }: ProductsPageCl
                   )}
                 >
                   {paginatedProducts.map((product, index) => (
-                    <ProductCard key={product.id} product={product} index={index} viewMode={viewMode} />
+                    <ProductCard key={product.id} product={product} index={index} viewMode={viewMode} onQuickView={setQuickViewProduct} />
                   ))}
                 </div>
 
@@ -377,6 +380,98 @@ function ProductsPageContent({ initialProducts, categoryCounts }: ProductsPageCl
           </main>
         </div>
       </div>
+
+      {/* Quick View Modal */}
+      <Sheet open={!!quickViewProduct} onOpenChange={(open) => !open && setQuickViewProduct(null)}>
+        <SheetContent side="right" className="w-full max-w-2xl overflow-y-auto p-0">
+          {quickViewProduct && (
+            <div className="relative">
+              <button
+                onClick={() => setQuickViewProduct(null)}
+                className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2">
+                {/* Image */}
+                <div className="relative aspect-square bg-gray-100">
+                  {quickViewProduct.images && quickViewProduct.images.length > 0 ? (
+                    <img
+                      src={quickViewProduct.images[0]}
+                      alt={quickViewProduct.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-6xl">
+                      {quickViewProduct.category === "fistik-ezmesi" && "🥜"}
+                      {quickViewProduct.category === "findik-ezmesi" && "🌰"}
+                      {quickViewProduct.category === "kuruyemis" && "🥔"}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Details */}
+                <div className="p-6 flex flex-col">
+                  <div className="mb-4">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{quickViewProduct.name}</h2>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className={cn("w-4 h-4", i < Math.round(quickViewProduct.rating || 5) ? "text-yellow-400 fill-yellow-400" : "text-gray-300")} />
+                        ))}
+                      </div>
+                      <span className="text-sm text-gray-500">({quickViewProduct.reviewCount || 0} değerlendirme)</span>
+                    </div>
+                  </div>
+                  
+                  <p className="text-gray-600 mb-4">{quickViewProduct.shortDescription || quickViewProduct.description}</p>
+                  
+                  {/* Variants */}
+                  <div className="mb-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Seçenekler</p>
+                    <div className="flex flex-wrap gap-2">
+                      {quickViewProduct.variants?.map((variant) => (
+                        <button
+                          key={variant.id}
+                          className="px-4 py-2 border-2 border-gray-200 rounded-lg hover:border-primary transition-colors text-sm"
+                        >
+                          {variant.name} - {formatPrice(variant.price)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="mt-auto">
+                    <div className="flex items-center gap-4 mb-4">
+                      <span className="text-3xl font-bold text-primary">
+                        {formatPrice(quickViewProduct.variants?.[0]?.price || 0)}
+                      </span>
+                      {quickViewProduct.variants?.[0]?.originalPrice && (
+                        <span className="text-lg text-gray-400 line-through">
+                          {formatPrice(quickViewProduct.variants[0].originalPrice)}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/urun/${quickViewProduct.slug}`}
+                        className="flex-1 px-6 py-3 bg-primary text-white text-center font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+                      >
+                        Ürünü İncele
+                      </Link>
+                      <button className="w-12 h-12 border-2 border-gray-200 rounded-lg flex items-center justify-center hover:border-primary hover:text-primary transition-colors">
+                        <Heart className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

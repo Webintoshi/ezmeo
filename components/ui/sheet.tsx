@@ -15,7 +15,11 @@ export function Sheet({ open, onOpenChange, children }: SheetProps) {
   return (
     <Dialog open={open} onClose={onOpenChange} className="relative z-50">
       <DialogBackdrop className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" />
-      {children}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 overflow-hidden pointer-events-auto">
+          {open && children}
+        </div>
+      </div>
     </Dialog>
   );
 }
@@ -34,31 +38,15 @@ export function SheetContent({ side = "right", className, children }: SheetConte
     bottom: "bottom-0 left-0 w-full border-t",
   };
 
-  const transformClasses = {
-    left: "-translate-x-full",
-    right: "translate-x-full",
-    top: "-translate-y-full",
-    bottom: "translate-y-full",
-  };
-
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      <div className="absolute inset-0 overflow-hidden pointer-events-auto">
-        <div
-          className={cn(
-            "fixed inset-y-0 bg-white p-6 shadow-xl transform transition-transform duration-300 ease-out pointer-events-auto",
-            sideClasses[side],
-            transformClasses[side],
-            side === "left" && "data-[enter]:translate-x-0",
-            side === "right" && "data-[enter]:translate-x-0",
-            side === "top" && "data-[enter]:translate-y-0",
-            side === "bottom" && "data-[enter]:translate-y-0",
-            className
-          )}
-        >
-          {children}
-        </div>
-      </div>
+    <div
+      className={cn(
+        "fixed inset-y-0 bg-white shadow-xl pointer-events-auto",
+        sideClasses[side],
+        className
+      )}
+    >
+      {children}
     </div>
   );
 }
