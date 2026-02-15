@@ -21,9 +21,11 @@ export default function PromotionalBanners() {
   const [banners, setBanners] = useState<PromoBanner[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+  const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     async function fetchBanners() {
@@ -139,6 +141,26 @@ export default function PromotionalBanners() {
 
   const sortedBanners = [...banners].sort((a, b) => a.order - b.order);
 
+  const autoPlayTimeout = 5000;
+
+  useEffect(() => {
+    if (!isPaused && sortedBanners.length > 1 && !loading) {
+      autoPlayRef.current = setInterval(() => {
+        setCurrentIndex((prev) => (prev + 1) % sortedBanners.length);
+        goToSlide((currentIndex + 1) % sortedBanners.length);
+      }, autoPlayTimeout);
+    }
+
+    return () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+      }
+    };
+  }, [isPaused, sortedBanners.length, loading, currentIndex]);
+
+  const handlePause = () => setIsPaused(true);
+  const handleResume = () => setIsPaused(false);
+
   if (loading) {
     return (
       <section className="redesign-section redesign-section--alt" id="promotional-banners">
@@ -154,31 +176,48 @@ export default function PromotionalBanners() {
   }
 
   return (
-    <section className="redesign-section redesign-section--alt" id="promotional-banners">
+    <section 
+      className="redesign-section redesign-section--alt" 
+      id="promotional-banners"
+      aria-label="Promosyon Bannerları"
+    >
       <div className="redesign-container">
         <div 
           className="promo-banners__carousel"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onMouseEnter={handlePause}
+          onMouseLeave={handleResume}
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Promosyon Bannerları"
         >
           <button 
             className="promo-banners__scroll-btn promo-banners__scroll-btn--left"
             onClick={() => scroll("left")}
             aria-label="Önceki banner"
+            disabled={currentIndex === 0}
+            type="button"
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft size={24} aria-hidden="true" />
           </button>
 
           <div 
             ref={scrollRef}
             className="promo-banners__track"
             onScroll={handleScroll}
+            role="group"
+            aria-live="polite"
+            aria-atomic="false"
           >
             {sortedBanners.map((banner, index) => (
               <div 
                 key={banner.id} 
                 className="promo-banners__card"
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${index + 1} / ${sortedBanners.length}`}
               >
                 <div className="promo-banners__image-wrapper">
                   <Image
@@ -186,17 +225,23 @@ export default function PromotionalBanners() {
                     alt={banner.title}
                     fill
                     className="promo-banners__image"
-                    sizes="(max-width: 768px) 85vw, (max-width: 1024px) 33vw, 25vw"
+                    sizes="(max-width: 768px) 92vw, (max-width: 1024px) 33vw, 25vw"
+                    loading={index === 0 ? "eager" : "lazy"}
+                    decoding="async"
                     priority={index === 0}
                   />
                 </div>
                 <div className="promo-banners__overlay" />
                 <div className="promo-banners__content">
                   <span className="promo-banners__subtitle">{banner.subtitle}</span>
-                  <h3 className="promo-banners__title">{banner.title}</h3>
-                  <Link href={banner.buttonLink} className="promo-banners__button">
+                  <h2 className="promo-banners__title">{banner.title}</h2>
+                  <Link 
+                    href={banner.buttonLink} 
+                    className="promo-banners__button"
+                    aria-label={`${banner.title} koleksiyonuna git`}
+                  >
                     {banner.buttonText}
-                    <ChevronRight size={16} />
+                    <ChevronRight size={16} aria-hidden="true" />
                   </Link>
                 </div>
               </div>
@@ -207,18 +252,27 @@ export default function PromotionalBanners() {
             className="promo-banners__scroll-btn promo-banners__scroll-btn--right"
             onClick={() => scroll("right")}
             aria-label="Sonraki banner"
+            disabled={currentIndex === sortedBanners.length - 1}
+            type="button"
           >
-            <ChevronRight size={24} />
+            <ChevronRight size={24} aria-hidden="true" />
           </button>
         </div>
 
-        <div className="promo-banners__dots">
+        <div 
+          className="promo-banners__dots"
+          role="tablist"
+          aria-label="Banner navigasyonu"
+        >
           {sortedBanners.map((_, idx) => (
             <button
               key={idx}
               className={`promo-banners__dot ${idx === currentIndex ? 'promo-banners__dot--active' : ''}`}
               onClick={() => goToSlide(idx)}
               aria-label={`Banner ${idx + 1}'e git`}
+              aria-selected={idx === currentIndex}
+              role="tab"
+              type="button"
             />
           ))}
         </div>

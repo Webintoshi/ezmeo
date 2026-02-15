@@ -13,6 +13,7 @@ import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
 import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 import TrackingProvider from "@/components/TrackingProvider";
 import { Toaster } from "sonner";
+import PromotionalBannersPreload from "@/components/preload/PromotionalBannersPreload";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -100,6 +101,7 @@ export default function RootLayout({
         className={`${lora.variable} ${inter.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
+        <PromotionalBannersPreload />
         <TrackingProvider>
           <AnalyticsTracker />
           <StoreInfoProvider>
