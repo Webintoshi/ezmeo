@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight, Leaf, Shield, Check, Truck, Clock, Sparkles, Mail, Send, Instagram, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
+import { Marquee } from "../Marquee";
 
 // Types from PremiumHome
 interface HeroSlide {
@@ -24,11 +25,13 @@ interface HeroSlide {
 
 export function HeroSection({ slides }: { slides: HeroSlide[] }) {
   const [current, setCurrent] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    setIsVisible(true);
-  }, []);
+    if (slides.length > 0) {
+      setIsLoaded(true);
+    }
+  }, [slides]);
 
   useEffect(() => {
     if (slides.length <= 1) return;
@@ -38,7 +41,7 @@ export function HeroSection({ slides }: { slides: HeroSlide[] }) {
     return () => clearInterval(interval);
   }, [slides.length]);
 
-  if (slides.length === 0) {
+  if (!isLoaded || slides.length === 0) {
     return (
       <section className="relative h-[70vh] md:h-[80vh] bg-gradient-to-br from-red-50 via-white to-red-100 overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%237B1113%22%20fill-opacity%3D%220.03%22%3E%3Cpath%20d%3D%22M36%2034h-2v-2h-2v2h-4v2h4v2h2v-2h4v-2zm-6-6h-2v-2h-2v2h-4v2h4v2h2v-2h4v-2zm-6-6h-2v-2h-2v2h-4v2h4v2h2v-2h4v-2zM36%2022h-2v-2h-2v2h-4v2h4v2h2v-2h4v-2zm-6-6h-2v-2h-2v2h-4v2h4v2h2v-2h4v-2zm-6-6h-2v-2h-2v2h-4v2h4v2h2v-2h4v-2z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-50" />
@@ -178,27 +181,7 @@ export function HeroSection({ slides }: { slides: HeroSlide[] }) {
 }
 
 export function MarqueeSection() {
-  const items = [
-    { text: "%100 Doğal", icon: Leaf },
-    { text: "Katkısız", icon: Shield },
-    { text: "Organik Sertifikalı", icon: Check },
-    { text: "Aynı Gün Kargo", icon: Truck },
-    { text: "Taze Üretim", icon: Clock },
-    { text: "Vegan Dostu", icon: Sparkles },
-  ];
-
-  return (
-    <section className="py-4 bg-red-700 overflow-hidden">
-      <div className="flex animate-marquee whitespace-nowrap">
-        {[...items, ...items, ...items].map((item, idx) => (
-          <div key={idx} className="flex items-center gap-2 mx-8">
-            <item.icon className="w-4 h-4 text-white" />
-            <span className="text-white font-medium text-sm">{item.text}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
+  return <Marquee />;
 }
 
 export function Newsletter() {

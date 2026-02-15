@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { formatPrice, cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
+import { Marquee } from "./Marquee";
 
 interface Product {
   id: string;
@@ -398,27 +399,7 @@ function FeaturedProducts() {
 }
 
 function MarqueeSection() {
-  const items = [
-    { text: "%100 Doğal", icon: Leaf },
-    { text: "Katkısız", icon: Shield },
-    { text: "Organik Sertifikalı", icon: Check },
-    { text: "Aynı Gün Kargo", icon: Truck },
-    { text: "Taze Üretim", icon: Clock },
-    { text: "Vegan Dostu", icon: Sparkles },
-  ];
-
-  return (
-    <section className="py-4 bg-red-700 overflow-hidden">
-      <div className="flex animate-marquee whitespace-nowrap">
-        {[...items, ...items, ...items].map((item, idx) => (
-          <div key={idx} className="flex items-center gap-2 mx-8">
-            <item.icon className="w-4 h-4 text-white" />
-            <span className="text-white font-medium text-sm">{item.text}</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
+  return <Marquee />;
 }
 
 function Benefits() {
