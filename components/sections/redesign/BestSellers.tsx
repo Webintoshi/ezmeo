@@ -6,8 +6,9 @@ import { Product } from "@/types/product";
 import { getAllProducts } from "@/lib/products";
 import { ROUTES } from "@/lib/constants";
 import { ProductCard } from "@/components/product/ProductCard";
-import { Grid3X3, List, Loader2, Package } from "lucide-react";
+import { Grid3X3, List, Loader2, Package, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -62,27 +63,24 @@ export default function BestSellers() {
 
   if (loading) {
     return (
-      <section className="py-12 md:py-20 bg-gray-50/50" id="best-sellers">
+      <section className="py-12 md:py-20 bg-white" id="best-sellers">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
-            <div className="h-8 w-32 bg-gray-200 rounded-lg animate-pulse" />
-            <div className="h-10 w-20 bg-gray-200 rounded-lg animate-pulse" />
+            <div className="h-8 w-40 bg-stone-200 rounded-lg animate-pulse" />
+            <div className="h-10 w-24 bg-stone-200 rounded-lg animate-pulse" />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
             {[...Array(8)].map((_, i) => (
               <div
                 key={i}
-                className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-100 animate-pulse"
+                className="bg-white rounded-2xl overflow-hidden border border-stone-100 animate-pulse"
               >
-                <div className="aspect-[4/5] sm:aspect-square bg-gray-100" />
-                <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
-                  <div className="h-3 bg-gray-100 rounded w-1/3" />
-                  <div className="h-4 sm:h-5 bg-gray-100 rounded w-3/4" />
-                  <div className="h-3 bg-gray-100 rounded w-1/2" />
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="h-5 sm:h-6 bg-gray-100 rounded w-16 sm:w-20" />
-                    <div className="h-9 sm:h-11 w-9 sm:w-11 bg-gray-100 rounded-full" />
-                  </div>
+                <div className="aspect-square bg-stone-100" />
+                <div className="p-4 bg-stone-50 space-y-3">
+                  <div className="h-3 bg-stone-200 rounded w-1/3" />
+                  <div className="h-5 bg-stone-200 rounded w-3/4" />
+                  <div className="h-3 bg-stone-200 rounded w-1/2" />
+                  <div className="h-10 bg-stone-200 rounded w-full mt-4" />
                 </div>
               </div>
             ))}
@@ -94,13 +92,13 @@ export default function BestSellers() {
 
   if (products.length === 0) {
     return (
-      <section className="py-12 md:py-20 bg-gray-50/50" id="best-sellers">
+      <section className="py-12 md:py-20 bg-white" id="best-sellers">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Ürünler</h2>
           </div>
-          <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-3xl border border-gray-100">
-            <Package className="w-16 h-16 text-gray-200 mb-4" />
+          <div className="flex flex-col items-center justify-center py-16 text-center bg-stone-50 rounded-3xl border border-stone-100">
+            <Package className="w-16 h-16 text-stone-300 mb-4" />
             <h3 className="text-xl font-bold text-gray-700 mb-2">Ürün Bulunamadı</h3>
             <p className="text-gray-400">Şu anda gösterilecek ürün bulunmuyor.</p>
             <Link
@@ -116,28 +114,33 @@ export default function BestSellers() {
   }
 
   return (
-    <section className="py-10 md:py-20 bg-gray-50/50" id="best-sellers">
+    <section className="py-10 md:py-20 bg-white" id="best-sellers">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-10"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 md:mb-12"
         >
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-            Ürünler
-          </h2>
+          <div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+              Ürünler
+            </h2>
+            <p className="text-gray-500 mt-1 text-sm md:text-base">
+              Doğal ve sağlıklı lezzetler
+            </p>
+          </div>
           
           <div className="flex items-center gap-3">
-            {/* View Toggle */}
-            <div className="hidden sm:flex items-center bg-white rounded-xl p-1 border border-gray-200">
+            {/* View Toggle - Desktop Only */}
+            <div className="hidden sm:flex items-center bg-stone-100 rounded-xl p-1">
               <button
                 onClick={() => setViewMode("grid")}
                 className={cn(
                   "p-2 rounded-lg transition-all",
                   viewMode === "grid"
-                    ? "bg-gray-100 text-primary shadow-sm"
+                    ? "bg-white text-primary shadow-sm"
                     : "text-gray-400 hover:text-gray-600"
                 )}
                 aria-label="Grid görünümü"
@@ -149,7 +152,7 @@ export default function BestSellers() {
                 className={cn(
                   "p-2 rounded-lg transition-all",
                   viewMode === "list"
-                    ? "bg-gray-100 text-primary shadow-sm"
+                    ? "bg-white text-primary shadow-sm"
                     : "text-gray-400 hover:text-gray-600"
                 )}
                 aria-label="Liste görünümü"
@@ -158,12 +161,13 @@ export default function BestSellers() {
               </button>
             </div>
             
+            {/* View All Link */}
             <Link 
               href={ROUTES.products} 
-              className="hidden sm:inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-primary transition-colors"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors"
             >
               Tümünü Gör
-              <span className="text-lg">→</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </motion.div>
@@ -172,7 +176,7 @@ export default function BestSellers() {
         <div className={cn(
           viewMode === "list" 
             ? "flex flex-col gap-4" 
-            : "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6"
+            : "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6"
         )}>
           {displayedProducts.map((product, idx) => (
             <ProductCard
@@ -186,11 +190,11 @@ export default function BestSellers() {
 
         {/* Load More */}
         {hasMore && (
-          <div className="flex justify-center mt-8 md:mt-10">
+          <div className="flex justify-center mt-10 md:mt-12">
             <button
               onClick={handleLoadMore}
               disabled={isLoadingMore}
-              className="px-6 sm:px-8 py-3 bg-white border border-gray-200 text-gray-700 rounded-full font-medium hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+              className="px-8 py-3 bg-stone-100 text-gray-700 rounded-full font-medium hover:bg-stone-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isLoadingMore ? (
                 <>
@@ -205,24 +209,22 @@ export default function BestSellers() {
         )}
 
         {!hasMore && products.length > 0 && (
-          <p className="text-center text-gray-400 mt-8 text-sm">
+          <p className="text-center text-gray-400 mt-10 text-sm">
             Tüm ürünler gösterildi ({products.length} ürün)
           </p>
         )}
 
         {/* Mobile: View All Button */}
-        <div className="flex sm:hidden justify-center mt-6">
+        <div className="flex sm:hidden justify-center mt-8">
           <Link
             href={ROUTES.products}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-medium text-sm hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
           >
             Tüm Ürünleri Gör
-            <span>→</span>
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>
     </section>
   );
 }
-
-import { cn } from "@/lib/utils";
