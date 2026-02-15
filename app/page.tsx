@@ -1,7 +1,5 @@
 import { Metadata } from "next";
-import { Hero } from "@/components/sections/Hero";
-import { Marquee } from "@/components/sections/Marquee";
-import { ProductGrid } from "@/components/sections/ProductGrid";
+import PremiumHome from "@/components/sections/PremiumHome";
 import { AnnouncementBar } from "@/components/sections/AnnouncementBar";
 
 export const metadata: Metadata = {
@@ -21,9 +19,7 @@ export default function Home() {
   return (
     <>
       <AnnouncementBar />
-      <Hero />
-      <Marquee />
-      <ProductGrid />
+      <PremiumHome />
       
       <script
         type="application/ld+json"
