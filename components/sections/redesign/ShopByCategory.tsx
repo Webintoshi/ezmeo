@@ -13,7 +13,6 @@ export default function ShopByCategory() {
   useEffect(() => {
     async function loadCategories() {
       const data = await fetchCategories();
-      // If no categories from DB, fallbacks (mimicking the design with available assets)
       if (!data || data.length === 0) {
         setCategories([
           {
@@ -38,12 +37,11 @@ export default function ShopByCategory() {
             id: "3",
             name: "Kuruyemiş",
             slug: "kuruyemis",
-            image: "/hero banner fıstık ezmeleri.jpg", // Fallback
+            image: "/hero banner fıstık ezmeleri.jpg",
             description: "",
             icon: "",
             productCount: 0
           },
-          // Add more duplicates to fill the grid if needed to match the visual of 6 items
           {
              id: "4",
              name: "Özel Paketler",
@@ -80,22 +78,65 @@ export default function ShopByCategory() {
   }, []);
 
   return (
-    <section className="redesign-section" id="shop-by-category">
+    <section 
+      className="redesign-section shop-by-category" 
+      id="shop-by-category"
+      aria-labelledby="category-heading"
+    >
       <div className="redesign-container">
-        <h2 className="redesign-title">Shop by Category</h2>
-        <div className="shop-category__grid">
-          {categories.map((cat) => (
-            <Link href={`/koleksiyon/${cat.slug}`} key={cat.id} className="shop-category__card">
-              <div className="shop-category__image-wrapper">
-                <Image
-                  src={cat.image || "/placeholder.jpg"}
-                  alt={cat.name}
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 768px) 50vw, 16vw"
-                />
+        <header className="shop-by-category__header">
+          <h2 id="category-heading" className="shop-by-category__title">
+            Kategoriye Göz At
+          </h2>
+          <p className="shop-by-category__subtitle">
+            Doğal lezzetleri keşfedin
+          </p>
+        </header>
+        
+        <div 
+          className="shop-by-category__grid" 
+          role="list" 
+          aria-label="Ürün kategorileri"
+        >
+          {categories.map((cat, index) => (
+            <Link
+              href={`/koleksiyon/${cat.slug}`}
+              key={cat.id}
+              role="listitem"
+              className="shop-by-category__card"
+              style={{ animationDelay: `${index * 80}ms` }}
+              aria-label={`${cat.name} kategorisini incele`}
+            >
+              <div className="shop-by-category__image-container">
+                <div className="shop-by-category__image-wrapper">
+                  <Image
+                    src={cat.image || "/placeholder.jpg"}
+                    alt=""
+                    fill
+                    className="shop-by-category__image"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
+                    aria-hidden="true"
+                  />
+                </div>
+                <div className="shop-by-category__overlay" />
               </div>
-              <h3 className="shop-category__title">{cat.name}</h3>
+              
+              <div className="shop-by-category__content">
+                <h3 className="shop-by-category__name">
+                  {cat.name}
+                </h3>
+                {cat.productCount !== undefined && cat.productCount > 0 && (
+                  <span className="shop-by-category__count">
+                    {cat.productCount} ürün
+                  </span>
+                )}
+              </div>
+              
+              <span className="shop-by-category__arrow" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
             </Link>
           ))}
         </div>
