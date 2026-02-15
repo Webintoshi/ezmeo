@@ -266,7 +266,8 @@
 
   &__card {
     position: relative;
-    height: 400px;
+    height: auto;
+    aspect-ratio: 9/16; // 9:16 vertical ratio
     border-radius: 16px;
     overflow: hidden;
     display: flex;
