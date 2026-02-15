@@ -146,7 +146,7 @@ export async function updateProduct(id: string, updates: Partial<Product>) {
 export async function deleteProduct(id: string) {
     const serverClient = createServerClient();
     
-    // Check if there are any order items referencing this product
+    // Check if there are any order items referencing this product directly
     const { data: orderItems } = await serverClient
         .from("order_items")
         .select("id")
@@ -177,18 +177,43 @@ export async function deleteProduct(id: string) {
             throw new Error("Bu ürünün varyantlarına ait sipariş kalemleri bulunmaktadır. Önce siparişleri iptal etmeniz gerekmektedir.");
         }
 
-        // Delete variants that don't have orders
-        const { error: variantsError } = await serverClient
-            .from("product_variants")
-            .delete()
-            .eq("product_id", id);
-
-        if (variantsError) throw variantsError;
+        // Delete related records first (in order to avoid FK constraints)
+        // Handle each variant separately to catch specific errors
+        for (const variant of variants) {
+            // Try to delete variant - if it fails due to FK, continue to next
+            const { error: variantError } = await serverClient
+                .from("product_variants")
+                .delete()
+                .eq("id", variant.id);
+            
+            if (variantError) {
+                console.log("Variant delete warning:", variantError.message);
+            }
+        }
     }
 
-    // Delete related records
-    await serverClient.from("customer_preferred_products").delete().eq("product_id", id).catch(() => {});
-    await serverClient.from("favorites").delete().eq("product_id", id).catch(() => {});
+    // Delete all related records - handle FK errors gracefully
+    const relatedTables = [
+        "customer_preferred_products",
+        "favorites",
+        "product_views",
+        "product_reviews",
+        "cart_items",
+        "wishlist_items"
+    ];
+
+    for (const table of relatedTables) {
+        try {
+            await serverClient.from(table).delete().eq("product_id", id);
+        } catch (e) {}
+        
+        try {
+            if (variants && variants.length > 0) {
+                const variantIds = variants.map(v => v.id);
+                await serverClient.from(table).delete().in("variant_id", variantIds);
+            }
+        } catch (e) {}
+    }
 
     // Now delete the product
     const { error } = await serverClient
