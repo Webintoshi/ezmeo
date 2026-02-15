@@ -44,7 +44,7 @@ export function ProductCard({ product, index = 0, onQuickView, viewMode = "grid"
   const handleQuickView = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onQuickView?.(product);
+    setQuickViewProduct(product);
   };
 
   const handleWishlist = (e: React.MouseEvent) => {

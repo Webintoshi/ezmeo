@@ -7,6 +7,7 @@ import { CartProvider } from "@/lib/cart-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
 import { AuthProvider } from "@/lib/auth-context";
 import { StoreInfoProvider } from "@/lib/store-info-context";
+import { QuickViewProvider } from "@/components/product/QuickViewProvider";
 import { LayoutWrapper } from "@/components/layout/LayoutWrapper";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
 import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
@@ -105,10 +106,12 @@ export default function RootLayout({
             <AuthProvider>
               <CartProvider>
                 <WishlistProvider>
-                  <LayoutWrapper>
-                    {children}
-                    <Toaster position="top-right" theme="light" />
-                  </LayoutWrapper>
+                  <QuickViewProvider>
+                    <LayoutWrapper>
+                      {children}
+                      <Toaster position="top-right" theme="light" />
+                    </LayoutWrapper>
+                  </QuickViewProvider>
                 </WishlistProvider>
               </CartProvider>
             </AuthProvider>
