@@ -234,8 +234,13 @@ export async function POST(request: NextRequest) {
 
         if (productError) throw productError;
 
+        console.log("Product created with ID:", product.id);
+        
         // 2. Varyantları ekle
         if (variants && Array.isArray(variants) && variants.length > 0) {
+            console.log("Processing variants, count:", variants.length);
+            console.log("Variants data:", JSON.stringify(variants, null, 2));
+            
             const variantsToInsert = variants.map((v: any) => ({
                 product_id: product.id,
                 name: v.name,
@@ -253,11 +258,19 @@ export async function POST(request: NextRequest) {
                 images: v.images || [],
             }));
 
+            console.log("Inserting variants:", JSON.stringify(variantsToInsert, null, 2));
+
             const { error: variantsError } = await supabase
                 .from("product_variants")
                 .insert(variantsToInsert);
 
-            if (variantsError) throw variantsError;
+            if (variantsError) {
+                console.error("Variants insert error:", variantsError);
+                throw variantsError;
+            }
+            console.log("Variants inserted successfully");
+        } else {
+            console.log("No variants to insert");
         }
 
         // 3. Tam ürünü döndür
