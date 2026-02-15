@@ -26,11 +26,10 @@
   }
 }
 
-// Shop By Category - Premium Apple Style with Carousel
+// Shop By Category - Yatay Card Stili
 .shop-by-category {
   padding: $spacing-xl * 1.5 0;
   background: $color-bg;
-  overflow: hidden;
   
   &__header {
     text-align: center;
@@ -57,85 +56,55 @@
     letter-spacing: -0.01em;
   }
 
-  // Carousel Container
-  &__carousel {
-    position: relative;
-    display: flex;
-    align-items: center;
-    margin: 0 -$spacing-lg;
-    padding: 0 $spacing-xl;
-    
-    @include tablet {
-      margin: 0;
-      padding: 0;
-    }
-  }
-
-  // Scroll Track - Carousel
-  &__track {
-    display: flex;
+  // Grid Layout - Yatay Cardlar için
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
     gap: $spacing-md;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
-    padding: $spacing-sm $spacing-md;
-    margin: 0 $spacing-xs;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    &::-webkit-scrollbar {
-      display: none;
-    }
     
     @include tablet {
-      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    @include desktop {
       grid-template-columns: repeat(3, 1fr);
-      gap: $spacing-lg;
-      overflow-x: visible;
-      padding: 0;
-      margin: 0;
     }
   }
 
-  // Cards
-  &__card {
+  // Yatay Card
+  &__card-horizontal {
     position: relative;
     display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    width: calc(85vw - #{$spacing-md});
-    background: $color-bg;
-    border-radius: 20px;
+    flex-direction: row;
+    background: #fff;
+    border-radius: 16px;
     overflow: hidden;
     text-decoration: none;
-    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     animation: fadeInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
     opacity: 0;
-    scroll-snap-align: start;
-    will-change: transform, box-shadow;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     
     @include tablet {
-      width: 100%;
+      flex-direction: column;
+      border-radius: 20px;
+    }
+    
+    @include desktop {
       border-radius: 24px;
-      animation: fadeInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-      opacity: 0;
     }
 
     &:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
       
-      .shop-by-category__image {
-        transform: scale(1.08);
+      .shop-by-category__image-horizontal {
+        transform: scale(1.05);
       }
       
-      .shop-by-category__overlay {
-        opacity: 0.05;
-      }
-      
-      .shop-by-category__arrow {
-        opacity: 1;
-        transform: translateX(0);
+      .shop-by-category__arrow-horizontal {
+        background: $color-primary;
+        color: white;
       }
     }
 
@@ -145,169 +114,202 @@
     }
   }
 
-  // Scroll Buttons
-  &__scroll-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border: none;
-    border-radius: 50%;
-    background: $color-bg;
-    color: $color-text;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-    flex-shrink: 0;
-    z-index: 10;
+  // Yatay Card - Mobilde yatay, tablet+ de dikey
+  @media (max-width: 767px) {
+    &__card-horizontal {
+      min-height: 120px;
+    }
     
-    &:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    &__image-wrapper-horizontal {
+      position: relative;
+      width: 120px;
+      min-width: 120px;
+      height: 120px;
+      flex-shrink: 0;
+    }
+    
+    &__image-horizontal {
+      object-fit: cover;
+    }
+    
+    &__content-horizontal {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: $spacing-sm $spacing-md;
+    }
+    
+    &__name-horizontal {
+      font-size: 1rem;
+      font-weight: 600;
+      color: $color-text;
+      margin-bottom: 4px;
+    }
+    
+    &__description {
+      font-size: 0.8125rem;
+      color: $color-text-light;
+      margin-bottom: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    &__count-horizontal {
+      font-size: 0.75rem;
+      color: $color-text-light;
+      margin-bottom: 6px;
+    }
+    
+    &__arrow-horizontal {
+      position: absolute;
+      right: $spacing-sm;
+      bottom: $spacing-sm;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
       background: $color-text;
       color: white;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      transition: background 0.3s ease;
+      
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+    }
+  }
+
+  // Tablet ve üzeri - Dikey Card
+  @media (min-width: 768px) {
+    &__card-horizontal {
+      min-height: 280px;
     }
     
-    &:active {
-      transform: scale(0.95);
+    &__image-wrapper-horizontal {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4/3;
+      overflow: hidden;
     }
     
-    @include tablet {
-      display: none;
+    &__image-horizontal {
+      object-fit: cover;
+      transition: transform 0.5s ease;
     }
     
-    &--left {
-      margin-right: $spacing-sm;
+    &__content-horizontal {
+      padding: $spacing-md $spacing-lg $spacing-lg;
+      text-align: center;
     }
     
-    &--right {
-      margin-left: $spacing-sm;
+    &__name-horizontal {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: $color-text;
+      margin-bottom: 6px;
+    }
+    
+    &__description {
+      font-size: 0.875rem;
+      color: $color-text-light;
+      margin-bottom: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    &__count-horizontal {
+      font-size: 0.8125rem;
+      color: $color-text-light;
+      margin-bottom: 12px;
+    }
+    
+    &__arrow-horizontal {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: $color-text;
+      color: white;
+      border-radius: 24px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: background 0.3s ease;
     }
   }
 
-  // Image Container
-  &__image-container {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1;
-    overflow: hidden;
-    background: linear-gradient(145deg, #f8f9fa 0%, #f0f1f2 100%);
-  }
-
-  &__image-wrapper {
-    position: absolute;
-    inset: 0;
-  }
-
-  &__image {
-    object-fit: cover;
-    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-
-  &__overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0.08) 100%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-  }
-
-  // Content
-  &__content {
-    padding: $spacing-md $spacing-md $spacing-sm;
+  // Skeleton Loading - Yatay
+  &__skeleton-card-horizontal {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-  }
-
-  &__name {
-    font-size: 1rem;
-    font-weight: 600;
-    color: $color-text;
-    letter-spacing: -0.01em;
-    line-height: 1.3;
-    
-    @include tablet {
-      font-size: 1.125rem;
-    }
-  }
-
-  &__count {
-    font-size: 0.8125rem;
-    font-weight: 400;
-    color: $color-text-light;
-  }
-
-  // Arrow Button
-  &__arrow {
-    position: absolute;
-    right: $spacing-md;
-    bottom: $spacing-md;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: $color-text;
-    color: white;
-    border-radius: 50%;
-    opacity: 0;
-    transform: translateX(-8px);
-    transition: opacity 0.3s ease, transform 0.3s ease, background 0.2s ease;
-    
-    @include tablet {
-      right: $spacing-lg;
-      bottom: $spacing-lg;
-      width: 40px;
-      height: 40px;
-    }
-
-    &:hover {
-      background: $color-primary;
-    }
-  }
-
-  // Skeleton Loading
-  &__skeleton-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: $spacing-lg;
-    
-    @include desktop {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  &__skeleton-card {
+    flex-direction: row;
     background: #f3f4f6;
-    border-radius: 20px;
+    border-radius: 16px;
     overflow: hidden;
     animation: pulse 1.5s ease-in-out infinite;
     
-    @include desktop {
-      border-radius: 24px;
+    @include tablet {
+      flex-direction: column;
+      border-radius: 20px;
     }
   }
 
-  &__skeleton-image {
-    width: 100%;
-    aspect-ratio: 1;
-    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  &__skeleton-image-horizontal {
+    width: 120px;
+    min-width: 120px;
+    height: 120px;
+    background: linear-gradient(90deg, #e5e7eb 25%, #d1d5db 50%, #e5e7eb 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
+    
+    @include tablet {
+      width: 100%;
+      min-width: unset;
+      aspect-ratio: 4/3;
+    }
   }
 
-  &__skeleton-text {
+  &__skeleton-content-horizontal {
+    flex: 1;
+    padding: $spacing-md;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  &__skeleton-text-horizontal {
     height: 20px;
-    width: 60%;
-    margin: $spacing-md;
-    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+    width: 70%;
+    background: linear-gradient(90deg, #e5e7eb 25%, #d1d5db 50%, #e5e7eb 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     border-radius: 4px;
+    
+    @include tablet {
+      width: 60%;
+      margin: 0 auto;
+    }
+  }
+
+  &__skeleton-text-short {
+    height: 16px;
+    width: 40%;
+    background: linear-gradient(90deg, #e5e7eb 25%, #d1d5db 50%, #e5e7eb 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    
+    @include tablet {
+      width: 30%;
+      margin: 0 auto;
+    }
   }
 }
 
