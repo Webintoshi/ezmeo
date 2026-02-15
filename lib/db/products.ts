@@ -145,6 +145,18 @@ export async function updateProduct(id: string, updates: Partial<Product>) {
  */
 export async function deleteProduct(id: string) {
     const serverClient = createServerClient();
+    
+    // Check if there are any order items referencing this product's variants
+    const { data: orderItems } = await serverClient
+        .from("order_items")
+        .select("id")
+        .eq("product_id", id)
+        .limit(1);
+
+    if (orderItems && orderItems.length > 0) {
+        throw new Error("Bu ürüne ait sipariş kalemleri bulunmaktadır. Önce siparişleri iptal etmeniz gerekmektedir.");
+    }
+
     const { error } = await serverClient
         .from("products")
         .delete()
@@ -190,6 +202,18 @@ export async function updateProductVariant(id: string, updates: Partial<ProductV
  */
 export async function deleteProductVariant(id: string) {
     const serverClient = createServerClient();
+    
+    // Check if there are any order items referencing this variant
+    const { data: orderItems } = await serverClient
+        .from("order_items")
+        .select("id")
+        .eq("variant_id", id)
+        .limit(1);
+
+    if (orderItems && orderItems.length > 0) {
+        throw new Error("Bu varyanta ait sipariş kalemleri bulunmaktadır. Önce siparişleri iptal etmeniz gerekmektedir.");
+    }
+
     const { error } = await serverClient
         .from("product_variants")
         .delete()
