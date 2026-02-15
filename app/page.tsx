@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Hero } from "@/components/sections/Hero";
 import { Marquee } from "@/components/sections/Marquee";
+import { FeaturedProducts } from "@/components/sections/FeaturedProducts";
 import { CategoryShowcase } from "@/components/sections/CategoryShowcase";
 import { HeroProducts } from "@/components/sections/HeroProducts";
 import { ProductShowcase } from "@/components/sections/ProductShowcase";
@@ -28,6 +29,7 @@ export default function Home() {
       <AnnouncementBar />
       <Hero />
       <Marquee />
+      <FeaturedProducts />
       <CategoryShowcase />
       <HeroProducts />
       <ProductShowcase />
