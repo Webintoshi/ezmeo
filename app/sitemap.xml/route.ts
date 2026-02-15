@@ -4,6 +4,7 @@ export async function GET() {
     const sitemaps = [
         `${baseUrl}/sitemap-pages.xml`,
         `${baseUrl}/sitemap-products.xml`,
+        `${baseUrl}/sitemap-collections.xml`,
     ];
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
