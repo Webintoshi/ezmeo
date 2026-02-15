@@ -21,10 +21,14 @@ export function ProductCard({ product, index = 0, onQuickView, viewMode = "grid"
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const isWishlisted = isInWishlist(product.id);
 
+  if (!product.variants || product.variants.length === 0) {
+    return null;
+  }
+
   const displayVariant = product.variants[0];
-  const isOutOfStock = displayVariant.stock === 0;
-  const originalPrice = displayVariant.originalPrice || displayVariant.price;
-  const hasDiscount = displayVariant.originalPrice
+  const isOutOfStock = displayVariant?.stock === 0;
+  const originalPrice = displayVariant?.originalPrice || displayVariant?.price;
+  const hasDiscount = displayVariant?.originalPrice
     ? displayVariant.originalPrice > displayVariant.price
     : false;
   const discountPercent = hasDiscount ? Math.round(((originalPrice - displayVariant.price) / originalPrice) * 100) : 0;

@@ -29,7 +29,15 @@ export const supabase = new Proxy({} as SupabaseClient, {
 // Server client with service role for admin operations
 export function createServerClient() {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceRoleKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured");
+    if (!serviceRoleKey) {
+        console.warn("SUPABASE_SERVICE_ROLE_KEY is not configured - using anon key instead");
+        return createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+            },
+        });
+    }
 
     return createClient(getSupabaseUrl(), serviceRoleKey, {
         auth: {
