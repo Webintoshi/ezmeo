@@ -6,7 +6,7 @@ import { Product } from "@/types/product";
 import { getAllProducts } from "@/lib/products";
 import { ROUTES } from "@/lib/constants";
 import { ProductCard } from "@/components/product/ProductCard";
-import { Grid3X3, List, Loader2, Package, Sparkles } from "lucide-react";
+import { Grid3X3, List, Loader2, Package } from "lucide-react";
 import { motion } from "framer-motion";
 
 const ITEMS_PER_PAGE = 8;
@@ -125,15 +125,9 @@ export default function BestSellers() {
           viewport={{ once: true }}
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-10"
         >
-          <div>
-            <span className="inline-flex items-center gap-1.5 text-primary text-xs font-semibold uppercase tracking-wider mb-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              Öne Çıkanlar
-            </span>
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-              Ürünler
-            </h2>
-          </div>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+            Ürünler
+          </h2>
           
           <div className="flex items-center gap-3">
             {/* View Toggle */}
