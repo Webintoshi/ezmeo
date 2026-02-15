@@ -74,7 +74,7 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f1f1f1]">
+    <div className="flex min-h-screen bg-[#f1f1f1] font-sans" style={{ fontFamily: 'var(--font-inter), Inter, system-ui, sans-serif' }}>
       <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       
       <main className="flex-1 overflow-y-auto h-screen">

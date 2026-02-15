@@ -67,7 +67,7 @@
   --radius-xl: var(--radius-xl);
   --radius-2xl: var(--radius-2xl);
 
-  --font-sans: var(--font-inter), "Inter", sans-serif;
+  --font-sans: var(--font-lora), "Lora", serif;
   --font-mono: var(--font-inter), monospace;
 }
 
@@ -85,7 +85,7 @@
 body {
   background: #FAFAFA;
   color: var(--foreground);
-  font-family: var(--font-inter), "Inter", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-lora), "Lora", serif;
   overflow-x: hidden;
 }
 
