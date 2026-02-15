@@ -196,19 +196,30 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
 
         if (user) {
           setUserEmail(user.email || "");
-          const { data: profile, error } = await supabase
-            .from("profiles")
-            .select("role, full_name")
-            .eq("id", user.id)
-            .single();
+          
+          // First try to get from user metadata
+          const userMetadata = user.user_metadata;
+          let displayName = userMetadata?.full_name || userMetadata?.name || null;
+          
+          // If not in metadata, try profile table
+          if (!displayName) {
+            const { data: profile, error } = await supabase
+              .from("profiles")
+              .select("role, full_name")
+              .eq("id", user.id)
+              .single();
 
-          if (profile && !error) {
-            setRole(profile.role);
-            if (profile.full_name) {
-              setUserName(profile.full_name);
+            if (profile && !error) {
+              setRole(profile.role);
+              displayName = profile.full_name;
             }
-          } else {
-            console.log("AdminSidebar: No profile found, using email");
+          }
+          
+          // Fallback to email username if no name found
+          if (displayName) {
+            setUserName(displayName);
+          } else if (user.email && user.email.includes('@')) {
+            setUserName(user.email.split('@')[0]);
           }
         }
       } catch (error) {
