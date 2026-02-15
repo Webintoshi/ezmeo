@@ -3,6 +3,8 @@ import { createServerClient } from "@/lib/supabase";
 import { ProductCard } from "@/components/product/ProductCard";
 import Link from "next/link";
 
+export const revalidate = 300; // 5 dakikada bir yeniden doğrula
+
 interface DBProduct {
   id: string;
   name: string;

@@ -2,7 +2,7 @@ import { createServerClient } from "@/lib/supabase";
 import { Product } from "@/types/product";
 import { ProductsPageClient } from "@/components/product/ProductsPageClient";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 120; // 2 dakikada bir yeniden doğrula
 
 export const metadata = {
   title: "Tüm Ürünler | Ezmeo",

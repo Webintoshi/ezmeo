@@ -76,8 +76,8 @@ export async function generateStaticParams() {
 }
 
 // Dynamic rendering for fresh data
-export const revalidate = 0; // No cache - always fresh
-export const dynamic = 'force-dynamic';
+export const revalidate = 300; // 5 dakikada bir yeniden doğrula
+export const dynamic = 'force-static';
 
 // Server component
 export default async function ProductDetailPage({
