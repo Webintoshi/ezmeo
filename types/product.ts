@@ -180,6 +180,8 @@ export interface Product {
   seo?: ProductSEO;
   stockSettings?: StockSettings;
   nutritionSettings?: NutritionSettings;
+  sales_count?: number;
+  isBestseller?: boolean;
 }
 
 // Kategori Bilgisi

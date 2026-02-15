@@ -171,6 +171,38 @@ export async function createOrder(orderData: {
         }
     }
 
+    // Reduce stock for each item
+    for (const item of orderData.items) {
+        // Get current stock
+        const { data: variant } = await serverClient
+            .from("product_variants")
+            .select("stock")
+            .eq("id", item.variantId)
+            .single();
+
+        if (variant) {
+            const newStock = Math.max(0, variant.stock - item.quantity);
+            await serverClient
+                .from("product_variants")
+                .update({ stock: newStock })
+                .eq("id", item.variantId);
+        }
+
+        // Update product sales count
+        const { data: product } = await serverClient
+            .from("products")
+            .select("sales_count")
+            .eq("id", item.productId)
+            .single();
+
+        if (product) {
+            await serverClient
+                .from("products")
+                .update({ sales_count: (product.sales_count || 0) + item.quantity })
+                .eq("id", item.productId);
+        }
+    }
+
     return { ...order, items: orderItems };
 }
 
@@ -254,6 +286,18 @@ export async function getOrderByNumber(orderNumber: string) {
 export async function updateOrderStatus(id: string, status: string) {
     const serverClient = createServerClient();
 
+    // Get current order status and items before updating
+    const { data: order } = await serverClient
+        .from("orders")
+        .select("status")
+        .eq("id", id)
+        .single();
+
+    const { data: orderItems } = await serverClient
+        .from("order_items")
+        .select("variant_id, quantity")
+        .eq("order_id", id);
+
     const { data, error } = await serverClient
         .from("orders")
         .update({ status })
@@ -262,6 +306,54 @@ export async function updateOrderStatus(id: string, status: string) {
         .single();
 
     if (error) throw error;
+
+    // If order is cancelled or failed, restore stock
+    if ((status === "cancelled" || status === "failed") && orderItems) {
+        for (const item of orderItems) {
+            if (item.variant_id) {
+                // Get current stock
+                const { data: variant } = await serverClient
+                    .from("product_variants")
+                    .select("stock")
+                    .eq("id", item.variant_id)
+                    .single();
+
+                if (variant) {
+                    const newStock = variant.stock + item.quantity;
+                    await serverClient
+                        .from("product_variants")
+                        .update({ stock: newStock })
+                        .eq("id", item.variant_id);
+                }
+            }
+
+            // Reduce sales count
+            if (item.variant_id) {
+                const { data: orderItem } = await serverClient
+                    .from("order_items")
+                    .select("product_id, quantity")
+                    .eq("order_id", id)
+                    .eq("variant_id", item.variant_id)
+                    .single();
+
+                if (orderItem?.product_id) {
+                    const { data: product } = await serverClient
+                        .from("products")
+                        .select("sales_count")
+                        .eq("id", orderItem.product_id)
+                        .single();
+
+                    if (product && product.sales_count > 0) {
+                        await serverClient
+                            .from("products")
+                            .update({ sales_count: Math.max(0, product.sales_count - orderItem.quantity) })
+                            .eq("id", orderItem.product_id);
+                    }
+                }
+            }
+        }
+    }
+
     return data;
 }
 
