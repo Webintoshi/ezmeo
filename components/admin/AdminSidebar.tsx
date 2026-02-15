@@ -190,16 +190,23 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
       }, 5000);
       
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        // First try getSession for client-side auth state
+        const { data: sessionData } = await supabase.auth.getSession();
+        
+        let user = sessionData?.session?.user;
+        
+        // If no session, try getUser
+        if (!user) {
+          const { data: userData } = await supabase.auth.getUser();
+          user = userData?.user;
+        }
 
         if (user) {
           setUserEmail(user.email || "");
           
           // First try to get from user metadata
-          const userMetadata = user.user_metadata;
-          let displayName = userMetadata?.full_name || userMetadata?.name || null;
+          const userMetadata = user.user_metadata || {};
+          let displayName = userMetadata.full_name || userMetadata.name || null;
           
           // If not in metadata, try profile table
           if (!displayName) {
@@ -221,6 +228,9 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
           } else if (user.email && user.email.includes('@')) {
             setUserName(user.email.split('@')[0]);
           }
+        } else {
+          // No user found, redirect to login
+          console.log("AdminSidebar: No user session found");
         }
       } catch (error) {
         console.error("AdminSidebar: Error fetching user:", error);
