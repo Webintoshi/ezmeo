@@ -25,10 +25,6 @@ export async function fetchCategories(): Promise<CategoryInfo[]> {
       icon: cat.icon || "📦",
       productCount: 0, // Bu değer ürün sayısı hesaplanarak güncellenebilir
     })) || [];
-  } catch (error) {
-    console.error("Failed to fetch categories:", error);
-    return [];
-  }
 }
 
 // Server-side için kategori çekme
