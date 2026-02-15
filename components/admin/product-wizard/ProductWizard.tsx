@@ -195,7 +195,6 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
         if (!formData.description.trim()) newErrors.description = "Açıklama gereklidir";
         if (!formData.shortDescription.trim()) newErrors.shortDescription = "Kısa açıklama gereklidir";
         if (!formData.category) newErrors.category = "Kategori seçilmelidir";
-        if (!formData.subcategory) newErrors.subcategory = "Alt kategori seçilmelidir";
         break;
       case 2:
         if (formData.images.length === 0) newErrors.images = "En az 1 görsel yüklenmelidir";

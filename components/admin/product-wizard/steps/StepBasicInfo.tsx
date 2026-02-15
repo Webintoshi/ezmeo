@@ -251,7 +251,7 @@ export function StepBasicInfo({ data, onChange, errors }: StepBasicInfoProps) {
               {/* Subcategory */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700">
-                  Alt Kategori <span className="text-rose-500">*</span>
+                  Alt Kategori
                 </label>
                 <div className="relative">
                   <select
