@@ -110,12 +110,16 @@ export default function ProductsPage() {
     if (confirm("Bu ürünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
       try {
         const res = await fetch(`/api/products?id=${id}`, { method: "DELETE" });
+        const data = await res.json();
         if (res.ok) {
           await loadProducts();
           setSelectedProducts(prev => prev.filter(pid => pid !== id));
+        } else {
+          alert(data.error || "Ürün silinirken bir hata oluştu");
         }
       } catch (error) {
         console.error("Failed to delete product:", error);
+        alert("Ürün silinirken bir hata oluştu");
       }
     }
   };

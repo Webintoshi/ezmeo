@@ -146,7 +146,7 @@ export async function updateProduct(id: string, updates: Partial<Product>) {
 export async function deleteProduct(id: string) {
     const serverClient = createServerClient();
     
-    // Check if there are any order items referencing this product's variants
+    // Check if there are any order items referencing this product
     const { data: orderItems } = await serverClient
         .from("order_items")
         .select("id")
@@ -157,6 +157,40 @@ export async function deleteProduct(id: string) {
         throw new Error("Bu ürüne ait sipariş kalemleri bulunmaktadır. Önce siparişleri iptal etmeniz gerekmektedir.");
     }
 
+    // Get product variants
+    const { data: variants } = await serverClient
+        .from("product_variants")
+        .select("id")
+        .eq("product_id", id);
+
+    if (variants && variants.length > 0) {
+        const variantIds = variants.map(v => v.id);
+        
+        // Check if any variant has order items
+        const { data: variantOrderItems } = await serverClient
+            .from("order_items")
+            .select("id")
+            .in("variant_id", variantIds)
+            .limit(1);
+
+        if (variantOrderItems && variantOrderItems.length > 0) {
+            throw new Error("Bu ürünün varyantlarına ait sipariş kalemleri bulunmaktadır. Önce siparişleri iptal etmeniz gerekmektedir.");
+        }
+
+        // Delete variants that don't have orders
+        const { error: variantsError } = await serverClient
+            .from("product_variants")
+            .delete()
+            .eq("product_id", id);
+
+        if (variantsError) throw variantsError;
+    }
+
+    // Delete related records
+    await serverClient.from("customer_preferred_products").delete().eq("product_id", id).catch(() => {});
+    await serverClient.from("favorites").delete().eq("product_id", id).catch(() => {});
+
+    // Now delete the product
     const { error } = await serverClient
         .from("products")
         .delete()
