@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
-import { HeroSection, MarqueeSection, Newsletter, InstagramFeed } from "./ExistingSections";
+import { HeroSection, MarqueeSection, Newsletter } from "./ExistingSections";
 import ShopByCategory from "./ShopByCategory";
 import BestSellers from "./BestSellers";
 import PromotionalBanners from "./PromotionalBanners";
@@ -63,7 +63,6 @@ export default function RedesignHome() {
       <ShopByLifestyle />
 
       <Newsletter />
-      <InstagramFeed />
       
     </main>
   );

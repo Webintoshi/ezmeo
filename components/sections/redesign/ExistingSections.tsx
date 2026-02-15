@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ChevronLeft, ChevronRight, Leaf, Shield, Check, Truck, Clock, Sparkles, Mail, Send, Instagram, Heart } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Leaf, Shield, Check, Truck, Clock, Sparkles, Mail, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
 import { Marquee } from "../Marquee";
@@ -221,71 +221,6 @@ export function Newsletter() {
           <p className="text-xs text-gray-500 mt-4">
             Dilediğiniz zaman abonelikten çıkabilirsiniz.
           </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function InstagramFeed() {
-  const posts = [
-    { id: 1, image: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=400", alt: "Post 1" },
-    { id: 2, image: "https://images.unsplash.com/photo-1599599810769-bcde5a45dd03?w=400", alt: "Post 2" },
-    { id: 3, image: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400", alt: "Post 3" },
-    { id: 4, image: "https://images.unsplash.com/photo-1481349518771-20055b2a7b24?w=400", alt: "Post 4" },
-    { id: 5, image: "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400", alt: "Post 5" },
-    { id: 6, image: "https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?w=400", alt: "Post 6" },
-  ];
-
-  return (
-    <section className="py-16 md:py-24 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Instagram className="w-5 h-5 text-pink-600" />
-            <span className="text-pink-600 font-medium text-sm uppercase tracking-wider">Instagram</span>
-          </div>
-          <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-2">@ezmeo</h2>
-          <p className="text-gray-500">Takip edin, lezzetli anları kaçırmayın</p>
-        </div>
-
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-4">
-          {posts.map((post, idx) => (
-            <motion.a
-              key={post.id}
-              href="https://instagram.com/ezmeo"
-              target="_blank"
-              rel="noopener noreferrer"
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.05 }}
-              className="relative aspect-square rounded-xl overflow-hidden group"
-            >
-              <Image
-                src={post.image}
-                alt={post.alt}
-                fill
-                className="object-cover group-hover:scale-110 transition-transform duration-500"
-                sizes="(max-width: 768px) 33vw, 16vw"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                <Heart className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </motion.a>
-          ))}
-        </div>
-
-        <div className="text-center mt-8">
-          <a
-            href="https://instagram.com/ezmeo"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 border border-gray-200 rounded-full font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            <Instagram className="w-5 h-5" />
-            Takip Et
-          </a>
         </div>
       </div>
     </section>
