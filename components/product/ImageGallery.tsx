@@ -97,6 +97,8 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
               src={displayImages[0]}
               alt={productName}
               className="w-full h-full object-contain"
+              loading="eager"
+              fetchPriority="high"
               onLoad={() => handleImageLoad(0)}
               onError={() => handleImageError(0)}
             />

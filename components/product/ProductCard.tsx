@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Star, ShoppingCart, Heart, Eye } from "lucide-react";
 import { Product } from "@/types/product";
 import { formatPrice } from "@/lib/utils";
@@ -69,10 +70,12 @@ export function ProductCard({ product, index = 0, viewMode = "grid" }: ProductCa
           <div className="flex">
             <div className="relative w-48 h-48 flex-shrink-0 bg-gradient-to-br from-gray-50/50 to-gray-100/50 overflow-hidden">
               {product.images && product.images.length > 0 ? (
-                <img
+                <Image
                   src={product.images[0]}
                   alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                  fill
+                  sizes="192px"
+                  className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-5xl">
@@ -187,10 +190,12 @@ export function ProductCard({ product, index = 0, viewMode = "grid" }: ProductCa
       <div className="relative bg-white/70 backdrop-blur-md rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-white/40 hover:border-primary/30 h-full flex flex-col">
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gray-50/50 to-gray-100/50">
           {product.images && product.images.length > 0 ? (
-            <img
+            <Image
               src={product.images[0]}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+              className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-7xl">

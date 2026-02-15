@@ -4,6 +4,7 @@ import * as React from "react";
 import { Product } from "@/types/product";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
+import Image from "next/image";
 import { X, Heart, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -73,10 +74,12 @@ function QuickViewModal({ product, onClose }: { product: Product; onClose: () =>
           {/* Image */}
           <div className="relative aspect-square md:aspect-auto bg-gray-100">
             {product.images && product.images.length > 0 ? (
-              <img
+              <Image
                 src={product.images[0]}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-6xl">
