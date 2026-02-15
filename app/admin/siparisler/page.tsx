@@ -155,7 +155,7 @@ export default function OrdersPage() {
     if (!confirm(`#${orderNumber} siparişini silmek istediğinizden emin misiniz?`)) return;
 
     try {
-      const res = await fetch(`/api/admin/orders?id=${orderId}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/orders/${orderId}`, { method: "DELETE" });
       if (res.ok) {
         await loadOrders();
       } else {
