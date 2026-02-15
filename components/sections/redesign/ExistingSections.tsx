@@ -5,10 +5,26 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ChevronLeft, ChevronRight, Leaf, Shield, Check, Truck, Clock, Sparkles, Mail, Send } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Leaf, Shield, Check, Truck, Clock, Sparkles, Mail, Send, Award, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
 import { Marquee } from "../Marquee";
+
+interface MarqueeSettings {
+  items: { id: string; text: string; icon: string; badge?: string }[];
+  speed?: string;
+  direction?: string;
+  enabled?: boolean;
+}
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  leaf: Leaf,
+  truck: Truck,
+  shield: Shield,
+  heart: Heart,
+  award: Award,
+  sparkle: Sparkles,
+};
 
 // Types from PremiumHome
 interface HeroSlide {
@@ -156,7 +172,57 @@ export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
 }
 
 export function MarqueeSection() {
-  return <Marquee />;
+  const [settings, setSettings] = useState<MarqueeSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchMarqueeSettings() {
+      try {
+        const res = await fetch("/api/settings?type=marquee");
+        const data = await res.json();
+        if (data.success && data.marqueeSettings) {
+          setSettings(data.marqueeSettings);
+        }
+      } catch (err) {
+        console.error("Failed to fetch marquee settings:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchMarqueeSettings();
+  }, []);
+
+  if (loading || !settings?.enabled || !settings.items?.length) {
+    return null;
+  }
+
+  const speedClass = {
+    slow: "animate-marquee-slow",
+    normal: "animate-marquee",
+    fast: "animate-marquee-fast",
+  }[settings.speed || "normal"] || "animate-marquee";
+
+  return (
+    <div className="bg-primary text-white py-3 overflow-hidden">
+      <div className={`flex ${speedClass} whitespace-nowrap`}>
+        {[...settings.items, ...settings.items].map((item, idx) => {
+          const Icon = ICON_MAP[item.icon] || Leaf;
+          return (
+            <div key={`${item.id}-${idx}`} className="flex items-center gap-2 px-6">
+              <Icon className="w-4 h-4 text-white/90" />
+              <span className="text-sm font-medium">{item.text}</span>
+              {item.badge && (
+                <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs font-bold">
+                  {item.badge}
+                </span>
+              )}
+              <span className="text-white/40 mx-2">•</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export function Newsletter() {

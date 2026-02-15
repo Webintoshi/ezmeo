@@ -148,6 +148,14 @@ body {
   animation: marquee 20s linear infinite;
 }
 
+.animate-marquee-slow {
+  animation: marquee 40s linear infinite;
+}
+
+.animate-marquee-fast {
+  animation: marquee 10s linear infinite;
+}
+
 /* Scrollbar Hide Utility */
 .scrollbar-hide {
   -ms-overflow-style: none;
