@@ -27,7 +27,7 @@ export async function fetchCategories(): Promise<CategoryInfo[]> {
       name: cat.name,
       slug: cat.slug,
       description: cat.description || "",
-      image: cat.image || "/placeholder.jpg",
+      image: cat.image || "/placeholder.svg",
       icon: cat.icon || "📦",
       productCount: 0,
       parent_id: cat.parent_id,
@@ -78,7 +78,7 @@ export async function fetchCategoryBySlug(slug: string): Promise<CategoryInfo | 
     name: data.name,
     slug: data.slug,
     description: data.description || "",
-    image: data.image || "/placeholder.jpg",
+    image: data.image || "/placeholder.svg",
     icon: data.icon || "📦",
     productCount: 0,
   };

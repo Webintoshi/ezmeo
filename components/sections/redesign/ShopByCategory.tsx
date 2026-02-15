@@ -86,12 +86,13 @@ export default function ShopByCategory() {
             >
               <div className="shop-by-category__image-wrapper-horizontal">
                 <Image
-                  src={imageErrors[cat.id] ? "/placeholder.jpg" : (cat.image || "/placeholder.jpg")}
+                  src={imageErrors[cat.id] ? "/placeholder.svg" : (cat.image || "/placeholder.svg")}
                   alt={cat.name}
                   fill
                   className="shop-by-category__image-horizontal"
                   sizes="(max-width: 768px) 100vw, 33vw"
                   onError={() => handleImageError(cat.id)}
+                  unoptimized
                 />
               </div>
               
