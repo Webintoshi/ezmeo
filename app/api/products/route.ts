@@ -400,20 +400,71 @@ export async function PUT(request: NextRequest) {
         if (variants && Array.isArray(variants)) {
             console.log("Updating variants, count:", variants.length);
 
-            // Mevcut variant'ları sil
-            const { error: deleteError } = await supabase
+            // Mevcut variant'ları al
+            const { data: existingVariants } = await supabase
                 .from("product_variants")
-                .delete()
+                .select("id, product_id")
                 .eq("product_id", id);
 
-            if (deleteError) {
-                console.error("Variants delete error:", deleteError);
-                throw new Error(`Variants delete failed: ${deleteError.message}`);
+            // Siparişi olan variant'ları bul
+            const { data: variantsWithOrders } = await supabase
+                .from("order_items")
+                .select("variant_id")
+                .in("variant_id", existingVariants?.map(v => v.id) || [])
+                .neq("variant_id", null);
+
+            const orderedVariantIds = new Set(variantsWithOrders?.map(v => v.variant_id) || []);
+            
+            // Siparişli variant ID'lerini koru, siparişsiz olanları sil
+            const variantsToDelete = existingVariants
+                ?.filter(v => !orderedVariantIds.has(v.id))
+                .map(v => v.id) || [];
+
+            if (variantsToDelete.length > 0) {
+                const { error: deleteError } = await supabase
+                    .from("product_variants")
+                    .delete()
+                    .in("id", variantsToDelete);
+
+                if (deleteError) {
+                    console.error("Variants delete error:", deleteError);
+                    throw new Error(`Variants delete failed: ${deleteError.message}`);
+                }
+            }
+
+            // Yeni variant'ları ekle (siparişi olanların yerine değil)
+            const newVariants = variants.filter((v: any) => !v.id);
+            const existingVariantsToUpdate = variants.filter((v: any) => v.id && !orderedVariantIds.has(v.id));
+
+            // Mevcut variant'ları güncelle
+            for (const v of existingVariantsToUpdate) {
+                const { error: updateError } = await supabase
+                    .from("product_variants")
+                    .update({
+                        name: v.name,
+                        weight: v.weight,
+                        price: v.price,
+                        original_price: v.original_price || null,
+                        cost: v.cost || null,
+                        stock: v.stock,
+                        sku: v.sku,
+                        barcode: v.barcode || null,
+                        group_name: v.group_name || null,
+                        unit: v.unit || 'adet',
+                        max_purchase_quantity: v.max_purchase_quantity || null,
+                        warehouse_location: v.warehouse_location || null,
+                        images: v.images || [],
+                    })
+                    .eq("id", v.id);
+
+                if (updateError) {
+                    console.error("Variant update error:", updateError);
+                }
             }
 
             // Yeni variant'ları ekle
-            if (variants.length > 0) {
-                const variantsToInsert = variants.map((v: any) => ({
+            if (newVariants.length > 0) {
+                const variantsToInsert = newVariants.map((v: any) => ({
                     product_id: id,
                     name: v.name,
                     weight: v.weight,
