@@ -1,9 +1,16 @@
 import { CategoryInfo } from "@/types/product";
+import { createBrowserClient } from "@supabase/ssr";
+
+function getSupabase() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
 // Supabase'den kategorileri çek (Client-side)
 export async function fetchCategories(): Promise<CategoryInfo[]> {
-  const { createServerClient } = await import("@/lib/supabase");
-  const supabase = createServerClient();
+  const supabase = getSupabase();
 
   const { data, error } = await supabase
       .from("categories")
@@ -23,38 +30,32 @@ export async function fetchCategories(): Promise<CategoryInfo[]> {
       description: cat.description || "",
       image: cat.image || "/placeholder.jpg",
       icon: cat.icon || "📦",
-      productCount: 0, // Bu değer ürün sayısı hesaplanarak güncellenebilir
+      productCount: 0,
     })) || [];
 }
 
 // Server-side için kategori çekme
 export async function fetchCategoriesServer() {
-  try {
-    const { createServerClient } = await import("@/lib/supabase");
-    const supabase = createServerClient();
+  const { createServerClient } = await import("@/lib/supabase");
+  const supabase = createServerClient();
 
-    const { data, error } = await supabase
-      .from("categories")
-      .select("*")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true });
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
 
-    if (error) {
-      console.error("Error fetching categories:", error);
-      return [];
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error("Failed to fetch categories:", error);
+  if (error) {
+    console.error("Error fetching categories:", error);
     return [];
   }
+
+  return data || [];
 }
 
 // Slug'a göre kategori getir (Client-side)
 export async function fetchCategoryBySlug(slug: string): Promise<CategoryInfo | null> {
-  const { createServerClient } = await import("@/lib/supabase");
-  const supabase = createServerClient();
+  const supabase = getSupabase();
 
   const { data, error } = await supabase
     .from("categories")
@@ -85,8 +86,7 @@ export async function fetchCategoryBySlug(slug: string): Promise<CategoryInfo | 
 
 // ID'ye göre kategori getir (Admin için)
 export async function getCategoryById(id: string): Promise<CategoryInfo | undefined> {
-  const { createServerClient } = await import("@/lib/supabase");
-  const supabase = createServerClient();
+  const supabase = getSupabase();
 
   const { data, error } = await supabase
     .from("categories")
@@ -109,8 +109,7 @@ export async function getCategoryById(id: string): Promise<CategoryInfo | undefi
 
 // Kategori ekle (Admin için)
 export async function addCategory(category: Omit<CategoryInfo, "id" | "productCount">): Promise<void> {
-  const { createServerClient } = await import("@/lib/supabase");
-  const supabase = createServerClient();
+  const supabase = getSupabase();
 
   const { error } = await supabase.from("categories").insert({
     name: category.name,
@@ -125,8 +124,7 @@ export async function addCategory(category: Omit<CategoryInfo, "id" | "productCo
 
 // Kategori güncelle (Admin için)
 export async function updateCategory(id: string, updatedCategory: Partial<CategoryInfo>): Promise<void> {
-  const { createServerClient } = await import("@/lib/supabase");
-  const supabase = createServerClient();
+  const supabase = getSupabase();
 
   const { error } = await supabase
     .from("categories")
@@ -144,8 +142,7 @@ export async function updateCategory(id: string, updatedCategory: Partial<Catego
 
 // Kategori sil (Admin için)
 export async function deleteCategory(id: string): Promise<void> {
-  const { createServerClient } = await import("@/lib/supabase");
-  const supabase = createServerClient();
+  const supabase = getSupabase();
 
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) throw error;
