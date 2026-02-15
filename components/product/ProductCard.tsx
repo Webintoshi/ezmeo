@@ -7,18 +7,19 @@ import { formatPrice } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
 import { useCart } from "@/lib/cart-context";
 import { useWishlist } from "@/lib/wishlist-context";
+import { useQuickView } from "@/components/product/QuickViewProvider";
 import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   product: Product;
   index?: number;
-  onQuickView?: (product: Product) => void;
   viewMode?: "grid" | "list";
 }
 
-export function ProductCard({ product, index = 0, onQuickView, viewMode = "grid" }: ProductCardProps) {
+export function ProductCard({ product, index = 0, viewMode = "grid" }: ProductCardProps) {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { setQuickViewProduct } = useQuickView();
   const isWishlisted = isInWishlist(product.id);
 
   if (!product.variants || product.variants.length === 0) {
