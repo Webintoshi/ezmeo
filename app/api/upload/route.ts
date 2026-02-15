@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadToR2 } from "@/lib/r2";
+import sharp from "sharp";
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
-};
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
     try {
@@ -39,9 +34,48 @@ export async function POST(request: NextRequest) {
         }
 
         const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
+        const inputBuffer = Buffer.from(bytes);
 
-        const result = await uploadToR2(buffer, file.name, file.type, folder);
+        const maxDimensions = {
+            products: { width: 2048, height: 2048 },
+            categories: { width: 1200, height: 1200 },
+            banners: { width: 1920, height: 1080 },
+            default: { width: 1920, height: 1920 }
+        };
+
+        const dimensions = maxDimensions[folder as keyof typeof maxDimensions] || maxDimensions.default;
+
+        let processedImage = sharp(inputBuffer)
+            .resize(dimensions.width, dimensions.height, {
+                fit: "inside",
+                withoutEnlargement: true
+            })
+            .webp({ quality: 85 });
+
+        const metadata = await processedImage.metadata();
+        
+        if (metadata.width && metadata.height) {
+            const aspectRatio = metadata.width / metadata.height;
+            
+            if (aspectRatio > 1) {
+                processedImage = processedImage.resize(dimensions.width, null, {
+                    fit: "inside",
+                    withoutEnlargement: true
+                });
+            } else {
+                processedImage = processedImage.resize(null, dimensions.height, {
+                    fit: "inside",
+                    withoutEnlargement: true
+                });
+            }
+        }
+
+        const outputBuffer = await processedImage.toBuffer();
+
+        const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+        const webpFileName = `${fileNameWithoutExt}.webp`;
+
+        const result = await uploadToR2(outputBuffer, webpFileName, "image/webp", folder);
 
         if (result.success) {
             return NextResponse.json({
