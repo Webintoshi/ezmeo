@@ -23,25 +23,25 @@ interface HeroSlide {
   buttonLink?: string;
 }
 
-export function HeroSection({ slides }: { slides: HeroSlide[] }) {
+export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
   const [current, setCurrent] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (slides.length > 0) {
+    if (slides && slides.length > 0) {
       setIsLoaded(true);
     }
   }, [slides]);
 
   useEffect(() => {
-    if (slides.length <= 1) return;
+    if (!slides || slides.length <= 1) return;
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % slides.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [slides.length]);
+  }, [slides]);
 
-  if (!isLoaded || slides.length === 0) {
+  if (!isLoaded || !slides || slides.length === 0) {
     return null;
   }
 

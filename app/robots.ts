@@ -6,7 +6,20 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin/", "/api/"],
+        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        crawlDelay: 2,
+      },
+      {
+        userAgent: "GPTBot",
+        disallow: "/",
+      },
+      {
+        userAgent: "ClaudeBot",
+        disallow: "/",
+      },
+      {
+        userAgent: " anthropic-ai",
+        disallow: "/",
       },
     ],
     sitemap: "https://ezmeo.com/sitemap.xml",
