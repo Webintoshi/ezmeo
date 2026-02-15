@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { createServerClient } from "@/lib/supabase";
-import { ProductsPageClient } from "@/components/product/ProductsPageClient";
+import { ProductCard } from "@/components/product/ProductCard";
+import Link from "next/link";
 
 interface DBProduct {
   id: string;
@@ -38,7 +39,6 @@ interface DBVariant {
   original_price: number | null;
   stock: number;
   weight: string | null;
-  created_at: string;
 }
 
 interface Category {
@@ -149,12 +149,12 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Koleksiyon Bulunamadı</h1>
           <p className="text-gray-600 mb-8">Aradığınız koleksyon mevcut değil veya kaldırılmış olabilir.</p>
-          <a
+          <Link
             href="/"
             className="inline-block px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
           >
             Ana Sayfaya Dön
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -163,28 +163,55 @@ export default async function CollectionPage({ params }: { params: Promise<{ slu
   const products = await getProductsByCategory(slug);
   
   return (
-    <>
-      {/* Hero Banner */}
-      <section className="bg-gradient-to-br from-primary via-primary/90 to-primary/80 py-16 md:py-20 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl" />
+    <div className="min-h-screen bg-gray-50">
+      {/* Breadcrumb */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="container mx-auto px-4 py-3">
+          <nav className="flex items-center gap-2 text-sm text-gray-500">
+            <Link href="/" className="hover:text-primary transition-colors">Ana Sayfa</Link>
+            <span>/</span>
+            <Link href="/urunler" className="hover:text-primary transition-colors">Ürünler</Link>
+            <span>/</span>
+            <span className="text-gray-900">{category.name}</span>
+          </nav>
         </div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{category.name}</h1>
-            {category.description && (
-              <p className="text-lg text-white/90">{category.description}</p>
-            )}
-            <p className="text-white/70 mt-4">{products.length} ürün</p>
+      </div>
+
+      {/* Category Header */}
+      <div className="bg-white">
+        <div className="container mx-auto px-4 py-8 md:py-12">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{category.name}</h1>
+          {category.description && (
+            <p className="text-gray-600 max-w-2xl">{category.description}</p>
+          )}
+          <p className="text-gray-500 mt-2">{products.length} ürün</p>
+        </div>
+      </div>
+
+      {/* Products Grid */}
+      <div className="container mx-auto px-4 py-8">
+        {products.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-gray-500 text-lg">Bu kategoride henüz ürün bulunmuyor.</p>
+            <Link 
+              href="/urunler" 
+              className="inline-block mt-4 px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              Tüm Ürünleri Gör
+            </Link>
           </div>
-        </div>
-      </section>
-      
-      {/* Products */}
-      <ProductsPageClient 
-        initialProducts={products} 
-      />
-    </>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {products.map((product, index) => (
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                index={index}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
