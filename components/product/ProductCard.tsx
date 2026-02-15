@@ -306,17 +306,6 @@ export function ProductCard({ product, index = 0, viewMode = "grid" }: ProductCa
               </button>
             </div>
 
-            {/* Quick View Button - Bottom (Desktop) */}
-            <div className="absolute inset-x-0 bottom-0 p-4 hidden md:block">
-              <button
-                onClick={handleQuickView}
-                className="w-full py-3 bg-white/95 backdrop-blur-sm text-gray-800 text-sm font-semibold rounded-xl shadow-lg opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:bg-primary hover:text-white flex items-center justify-center gap-2"
-              >
-                <Eye className="w-4 h-4" />
-                Hızlı Görüntüle
-              </button>
-            </div>
-
             {/* Out of Stock Overlay */}
             {isOutOfStock && (
               <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">

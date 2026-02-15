@@ -6,7 +6,7 @@ import { Product } from "@/types/product";
 import { getAllProducts } from "@/lib/products";
 import { ROUTES } from "@/lib/constants";
 import { ProductCard } from "@/components/product/ProductCard";
-import { Grid3X3, List, Loader2, Package, ArrowRight } from "lucide-react";
+import { Loader2, Package, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +15,7 @@ const ITEMS_PER_PAGE = 8;
 export default function BestSellers() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -132,58 +132,23 @@ export default function BestSellers() {
             </p>
           </div>
           
-          <div className="flex items-center gap-3">
-            {/* View Toggle - Desktop Only */}
-            <div className="hidden sm:flex items-center bg-stone-100 rounded-xl p-1">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={cn(
-                  "p-2 rounded-lg transition-all",
-                  viewMode === "grid"
-                    ? "bg-white text-primary shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                )}
-                aria-label="Grid görünümü"
-              >
-                <Grid3X3 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={cn(
-                  "p-2 rounded-lg transition-all",
-                  viewMode === "list"
-                    ? "bg-white text-primary shadow-sm"
-                    : "text-gray-400 hover:text-gray-600"
-                )}
-                aria-label="Liste görünümü"
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-            
-            {/* View All Link */}
-            <Link 
-              href={ROUTES.products} 
-              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors"
-            >
-              Tümünü Gör
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
+          {/* View All Link */}
+          <Link 
+            href={ROUTES.products} 
+            className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors"
+          >
+            Tümünü Gör
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </motion.div>
 
-        {/* Products Grid/List */}
-        <div className={cn(
-          viewMode === "list" 
-            ? "flex flex-col gap-4" 
-            : "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6"
-        )}>
+        {/* Products Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
           {displayedProducts.map((product, idx) => (
             <ProductCard
               key={product.id}
               product={product}
               index={idx}
-              viewMode={viewMode}
             />
           ))}
         </div>
@@ -208,11 +173,7 @@ export default function BestSellers() {
           </div>
         )}
 
-        {!hasMore && products.length > 0 && (
-          <p className="text-center text-gray-400 mt-10 text-sm">
-            Tüm ürünler gösterildi ({products.length} ürün)
-          </p>
-        )}
+
 
         {/* Mobile: View All Button */}
         <div className="flex sm:hidden justify-center mt-8">
