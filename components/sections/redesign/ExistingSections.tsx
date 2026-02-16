@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ChevronLeft, ChevronRight, Leaf, Shield, Check, Truck, Clock, Sparkles, Mail, Send, Award, Heart } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Leaf, Shield, Check, Truck, Clock, Sparkles, Mail, Send, Award, Heart, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
 import { Marquee } from "../Marquee";
@@ -265,58 +265,127 @@ export function Newsletter() {
   };
 
   return (
-    <section className="py-12 sm:py-16 md:py-24 bg-gray-900 relative overflow-hidden">
-      <div className="container mx-auto px-4 sm:px-6 relative z-10">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
-            <span className="text-red-400 font-medium text-xs sm:text-sm uppercase tracking-wider">Bülten</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white mb-4">
-            Özel Fırsatlardan Haber Olun
-          </h2>
-          <p className="text-gray-400 mb-6 sm:mb-8 text-sm sm:text-base">
-            İlk siparişinizde <span className="text-white font-bold">%10 indirim</span> kazanın! E-posta listemize abone olun.
-          </p>
+    <section className="py-16 sm:py-20 md:py-28 bg-[#7B1113] relative overflow-hidden">
+      {/* Decorative Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Gradient Orbs */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#F3E0E1]/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-[#F3E0E1]/10 rounded-full blur-3xl" />
+        
+        {/* Pattern Overlay */}
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+      </div>
 
+      <div className="container mx-auto px-4 sm:px-6 relative z-10">
+        <div className="max-w-2xl mx-auto">
           {subscribed ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-emerald-500/20 border border-emerald-500/50 rounded-xl sm:rounded-2xl p-4 sm:p-6"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-8 sm:p-12 text-center"
             >
-              <Check className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-400 mx-auto mb-2" />
-              <p className="text-white font-medium text-sm sm:text-base">Teşekkürler! %10 indirim kazandınız.</p>
+              {/* Success Icon */}
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#F3E0E1] flex items-center justify-center">
+                <Check className="w-10 h-10 text-[#7B1113]" />
+              </div>
+              
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+                Aramıza Hoş Geldiniz! 🎉
+              </h3>
+              <p className="text-white/80 text-base sm:text-lg mb-4">
+                %10 indirim kodunuz e-posta adresinize gönderildi.
+              </p>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F3E0E1]/20 text-white text-sm">
+                <Sparkles className="w-4 h-4" />
+                İlk siparişinizde geçerli
+              </div>
             </motion.div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="E-posta adresiniz"
-                required
-                className="flex-1 px-4 sm:px-5 py-3.5 sm:py-4 bg-white/10 border border-white/20 rounded-xl text-white text-sm sm:text-base placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500/50"
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-6 sm:px-8 py-3.5 sm:py-4 bg-red-600 text-white text-sm sm:text-base font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center"
+            >
+              {/* Badge */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium mb-6"
               >
-                {loading ? (
-                  <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    Abone Ol <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </>
-                )}
-              </button>
-            </form>
+                <Mail className="w-4 h-4" />
+                E-Bülten
+              </motion.div>
+
+              {/* Title */}
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+                Özel Fırsatları
+                <span className="block mt-1 text-[#F3E0E1]">Kaçırma</span>
+              </h2>
+
+              {/* Description */}
+              <p className="text-white/80 text-base sm:text-lg mb-8 max-w-lg mx-auto">
+                İlk siparişinde <span className="text-white font-bold bg-white/20 px-2 py-0.5 rounded">%10 indirim</span> kazanmak için e-bültene abone ol
+              </p>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                <div className="relative flex-1">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="E-posta adresin"
+                    required
+                    className="w-full px-5 sm:px-6 py-4 bg-white/10 border border-white/30 rounded-xl text-white text-base placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-[#F3E0E1]/50 focus:border-[#F3E0E1] transition-all backdrop-blur-sm"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-8 py-4 bg-white text-[#7B1113] text-base font-bold rounded-xl hover:bg-[#F3E0E1] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-[#7B1113] border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      Abone Ol
+                      <Send className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Trust Note */}
+              <p className="text-white/60 text-xs sm:text-sm mt-6 flex items-center justify-center gap-2">
+                <Shield className="w-4 h-4" />
+                Dilediğin zaman abonelikten çıkabilirsin. Spam yok.
+              </p>
+
+              {/* Decorative Elements */}
+              <div className="flex items-center justify-center gap-4 mt-8">
+                <div className="flex -space-x-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className="w-8 h-8 rounded-full bg-[#F3E0E1]/30 border-2 border-[#7B1113] flex items-center justify-center"
+                    >
+                      <span className="text-white text-xs">👤</span>
+                    </div>
+                  ))}
+                </div>
+                <span className="text-white/60 text-sm">
+                  <span className="text-white font-semibold">5.000+</span> kişi katıldı
+                </span>
+              </div>
+            </motion.div>
           )}
-          
-          <p className="text-[10px] sm:text-xs text-gray-500 mt-4">
-            Dilediğiniz zaman abonelikten çıkabilirsiniz.
-          </p>
         </div>
       </div>
     </section>
