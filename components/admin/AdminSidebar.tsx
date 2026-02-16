@@ -194,162 +194,44 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
     }
   }, [isOpen]);
 
-  // Fetch user data
-  const fetchUserData = async () => {
+  // Fetch user data from localStorage (set during login)
+  const fetchUserData = () => {
     try {
-      console.log("AdminSidebar: Fetching user data...");
+      console.log("AdminSidebar: Fetching user data from localStorage...");
       
-      // Wait a bit for auth to initialize
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Get stored user info from localStorage (set during login)
+      const userEmail = localStorage.getItem("admin_user_email");
+      const userName = localStorage.getItem("admin_user_name");
       
-      // Get session
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      console.log("AdminSidebar: localStorage:", { userEmail, userName });
       
-      if (sessionError) {
-        console.error("AdminSidebar: Session error:", sessionError);
-      }
-      
-      console.log("AdminSidebar: Session data:", sessionData);
-      
-      if (!sessionData?.session?.user) {
-        console.log("AdminSidebar: No session in getSession, trying cookies...");
+      if (userEmail) {
+        setUserEmail(userEmail);
         
-        // Try to get from cookies
-        try {
-          const cookies = document.cookie.split(';');
-          console.log("AdminSidebar: All cookies:", cookies.map(c => c.trim().split('=')[0]));
-          
-          // Find supabase auth cookie
-          const authCookie = cookies.find(c => c.trim().startsWith('sb-jlrfjirbtcazhqqnrxfb-auth-token'));
-          
-          if (authCookie) {
-            const cookieValue = authCookie.split('=')[1];
-            console.log("AdminSidebar: Found auth cookie");
-            
-            try {
-              // Cookie might be URL encoded and base64 encoded
-              const decoded = decodeURIComponent(cookieValue);
-              console.log("AdminSidebar: Decoded cookie:", decoded.substring(0, 100) + "...");
-              
-              // Try to parse as JSON
-              const parsed = JSON.parse(decoded);
-              console.log("AdminSidebar: Parsed cookie:", parsed);
-              
-              if (parsed.user || parsed.currentSession?.user) {
-                const user = parsed.user || parsed.currentSession?.user;
-                console.log("AdminSidebar: Using user from cookie:", user);
-                processUser(user);
-                return;
-              }
-            } catch (parseError) {
-              console.error("AdminSidebar: Cookie parse error:", parseError);
-            }
-          } else {
-            console.log("AdminSidebar: No auth cookie found");
-          }
-        } catch (e) {
-          console.error("AdminSidebar: Cookie read error:", e);
+        if (userName) {
+          console.log("AdminSidebar: Using stored name:", userName);
+          setUserName(userName);
+        } else if (userEmail.includes('@')) {
+          const emailName = userEmail.split('@')[0];
+          console.log("AdminSidebar: Using email prefix:", emailName);
+          setUserName(emailName);
+        } else {
+          setUserName("Admin Kullanıcı");
         }
-        
-        setLoading(false);
-        return;
+      } else {
+        console.log("AdminSidebar: No user data in localStorage");
+        setUserName("Admin Kullanıcı");
       }
-      
-      await processUser(sessionData.session.user);
-      
     } catch (error) {
-      console.error("AdminSidebar: Error:", error);
+      console.error("AdminSidebar: Error reading localStorage:", error);
+      setUserName("Admin Kullanıcı");
+    } finally {
       setLoading(false);
     }
   };
-  
-  const processUser = async (user: any) => {
-    console.log("AdminSidebar: Processing user:", user.id);
-    console.log("AdminSidebar: User email:", user.email);
-    
-    setUserEmail(user.email || "");
-    
-    let displayName: string | null = null;
-    let userRole: string | null = null;
-    
-    // 1. Önce user_metadata dene
-    const userMetadata = user.user_metadata || {};
-    console.log("AdminSidebar: user_metadata:", userMetadata);
-    
-    if (userMetadata.full_name) {
-      displayName = userMetadata.full_name;
-    } else if (userMetadata.name) {
-      displayName = userMetadata.name;
-    }
-    
-    // 2. Sonra profile tablosu dene
-    if (!displayName || !userRole) {
-      console.log("AdminSidebar: Fetching profile for:", user.id);
-      
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role, full_name")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError) {
-        console.error("AdminSidebar: Profile error:", profileError.message);
-      } else if (profile) {
-        console.log("AdminSidebar: Profile found:", profile);
-        
-        if (profile.role) userRole = profile.role;
-        
-        if (!displayName && profile.full_name) {
-          displayName = profile.full_name;
-        }
-      }
-    }
-    
-    // 3. Role'ü set et
-    if (userRole) {
-      setRole(userRole);
-    }
-    
-    // 4. İsmi set et
-    if (displayName?.trim()) {
-      console.log("AdminSidebar: Setting display name:", displayName);
-      setUserName(displayName.trim());
-    } else if (user.email?.includes('@')) {
-      const emailName = user.email.split('@')[0];
-      console.log("AdminSidebar: Using email prefix:", emailName);
-      setUserName(emailName);
-    } else {
-      setUserName("Admin Kullanıcı");
-    }
-    
-    setLoading(false);
-  };
 
   useEffect(() => {
-    let isMounted = true;
-    
-    // Listen for auth state changes FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("AdminSidebar: Auth event:", event, "Session:", session ? "YES" : "NO");
-      
-      if (!isMounted) return;
-      
-      if (session?.user) {
-        console.log("AdminSidebar: User from auth event:", session.user.id);
-        processUser(session.user);
-      } else if (event === 'INITIAL_SESSION' && !session) {
-        console.log("AdminSidebar: INITIAL_SESSION with no session, user not logged in");
-        setLoading(false);
-      }
-    });
-    
-    // Also try to fetch immediately (for SSR cases)
     fetchUserData();
-    
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
   }, []);
 
   const toggleMenu = (title: string) => {

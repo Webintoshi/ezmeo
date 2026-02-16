@@ -31,7 +31,24 @@ export default function AdminLoginPage() {
         toast.error("Giriş başarısız: " + error.message);
       } else {
         toast.success("Giriş yapıldı.");
-        localStorage.setItem("admin_authenticated", "true"); // Legacy support
+        
+        // Get user info and store in localStorage
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Store user info for sidebar
+          localStorage.setItem("admin_authenticated", "true");
+          localStorage.setItem("admin_user_id", user.id);
+          localStorage.setItem("admin_user_email", user.email || "");
+          
+          // Try to get full name from metadata
+          const fullName = user.user_metadata?.full_name || 
+                          user.user_metadata?.name || 
+                          "";
+          if (fullName) {
+            localStorage.setItem("admin_user_name", fullName);
+          }
+        }
+        
         router.push("/admin");
         router.refresh();
       }
