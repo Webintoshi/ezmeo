@@ -42,6 +42,16 @@ interface HeroSlide {
 export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
   const [current, setCurrent] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     if (slides && slides.length > 0) {
@@ -64,7 +74,7 @@ export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
   const slide = slides[current];
 
   return (
-    <section className="relative h-[60vh] md:h-[75vh] overflow-hidden">
+    <section className="relative h-[50vh] sm:h-[55vh] md:h-[65vh] lg:h-[75vh] min-h-[400px] max-h-[800px] overflow-hidden">
       <AnimatePresence mode="wait">
         <motion.div
           key={current}
@@ -94,12 +104,12 @@ export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
               sizes="100vw"
             />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent md:from-black/60 md:via-black/30" />
         </motion.div>
       </AnimatePresence>
 
-      <div className="container mx-auto px-4 h-full flex items-center relative z-10">
-        <div className="max-w-xl md:max-w-2xl">
+      <div className="container mx-auto px-4 sm:px-6 h-full flex items-center relative z-10">
+        <div className="max-w-lg sm:max-w-xl md:max-w-2xl">
           <AnimatePresence mode="wait">
             <motion.div
               key={current}
@@ -113,26 +123,26 @@ export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full mb-6"
+                  className="inline-block px-3 py-1 sm:px-4 sm:py-1.5 bg-white/20 backdrop-blur-sm text-white text-xs sm:text-sm font-medium rounded-full mb-4 sm:mb-6"
                 >
                   {slide.title}
                 </motion.span>
               )}
-              <h2 className="text-4xl md:text-6xl font-black text-white mb-4 leading-tight">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black text-white mb-3 sm:mb-4 leading-tight">
                 {slide.alt}
               </h2>
               {slide.subtitle && (
-                <p className="text-lg md:text-xl text-white/90 mb-8">
+                <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 max-w-md">
                   {slide.subtitle}
                 </p>
               )}
               {slide.buttonText && (
                 <Link
                   href={slide.buttonLink || ROUTES.products}
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-900 font-bold rounded-full hover:bg-gray-100 transition-all hover:scale-105"
+                  className="inline-flex items-center gap-2 px-6 py-3 sm:px-8 sm:py-4 bg-white text-gray-900 text-sm sm:text-base font-bold rounded-full hover:bg-gray-100 transition-all hover:scale-105 active:scale-95"
                 >
                   {slide.buttonText}
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Link>
               )}
             </motion.div>
@@ -141,32 +151,39 @@ export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
       </div>
 
       {slides.length > 1 && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+        <div className="absolute bottom-4 sm:bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-20">
           {slides.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setCurrent(idx)}
               className={cn(
-                "w-3 h-3 rounded-full transition-all",
-                idx === current ? "bg-white w-8" : "bg-white/50 hover:bg-white/80"
+                "w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all",
+                idx === current ? "bg-white w-6 sm:w-8" : "bg-white/50 hover:bg-white/80"
               )}
+              aria-label={`Slide ${idx + 1}`}
             />
           ))}
         </div>
       )}
 
-      <button
-        onClick={() => setCurrent((current - 1 + slides.length) % slides.length)}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all z-20"
-      >
-        <ChevronLeft className="w-6 h-6" />
-      </button>
-      <button
-        onClick={() => setCurrent((current + 1) % slides.length)}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all z-20"
-      >
-        <ChevronRight className="w-6 h-6" />
-      </button>
+      {slides.length > 1 && (
+        <>
+          <button
+            onClick={() => setCurrent((current - 1 + slides.length) % slides.length)}
+            className="hidden sm:flex absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white/20 backdrop-blur-sm rounded-full items-center justify-center text-white hover:bg-white/30 transition-all z-20 touch-manipulation"
+            aria-label="Önceki slide"
+          >
+            <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+          </button>
+          <button
+            onClick={() => setCurrent((current + 1) % slides.length)}
+            className="hidden sm:flex absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white/20 backdrop-blur-sm rounded-full items-center justify-center text-white hover:bg-white/30 transition-all z-20 touch-manipulation"
+            aria-label="Sonraki slide"
+          >
+            <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+          </button>
+        </>
+      )}
     </section>
   );
 }
@@ -203,20 +220,20 @@ export function MarqueeSection() {
   }[settings.speed || "normal"] || "animate-marquee";
 
   return (
-    <div className="bg-primary text-white py-3 overflow-hidden">
+    <div className="bg-primary text-white py-2.5 sm:py-3 overflow-hidden">
       <div className={`flex ${speedClass} whitespace-nowrap`}>
         {[...settings.items, ...settings.items].map((item, idx) => {
           const Icon = ICON_MAP[item.icon] || Leaf;
           return (
-            <div key={`${item.id}-${idx}`} className="flex items-center gap-2 px-6">
-              <Icon className="w-4 h-4 text-white/90" />
-              <span className="text-sm font-medium">{item.text}</span>
+            <div key={`${item.id}-${idx}`} className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6">
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/90 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-medium">{item.text}</span>
               {item.badge && (
-                <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs font-bold">
+                <span className="px-1.5 sm:px-2 py-0.5 bg-white/20 rounded-full text-[10px] sm:text-xs font-bold">
                   {item.badge}
                 </span>
               )}
-              <span className="text-white/40 mx-2">•</span>
+              <span className="text-white/40 mx-1 sm:mx-2">•</span>
             </div>
           );
         })}
@@ -243,17 +260,17 @@ export function Newsletter() {
   };
 
   return (
-    <section className="py-16 md:py-24 bg-gray-900 relative overflow-hidden">
-      <div className="container mx-auto px-4 relative z-10">
+    <section className="py-12 sm:py-16 md:py-24 bg-gray-900 relative overflow-hidden">
+      <div className="container mx-auto px-4 sm:px-6 relative z-10">
         <div className="max-w-2xl mx-auto text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Mail className="w-5 h-5 text-red-400" />
-            <span className="text-red-400 font-medium text-sm uppercase tracking-wider">Bülten</span>
+            <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
+            <span className="text-red-400 font-medium text-xs sm:text-sm uppercase tracking-wider">Bülten</span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white mb-4">
             Özel Fırsatlardan Haber Olun
           </h2>
-          <p className="text-gray-400 mb-8">
+          <p className="text-gray-400 mb-6 sm:mb-8 text-sm sm:text-base">
             İlk siparişinizde <span className="text-white font-bold">%10 indirim</span> kazanın! E-posta listemize abone olun.
           </p>
 
@@ -261,10 +278,10 @@ export function Newsletter() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-emerald-500/20 border border-emerald-500/50 rounded-2xl p-6"
+              className="bg-emerald-500/20 border border-emerald-500/50 rounded-xl sm:rounded-2xl p-4 sm:p-6"
             >
-              <Check className="w-12 h-12 text-emerald-400 mx-auto mb-2" />
-              <p className="text-white font-medium">Teşekkürler! %10 indirim kazandınız.</p>
+              <Check className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-400 mx-auto mb-2" />
+              <p className="text-white font-medium text-sm sm:text-base">Teşekkürler! %10 indirim kazandınız.</p>
             </motion.div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
@@ -274,25 +291,25 @@ export function Newsletter() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="E-posta adresiniz"
                 required
-                className="flex-1 px-5 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                className="flex-1 px-4 sm:px-5 py-3.5 sm:py-4 bg-white/10 border border-white/20 rounded-xl text-white text-sm sm:text-base placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500/50"
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="px-8 py-4 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                className="px-6 sm:px-8 py-3.5 sm:py-4 bg-red-600 text-white text-sm sm:text-base font-bold rounded-xl hover:bg-red-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    Abone Ol <Send className="w-4 h-4" />
+                    Abone Ol <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </>
                 )}
               </button>
             </form>
           )}
           
-          <p className="text-xs text-gray-500 mt-4">
+          <p className="text-[10px] sm:text-xs text-gray-500 mt-4">
             Dilediğiniz zaman abonelikten çıkabilirsiniz.
           </p>
         </div>
