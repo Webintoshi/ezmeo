@@ -188,106 +188,137 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    async function getUser() {
-      const timeout = setTimeout(() => {
-        setLoading(false);
-      }, 5000);
+  // Fetch user data
+  const fetchUserData = async () => {
+    try {
+      console.log("AdminSidebar: Fetching user data...");
       
-      try {
-        // Get session
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("AdminSidebar: Session error:", sessionError);
+      // Get session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error("AdminSidebar: Session error:", sessionError);
+        setLoading(false);
+        return;
+      }
+      
+      let user = sessionData?.session?.user;
+      
+      // If no session in getSession, try getUser
+      if (!user) {
+        console.log("AdminSidebar: No session, trying getUser...");
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          console.error("AdminSidebar: GetUser error:", userError);
+          setLoading(false);
+          return;
         }
+        user = userData?.user;
+      }
+
+      if (!user) {
+        console.log("AdminSidebar: No user found");
+        setLoading(false);
+        return;
+      }
+
+      console.log("AdminSidebar: User authenticated:", user.id);
+      console.log("AdminSidebar: User email:", user.email);
+      setUserEmail(user.email || "");
+      
+      let displayName: string | null = null;
+      let userRole: string | null = null;
+      
+      // First try user metadata (works without RLS)
+      const userMetadata = user.user_metadata || {};
+      console.log("AdminSidebar: Raw user_metadata:", JSON.stringify(userMetadata, null, 2));
+      
+      displayName = userMetadata.full_name || 
+                   userMetadata.name || 
+                   (userMetadata.first_name && userMetadata.last_name ? 
+                    `${userMetadata.first_name} ${userMetadata.last_name}` : null) ||
+                   userMetadata.first_name ||
+                   null;
+      
+      console.log("AdminSidebar: Display name from metadata:", displayName);
+      
+      // If not in metadata, try profile table
+      if (!displayName || !userRole) {
+        console.log("AdminSidebar: Checking profile table for user:", user.id);
         
-        let user = sessionData?.session?.user;
-        
-        // If no session, try getUser
-        if (!user) {
-          const { data: userData, error: userError } = await supabase.auth.getUser();
-          if (userError) {
-            console.error("AdminSidebar: GetUser error:", userError);
-          }
-          user = userData?.user;
+        // Try with service role bypass or just regular query
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("role, full_name, first_name, last_name, email")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("AdminSidebar: Profile error:", profileError.message);
+        } else {
+          console.log("AdminSidebar: Profile query result:", profile);
         }
 
-        if (user) {
-          console.log("AdminSidebar: User found:", user.id);
-          setUserEmail(user.email || "");
+        if (profile) {
+          console.log("AdminSidebar: Profile found!");
+          if (!userRole && profile.role) userRole = profile.role;
           
-          let displayName: string | null = null;
-          let userRole: string | null = null;
-          
-          // First try user metadata (bypasses RLS issues)
-          const userMetadata = user.user_metadata || {};
-          console.log("AdminSidebar: User metadata:", userMetadata);
-          
-          displayName = userMetadata.full_name || 
-                       userMetadata.name || 
-                       (userMetadata.first_name && userMetadata.last_name ? 
-                        `${userMetadata.first_name} ${userMetadata.last_name}` : null) ||
-                       userMetadata.first_name ||
-                       null;
-          
-          // If not in metadata, try profile table with maybeSingle() to avoid errors
-          if (!displayName || !userRole) {
-            console.log("AdminSidebar: Fetching profile for user:", user.id);
-            const { data: profile, error: profileError } = await supabase
-              .from("profiles")
-              .select("role, full_name, first_name, last_name")
-              .eq("id", user.id)
-              .maybeSingle();
-
-            if (profileError) {
-              console.error("AdminSidebar: Profile fetch error (RLS issue?):", profileError.message);
+          // Try different name fields from profile
+          if (!displayName) {
+            if (profile.full_name) {
+              displayName = profile.full_name;
+              console.log("AdminSidebar: Using profile.full_name:", displayName);
+            } else if (profile.first_name || profile.last_name) {
+              displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+              console.log("AdminSidebar: Using profile first/last name:", displayName);
             }
-
-            if (profile) {
-              console.log("AdminSidebar: Profile found:", profile);
-              if (!userRole && profile.role) userRole = profile.role;
-              
-              // Try different name fields
-              if (!displayName && profile.full_name) {
-                displayName = profile.full_name;
-              } else if (!displayName && (profile.first_name || profile.last_name)) {
-                displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
-              }
-            } else {
-              console.log("AdminSidebar: No profile data returned - checking RLS policies");
-            }
-          }
-          
-          // Set role
-          if (userRole) {
-            setRole(userRole);
-          }
-          
-          // Set display name with fallback
-          if (displayName) {
-            console.log("AdminSidebar: Setting display name:", displayName);
-            setUserName(displayName);
-          } else if (user.email && user.email.includes('@')) {
-            const emailName = user.email.split('@')[0];
-            console.log("AdminSidebar: Using email as fallback:", emailName);
-            setUserName(emailName);
-          } else {
-            console.log("AdminSidebar: No name found, using default");
-            setUserName("Admin Kullanıcı");
           }
         } else {
-          console.log("AdminSidebar: No user session found");
+          console.log("AdminSidebar: Profile not found for user id:", user.id);
         }
-      } catch (error) {
-        console.error("AdminSidebar: Error fetching user:", error);
-      } finally {
-        clearTimeout(timeout);
-        setLoading(false);
       }
+      
+      // Set role
+      if (userRole) {
+        setRole(userRole);
+        console.log("AdminSidebar: Role set to:", userRole);
+      }
+      
+      // Set display name with fallback
+      if (displayName && displayName.trim()) {
+        console.log("AdminSidebar: Final display name:", displayName);
+        setUserName(displayName.trim());
+      } else if (user.email && user.email.includes('@')) {
+        const emailName = user.email.split('@')[0];
+        console.log("AdminSidebar: Using email prefix:", emailName);
+        setUserName(emailName);
+      } else {
+        console.log("AdminSidebar: Using default name");
+        setUserName("Admin Kullanıcı");
+      }
+      
+    } catch (error) {
+      console.error("AdminSidebar: Unexpected error:", error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    getUser();
+  useEffect(() => {
+    // Initial fetch
+    fetchUserData();
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("AdminSidebar: Auth state changed:", event);
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        fetchUserData();
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const toggleMenu = (title: string) => {
