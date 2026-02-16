@@ -8,72 +8,51 @@ let analyticsClient: BetaAnalyticsDataClient | null = null;
 function getAnalyticsClient() {
   if (analyticsClient) return analyticsClient;
 
-  const credentialsStr = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
-  
-  if (!credentialsStr) {
-    console.error("GOOGLE_SERVICE_ACCOUNT_JSON is not set");
-    throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON environment variable is missing");
-  }
+  const projectId = process.env.GA4_PROJECT_ID || process.env.GOOGLE_PROJECT_ID;
+  const clientEmail = process.env.GA4_CLIENT_EMAIL || process.env.GOOGLE_CLIENT_EMAIL;
+  const privateKey = process.env.GA4_PRIVATE_KEY || process.env.GOOGLE_PRIVATE_KEY;
+  const jsonCredentials = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
 
-  try {
-    let credentials;
-    
-    if (credentialsStr.startsWith("{")) {
-      credentials = JSON.parse(credentialsStr);
-    } else {
-      credentials = {
-        type: "service_account",
-        project_id: process.env.GA4_PROJECT_ID || "igneous-stone-487614-e1",
-        private_key: credentialsStr,
-        client_email: process.env.GA4_CLIENT_EMAIL || "ga4-api@igneous-stone-487614-e1.iam.gserviceaccount.com",
-      };
+  let credentials: any;
+
+  if (jsonCredentials) {
+    try {
+      credentials = JSON.parse(jsonCredentials);
+      console.log("Using JSON credentials, project:", credentials.project_id);
+    } catch (e) {
+      console.error("Failed to parse JSON credentials");
     }
-    
-    console.log("Creating GA4 client with credentials...");
-    analyticsClient = new BetaAnalyticsDataClient({
-      credentials,
-    });
-  } catch (parseError) {
-    console.error("Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON:", parseError);
-    throw new Error("Invalid GOOGLE_SERVICE_ACCOUNT_JSON format");
+  } else if (projectId && clientEmail && privateKey) {
+    credentials = {
+      type: "service_account",
+      project_id: projectId,
+      client_email: clientEmail,
+      private_key: privateKey.replace(/\\n/g, '\n'),
+    };
+    console.log("Using separate env vars, project:", projectId);
+  } else {
+    console.error("No GA4 credentials provided");
+    throw new Error("GA4 credentials not configured");
   }
 
+  analyticsClient = new BetaAnalyticsDataClient({ credentials });
   return analyticsClient;
 }
 
 export async function GET() {
   try {
-    console.log("Starting GA4 API request, Property ID:", GA4_PROPERTY_ID);
-    
     const client = getAnalyticsClient();
-    console.log("GA4 client created successfully");
 
     const [realtimeReport] = await client.runRealtimeReport({
       property: `properties/${GA4_PROPERTY_ID}`,
-      dimensions: [
-        {
-          name: "unifiedScreenName",
-        },
-      ],
-      metrics: [
-        {
-          name: "activeUsers",
-        },
-      ],
+      dimensions: [{ name: "unifiedScreenName" }],
+      metrics: [{ name: "activeUsers" }],
     });
 
     const [deviceReport] = await client.runRealtimeReport({
       property: `properties/${GA4_PROPERTY_ID}`,
-      metrics: [
-        {
-          name: "activeUsers",
-        },
-      ],
-      dimensions: [
-        {
-          name: "deviceCategory",
-        },
-      ],
+      metrics: [{ name: "activeUsers" }],
+      dimensions: [{ name: "deviceCategory" }],
     });
 
     const totalUsers = deviceReport.rows?.reduce(
@@ -81,23 +60,13 @@ export async function GET() {
       0
     ) || 0;
 
-    const devices = {
-      mobile: 0,
-      desktop: 0,
-      tablet: 0,
-    };
-
+    const devices = { mobile: 0, desktop: 0, tablet: 0 };
     deviceReport.rows?.forEach((row: any) => {
       const deviceType = row.dimensionValues[0]?.value?.toLowerCase() || "desktop";
       const count = Number(row.metricValues[0]?.value || 0);
-      
-      if (deviceType.includes("mobile")) {
-        devices.mobile += count;
-      } else if (deviceType.includes("tablet")) {
-        devices.tablet += count;
-      } else {
-        devices.desktop += count;
-      }
+      if (deviceType.includes("mobile")) devices.mobile += count;
+      else if (deviceType.includes("tablet")) devices.tablet += count;
+      else devices.desktop += count;
     });
 
     const pageGroups: Record<string, number> = {};
@@ -112,23 +81,14 @@ export async function GET() {
       .slice(0, 5)
       .map(([url, count]) => ({ url, count }));
 
-    console.log("GA4 API success, visitors:", totalUsers);
-
     return NextResponse.json({
       success: true,
-      data: {
-        liveVisitors: totalUsers,
-        devices,
-        topPages,
-      },
+      data: { liveVisitors: totalUsers, devices, topPages },
     });
   } catch (error) {
     console.error("GA4 API Error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to fetch GA4 data",
-      },
+      { success: false, error: error instanceof Error ? error.message : "Failed to fetch GA4 data" },
       { status: 500 }
     );
   }
