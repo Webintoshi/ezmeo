@@ -2,15 +2,13 @@
 
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Product } from "@/types/product";
 import { ProductCard } from "@/components/product/ProductCard";
-import { FilterSidebar, FilterState, ActiveFilters } from "@/components/product/FilterSidebar";
+import { FilterSidebar, FilterState } from "@/components/product/FilterSidebar";
 import { FilterDrawer } from "@/components/product/FilterDrawer";
-import { SearchInput } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { ProductCardSkeleton } from "@/components/ui/skeleton";
-import { Grid3X3, List, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Package, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ProductsPageClientProps {
@@ -62,7 +60,7 @@ function parseFiltersFromParams(searchParams: URLSearchParams): {
 function ProductsPageContent({ initialProducts, categoryCounts }: ProductsPageClientProps) {
   const searchParams = useSearchParams();
   const [isInitialized, setIsInitialized] = React.useState(false);
-  const [quickViewProduct, setQuickViewProduct] = React.useState<Product | null>(null);
+  const [showMobileFilters, setShowMobileFilters] = React.useState(false);
 
   const initialState = React.useMemo(() => parseFiltersFromParams(searchParams), [searchParams]);
 
@@ -70,7 +68,6 @@ function ProductsPageContent({ initialProducts, categoryCounts }: ProductsPageCl
   const [sortOption, setSortOption] = React.useState<ProductSortOption>(initialState.sort);
   const [filters, setFilters] = React.useState<FilterState>(initialState.filters);
   const [currentPage, setCurrentPage] = React.useState(initialState.page);
-  const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
 
   React.useEffect(() => {
     setIsInitialized(true);
@@ -107,33 +104,13 @@ function ProductsPageContent({ initialProducts, categoryCounts }: ProductsPageCl
       });
     }
 
-    if (filters.vegan) {
-      products = products.filter((p) => p.vegan);
-    }
-
-    if (filters.sugarFree) {
-      products = products.filter((p) => p.sugarFree);
-    }
-
-    if (filters.highProtein) {
-      products = products.filter((p) => p.highProtein);
-    }
-
-    if (filters.glutenFree) {
-      products = products.filter((p) => p.glutenFree);
-    }
-
-    if (filters.inStock) {
-      products = products.filter((p) => p.variants.some((v) => v.stock > 0));
-    }
-
-    if (filters.onSale) {
-      products = products.filter((p) => p.variants.some((v) => v.originalPrice && v.originalPrice > v.price));
-    }
-
-    if (filters.isNew) {
-      products = products.filter((p) => p.new);
-    }
+    if (filters.vegan) products = products.filter((p) => p.vegan);
+    if (filters.sugarFree) products = products.filter((p) => p.sugarFree);
+    if (filters.highProtein) products = products.filter((p) => p.highProtein);
+    if (filters.glutenFree) products = products.filter((p) => p.glutenFree);
+    if (filters.inStock) products = products.filter((p) => p.variants.some((v) => v.stock > 0));
+    if (filters.onSale) products = products.filter((p) => p.variants.some((v) => v.originalPrice && v.originalPrice > v.price));
+    if (filters.isNew) products = products.filter((p) => p.new);
 
     switch (sortOption) {
       case "newest":
@@ -166,16 +143,36 @@ function ProductsPageContent({ initialProducts, categoryCounts }: ProductsPageCl
     currentPage * ITEMS_PER_PAGE
   );
 
+  const activeFiltersCount = [
+    ...filters.categories,
+    filters.vegan && "vegan",
+    filters.sugarFree && "sugarFree",
+    filters.highProtein && "highProtein",
+    filters.glutenFree && "glutenFree",
+    filters.inStock && "inStock",
+    filters.onSale && "onSale",
+    filters.isNew && "isNew",
+  ].filter(Boolean).length + (filters.priceRange[0] > 0 || filters.priceRange[1] < 500 ? 1 : 0);
+
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
+    setCurrentPage(1);
   };
 
-  const handleSortChange = (newSort: string) => {
-    setSortOption(newSort as ProductSortOption);
-  };
-
-  const handleSearchChange = (newSearch: string) => {
-    setSearchQuery(newSearch);
+  const clearAllFilters = () => {
+    setFilters({
+      categories: [],
+      priceRange: [0, 500],
+      vegan: false,
+      sugarFree: false,
+      highProtein: false,
+      glutenFree: false,
+      inStock: false,
+      onSale: false,
+      isNew: false,
+    });
+    setSearchQuery("");
+    setCurrentPage(1);
   };
 
   const handlePageChange = (page: number) => {
@@ -183,120 +180,162 @@ function ProductsPageContent({ initialProducts, categoryCounts }: ProductsPageCl
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const getPageNumbers = () => {
-    const pages: (number | "ellipsis")[] = [];
-    const maxVisible = 5;
-
-    if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) pages.push(i);
-        pages.push("ellipsis");
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1);
-        pages.push("ellipsis");
-        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
-      } else {
-        pages.push(1);
-        pages.push("ellipsis");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push("ellipsis");
-        pages.push(totalPages);
-      }
-    }
-
-    return pages;
-  };
+  if (!isInitialized) {
+    return null;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <section className="bg-gradient-to-br from-primary via-primary/90 to-primary/80 py-12 md:py-16 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }}
-          />
-        </div>
-
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Tüm Ürünler</h1>
-            <p className="text-lg text-white/90">Doğal ve katkısız ürünlerimizi keşfedin</p>
-          </div>
+    <div className="min-h-screen bg-[#FFF5F5]">
+      {/* Minimal Hero */}
+      <section className="pt-20 pb-8 md:pt-28 md:pb-12">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center max-w-2xl mx-auto"
+          >
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#7B1113]/10 text-[#7B1113] text-sm font-medium mb-4">
+              <Package className="w-4 h-4" />
+              {initialProducts.length} Ürün
+            </span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#7B1113] mb-4 tracking-tight">
+              Tüm Ürünler
+            </h1>
+            <p className="text-[#6b4b4c] text-lg">
+              Doğal ve katkısız ürünlerimizi keşfedin
+            </p>
+          </motion.div>
         </div>
       </section>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="sticky top-0 z-40 bg-gray-50/95 backdrop-blur-sm py-4 -mx-4 px-4 md:-mx-0 md:px-0 border-b border-gray-200/50 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 max-w-md">
-              <SearchInput
+      {/* Controls Bar */}
+      <section className="sticky top-0 z-40 bg-[#FFF5F5]/95 backdrop-blur-md border-b border-[#7B1113]/10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7B1113]/40" />
+              <input
+                type="text"
                 placeholder="Ürün ara..."
                 value={searchQuery}
-                onSearch={handleSearchChange}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-white rounded-xl border border-[#7B1113]/10 text-[#7B1113] placeholder:text-[#7B1113]/40 focus:outline-none focus:ring-2 focus:ring-[#7B1113]/20 focus:border-transparent transition-all"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#F3E0E1] text-[#7B1113] flex items-center justify-center hover:bg-[#7B1113] hover:text-white transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
 
+            {/* Right Controls */}
             <div className="flex items-center gap-3">
-              <div className="hidden lg:block w-48">
-                <Select
-                  options={SORT_OPTIONS}
+              {/* Sort Dropdown */}
+              <div className="relative">
+                <select
                   value={sortOption}
-                  onChange={handleSortChange}
-                  placeholder="Sırala"
-                />
+                  onChange={(e) => setSortOption(e.target.value as ProductSortOption)}
+                  className="appearance-none bg-white px-4 py-3 pr-10 rounded-xl border border-[#7B1113]/10 text-[#7B1113] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#7B1113]/20 cursor-pointer"
+                >
+                  {SORT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7B1113]/40 rotate-90 pointer-events-none" />
               </div>
 
-              <FilterDrawer
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                categoryCounts={categoryCounts}
-              />
-
-              <div className="hidden lg:flex items-center border border-gray-200 rounded-xl overflow-hidden">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={cn(
-                    "p-2.5 transition-colors",
-                    viewMode === "grid" ? "bg-primary text-white" : "bg-white text-gray-600 hover:bg-gray-50"
-                  )}
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={cn(
-                    "p-2.5 transition-colors",
-                    viewMode === "list" ? "bg-primary text-white" : "bg-white text-gray-600 hover:bg-gray-50"
-                  )}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
+              {/* Filter Button (Mobile) */}
+              <button
+                onClick={() => setShowMobileFilters(true)}
+                className="lg:hidden flex items-center gap-2 px-4 py-3 bg-white rounded-xl border border-[#7B1113]/10 text-[#7B1113] font-medium text-sm hover:bg-[#7B1113]/5 transition-colors"
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                Filtrele
+                {activeFiltersCount > 0 && (
+                  <span className="w-5 h-5 rounded-full bg-[#7B1113] text-white text-xs flex items-center justify-center">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
-          <div className="mt-4 lg:hidden">
-            <Select
-              options={SORT_OPTIONS}
-              value={sortOption}
-              onChange={handleSortChange}
-              placeholder="Sırala"
-            />
-          </div>
+          {/* Active Filters */}
+          {activeFiltersCount > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-[#7B1113]/10"
+            >
+              <span className="text-sm text-[#6b4b4c]">Aktif Filtreler:</span>
+              {filters.categories.map((cat) => (
+                <span
+                  key={cat}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#7B1113] text-white text-sm rounded-full"
+                >
+                  {cat}
+                  <button
+                    onClick={() =>
+                      handleFilterChange({
+                        categories: filters.categories.filter((c) => c !== cat),
+                      })
+                    }
+                    className="hover:bg-white/20 rounded-full p-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              {filters.vegan && (
+                <FilterTag label="Vegan" onRemove={() => handleFilterChange({ vegan: false })} />
+              )}
+              {filters.sugarFree && (
+                <FilterTag label="Şekersiz" onRemove={() => handleFilterChange({ sugarFree: false })} />
+              )}
+              {filters.glutenFree && (
+                <FilterTag label="Glutensiz" onRemove={() => handleFilterChange({ glutenFree: false })} />
+              )}
+              {filters.highProtein && (
+                <FilterTag label="Protein" onRemove={() => handleFilterChange({ highProtein: false })} />
+              )}
+              {filters.inStock && (
+                <FilterTag label="Stokta" onRemove={() => handleFilterChange({ inStock: false })} />
+              )}
+              {filters.onSale && (
+                <FilterTag label="İndirimli" onRemove={() => handleFilterChange({ onSale: false })} />
+              )}
+              {filters.isNew && (
+                <FilterTag label="Yeni" onRemove={() => handleFilterChange({ isNew: false })} />
+              )}
+              {(filters.priceRange[0] > 0 || filters.priceRange[1] < 500) && (
+                <FilterTag
+                  label={`${filters.priceRange[0]}₺ - ${filters.priceRange[1]}₺`}
+                  onRemove={() => handleFilterChange({ priceRange: [0, 500] })}
+                />
+              )}
+              <button
+                onClick={clearAllFilters}
+                className="text-sm text-[#7B1113] underline hover:no-underline ml-2"
+              >
+                Temizle
+              </button>
+            </motion.div>
+          )}
         </div>
+      </section>
 
-        <ActiveFilters filters={filters} onFilterChange={handleFilterChange} />
-
-        <div className="flex flex-col lg:flex-row gap-8 mt-6">
-          <aside className="hidden lg:block w-72 flex-shrink-0">
-            <div className="sticky top-36">
+      {/* Main Content */}
+      <section className="container mx-auto px-4 py-8">
+        <div className="flex gap-8">
+          {/* Sidebar Filters - Desktop */}
+          <aside className="hidden lg:block w-64 flex-shrink-0">
+            <div className="sticky top-32">
               <FilterSidebar
                 filters={filters}
                 onFilterChange={handleFilterChange}
@@ -305,104 +344,161 @@ function ProductsPageContent({ initialProducts, categoryCounts }: ProductsPageCl
             </div>
           </aside>
 
-          <main className="flex-1">
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm text-gray-500">
-                <span className="font-medium text-gray-900">{filteredProducts.length}</span> ürün bulundu
+          {/* Products Grid */}
+          <main className="flex-1 min-w-0">
+            {/* Results Count */}
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-[#6b4b4c]">
+                <span className="font-semibold text-[#7B1113]">{filteredProducts.length}</span> ürün bulundu
               </p>
             </div>
 
             {paginatedProducts.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-2xl">
-                <svg className="w-20 h-20 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-                <p className="text-gray-500 text-lg mb-2">Filtrelere uygun ürün bulunamadı</p>
-                <p className="text-gray-400 text-sm">Farklı filtreler denemeyi veya arama yapmayı deneyin</p>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-20 bg-white rounded-3xl border border-[#7B1113]/10"
+              >
+                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-[#F3E0E1] flex items-center justify-center">
+                  <Package className="w-10 h-10 text-[#7B1113]/40" />
+                </div>
+                <h3 className="text-xl font-semibold text-[#7B1113] mb-2">
+                  Ürün Bulunamadı
+                </h3>
+                <p className="text-[#6b4b4c] mb-6">
+                  Farklı filtreler denemeyi veya arama yapmayı deneyin
+                </p>
+                <button
+                  onClick={clearAllFilters}
+                  className="px-6 py-3 bg-[#7B1113] text-white rounded-full font-medium hover:bg-[#5d0e0f] transition-colors"
+                >
+                  Filtreleri Temizle
+                </button>
+              </motion.div>
             ) : (
               <>
-                <div
-                  className={cn(
-                    "grid gap-4 lg:gap-6",
-                    viewMode === "grid"
-                      ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-                      : "grid-cols-1"
-                  )}
+                <motion.div
+                  layout
+                  className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6"
                 >
-                  {paginatedProducts.map((product, index) => (
-                    <ProductCard key={product.id} product={product} index={index} viewMode={viewMode} />
-                  ))}
-                </div>
+                  <AnimatePresence mode="popLayout">
+                    {paginatedProducts.map((product, index) => (
+                      <motion.div
+                        key={product.id}
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <ProductCard product={product} index={index} />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
 
+                {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="mt-8 flex items-center justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
+                  <div className="mt-12 flex items-center justify-center gap-2">
+                    <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
+                      className="w-10 h-10 flex items-center justify-center rounded-full border border-[#7B1113]/20 text-[#7B1113] hover:bg-[#7B1113] hover:text-white hover:border-[#7B1113] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                     >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
 
-                    {getPageNumbers().map((page, index) =>
-                      page === "ellipsis" ? (
-                        <span key={`ellipsis-${index}`} className="px-2 text-gray-400">
-                          ...
-                        </span>
-                      ) : (
-                        <Button
-                          key={page}
-                          variant={currentPage === page ? "primary" : "outline"}
-                          size="sm"
-                          onClick={() => handlePageChange(page)}
-                        >
-                          {page}
-                        </Button>
-                      )
-                    )}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter((page) => {
+                        if (totalPages <= 5) return true;
+                        if (page === 1 || page === totalPages) return true;
+                        if (Math.abs(page - currentPage) <= 1) return true;
+                        return false;
+                      })
+                      .map((page, index, array) => (
+                        <React.Fragment key={page}>
+                          {index > 0 && array[index - 1] !== page - 1 && (
+                            <span className="text-[#7B1113]/40">...</span>
+                          )}
+                          <button
+                            onClick={() => handlePageChange(page)}
+                            className={cn(
+                              "w-10 h-10 rounded-full font-medium transition-all",
+                              currentPage === page
+                                ? "bg-[#7B1113] text-white"
+                                : "border border-[#7B1113]/20 text-[#7B1113] hover:bg-[#7B1113]/10"
+                            )}
+                          >
+                            {page}
+                          </button>
+                        </React.Fragment>
+                      ))}
 
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
+                      className="w-10 h-10 flex items-center justify-center rounded-full border border-[#7B1113]/20 text-[#7B1113] hover:bg-[#7B1113] hover:text-white hover:border-[#7B1113] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                     >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
                   </div>
                 )}
               </>
             )}
           </main>
         </div>
-      </div>
+      </section>
+
+      {/* Mobile Filter Drawer */}
+      <FilterDrawer
+        isOpen={showMobileFilters}
+        onClose={() => setShowMobileFilters(false)}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        categoryCounts={categoryCounts}
+      />
     </div>
+  );
+}
+
+function FilterTag({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#F3E0E1] text-[#7B1113] text-sm rounded-full">
+      {label}
+      <button
+        onClick={onRemove}
+        className="hover:bg-[#7B1113]/20 rounded-full p-0.5 transition-colors"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </span>
   );
 }
 
 export function ProductsPageClient({ initialProducts, categoryCounts }: ProductsPageClientProps) {
   return (
-    <React.Suspense fallback={
-      <div className="min-h-screen bg-gray-50">
-        <section className="bg-gradient-to-br from-primary via-primary/90 to-primary/80 py-12 md:py-16 relative overflow-hidden">
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="max-w-4xl mx-auto text-center">
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Tüm Ürünler</h1>
-              <p className="text-lg text-white/90">Doğal ve katkısız ürünlerimizi keşfedin</p>
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-[#FFF5F5]">
+          <section className="pt-20 pb-8 md:pt-28 md:pb-12">
+            <div className="container mx-auto px-4">
+              <div className="text-center max-w-2xl mx-auto">
+                <div className="h-8 w-32 bg-[#F3E0E1] rounded-full mx-auto mb-4 animate-pulse" />
+                <div className="h-12 w-64 bg-[#F3E0E1] rounded-lg mx-auto mb-4 animate-pulse" />
+                <div className="h-6 w-96 bg-[#F3E0E1] rounded mx-auto animate-pulse" />
+              </div>
+            </div>
+          </section>
+          <div className="container mx-auto px-4 py-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+              {[...Array(8)].map((_, i) => (
+                <ProductCardSkeleton key={i} />
+              ))}
             </div>
           </div>
-        </section>
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
-            {[...Array(8)].map((_, i) => (
-              <ProductCardSkeleton key={i} />
-            ))}
-          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <ProductsPageContent initialProducts={initialProducts} categoryCounts={categoryCounts} />
     </React.Suspense>
   );
