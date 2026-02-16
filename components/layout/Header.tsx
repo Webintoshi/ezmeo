@@ -485,7 +485,11 @@ export function Header() {
                         className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
                       >
                         <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-red-100 rounded-2xl flex items-center justify-center">
-                          <Cookie className="w-6 h-6 text-orange-700" strokeWidth={1.5} />
+                          <img 
+                            src="/icons/peanut-butter.svg" 
+                            alt="Fıstık Ezmesi" 
+                            className="w-7 h-7"
+                          />
                         </div>
                         <span className="text-[11px] font-bold text-gray-700 text-center leading-tight">
                           Fıstık<br/>Ezmesi
