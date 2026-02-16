@@ -11,15 +11,8 @@ import {
   Plus,
   Truck,
   Shield,
-  ChevronDown,
-  Check,
   ArrowLeft,
-  Leaf,
-  Award,
-  Sparkles,
-  ChefHat,
   Package,
-  Info,
   ChevronRight,
   BadgeCheck,
 } from "lucide-react";
@@ -73,64 +66,6 @@ function TrustBadge({
   );
 }
 
-// Ingredient Card Component
-function IngredientCard({
-  title,
-  description,
-  icon: Icon,
-}: {
-  title: string;
-  description: string;
-  icon: React.ElementType;
-}) {
-  return (
-    <motion.div
-      whileHover={{ y: -4 }}
-      className="flex-shrink-0 w-[160px] p-4 rounded-2xl bg-white border border-[#7B1113]/10 shadow-sm"
-    >
-      <div className="w-12 h-12 rounded-xl bg-[#F3E0E1] flex items-center justify-center mb-3">
-        <Icon className="w-6 h-6 text-[#7B1113]" />
-      </div>
-      <h4 className="font-medium text-[#7B1113] text-sm mb-1">{title}</h4>
-      <p className="text-xs text-[#6b4b4c] leading-relaxed">{description}</p>
-    </motion.div>
-  );
-}
-
-// Recipe Card Component
-function RecipeCard({
-  title,
-  description,
-  image,
-}: {
-  title: string;
-  description: string;
-  image?: string;
-}) {
-  return (
-    <motion.div
-      whileHover={{ y: -4 }}
-      className="group cursor-pointer"
-    >
-      <div className="aspect-[4/3] rounded-2xl bg-[#F3E0E1] mb-3 overflow-hidden">
-        {image ? (
-          <img
-            src={image}
-            alt={title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <ChefHat className="w-12 h-12 text-[#7B1113]/30" />
-          </div>
-        )}
-      </div>
-      <h4 className="font-medium text-[#7B1113] mb-1">{title}</h4>
-      <p className="text-sm text-[#6b4b4c]">{description}</p>
-    </motion.div>
-  );
-}
-
 export function ProductDetailClient({
   slug,
   initialProduct,
@@ -151,7 +86,6 @@ export function ProductDetailClient({
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<TabType>("features");
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [showShareMenu, setShowShareMenu] = useState(false);
 
   const { addToCart } = useCart();
 
@@ -241,7 +175,6 @@ export function ProductDetailClient({
     } else {
       navigator.clipboard.writeText(window.location.href);
     }
-    setShowShareMenu(false);
   };
 
   // Stock status text
@@ -253,21 +186,6 @@ export function ProductDetailClient({
   };
 
   const stockStatus = getStockStatus();
-
-  // Sample ingredients data (can be moved to product type)
-  const ingredients = [
-    { title: "Antep Fıstığı", description: "Gaziantep'ten özenle seçilmiş", icon: Award },
-    { title: "Doğal", description: "Katkı maddesi içermez", icon: Leaf },
-    { title: "Taze", description: "Günlük üretim", icon: Sparkles },
-    { title: "Sağlıklı", description: "Protein ve lif kaynağı", icon: BadgeCheck },
-  ];
-
-  // Sample recipes data
-  const recipes = [
-    { title: "Kahvaltı Kasesi", description: "Yoğurt, granola ve ezme ile güne enerjik başlayın" },
-    { title: "Smoothie Bowl", description: "Meyve ve ezme karışımı sağlıklı bir öğün" },
-    { title: "Protein Topları", description: "Yulaf, ezme ve bal ile pratik atıştırmalık" },
-  ];
 
   return (
     <div className="min-h-screen bg-[#FFF5F5]">
@@ -518,115 +436,12 @@ export function ProductDetailClient({
         </div>
       </section>
 
-      {/* Ingredients & Highlights Section */}
-      <section className="py-12 bg-white border-y border-[#7B1113]/10">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-semibold text-[#7B1113] mb-8 text-center">
-            İçindekiler & Özellikler
-          </h2>
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-            {ingredients.map((ing, idx) => (
-              <IngredientCard key={idx} {...ing} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Editorial Product Description */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div>
-                <span className="text-[#7B1113] font-medium mb-2 block">
-                  Neden Ezmeo?
-                </span>
-                <h2 className="text-3xl font-semibold text-[#7B1113] mb-6">
-                  Doğallığın Tadını Çıkarın
-                </h2>
-                <div className="prose prose-lg text-[#6b4b4c] space-y-4">
-                  <p>
-                    Ezmeo olarak, Anadolu'nun en kaliteli fıstıklarını ve kuruyemişlerini 
-                    sizlerle buluşturuyoruz. Her kavanoz, Gaziantep'in bereketli topraklarından 
-                    gelen taze fıstıkların özenle seçilmesiyle başlar.
-                  </p>
-                  <p>
-                    Üretim sürecimizde katkı maddesi, koruyucu veya şeker kullanmıyoruz. 
-                    Sadece %100 doğal içeriklerle, besleyici ve lezzetli ürünler sunuyoruz.
-                  </p>
-                </div>
-                
-                {/* Features List */}
-                <div className="mt-8 space-y-3">
-                  {[
-                    "Katlı maddesi içermez",
-                    "Günlük taze üretim",
-                    "Gaziantep menşeli fıstık",
-                    "Cam kavanozda hijyenik paketleme",
-                  ].map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full bg-[#7B1113] flex items-center justify-center flex-shrink-0">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="text-[#7B1113]">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Visual Placeholder - Can be replaced with lifestyle image */}
-              <div className="relative">
-                <div className="aspect-square rounded-3xl bg-[#F3E0E1] flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-[#7B1113]/10 flex items-center justify-center">
-                      <Leaf className="w-12 h-12 text-[#7B1113]" />
-                    </div>
-                    <p className="text-[#7B1113] font-medium text-lg">
-                      100% Doğal
-                    </p>
-                    <p className="text-[#6b4b4c] mt-2">
-                      Anadolu'nun saf lezzeti
-                    </p>
-                  </div>
-                </div>
-                {/* Floating Badge */}
-                <div className="absolute -bottom-4 -left-4 bg-[#7B1113] text-white px-6 py-3 rounded-2xl shadow-xl">
-                  <p className="font-bold text-lg">100%</p>
-                  <p className="text-sm opacity-90">Doğal</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Recipe Suggestions */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-semibold text-[#7B1113] mb-4">
-              Kullanım Önerileri
-            </h2>
-            <p className="text-[#6b4b4c] max-w-2xl mx-auto">
-              Ezmeo ürünlerini mutfağınızda birçok farklı şekilde kullanabilirsiniz. 
-              İşte size ilham verecek öneriler:
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {recipes.map((recipe, idx) => (
-              <RecipeCard key={idx} {...recipe} />
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Tabs Section - Modern */}
-      <section className="py-16 bg-[#FFF5F5]">
+      <section className="py-16 bg-white border-y border-[#7B1113]/10">
         <div className="container mx-auto px-4">
           {/* Tab Navigation - Pills */}
           <div className="flex justify-center mb-12">
-            <div className="inline-flex bg-white rounded-full p-1.5 border border-[#7B1113]/10 shadow-sm">
+            <div className="inline-flex bg-[#FFF5F5] rounded-full p-1.5 border border-[#7B1113]/10 shadow-sm">
               {[
                 { id: "features", label: "Ürün Detayları" },
                 { id: "nutrition", label: "Besin Değerleri" },
@@ -678,7 +493,7 @@ export function ProductDetailClient({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="text-center py-16 bg-white rounded-3xl border border-[#7B1113]/10"
+                  className="text-center py-16 bg-[#FFF5F5] rounded-3xl border border-[#7B1113]/10"
                 >
                   <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#F3E0E1] flex items-center justify-center">
                     <Star className="w-10 h-10 text-[#7B1113]" />
