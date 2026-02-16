@@ -267,7 +267,7 @@ export function Footer() {
               <img 
                 src="/webintosh%20logo.svg" 
                 alt="Webintosh" 
-                className="h-3 w-auto opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300"
+                className="h-3 w-auto opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 invert"
               />
             </a>
           </div>
@@ -289,7 +289,7 @@ export function Footer() {
               <img 
                 src="/webintosh%20logo.svg" 
                 alt="Webintosh" 
-                className="h-2.5 w-auto opacity-80"
+                className="h-2.5 w-auto opacity-80 invert"
               />
             </a>
             
