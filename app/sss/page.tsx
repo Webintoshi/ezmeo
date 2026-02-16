@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, Search, HelpCircle, MessageCircle, Mail, ArrowRight } from "lucide-react";
 
 interface FAQItem {
   id: string;
@@ -114,122 +115,214 @@ export default function FAQPage() {
   });
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <div className="bg-primary text-primary-foreground py-16">
+    <div className="min-h-screen bg-[#FFF5F5]">
+      {/* Minimal Hero Section */}
+      <section className="pt-20 pb-12 md:pt-28 md:pb-16">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="max-w-3xl mx-auto text-center"
+          >
+            {/* Icon */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring" }}
+              className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#7B1113]/10 mb-6"
+            >
+              <HelpCircle className="w-8 h-8 text-[#7B1113]" />
+            </motion.div>
+
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#7B1113] mb-4 tracking-tight">
               Sıkça Sorulan Sorular
             </h1>
-            <p className="text-xl text-primary-foreground/90">
-              Merak ettiğiniz her şey burada
+            <p className="text-lg md:text-xl text-[#6b4b4c] max-w-xl mx-auto">
+              Merak ettiğiniz her şey için hazırladığımız kapsamlı rehber
             </p>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </section>
 
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto">
-          {/* Search */}
-          <div className="mb-8">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Soru ara..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div className="flex flex-wrap gap-2 mb-8">
-            {CATEGORIES.map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-full font-medium transition-colors ${
-                  selectedCategory === category
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
-
-          {/* FAQ Items */}
-          <div className="space-y-4">
-            {filteredFAQs.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-600">
-                  Aradığınız soruyu bulamadık. Lütfen farklı bir arama yapın veya
-                  bizimle iletişime geçin.
-                </p>
-              </div>
-            ) : (
-              filteredFAQs.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
-                >
-                  <button
-                    onClick={() => setOpenId(openId === item.id ? null : item.id)}
-                    className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex-1 pr-4">
-                      <span className="inline-block px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded mb-2">
-                        {item.category}
-                      </span>
-                      <h3 className="font-semibold text-gray-900">
-                        {item.question}
-                      </h3>
-                    </div>
-                    <ChevronDown
-                      className={`w-5 h-5 text-gray-500 transition-transform flex-shrink-0 ${
-                        openId === item.id ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  {openId === item.id && (
-                    <div className="px-6 pb-4">
-                      <p className="text-gray-600">{item.answer}</p>
-                    </div>
-                  )}
+      {/* Main Content */}
+      <section className="pb-20 md:pb-32">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            {/* Search Bar - Premium Style */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="mb-10"
+            >
+              <div className="relative group">
+                <div className="absolute inset-0 bg-[#7B1113]/5 rounded-2xl transform group-focus-within:scale-[1.02] transition-transform" />
+                <div className="relative flex items-center bg-white rounded-2xl shadow-sm border border-[#7B1113]/10 group-focus-within:ring-2 group-focus-within:ring-[#7B1113]/20 group-focus-within:border-transparent transition-all">
+                  <Search className="ml-5 w-5 h-5 text-[#7B1113]/50" />
+                  <input
+                    type="text"
+                    placeholder="Soru ara..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-4 py-4 bg-transparent text-[#7B1113] placeholder:text-[#7B1113]/40 focus:outline-none text-base"
+                  />
                 </div>
-              ))
-            )}
-          </div>
+              </div>
+            </motion.div>
 
-          {/* Contact CTA */}
-          <div className="mt-12 bg-gradient-to-r from-primary to-primary/80 text-white rounded-xl p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">
-              Sorunuza cevap bulamadınız mı?
-            </h2>
-            <p className="mb-6 text-white/90">
-              Müşteri hizmetlerimiz size yardımcı olmaktan mutluluk duyar.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="/iletisim"
-                className="inline-block px-6 py-3 bg-white text-primary rounded-lg font-medium hover:bg-gray-100 transition-colors"
-              >
-                İletişime Geç
-              </a>
-              <a
-                href="mailto:ezmeoshopify@proton.me"
-                className="inline-block px-6 py-3 bg-white/10 border border-white/20 rounded-lg font-medium hover:bg-white/20 transition-colors"
-              >
-                E-posta Gönder
-              </a>
-            </div>
+            {/* Category Pills - Minimalist */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="flex flex-wrap justify-center gap-2 mb-12"
+            >
+              {CATEGORIES.map((category, index) => (
+                <motion.button
+                  key={category}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 + index * 0.05 }}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                    selectedCategory === category
+                      ? "bg-[#7B1113] text-white shadow-lg shadow-[#7B1113]/25"
+                      : "bg-white text-[#6b4b4c] border border-[#7B1113]/10 hover:border-[#7B1113]/30 hover:bg-[#7B1113]/5"
+                  }`}
+                >
+                  {category}
+                </motion.button>
+              ))}
+            </motion.div>
+
+            {/* FAQ Items - Premium Accordion */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="space-y-3"
+            >
+              <AnimatePresence mode="wait">
+                {filteredFAQs.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="text-center py-16"
+                  >
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-[#F3E0E1] flex items-center justify-center">
+                      <Search className="w-8 h-8 text-[#7B1113]/50" />
+                    </div>
+                    <p className="text-[#6b4b4c] text-lg mb-2">Sonuç bulunamadı</p>
+                    <p className="text-[#6b4b4c]/70">
+                      Farklı bir arama yapın veya kategori seçin
+                    </p>
+                  </motion.div>
+                ) : (
+                  filteredFAQs.map((item, index) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="bg-white rounded-2xl border border-[#7B1113]/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <button
+                        onClick={() => setOpenId(openId === item.id ? null : item.id)}
+                        className="w-full px-6 py-5 flex items-center justify-between text-left group"
+                      >
+                        <div className="flex-1 pr-4">
+                          <span className="inline-block px-2.5 py-1 bg-[#F3E0E1] text-[#7B1113] text-xs font-medium rounded-md mb-2">
+                            {item.category}
+                          </span>
+                          <h3 className="font-semibold text-[#7B1113] text-lg group-hover:text-[#7B1113]/80 transition-colors">
+                            {item.question}
+                          </h3>
+                        </div>
+                        <motion.div
+                          animate={{ rotate: openId === item.id ? 180 : 0 }}
+                          transition={{ duration: 0.2 }}
+                          className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                            openId === item.id
+                              ? "bg-[#7B1113] text-white"
+                              : "bg-[#F3E0E1] text-[#7B1113] group-hover:bg-[#7B1113]/10"
+                          }`}
+                        >
+                          <ChevronDown className="w-5 h-5" />
+                        </motion.div>
+                      </button>
+                      <AnimatePresence>
+                        {openId === item.id && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-6 pb-5 pt-2 border-t border-[#7B1113]/5">
+                              <p className="text-[#6b4b4c] leading-relaxed">
+                                {item.answer}
+                              </p>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  ))
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Still Need Help Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="mt-16"
+            >
+              <div className="relative overflow-hidden rounded-3xl bg-[#7B1113] p-8 md:p-12">
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-[#F3E0E1]/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#F3E0E1]/5 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
+
+                <div className="relative z-10 text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/10 mb-6">
+                    <MessageCircle className="w-7 h-7 text-white" />
+                  </div>
+                  
+                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+                    Hala sorunuz mu var?
+                  </h2>
+                  <p className="text-white/80 mb-8 max-w-md mx-auto">
+                    Size yardımcı olmaktan mutluluk duyarız. Bize ulaşın, en kısa sürede yanıtlayalım.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a
+                      href="/iletisim"
+                      className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-[#7B1113] rounded-full font-semibold hover:bg-[#F3E0E1] transition-colors shadow-lg"
+                    >
+                      İletişime Geç
+                      <ArrowRight className="w-4 h-4" />
+                    </a>
+                    <a
+                      href="mailto:ezmeoshopify@proton.me"
+                      className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 text-white border border-white/20 rounded-full font-semibold hover:bg-white/20 transition-colors"
+                    >
+                      <Mail className="w-4 h-4" />
+                      E-posta Gönder
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

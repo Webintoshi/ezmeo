@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
+  sassOptions: {
+    includePaths: ["./app/styles"],
+    quietDeps: true,
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
@@ -49,9 +53,18 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '10mb',
     },
+    optimizeCss: true,
   },
   compress: true,
   poweredByHeader: false,
+  modularizeImports: {
+    "@heroicons/react/24/outline": {
+      transform: "{{name}}",
+    },
+    lucideReact: {
+      transform: "lucide-react/{{name}}",
+    },
+  },
 };
 
 export default nextConfig;
