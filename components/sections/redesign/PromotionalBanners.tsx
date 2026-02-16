@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export interface PromoBanner {
@@ -82,8 +82,21 @@ export default function PromotionalBanners() {
   };
 
   const getDefaultColor = (order: number): string => {
-    const colors = ["from-amber-500 to-orange-600", "from-emerald-500 to-teal-600", "from-rose-500 to-pink-600"];
-    return colors[order - 1] || "from-primary to-primary/80";
+    const colors = [
+      "from-amber-500/20 to-orange-600/20",
+      "from-emerald-500/20 to-teal-600/20",
+      "from-rose-500/20 to-pink-600/20"
+    ];
+    return colors[order - 1] || "from-[#7B1113]/20 to-[#5d0e0f]/20";
+  };
+
+  const getGradientBorder = (order: number): string => {
+    const gradients = [
+      "from-amber-400 via-orange-500 to-amber-400",
+      "from-emerald-400 via-teal-500 to-emerald-400",
+      "from-rose-400 via-pink-500 to-rose-400"
+    ];
+    return gradients[order - 1] || "from-[#7B1113] via-[#F3E0E1] to-[#7B1113]";
   };
 
   const getDefaultBanners = (): PromoBanner[] => [
@@ -97,7 +110,7 @@ export default function PromotionalBanners() {
       buttonLink: "/koleksiyon/fistik-ezmesi",
       order: 1,
       badge: "🔥 Çok Satan",
-      color: "from-amber-500 to-orange-600"
+      color: "from-amber-500/20 to-orange-600/20"
     },
     {
       id: 2,
@@ -109,7 +122,7 @@ export default function PromotionalBanners() {
       buttonLink: "/koleksiyon/yeni-urunler",
       order: 2,
       badge: "✨ Yeni",
-      color: "from-emerald-500 to-teal-600"
+      color: "from-emerald-500/20 to-teal-600/20"
     },
     {
       id: 3,
@@ -121,15 +134,16 @@ export default function PromotionalBanners() {
       buttonLink: "/koleksiyon/kuruyemis",
       order: 3,
       badge: "🌿 Organik",
-      color: "from-rose-500 to-pink-600"
+      color: "from-rose-500/20 to-pink-600/20"
     }
   ];
 
   const scroll = useCallback((direction: "left" | "right") => {
     if (scrollRef.current) {
       const container = scrollRef.current;
-      const cardWidth = isMobile ? container.offsetWidth * 0.85 : 380;
-      const gap = isMobile ? 12 : 24;
+      // 9:16 kart genişliği + gap
+      const cardWidth = isMobile ? 180 : 270;
+      const gap = isMobile ? 12 : 20;
       const scrollAmount = cardWidth + gap;
       
       container.scrollBy({
@@ -142,8 +156,8 @@ export default function PromotionalBanners() {
   const handleScroll = useCallback(() => {
     if (scrollRef.current) {
       const scrollLeft = scrollRef.current.scrollLeft;
-      const cardWidth = isMobile ? scrollRef.current.offsetWidth * 0.85 : 404;
-      const gap = isMobile ? 12 : 24;
+      const cardWidth = isMobile ? 180 : 270;
+      const gap = isMobile ? 12 : 20;
       const newIndex = Math.round(scrollLeft / (cardWidth + gap));
       setCurrentIndex(Math.min(newIndex, banners.length - 1));
     }
@@ -173,8 +187,8 @@ export default function PromotionalBanners() {
   const goToSlide = useCallback((index: number) => {
     if (scrollRef.current) {
       const container = scrollRef.current;
-      const cardWidth = isMobile ? container.offsetWidth * 0.85 : 380;
-      const gap = isMobile ? 12 : 24;
+      const cardWidth = isMobile ? 180 : 270;
+      const gap = isMobile ? 12 : 20;
       
       container.scrollTo({
         left: index * (cardWidth + gap),
@@ -207,13 +221,20 @@ export default function PromotionalBanners() {
 
   if (loading) {
     return (
-      <section className="py-16 md:py-24 bg-gradient-to-b from-gray-50/50 to-white" id="promotional-banners">
+      <section className="py-16 md:py-24 bg-[#FFF5F5]" id="promotional-banners">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-4 md:gap-6 overflow-hidden">
+          {/* Section Header Skeleton */}
+          <div className="text-center mb-10 md:mb-14">
+            <div className="h-6 w-32 bg-[#F3E0E1] rounded-full mx-auto mb-4 animate-pulse" />
+            <div className="h-10 w-64 bg-[#F3E0E1] rounded-lg mx-auto mb-3 animate-pulse" />
+            <div className="h-5 w-80 bg-[#F3E0E1] rounded mx-auto animate-pulse" />
+          </div>
+          {/* Cards Skeleton */}
+          <div className="flex gap-4 md:gap-5 justify-center">
             {[1, 2, 3].map((i) => (
               <div 
                 key={i} 
-                className="flex-shrink-0 w-[85vw] md:w-[380px] h-[280px] md:h-[480px] rounded-2xl md:rounded-3xl bg-gray-200 animate-pulse"
+                className="flex-shrink-0 w-[180px] md:w-[270px] aspect-[9/16] rounded-2xl md:rounded-3xl bg-[#F3E0E1] animate-pulse"
               />
             ))}
           </div>
@@ -224,26 +245,41 @@ export default function PromotionalBanners() {
 
   return (
     <section 
-      className="py-12 md:py-20 bg-gradient-to-b from-gray-50/50 to-white overflow-hidden" 
+      className="py-16 md:py-24 bg-[#FFF5F5] overflow-hidden" 
       id="promotional-banners"
       aria-label="Promosyon Bannerları"
     >
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
+        {/* Section Header - Modern Editorial Style */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-8 md:mb-12"
+          transition={{ duration: 0.6 }}
+          className="text-center mb-10 md:mb-14"
         >
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          {/* Eyebrow Text */}
+          <motion.span 
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#7B1113]/10 text-[#7B1113] text-sm font-medium mb-4 border border-[#7B1113]/20"
+          >
+            <span className="w-2 h-2 rounded-full bg-[#7B1113] animate-pulse" />
             Özel Fırsatlar
-          </span>
-          <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3">
-            Keşfedilmeyi Bekleyen Lezzetler
+          </motion.span>
+          
+          {/* Main Title */}
+          <h2 className="text-3xl md:text-5xl font-bold text-[#7B1113] mb-4 tracking-tight">
+            Keşfedilmeyi Bekleyen
+            <span className="block mt-1 bg-gradient-to-r from-[#7B1113] via-[#7B1113]/80 to-[#7B1113] bg-clip-text text-transparent">
+              Lezzetler
+            </span>
           </h2>
-          <p className="text-gray-500 text-sm md:text-base max-w-md mx-auto">
+          
+          {/* Subtitle */}
+          <p className="text-[#6b4b4c] text-base md:text-lg max-w-lg mx-auto leading-relaxed">
             En sevilen ürünlerimiz ve yeni koleksiyonlarımız için özel seçkiler
           </p>
         </motion.div>
@@ -256,29 +292,29 @@ export default function PromotionalBanners() {
         >
           {/* Navigation Buttons - Desktop Only */}
           <button 
-            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-12 h-12 items-center justify-center rounded-full bg-white shadow-lg border border-gray-100 text-gray-700 hover:text-primary hover:shadow-xl transition-all duration-300 disabled:opacity-0 disabled:pointer-events-none"
+            className="hidden md:flex absolute -left-4 lg:-left-6 top-1/2 -translate-y-1/2 z-10 w-12 h-12 items-center justify-center rounded-full bg-white shadow-xl border border-[#7B1113]/10 text-[#7B1113] hover:bg-[#7B1113] hover:text-white hover:shadow-2xl hover:scale-110 transition-all duration-300 disabled:opacity-0 disabled:pointer-events-none group"
             onClick={() => scroll("left")}
             aria-label="Önceki banner"
             disabled={currentIndex === 0}
             type="button"
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft size={24} className="group-hover:-translate-x-0.5 transition-transform" />
           </button>
 
           <button 
-            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-12 h-12 items-center justify-center rounded-full bg-white shadow-lg border border-gray-100 text-gray-700 hover:text-primary hover:shadow-xl transition-all duration-300 disabled:opacity-0 disabled:pointer-events-none"
+            className="hidden md:flex absolute -right-4 lg:-right-6 top-1/2 -translate-y-1/2 z-10 w-12 h-12 items-center justify-center rounded-full bg-white shadow-xl border border-[#7B1113]/10 text-[#7B1113] hover:bg-[#7B1113] hover:text-white hover:shadow-2xl hover:scale-110 transition-all duration-300 disabled:opacity-0 disabled:pointer-events-none group"
             onClick={() => scroll("right")}
             aria-label="Sonraki banner"
             disabled={currentIndex === sortedBanners.length - 1}
             type="button"
           >
-            <ChevronRight size={24} />
+            <ChevronRight size={24} className="group-hover:translate-x-0.5 transition-transform" />
           </button>
 
-          {/* Cards Track */}
+          {/* Cards Track - Centered */}
           <div 
             ref={scrollRef}
-            className="flex gap-3 sm:gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 -mx-4 px-4 md:mx-0 md:px-0"
+            className="flex gap-3 md:gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-6 justify-start md:justify-center"
             onScroll={handleScroll}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -288,76 +324,85 @@ export default function PromotionalBanners() {
             {sortedBanners.map((banner, index) => (
               <motion.div 
                 key={banner.id}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="group relative flex-shrink-0 w-[85vw] md:w-[380px] lg:w-[420px] snap-center"
+                transition={{ delay: index * 0.15, duration: 0.5 }}
+                className="group relative flex-shrink-0 snap-center"
               >
+                {/* Gradient Border Effect */}
+                <div className={`absolute -inset-[2px] rounded-2xl md:rounded-3xl bg-gradient-to-r ${getGradientBorder(banner.order)} opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm`} />
+                
                 <Link 
                   href={banner.buttonLink}
-                  className="block relative h-[280px] md:h-[480px] rounded-2xl md:rounded-3xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500"
+                  className="block relative w-[180px] md:w-[270px] aspect-[9/16] rounded-2xl md:rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 bg-[#7B1113]"
                 >
-                  {/* Background Image */}
+                  {/* Background Image with 9:16 Container */}
                   <div className="absolute inset-0">
                     <Image
                       src={isMobile && banner.mobileImage ? banner.mobileImage : banner.image}
                       alt={banner.title}
                       fill
                       className="object-cover transition-transform duration-700 group-hover:scale-110"
-                      sizes="(max-width: 768px) 85vw, 400px"
+                      sizes="(max-width: 768px) 180px, 270px"
                       loading={index === 0 ? "eager" : "lazy"}
                       priority={index === 0}
                     />
                   </div>
 
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  {/* Gradient Overlay - Enhanced for 9:16 */}
+                  <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-500`} />
                   
+                  {/* Top Gradient for Badge Visibility */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent" />
 
-
-                  {/* Badge */}
+                  {/* Glassmorphism Badge */}
                   {banner.badge && (
-                    <div className="absolute top-4 left-4">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-sm text-xs font-semibold text-gray-900 shadow-lg">
+                    <div className="absolute top-4 left-4 right-4">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold text-white shadow-lg border border-white/30">
                         {banner.badge}
                       </span>
                     </div>
                   )}
 
-                  {/* Content */}
-                  <div className="absolute inset-x-0 bottom-0 p-5 md:p-8">
-                    <div className="transform transition-transform duration-500 group-hover:translate-y-[-8px]">
-                      {/* Subtitle */}
-                      <span className="inline-block text-white/80 text-xs md:text-sm font-medium tracking-wider uppercase mb-2">
+                  {/* Content - Bottom Positioned for 9:16 */}
+                  <div className="absolute inset-x-0 bottom-0 p-4 md:p-6">
+                    <div className="transform transition-transform duration-500 group-hover:translate-y-[-4px]">
+                      {/* Subtitle with Glass Effect */}
+                      <span className="inline-block px-2 py-1 rounded-md bg-white/10 backdrop-blur-sm text-white/90 text-[10px] md:text-xs font-medium tracking-wider uppercase mb-2 border border-white/20">
                         {banner.subtitle}
                       </span>
                       
-                      {/* Title */}
-                      <h3 className="text-xl md:text-3xl font-bold text-white mb-4 leading-tight">
+                      {/* Title - Larger for 9:16 impact */}
+                      <h3 className="text-lg md:text-2xl font-bold text-white mb-3 leading-tight">
                         {banner.title}
                       </h3>
                       
-                      {/* CTA Button */}
+                      {/* CTA Button - Glassmorphism Style */}
                       <div className="flex items-center">
-                        <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-gray-900 text-sm font-semibold shadow-lg transform transition-all duration-300 group-hover:gap-3 group-hover:bg-primary group-hover:text-white">
+                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md text-white text-xs md:text-sm font-semibold border border-white/30 transform transition-all duration-300 group-hover:bg-white group-hover:text-[#7B1113] group-hover:gap-3">
                           {banner.buttonText}
-                          <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                          <ArrowUpRight size={14} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Hover Border Effect */}
-                  <div className="absolute inset-0 rounded-2xl md:rounded-3xl border-2 border-white/0 group-hover:border-white/20 transition-colors duration-500 pointer-events-none" />
+                  {/* Hover Border Glow */}
+                  <div className="absolute inset-0 rounded-2xl md:rounded-3xl border-2 border-white/0 group-hover:border-white/30 transition-colors duration-500 pointer-events-none" />
+                  
+                  {/* Shine Effect on Hover */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                  </div>
                 </Link>
               </motion.div>
             ))}
           </div>
 
-          {/* Progress Dots */}
+          {/* Modern Progress Dots */}
           <div 
-            className="flex items-center justify-center gap-2 mt-6"
+            className="flex items-center justify-center gap-2 mt-8"
             role="tablist"
             aria-label="Banner navigasyonu"
           >
@@ -366,18 +411,41 @@ export default function PromotionalBanners() {
                 key={idx}
                 className={`relative h-2 rounded-full transition-all duration-300 ${
                   idx === currentIndex 
-                    ? 'w-8 bg-primary' 
-                    : 'w-2 bg-gray-300 hover:bg-gray-400'
+                    ? 'w-8 bg-[#7B1113]' 
+                    : 'w-2 bg-[#7B1113]/30 hover:bg-[#7B1113]/50'
                 }`}
                 onClick={() => goToSlide(idx)}
                 aria-label={`Banner ${idx + 1}'e git`}
                 aria-selected={idx === currentIndex}
                 role="tab"
                 type="button"
-              />
+              >
+                {idx === currentIndex && (
+                  <span className="absolute inset-0 rounded-full bg-[#7B1113] animate-pulse" />
+                )}
+              </button>
             ))}
           </div>
         </div>
+        
+        {/* View All Link - Optional */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5 }}
+          className="text-center mt-10"
+        >
+          <Link 
+            href="/urunler" 
+            className="inline-flex items-center gap-2 text-[#7B1113] font-medium hover:gap-3 transition-all duration-300 group"
+          >
+            <span className="border-b-2 border-[#7B1113]/30 group-hover:border-[#7B1113] transition-colors">
+              Tüm Ürünleri Keşfet
+            </span>
+            <ArrowUpRight size={18} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </Link>
+        </motion.div>
       </div>
 
       {/* Custom Styles for Scrollbar Hide */}
