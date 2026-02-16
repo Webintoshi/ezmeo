@@ -219,40 +219,76 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Bottom Bar - Minimal */}
+      {/* Bottom Bar - Clean & Organized */}
       <div className="border-t border-white/10">
-        <div className="container mx-auto px-4 py-4 md:py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6 text-xs md:text-sm text-white/50">
-            <p className="text-center md:text-left order-2 md:order-1">
+        <div className="container mx-auto px-4 py-5 md:py-6">
+          {/* Desktop Layout */}
+          <div className="hidden md:flex items-center justify-between gap-6">
+            {/* Left - Copyright */}
+            <p className="text-sm text-white/50">
               © {currentYear} {SITE_NAME}. Tüm hakları saklıdır.
             </p>
-            <div className="flex flex-wrap justify-center items-center gap-3 md:gap-4 order-1 md:order-2">
-              <a 
-                href="https://webintoshi.com/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="group flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-full border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-300"
-              >
-                <div className="flex flex-col items-end">
-                  <span className="text-[5px] md:text-[6px] font-medium tracking-widest text-gray-500 uppercase leading-none mb-0.5">Designed by</span>
-                  <span className="text-[7px] md:text-[8px] font-bold tracking-[0.15em] md:tracking-[0.2em] text-white leading-none group-hover:text-gray-200 transition-colors">WEBINTOSH</span>
-                </div>
-                <div className="h-2.5 md:h-3 w-[1px] bg-white/10 mx-0.5"></div>
-                <img 
-                  src="/webintosh%20logo.svg" 
-                  alt="Webintosh" 
-                  className="h-2.5 md:h-3 w-auto opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300"
-                />
-              </a>
+            
+            {/* Center - Secure Payment */}
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-white/40">Güvenli Ödeme</span>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] md:text-xs">Güvenli Ödeme</span>
-                <div className="flex gap-1.5 md:gap-2">
-                  <div className="px-1.5 md:px-2 py-0.5 md:py-1 bg-white/10 rounded text-[8px] md:text-[10px] font-semibold">VISA</div>
-                  <div className="px-1.5 md:px-2 py-0.5 md:py-1 bg-white/10 rounded text-[8px] md:text-[10px] font-semibold">MC</div>
-                  <div className="px-1.5 md:px-2 py-0.5 md:py-1 bg-white/10 rounded text-[8px] md:text-[10px] font-semibold">AMEX</div>
+                <div className="h-6 px-2 bg-white/10 rounded flex items-center justify-center">
+                  <span className="text-[10px] font-semibold text-white/80 tracking-wider">VISA</span>
+                </div>
+                <div className="h-6 px-2 bg-white/10 rounded flex items-center justify-center">
+                  <span className="text-[10px] font-semibold text-white/80 tracking-wider">MC</span>
+                </div>
+                <div className="h-6 px-2 bg-white/10 rounded flex items-center justify-center">
+                  <span className="text-[10px] font-semibold text-white/80 tracking-wider">AMEX</span>
                 </div>
               </div>
             </div>
+            
+            {/* Right - Webintosh */}
+            <a 
+              href="https://webintoshi.com/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="group flex items-center gap-2 text-white/40 hover:text-white/60 transition-colors"
+            >
+              <span className="text-xs">Designed by</span>
+              <span className="text-xs font-semibold tracking-wide">WEBINTOSH</span>
+            </a>
+          </div>
+          
+          {/* Mobile Layout - Stacked */}
+          <div className="flex md:hidden flex-col items-center gap-4">
+            {/* Payment Methods */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-white/40">Güvenli Ödeme</span>
+              <div className="flex items-center gap-1.5">
+                <div className="h-5 px-1.5 bg-white/10 rounded flex items-center justify-center">
+                  <span className="text-[9px] font-semibold text-white/80">VISA</span>
+                </div>
+                <div className="h-5 px-1.5 bg-white/10 rounded flex items-center justify-center">
+                  <span className="text-[9px] font-semibold text-white/80">MC</span>
+                </div>
+                <div className="h-5 px-1.5 bg-white/10 rounded flex items-center justify-center">
+                  <span className="text-[9px] font-semibold text-white/80">AMEX</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Copyright */}
+            <p className="text-xs text-white/50 text-center">
+              © {currentYear} {SITE_NAME}. Tüm hakları saklıdır.
+            </p>
+            
+            {/* Webintosh */}
+            <a 
+              href="https://webintoshi.com/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs text-white/30 hover:text-white/50 transition-colors"
+            >
+              Designed by <span className="font-medium">WEBINTOSH</span>
+            </a>
           </div>
         </div>
       </div>
