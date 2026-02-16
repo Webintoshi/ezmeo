@@ -76,7 +76,7 @@ export default function ShopByLifestyle() {
         </motion.div>
         
         {/* Desktop: Grid / Mobile: Scrollable */}
-        <div className="hidden sm:grid sm:grid-cols-3 md:grid-cols-5 gap-6 lg:gap-8">
+        <div className="hidden sm:grid sm:grid-cols-3 md:grid-cols-5 gap-4 lg:gap-6 xl:gap-8">
           {lifestyles.map((item, index) => (
             <motion.div
               key={item.name}

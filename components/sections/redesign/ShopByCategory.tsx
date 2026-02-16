@@ -87,9 +87,9 @@ export default function ShopByCategory() {
         </motion.div>
 
         {/* Mobile: Horizontal Scroll | Desktop: Grid */}
-        <div className="md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6">
+        <div className="md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 lg:gap-6">
           {/* Mobile: Scrollable Container */}
-          <div className="flex md:contents gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 pb-4 md:mx-0 md:px-0 md:pb-0">
+          <div className="flex md:contents gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 pb-4 md:mx-0 md:px-0 md:pb-0">
             {categories.map((cat, index) => (
               <motion.div
                 key={cat.id}
