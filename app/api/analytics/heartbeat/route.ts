@@ -13,6 +13,14 @@ function isBot(userAgent: string | undefined): boolean {
     return BOT_USER_AGENTS.some(bot => ua.includes(bot));
 }
 
+function isAdminPath(path: string): boolean {
+    if (!path) return false;
+    const lowerPath = path.toLowerCase();
+    return lowerPath.startsWith('/admin') || 
+           lowerPath.startsWith('/api') || 
+           lowerPath.startsWith('/_');
+}
+
 export async function POST(request: NextRequest) {
     try {
         let body = { sessionId: '', path: '', userAgent: '' };
@@ -23,7 +31,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, visitors: 0 });
         }
         
-        const { sessionId, userAgent } = body;
+        const { sessionId, userAgent, path } = body;
 
         if (!sessionId) {
             return NextResponse.json({ success: true, visitors: 0 });
@@ -31,6 +39,10 @@ export async function POST(request: NextRequest) {
 
         if (isBot(userAgent)) {
             return NextResponse.json({ success: true, visitors: 0, bot: true });
+        }
+
+        if (path && isAdminPath(path)) {
+            return NextResponse.json({ success: true, visitors: 0, admin: true });
         }
 
         const supabase = createServerClient();

@@ -10,9 +10,18 @@ const BOT_USER_AGENTS = [
 ];
 
 function isBot(userAgent: string | undefined): boolean {
-    if (!userAgent) return false;
-    const ua = userAgent.toLowerCase();
+    if (typeof window === "undefined") return false;
+    const ua = userAgent?.toLowerCase() || navigator.userAgent.toLowerCase();
     return BOT_USER_AGENTS.some(bot => ua.includes(bot));
+}
+
+function shouldTrackPath(pathname: string): boolean {
+    if (!pathname) return true;
+    const lowerPath = pathname.toLowerCase();
+    if (lowerPath.startsWith('/admin')) return false;
+    if (lowerPath.startsWith('/api')) return false;
+    if (lowerPath.startsWith('/_')) return false;
+    return true;
 }
 
 function generateSessionId(): string {
@@ -113,14 +122,20 @@ class Tracker {
 
     async init() {
         if (typeof window === "undefined" || this.isInitialized) return;
+        this.isInitialized = true;
 
         if (isBot(navigator.userAgent)) {
             console.log('[Tracking] Bot detected, skipping');
             return;
         }
 
+        const currentPath = window.location.pathname;
+        if (!shouldTrackPath(currentPath)) {
+            console.log('[Tracking] Admin/path skipped, not tracking');
+            return;
+        }
+
         this.sessionId = getSessionId();
-        this.isInitialized = true;
 
         await this.createSession();
         this.startHeartbeat();
@@ -128,7 +143,12 @@ class Tracker {
         await this.trackPageView();
 
         if (typeof window !== "undefined") {
-            window.addEventListener("popstate", () => this.trackPageView());
+            window.addEventListener("popstate", () => {
+                const newPath = window.location.pathname;
+                if (shouldTrackPath(newPath)) {
+                    this.trackPageView();
+                }
+            });
         }
     }
 
@@ -156,6 +176,10 @@ class Tracker {
 
     private startHeartbeat() {
         this.heartbeatInterval = setInterval(async () => {
+            if (!shouldTrackPath(window.location.pathname)) {
+                return;
+            }
+
             const now = Date.now();
             if (now - this.lastHeartbeat < 10000) return;
             
@@ -165,7 +189,10 @@ class Tracker {
                 await fetch("/api/analytics/heartbeat", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ sessionId: this.sessionId }),
+                    body: JSON.stringify({ 
+                        sessionId: this.sessionId,
+                        path: window.location.pathname 
+                    }),
                 });
             } catch (error) {
                 console.error("Heartbeat failed:", error);

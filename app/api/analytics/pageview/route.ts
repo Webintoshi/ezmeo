@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 
+function isAdminPath(path: string): boolean {
+    if (!path) return false;
+    const lowerPath = path.toLowerCase();
+    return lowerPath.startsWith('/admin') || 
+           lowerPath.startsWith('/api') || 
+           lowerPath.startsWith('/_');
+}
+
 // POST /api/analytics/pageview - Track page view
 export async function POST(request: NextRequest) {
     try {
@@ -19,6 +27,10 @@ export async function POST(request: NextRequest) {
         if (!sessionId || !pageUrl) {
             // Missing required fields - silently fail
             return NextResponse.json({ success: true });
+        }
+
+        if (isAdminPath(pageUrl)) {
+            return NextResponse.json({ success: true, filtered: true });
         }
 
         const supabase = createServerClient();
