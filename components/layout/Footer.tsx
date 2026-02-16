@@ -222,6 +222,13 @@ export function Footer() {
       {/* Bottom Bar - Clean & Organized */}
       <div className="border-t border-white/10">
         <div className="container mx-auto px-4 py-4 md:py-6">
+          {/* Attribution */}
+          <div className="text-center mb-3 md:mb-4">
+            <p className="text-[9px] md:text-[10px] text-white/30">
+              Icons made by <a href="https://www.freepik.com" target="_blank" rel="noopener noreferrer" className="hover:text-white/50 transition-colors">Freepik</a> from <a href="https://www.flaticon.com/" target="_blank" rel="noopener noreferrer" className="hover:text-white/50 transition-colors">Flaticon</a>
+            </p>
+          </div>
+          
           {/* Desktop Layout */}
           <div className="hidden md:flex items-center justify-between gap-6">
             {/* Left - Copyright */}
