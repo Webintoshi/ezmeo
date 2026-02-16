@@ -142,7 +142,7 @@ export default function PromotionalBanners() {
     if (scrollRef.current) {
       const container = scrollRef.current;
       // 9:16 kart genişliği + gap
-      const cardWidth = isMobile ? 180 : 270;
+      const cardWidth = isMobile ? 200 : 300;
       const gap = isMobile ? 12 : 20;
       const scrollAmount = cardWidth + gap;
       
@@ -156,7 +156,7 @@ export default function PromotionalBanners() {
   const handleScroll = useCallback(() => {
     if (scrollRef.current) {
       const scrollLeft = scrollRef.current.scrollLeft;
-      const cardWidth = isMobile ? 180 : 270;
+      const cardWidth = isMobile ? 200 : 300;
       const gap = isMobile ? 12 : 20;
       const newIndex = Math.round(scrollLeft / (cardWidth + gap));
       setCurrentIndex(Math.min(newIndex, banners.length - 1));
@@ -187,7 +187,7 @@ export default function PromotionalBanners() {
   const goToSlide = useCallback((index: number) => {
     if (scrollRef.current) {
       const container = scrollRef.current;
-      const cardWidth = isMobile ? 180 : 270;
+      const cardWidth = isMobile ? 200 : 300;
       const gap = isMobile ? 12 : 20;
       
       container.scrollTo({
@@ -234,7 +234,7 @@ export default function PromotionalBanners() {
             {[1, 2, 3].map((i) => (
               <div 
                 key={i} 
-                className="flex-shrink-0 w-[180px] md:w-[270px] aspect-[9/16] rounded-2xl md:rounded-3xl bg-[#F3E0E1] animate-pulse"
+                className="flex-shrink-0 w-[200px] md:w-[300px] aspect-[9/16] rounded-2xl md:rounded-3xl bg-[#F3E0E1] animate-pulse"
               />
             ))}
           </div>
@@ -344,7 +344,7 @@ export default function PromotionalBanners() {
                       alt={banner.title}
                       fill
                       className="object-cover transition-transform duration-700 group-hover:scale-110"
-                      sizes="(max-width: 768px) 180px, 270px"
+                      sizes="(max-width: 768px) 200px, 300px"
                       loading={index === 0 ? "eager" : "lazy"}
                       priority={index === 0}
                     />
