@@ -165,9 +165,15 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Supabase client with cookie handling
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookieOptions: {
+        name: 'sb-jlrfjirbtcazhqqnrxfb-auth-token',
+      }
+    }
   );
 
   useEffect(() => {
@@ -206,36 +212,43 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
       console.log("AdminSidebar: Session data:", sessionData);
       
       if (!sessionData?.session?.user) {
-        console.log("AdminSidebar: No session in getSession, trying localStorage...");
+        console.log("AdminSidebar: No session in getSession, trying cookies...");
         
-        // Try to get from localStorage directly
+        // Try to get from cookies
         try {
-          // Try different possible storage keys
-          const possibleKeys = [
-            'sb-jlrfjirbtcazhqqnrxfb-auth-token',
-            'sb-auth-token',
-            'supabase.auth.token'
-          ];
+          const cookies = document.cookie.split(';');
+          console.log("AdminSidebar: All cookies:", cookies.map(c => c.trim().split('=')[0]));
           
-          for (const key of possibleKeys) {
-            const stored = localStorage.getItem(key);
-            console.log(`AdminSidebar: Checking localStorage key "${key}":`, stored ? "FOUND" : "NOT FOUND");
+          // Find supabase auth cookie
+          const authCookie = cookies.find(c => c.trim().startsWith('sb-jlrfjirbtcazhqqnrxfb-auth-token'));
+          
+          if (authCookie) {
+            const cookieValue = authCookie.split('=')[1];
+            console.log("AdminSidebar: Found auth cookie");
             
-            if (stored) {
-              const parsed = JSON.parse(stored);
-              console.log("AdminSidebar: Parsed from localStorage:", parsed);
+            try {
+              // Cookie might be URL encoded and base64 encoded
+              const decoded = decodeURIComponent(cookieValue);
+              console.log("AdminSidebar: Decoded cookie:", decoded.substring(0, 100) + "...");
+              
+              // Try to parse as JSON
+              const parsed = JSON.parse(decoded);
+              console.log("AdminSidebar: Parsed cookie:", parsed);
+              
               if (parsed.user || parsed.currentSession?.user) {
                 const user = parsed.user || parsed.currentSession?.user;
-                console.log("AdminSidebar: Using user from localStorage:", user);
+                console.log("AdminSidebar: Using user from cookie:", user);
                 processUser(user);
                 return;
               }
+            } catch (parseError) {
+              console.error("AdminSidebar: Cookie parse error:", parseError);
             }
+          } else {
+            console.log("AdminSidebar: No auth cookie found");
           }
-          
-          console.log("AdminSidebar: No valid token found in localStorage");
         } catch (e) {
-          console.error("AdminSidebar: localStorage read error:", e);
+          console.error("AdminSidebar: Cookie read error:", e);
         }
         
         setLoading(false);
