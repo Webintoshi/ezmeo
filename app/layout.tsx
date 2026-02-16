@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Lora } from "next/font/google";
 import localFont from "next/font/local";
+import Script from "next/script";
 import "./globals.css";
 import "@/app/styles/redesign.scss";
 import { CartProvider } from "@/lib/cart-context";
@@ -97,6 +98,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" suppressHydrationWarning>
+      <head>
+        <Script
+          strategy="afterInteractive"
+          src={`https://www.googletagmanager.com/gtag/js?id=G-EZQRVJY38R`}
+        />
+        <Script id="ga4-config" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-EZQRVJY38R');
+          `}
+        </Script>
+      </head>
       <body
         className={`${lora.variable} ${inter.variable} font-sans antialiased`}
         suppressHydrationWarning
