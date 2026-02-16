@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, MapPin, Phone, Instagram, Send } from "lucide-react";
 import { SITE_NAME, CONTACT_INFO, SOCIAL_LINKS } from "@/lib/constants";
 import { useStoreInfo } from "@/lib/store-info-context";
@@ -62,7 +63,14 @@ export function Footer() {
           {/* Brand Column */}
           <div className="lg:col-span-4">
             <Link href="/" className="inline-block mb-5">
-              <img src="/logo.webp" alt={SITE_NAME} className="h-10 w-auto brightness-0 invert" />
+              <Image 
+                src="/logo.webp" 
+                alt={SITE_NAME} 
+                width={120}
+                height={40}
+                className="h-10 w-auto brightness-0 invert"
+                sizes="120px"
+              />
             </Link>
             <p className="text-white/60 text-sm leading-relaxed mb-6 max-w-xs">
               %100 doğal, katkısız fıstık ezmeleri ve kuruyemişler. Sağlıklı yaşamın vazgeçilmezi.

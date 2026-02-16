@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Search,
   Menu,
@@ -153,7 +154,15 @@ export function Header() {
         <div className="flex h-16 lg:h-20 items-center gap-4">
           {/* LOGO */}
           <Link href={ROUTES.home} className="flex items-center gap-2 transform hover:scale-105 transition-transform duration-300">
-            <img src="/logo.webp" alt={SITE_NAME} className="h-10 lg:h-12 w-auto" />
+            <Image 
+              src="/logo.webp" 
+              alt={SITE_NAME} 
+              width={120}
+              height={48}
+              className="h-10 lg:h-12 w-auto"
+              priority
+              sizes="120px"
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -349,7 +358,14 @@ export function Header() {
                 {/* Sticky Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white shrink-0">
                   <Link href="/" onClick={() => setIsMenuOpen(false)}>
-                    <img src="/logo.webp" alt={SITE_NAME} className="h-7 w-auto" />
+                    <Image 
+                      src="/logo.webp" 
+                      alt={SITE_NAME} 
+                      width={84}
+                      height={28}
+                      className="h-7 w-auto"
+                      sizes="84px"
+                    />
                   </Link>
                   <div className="flex items-center gap-1">
                     <Link href="/favoriler" onClick={() => setIsMenuOpen(false)} className="relative p-2">
