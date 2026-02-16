@@ -61,8 +61,6 @@ export default function RedesignHome() {
       <PromotionalBanners />
       <ShopByLifestyle />
 
-      <Newsletter />
-      
     </main>
   );
 }
