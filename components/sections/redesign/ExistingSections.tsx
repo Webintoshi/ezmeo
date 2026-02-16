@@ -74,7 +74,9 @@ export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
   const slide = slides[current];
 
   return (
-    <section className="relative h-[50vh] sm:h-[55vh] md:h-[65vh] lg:h-[75vh] min-h-[400px] max-h-[800px] overflow-hidden">
+    <section className="relative w-full overflow-hidden">
+      {/* Aspect Ratio Container - Mobile: 3/4, Desktop: 16/9 */}
+      <div className="relative w-full aspect-[3/4] sm:aspect-[4/5] md:aspect-[16/9] lg:aspect-[21/9] max-h-[900px]">
       <AnimatePresence mode="wait">
         <motion.div
           key={current}
@@ -108,7 +110,8 @@ export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
         </motion.div>
       </AnimatePresence>
 
-      <div className="container mx-auto px-4 sm:px-6 h-full flex items-center relative z-10">
+      <div className="absolute inset-0 z-10 flex items-center">
+        <div className="container mx-auto px-4 sm:px-6">
         <div className="max-w-lg sm:max-w-xl md:max-w-2xl">
           <AnimatePresence mode="wait">
             <motion.div
@@ -149,6 +152,7 @@ export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
           </AnimatePresence>
         </div>
       </div>
+      </div>
 
       {slides.length > 1 && (
         <div className="absolute bottom-4 sm:bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-20">
@@ -184,6 +188,7 @@ export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
           </button>
         </>
       )}
+      </div>
     </section>
   );
 }
