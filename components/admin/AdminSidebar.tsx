@@ -210,16 +210,30 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
         
         // Try to get from localStorage directly
         try {
-          const storageKey = 'sb-jlrfjirbtcazhqqnrxfb-auth-token';
-          const stored = localStorage.getItem(storageKey);
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            console.log("AdminSidebar: Found in localStorage:", parsed);
-            if (parsed.user) {
-              processUser(parsed.user);
-              return;
+          // Try different possible storage keys
+          const possibleKeys = [
+            'sb-jlrfjirbtcazhqqnrxfb-auth-token',
+            'sb-auth-token',
+            'supabase.auth.token'
+          ];
+          
+          for (const key of possibleKeys) {
+            const stored = localStorage.getItem(key);
+            console.log(`AdminSidebar: Checking localStorage key "${key}":`, stored ? "FOUND" : "NOT FOUND");
+            
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              console.log("AdminSidebar: Parsed from localStorage:", parsed);
+              if (parsed.user || parsed.currentSession?.user) {
+                const user = parsed.user || parsed.currentSession?.user;
+                console.log("AdminSidebar: Using user from localStorage:", user);
+                processUser(user);
+                return;
+              }
             }
           }
+          
+          console.log("AdminSidebar: No valid token found in localStorage");
         } catch (e) {
           console.error("AdminSidebar: localStorage read error:", e);
         }
