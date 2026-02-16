@@ -326,17 +326,30 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
   };
 
   useEffect(() => {
-    fetchUserData();
+    let isMounted = true;
     
-    // Listen for auth state changes
+    // Listen for auth state changes FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("AdminSidebar: Auth event:", event);
+      console.log("AdminSidebar: Auth event:", event, "Session:", session ? "YES" : "NO");
+      
+      if (!isMounted) return;
+      
       if (session?.user) {
+        console.log("AdminSidebar: User from auth event:", session.user.id);
         processUser(session.user);
+      } else if (event === 'INITIAL_SESSION' && !session) {
+        console.log("AdminSidebar: INITIAL_SESSION with no session, user not logged in");
+        setLoading(false);
       }
     });
     
-    return () => subscription.unsubscribe();
+    // Also try to fetch immediately (for SSR cases)
+    fetchUserData();
+    
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const toggleMenu = (title: string) => {
