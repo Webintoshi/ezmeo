@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Monitor, Smartphone, Tablet } from "lucide-react";
+import { Users, Monitor, Smartphone, Tablet, AlertCircle } from "lucide-react";
 
 interface LiveData {
     liveVisitors: number;
@@ -16,28 +16,44 @@ interface LiveData {
 export default function LiveVisitors() {
     const [data, setData] = useState<LiveData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [useGA4, setUseGA4] = useState(true);
+
+    const fetchLiveData = async () => {
+        try {
+            const endpoint = useGA4 ? "/api/analytics/ga4" : "/api/analytics/live";
+            const res = await fetch(endpoint);
+            const json = await res.json();
+            
+            if (json.success) {
+                setData(json.data);
+                setError(null);
+            } else {
+                if (useGA4) {
+                    console.warn("GA4 failed, falling back to session-based tracking");
+                    setUseGA4(false);
+                } else {
+                    setError(json.error || "Veri alınamadı");
+                }
+            }
+        } catch (err) {
+            if (useGA4) {
+                setUseGA4(false);
+            } else {
+                console.error("Failed to fetch live data:", err);
+                setError("Bağlantı hatası");
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchLiveData = async () => {
-            try {
-                const res = await fetch("/api/analytics/live");
-                const json = await res.json();
-                if (json.success) {
-                    setData(json.data);
-                }
-            } catch (error) {
-                console.error("Failed to fetch live data:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchLiveData();
 
-        // Refresh every 30 seconds
-        const interval = setInterval(fetchLiveData, 30000);
+        const interval = setInterval(fetchLiveData, useGA4 ? 15000 : 30000);
         return () => clearInterval(interval);
-    }, []);
+    }, [useGA4]);
 
     if (loading) {
         return (
@@ -45,6 +61,23 @@ export default function LiveVisitors() {
                 <div className="animate-pulse">
                     <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
                     <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error && !data) {
+        return (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <Users className="w-5 h-5 text-gray-400" />
+                        Anlık Ziyaretçiler
+                    </h3>
+                </div>
+                <div className="flex items-center gap-2 text-gray-500">
+                    <AlertCircle className="w-5 h-5" />
+                    <span>{error}</span>
                 </div>
             </div>
         );
