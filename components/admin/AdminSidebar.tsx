@@ -188,94 +188,128 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
     }
   }, [isOpen]);
 
-  // Fetch user data - sadece getSession kullan
+  // Fetch user data
   const fetchUserData = async () => {
     try {
       console.log("AdminSidebar: Fetching user data...");
       
-      // Get session - tek kaynak
+      // Wait a bit for auth to initialize
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Get session
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
         console.error("AdminSidebar: Session error:", sessionError);
-        setLoading(false);
-        return;
       }
+      
+      console.log("AdminSidebar: Session data:", sessionData);
       
       if (!sessionData?.session?.user) {
-        console.log("AdminSidebar: No session found");
+        console.log("AdminSidebar: No session in getSession, trying localStorage...");
+        
+        // Try to get from localStorage directly
+        try {
+          const storageKey = 'sb-jlrfjirbtcazhqqnrxfb-auth-token';
+          const stored = localStorage.getItem(storageKey);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            console.log("AdminSidebar: Found in localStorage:", parsed);
+            if (parsed.user) {
+              processUser(parsed.user);
+              return;
+            }
+          }
+        } catch (e) {
+          console.error("AdminSidebar: localStorage read error:", e);
+        }
+        
         setLoading(false);
         return;
       }
       
-      const user = sessionData.session.user;
-      console.log("AdminSidebar: User authenticated:", user.id);
-      console.log("AdminSidebar: User email:", user.email);
-      
-      setUserEmail(user.email || "");
-      
-      let displayName: string | null = null;
-      let userRole: string | null = null;
-      
-      // 1. Önce user_metadata dene
-      const userMetadata = user.user_metadata || {};
-      console.log("AdminSidebar: user_metadata:", userMetadata);
-      
-      if (userMetadata.full_name) {
-        displayName = userMetadata.full_name;
-        console.log("AdminSidebar: Name from metadata.full_name:", displayName);
-      } else if (userMetadata.name) {
-        displayName = userMetadata.name;
-        console.log("AdminSidebar: Name from metadata.name:", displayName);
-      }
-      
-      // 2. Sonra profile tablosu dene
-      if (!displayName || !userRole) {
-        console.log("AdminSidebar: Fetching profile for:", user.id);
-        
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("role, full_name")
-          .eq("id", user.id)
-          .single();
-
-        if (profileError) {
-          console.error("AdminSidebar: Profile error:", profileError);
-        } else if (profile) {
-          console.log("AdminSidebar: Profile found:", profile);
-          
-          if (profile.role) userRole = profile.role;
-          
-          if (!displayName && profile.full_name) {
-            displayName = profile.full_name;
-            console.log("AdminSidebar: Name from profile.full_name:", displayName);
-          }
-        }
-      }
-      
-      // 3. Role'ü set et
-      if (userRole) {
-        setRole(userRole);
-      }
-      
-      // 4. İsmi set et
-      if (displayName?.trim()) {
-        setUserName(displayName.trim());
-      } else if (user.email?.includes('@')) {
-        setUserName(user.email.split('@')[0]);
-      } else {
-        setUserName("Admin Kullanıcı");
-      }
+      await processUser(sessionData.session.user);
       
     } catch (error) {
       console.error("AdminSidebar: Error:", error);
-    } finally {
       setLoading(false);
     }
+  };
+  
+  const processUser = async (user: any) => {
+    console.log("AdminSidebar: Processing user:", user.id);
+    console.log("AdminSidebar: User email:", user.email);
+    
+    setUserEmail(user.email || "");
+    
+    let displayName: string | null = null;
+    let userRole: string | null = null;
+    
+    // 1. Önce user_metadata dene
+    const userMetadata = user.user_metadata || {};
+    console.log("AdminSidebar: user_metadata:", userMetadata);
+    
+    if (userMetadata.full_name) {
+      displayName = userMetadata.full_name;
+    } else if (userMetadata.name) {
+      displayName = userMetadata.name;
+    }
+    
+    // 2. Sonra profile tablosu dene
+    if (!displayName || !userRole) {
+      console.log("AdminSidebar: Fetching profile for:", user.id);
+      
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role, full_name")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) {
+        console.error("AdminSidebar: Profile error:", profileError.message);
+      } else if (profile) {
+        console.log("AdminSidebar: Profile found:", profile);
+        
+        if (profile.role) userRole = profile.role;
+        
+        if (!displayName && profile.full_name) {
+          displayName = profile.full_name;
+        }
+      }
+    }
+    
+    // 3. Role'ü set et
+    if (userRole) {
+      setRole(userRole);
+    }
+    
+    // 4. İsmi set et
+    if (displayName?.trim()) {
+      console.log("AdminSidebar: Setting display name:", displayName);
+      setUserName(displayName.trim());
+    } else if (user.email?.includes('@')) {
+      const emailName = user.email.split('@')[0];
+      console.log("AdminSidebar: Using email prefix:", emailName);
+      setUserName(emailName);
+    } else {
+      setUserName("Admin Kullanıcı");
+    }
+    
+    setLoading(false);
   };
 
   useEffect(() => {
     fetchUserData();
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("AdminSidebar: Auth event:", event);
+      if (session?.user) {
+        processUser(session.user);
+      }
+    });
+    
+    return () => subscription.unsubscribe();
   }, []);
 
   const toggleMenu = (title: string) => {
