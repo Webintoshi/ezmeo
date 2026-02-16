@@ -17,9 +17,9 @@ import {
   Phone,
   Instagram,
   Facebook,
-  Coffee,
+  Sprout,
   Cookie,
-  Cherry,
+  Wheat,
 } from "lucide-react";
 import { SITE_NAME, NAV_LINKS, ROUTES, CONTACT_INFO, SOCIAL_LINKS } from "@/lib/constants";
 import { useCart } from "@/lib/cart-context";
@@ -466,12 +466,12 @@ export function Header() {
                     <div className="grid grid-cols-3 gap-3">
                       {/* Fındık Ezmesi */}
                       <Link
-                        href="/kategori/findik-ezmesi"
+                        href="/koleksiyon/findik-ezmesi"
                         onClick={() => setIsMenuOpen(false)}
                         className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
                       >
                         <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center">
-                          <Coffee className="w-6 h-6 text-amber-700" strokeWidth={1.5} />
+                          <Sprout className="w-6 h-6 text-amber-700" strokeWidth={1.5} />
                         </div>
                         <span className="text-[11px] font-bold text-gray-700 text-center leading-tight">
                           Fındık<br/>Ezmesi
@@ -480,7 +480,7 @@ export function Header() {
 
                       {/* Fıstık Ezmesi */}
                       <Link
-                        href="/kategori/fistik-ezmesi"
+                        href="/koleksiyon/fistik-ezmesi"
                         onClick={() => setIsMenuOpen(false)}
                         className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
                       >
@@ -494,12 +494,12 @@ export function Header() {
 
                       {/* Kuruyemişler */}
                       <Link
-                        href="/kategori/kuruyemisler"
+                        href="/koleksiyon/kuruyemisler"
                         onClick={() => setIsMenuOpen(false)}
                         className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
                       >
                         <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-2xl flex items-center justify-center">
-                          <Cherry className="w-6 h-6 text-yellow-700" strokeWidth={1.5} />
+                          <Wheat className="w-6 h-6 text-yellow-700" strokeWidth={1.5} />
                         </div>
                         <span className="text-[11px] font-bold text-gray-700 text-center leading-tight">
                           Kuruyemiş
