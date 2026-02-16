@@ -200,14 +200,15 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
         if (formData.images.length === 0) newErrors.images = "En az 1 görsel yüklenmelidir";
         break;
       case 3:
-        if (formData.variants.length === 0) {
-          newErrors.variants = "En az bir varyant gerekli";
-        } else {
-          formData.variants.forEach((v, i) => {
-            if (!v.name.trim()) newErrors[`variant_${i}_name`] = "Varyant adı gerekli";
-            if (!v.price || v.price <= 0) newErrors[`variant_${i}_price`] = "Geçerli fiyat girin";
-          });
-        }
+        // Varyantlar artık opsiyonel - kontrolü kaldırıldı
+        // if (formData.variants.length === 0) {
+        //   newErrors.variants = "En az bir varyant gerekli";
+        // } else {
+        //   formData.variants.forEach((v, i) => {
+        //     if (!v.name.trim()) newErrors[`variant_${i}_name`] = "Varyant adı gerekli";
+        //     if (!v.price || v.price <= 0) newErrors[`variant_${i}_price`] = "Geçerli fiyat girin";
+        //   });
+        // }
         break;
       case 5:
         if (!formData.seo.title.trim()) newErrors.seoTitle = "Meta başlık gereklidir";

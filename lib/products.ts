@@ -583,7 +583,8 @@ export async function getAllProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
     .select("*, variants:product_variants(*)")
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .eq("status", "published");
 
   if (error) {
     console.error("Error fetching products from Supabase:", error);
@@ -601,7 +602,8 @@ export async function getProductSlug(): Promise<string[]> {
   const { data, error } = await supabase
     .from("products")
     .select("slug")
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .eq("status", "published");
 
   if (error) {
     console.error("Error fetching product slugs from Supabase:", error);
@@ -620,6 +622,7 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
     .select("*, variants:product_variants(*)")
     .eq("slug", slug)
     .eq("is_active", true)
+    .eq("status", "published")
     .single();
 
   if (error) {

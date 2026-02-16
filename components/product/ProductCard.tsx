@@ -27,8 +27,56 @@ export function ProductCard({ product, index = 0, viewMode = "grid" }: ProductCa
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  // Varyant yoksa bile ürünü göster
   if (!product.variants || product.variants.length === 0) {
-    return null;
+    return (
+      <Link 
+        href={`${ROUTES.PRODUCTS}/${product.slug}`}
+        className="block group"
+      >
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+          {/* Image */}
+          <div className="relative aspect-square bg-gray-100 overflow-hidden">
+            {(product.images_v2 && product.images_v2.length > 0) ? (
+              <Image
+                src={product.images_v2[0].url || product.images_v2[0]}
+                alt={product.name}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              />
+            ) : product.images?.[0] ? (
+              <Image
+                src={product.images[0]}
+                alt={product.name}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                <span className="text-sm">Görsel yok</span>
+              </div>
+            )}
+          </div>
+          
+          {/* Info */}
+          <div className="p-4">
+            <h3 className="font-medium text-gray-900 line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+              {product.name}
+            </h3>
+            <p className="text-sm text-gray-500 mb-2">
+              Varyant seçenekleri için tıklayın
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-gray-400">
+                ---
+              </span>
+            </div>
+          </div>
+        </div>
+      </Link>
+    );
   }
 
   const displayVariant = product.variants[0];
