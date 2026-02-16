@@ -261,14 +261,12 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
     router.push("/");
   };
 
-  const filteredItems = loading 
-    ? MENU_ITEMS
-    : MENU_ITEMS.filter(item => {
-        if (!role) return true;
-        if (role === 'super_admin') return true;
-        if (item.title === "Ana Sayfa") return true;
-        return hasPermission(role as UserRole, item.href);
-      });
+  const filteredItems = MENU_ITEMS.filter(item => {
+    if (loading || !role) return true;
+    if (role === 'super_admin') return true;
+    if (item.title === "Ana Sayfa") return true;
+    return hasPermission(role as UserRole, item.href);
+  });
 
   const handleLinkClick = () => {
     if (isMobile && onClose) {
@@ -276,7 +274,7 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
     }
   };
 
-  if (loading) return <aside className="w-64 bg-[#ebebeb] min-h-screen border-r border-gray-200" />;
+  // Show skeleton while loading but keep layout stable
 
   return (
     <>
@@ -297,15 +295,27 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
       )}>
         {/* Admin Header */}
         <div className="p-4 flex items-center gap-3 border-b border-gray-200/50">
-          <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-            {userName?.[0]?.toUpperCase() || userEmail?.[0]?.toUpperCase() || "E"}
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm">
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              userName?.[0]?.toUpperCase() || userEmail?.[0]?.toUpperCase() || "A"
+            )}
           </div>
-          <div>
-            <span className="font-semibold text-gray-900 block leading-tight">
+          <div className="min-w-0 flex-1">
+            <span className="font-semibold text-gray-900 block leading-tight text-sm">
               Webintosh Panel
             </span>
-            <span className="text-xs text-gray-500 font-medium">
-              {userName || (userEmail && userEmail.includes('@') ? userEmail.split('@')[0] : "Yükleniyor...")}
+            <span className="text-xs text-gray-500 font-medium truncate block">
+              {loading ? (
+                <span className="text-gray-400">Oturum açılıyor...</span>
+              ) : userName ? (
+                <span className="text-gray-600">{userName}</span>
+              ) : userEmail ? (
+                <span className="text-gray-600">{userEmail}</span>
+              ) : (
+                <span className="text-gray-400">Admin Kullanıcı</span>
+              )}
             </span>
           </div>
         </div>
