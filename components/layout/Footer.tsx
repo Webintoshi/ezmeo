@@ -2,10 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { 
   Mail, 
-  MapPin, 
   Phone, 
   Instagram,
   ArrowRight
@@ -160,7 +158,7 @@ export function Footer() {
 
       {/* Bottom Bar */}
       <div className="border-t border-gray-200">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-5">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Copyright */}
             <p className="text-sm text-gray-400">
@@ -171,24 +169,26 @@ export function Footer() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-400 mr-2">Güvenli Ödeme</span>
               <span className="px-2.5 py-1 bg-white border border-gray-200 rounded-md text-xs font-semibold text-gray-600">VISA</span>
-              <span className="px-2.5 py-1 bg-white border border-gray-200 rounded-md text-xs font-semibold text-gray-600">MASTERCARD</span>
+              <span className="px-2.5 py-1 bg-white border border-gray-200 rounded-md text-xs font-semibold text-gray-600">MC</span>
               <span className="px-2.5 py-1 bg-white border border-gray-200 rounded-md text-xs font-semibold text-gray-600">AMEX</span>
             </div>
 
-            {/* Webintosh Logo - Image ile */}
+            {/* Webintosh Logo - Düzeltilmiş */}
             <a 
               href="https://webintoshi.com/" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              className="flex items-center justify-center"
             >
-              <Image
-                src="/webintosh logo.svg"
-                alt="Designed by Webintosh"
-                width={120}
-                height={40}
-                className="h-8 w-auto"
-              />
+              <div className="relative w-24 h-8">
+                <Image
+                  src="/webintosh logo.svg"
+                  alt="Designed by Webintosh"
+                  fill
+                  className="object-contain"
+                  sizes="96px"
+                />
+              </div>
             </a>
           </div>
         </div>
