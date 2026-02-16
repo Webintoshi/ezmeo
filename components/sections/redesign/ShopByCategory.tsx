@@ -1,21 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { CategoryInfo } from "@/types/product";
 import { fetchCategories } from "@/lib/categories";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 
 export default function ShopByCategory() {
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef(0);
 
   const handleImageError = (categoryId: string) => {
     setImageErrors(prev => ({ ...prev, [categoryId]: true }));
   };
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     async function loadCategories() {
@@ -33,22 +46,58 @@ export default function ShopByCategory() {
     loadCategories();
   }, []);
 
+  // Scroll tracking for mobile indicator
+  const handleScroll = useCallback(() => {
+    if (scrollRef.current && isMobile) {
+      const scrollLeft = scrollRef.current.scrollLeft;
+      const cardWidth = scrollRef.current.offsetWidth * 0.85;
+      const gap = 12;
+      const newIndex = Math.round(scrollLeft / (cardWidth + gap));
+      setCurrentIndex(Math.min(newIndex, categories.length - 1));
+    }
+  }, [categories.length, isMobile]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0 && currentIndex < categories.length - 1) {
+        scrollToIndex(currentIndex + 1);
+      } else if (diff < 0 && currentIndex > 0) {
+        scrollToIndex(currentIndex - 1);
+      }
+    }
+  };
+
+  const scrollToIndex = (index: number) => {
+    if (scrollRef.current) {
+      const cardWidth = scrollRef.current.offsetWidth * 0.85;
+      const gap = 12;
+      scrollRef.current.scrollTo({
+        left: index * (cardWidth + gap),
+        behavior: 'smooth'
+      });
+    }
+  };
+
   if (loading) {
     return (
-      <section className="py-12 md:py-20 bg-white" id="shop-by-category">
+      <section className="py-16 md:py-24 bg-[#FFF5F5]" id="shop-by-category">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8 md:mb-12">
-            <div className="h-8 w-48 bg-gray-200 rounded-lg mx-auto mb-3 animate-pulse" />
-            <div className="h-4 w-64 bg-gray-200 rounded-lg mx-auto animate-pulse" />
+          {/* Section Header Skeleton */}
+          <div className="text-center mb-10 md:mb-14">
+            <div className="h-6 w-32 bg-[#F3E0E1] rounded-full mx-auto mb-4 animate-pulse" />
+            <div className="h-10 w-56 bg-[#F3E0E1] rounded-lg mx-auto mb-3 animate-pulse" />
+            <div className="h-5 w-72 bg-[#F3E0E1] rounded mx-auto animate-pulse" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {/* Cards Skeleton */}
+          <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 justify-center">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-gray-100 rounded-2xl overflow-hidden animate-pulse">
-                <div className="aspect-[16/10] bg-gray-200" />
-                <div className="p-4 space-y-2">
-                  <div className="h-5 w-32 bg-gray-200 rounded" />
-                  <div className="h-4 w-full bg-gray-200 rounded" />
-                </div>
+              <div key={i} className="flex-shrink-0 w-[280px] md:w-auto">
+                <div className="aspect-[4/5] bg-[#F3E0E1] rounded-2xl md:rounded-3xl animate-pulse" />
               </div>
             ))}
           </div>
@@ -63,131 +112,179 @@ export default function ShopByCategory() {
 
   return (
     <section 
-      className="py-10 md:py-20 bg-white" 
+      className="py-16 md:py-24 bg-[#FFF5F5] overflow-hidden" 
       id="shop-by-category"
       aria-labelledby="category-heading"
     >
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
+        {/* Section Header - Premium Editorial Style */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-6 md:mb-12"
+          transition={{ duration: 0.6 }}
+          className="text-center mb-10 md:mb-14"
         >
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-3">
+          {/* Eyebrow Badge */}
+          <motion.span 
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#7B1113]/10 text-[#7B1113] text-sm font-medium mb-4 border border-[#7B1113]/20"
+          >
+            <span className="w-2 h-2 rounded-full bg-[#7B1113]" />
             Koleksiyonlar
-          </span>
-          <h2 id="category-heading" className="text-2xl md:text-4xl font-bold text-gray-900 mb-2">
+          </motion.span>
+          
+          {/* Main Title */}
+          <h2 
+            id="category-heading" 
+            className="text-3xl md:text-5xl font-bold text-[#7B1113] mb-4 tracking-tight"
+          >
             Kategoriye Göz At
           </h2>
-          <p className="text-gray-500 text-sm md:text-base">
-            Doğal lezzetleri keşfedin
+          
+          {/* Subtitle */}
+          <p className="text-[#6b4b4c] text-base md:text-lg max-w-lg mx-auto">
+            Doğal lezzetleri keşfedin, size özel seçkilerimizi inceleyin
           </p>
         </motion.div>
 
-        {/* Mobile: Horizontal Scroll | Desktop: Grid */}
-        <div className="md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 lg:gap-6">
-          {/* Mobile: Scrollable Container */}
-          <div className="flex md:contents gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 pb-4 md:mx-0 md:px-0 md:pb-0">
+        {/* Cards Container */}
+        <div className="relative">
+          {/* Mobile: Horizontal Scroll | Desktop: Premium Grid */}
+          <div 
+            ref={scrollRef}
+            onScroll={handleScroll}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            className="flex md:grid md:grid-cols-3 gap-4 md:gap-6 lg:gap-8 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 pb-4"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
             {categories.map((cat, index) => (
               <motion.div
                 key={cat.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="flex-shrink-0 w-[85vw] md:w-auto snap-center md:snap-none"
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                className="flex-shrink-0 w-[280px] sm:w-[320px] md:w-auto snap-center"
               >
                 <Link
                   href={`/koleksiyon/${cat.slug}`}
-                  className="group block bg-gray-50 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-500 md:hover:-translate-y-1"
+                  className="group block relative"
                   aria-label={`${cat.name} kategorisini incele`}
                 >
-                  {/* Image Container - Mobile: 16:9 | Desktop: 4:3 */}
-                  <div className="relative aspect-[16/10] md:aspect-[4/3] overflow-hidden">
-                    <Image
-                      src={imageErrors[cat.id] ? "/placeholder.svg" : (cat.image || "/placeholder.svg")}
-                      alt={cat.name}
-                      fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-110"
-                      sizes="(max-width: 768px) 85vw, (max-width: 1200px) 50vw, 33vw"
-                      onError={() => handleImageError(cat.id)}
-                      unoptimized
-                    />
-                    {/* Overlay on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  {/* Card Container with 4:5 Aspect Ratio */}
+                  <div className="relative aspect-[4/5] rounded-2xl md:rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 bg-[#7B1113]">
+                    {/* Gradient Border on Hover */}
+                    <div className="absolute -inset-[2px] rounded-2xl md:rounded-3xl bg-gradient-to-r from-[#7B1113] via-[#F3E0E1] to-[#7B1113] opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
                     
-                    {/* Product Count Badge - Shows on hover desktop, always on mobile */}
-                    {cat.productCount !== undefined && cat.productCount > 0 && (
-                      <div className="absolute top-3 right-3 md:top-4 md:right-4">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-sm text-xs font-semibold text-gray-900 shadow-lg">
-                          {cat.productCount} ürün
-                        </span>
-                      </div>
-                    )}
+                    {/* Main Card */}
+                    <div className="relative w-full h-full rounded-2xl md:rounded-3xl overflow-hidden">
+                      {/* Background Image */}
+                      <Image
+                        src={imageErrors[cat.id] ? "/placeholder.svg" : (cat.image || "/placeholder.svg")}
+                        alt={cat.name}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-110"
+                        sizes="(max-width: 768px) 320px, (max-width: 1200px) 33vw, 400px"
+                        onError={() => handleImageError(cat.id)}
+                        unoptimized
+                      />
+                      
+                      {/* Gradient Overlay - Bottom to Top */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      
+                      {/* Top Badge - Product Count */}
+                      {cat.productCount !== undefined && cat.productCount > 0 && (
+                        <div className="absolute top-4 left-4">
+                          <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-semibold border border-white/30">
+                            {cat.productCount} ürün
+                          </span>
+                        </div>
+                      )}
 
-                    {/* Mobile CTA Overlay */}
-                    <div className="absolute inset-x-0 bottom-0 p-4 md:hidden">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-bold text-white drop-shadow-lg">
-                          {cat.name}
-                        </h3>
-                        <span className="flex items-center justify-center w-10 h-10 rounded-full bg-white text-gray-900 shadow-lg">
-                          <ArrowRight size={18} />
+                      {/* Top Right - Arrow Icon (Glassmorphism) */}
+                      <div className="absolute top-4 right-4">
+                        <span className="flex items-center justify-center w-10 h-10 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30 transform transition-all duration-300 group-hover:scale-110 group-hover:bg-white group-hover:text-[#7B1113]">
+                          <ArrowUpRight size={20} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                         </span>
                       </div>
-                    </div>
-                  </div>
-                  
-                  {/* Content - Desktop Only (Mobile content is in overlay) */}
-                  <div className="hidden md:block p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-primary transition-colors">
-                          {cat.name}
-                        </h3>
-                        {cat.description && (
-                          <p className="text-sm text-gray-500 line-clamp-2">
-                            {cat.description}
-                          </p>
-                        )}
+
+                      {/* Bottom Content */}
+                      <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
+                        <motion.div 
+                          className="transform transition-transform duration-500 group-hover:translate-y-[-4px]"
+                        >
+                          {/* Category Name */}
+                          <h3 className="text-xl md:text-2xl font-bold text-white mb-2 leading-tight">
+                            {cat.name}
+                          </h3>
+                          
+                          {/* Description */}
+                          {cat.description && (
+                            <p className="text-sm text-white/80 line-clamp-2 mb-4">
+                              {cat.description}
+                            </p>
+                          )}
+                          
+                          {/* CTA Button - Glassmorphism */}
+                          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md text-white text-sm font-medium border border-white/30 transition-all duration-300 group-hover:bg-white group-hover:text-[#7B1113] group-hover:gap-3">
+                            Koleksiyonu Gör
+                            <ArrowRight size={16} />
+                          </span>
+                        </motion.div>
                       </div>
-                      <span className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-700 group-hover:bg-primary group-hover:text-white transition-all duration-300 flex-shrink-0">
-                        <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
-                      </span>
+
+                      {/* Shine Effect on Hover */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                      </div>
                     </div>
                   </div>
                 </Link>
               </motion.div>
             ))}
           </div>
+
+          {/* Mobile Scroll Indicator - Working */}
+          <div className="flex md:hidden items-center justify-center gap-2 mt-6">
+            {categories.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => scrollToIndex(idx)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  idx === currentIndex 
+                    ? 'w-8 bg-[#7B1113]' 
+                    : 'w-2 bg-[#7B1113]/30 hover:bg-[#7B1113]/50'
+                }`}
+                aria-label={`Kategori ${idx + 1}'e git`}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Mobile Scroll Indicator */}
-        <div className="flex md:hidden items-center justify-center gap-1.5 mt-4">
-          {categories.map((_, idx) => (
-            <div
-              key={idx}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                idx === 0 ? 'w-6 bg-primary' : 'w-1.5 bg-gray-300'
-              }`}
-            />
-          ))}
-        </div>
-
-        {/* View All Link - Mobile */}
-        <div className="flex md:hidden justify-center mt-6">
+        {/* View All Link */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+          className="text-center mt-12"
+        >
           <Link
             href="/koleksiyon"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gray-100 text-gray-900 font-medium text-sm hover:bg-gray-200 transition-colors"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-[#7B1113] font-semibold border border-[#7B1113]/20 shadow-lg hover:shadow-xl hover:bg-[#7B1113] hover:text-white hover:border-[#7B1113] transition-all duration-300 group"
           >
-            Tüm Kategoriler
-            <ArrowRight size={16} />
+            Tüm Kategorileri Keşfet
+            <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
           </Link>
-        </div>
+        </motion.div>
       </div>
 
+      {/* Custom Styles */}
       <style jsx>{`
         .scrollbar-hide {
           -ms-overflow-style: none;
