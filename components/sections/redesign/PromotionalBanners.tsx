@@ -102,7 +102,7 @@ export default function PromotionalBanners() {
     {
       id: 2,
       image: "/Hero_banner_Bir.jpg",
-      mobileImage: "/Hero_banner_Bir-mobile.jpg",
+      mobileImage: "/hero-banner-super-gidalar-mobile.jpg",
       title: "Süper Gıdalar",
       subtitle: "Yeni Geldi!",
       buttonText: "Keşfet",
@@ -114,7 +114,7 @@ export default function PromotionalBanners() {
     {
       id: 3,
       image: "/Findik_Ezmeleri_Kategorisi.webp",
-      mobileImage: "/Findik_Ezmeleri_Kategorisi-mobile.webp",
+      mobileImage: "/Findik_Ezmeleri_Kategorisi.webp",
       title: "Saf Organik",
       subtitle: "Koleksiyon",
       buttonText: "Göz At",
@@ -314,8 +314,7 @@ export default function PromotionalBanners() {
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                   
-                  {/* Color Accent Overlay */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${banner.color || 'from-primary/40 to-transparent'} opacity-0 group-hover:opacity-60 transition-opacity duration-500 mix-blend-overlay`} />
+
 
                   {/* Badge */}
                   {banner.badge && (
