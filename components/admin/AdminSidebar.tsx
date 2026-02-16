@@ -195,46 +195,86 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
       }, 5000);
       
       try {
-        // First try getSession for client-side auth state
-        const { data: sessionData } = await supabase.auth.getSession();
+        // Get session
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("AdminSidebar: Session error:", sessionError);
+        }
         
         let user = sessionData?.session?.user;
         
         // If no session, try getUser
         if (!user) {
-          const { data: userData } = await supabase.auth.getUser();
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          if (userError) {
+            console.error("AdminSidebar: GetUser error:", userError);
+          }
           user = userData?.user;
         }
 
         if (user) {
+          console.log("AdminSidebar: User found:", user.id);
           setUserEmail(user.email || "");
           
-          // First try to get from user metadata
-          const userMetadata = user.user_metadata || {};
-          let displayName = userMetadata.full_name || userMetadata.name || null;
+          let displayName: string | null = null;
+          let userRole: string | null = null;
           
-          // If not in metadata, try profile table
-          if (!displayName) {
-            const { data: profile, error } = await supabase
-              .from("profiles")
-              .select("role, full_name")
-              .eq("id", user.id)
-              .single();
+          // First try profile table (most reliable)
+          console.log("AdminSidebar: Fetching profile for user:", user.id);
+          const { data: profile, error: profileError } = await supabase
+            .from("profiles")
+            .select("role, full_name, first_name, last_name")
+            .eq("id", user.id)
+            .single();
 
-            if (profile && !error) {
-              setRole(profile.role);
+          if (profileError) {
+            console.error("AdminSidebar: Profile fetch error:", profileError);
+          }
+
+          if (profile) {
+            console.log("AdminSidebar: Profile found:", profile);
+            userRole = profile.role;
+            
+            // Try different name fields
+            if (profile.full_name) {
               displayName = profile.full_name;
+            } else if (profile.first_name || profile.last_name) {
+              displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
             }
           }
           
-          // Fallback to email username if no name found
+          // If not in profile, try user metadata
+          if (!displayName) {
+            const userMetadata = user.user_metadata || {};
+            console.log("AdminSidebar: User metadata:", userMetadata);
+            
+            displayName = userMetadata.full_name || 
+                         userMetadata.name || 
+                         (userMetadata.first_name && userMetadata.last_name ? 
+                          `${userMetadata.first_name} ${userMetadata.last_name}` : null) ||
+                         userMetadata.first_name ||
+                         null;
+          }
+          
+          // Set role
+          if (userRole) {
+            setRole(userRole);
+          }
+          
+          // Set display name with fallback
           if (displayName) {
+            console.log("AdminSidebar: Setting display name:", displayName);
             setUserName(displayName);
           } else if (user.email && user.email.includes('@')) {
-            setUserName(user.email.split('@')[0]);
+            const emailName = user.email.split('@')[0];
+            console.log("AdminSidebar: Using email as fallback:", emailName);
+            setUserName(emailName);
+          } else {
+            console.log("AdminSidebar: No name found, using default");
+            setUserName("Admin Kullanıcı");
           }
         } else {
-          // No user found, redirect to login
           console.log("AdminSidebar: No user session found");
         }
       } catch (error) {
