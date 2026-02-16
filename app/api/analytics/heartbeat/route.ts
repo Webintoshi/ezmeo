@@ -1,49 +1,79 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 
-// POST /api/analytics/heartbeat - Keep session alive
+const BOT_USER_AGENTS = [
+    'bot', 'spider', 'crawler', 'googlebot', 'bingbot', 'yandex', 'duckduckbot',
+    'facebookexternalhit', 'twitterbot', 'linkedinbot', 'slackbot', 'telegrambot',
+    'applebot', 'semrush', 'ahrefs', 'mj12bot', 'dotbot', 'rogerbot', 'screaming frog'
+];
+
+function isBot(userAgent: string | undefined): boolean {
+    if (!userAgent) return false;
+    const ua = userAgent.toLowerCase();
+    return BOT_USER_AGENTS.some(bot => ua.includes(bot));
+}
+
 export async function POST(request: NextRequest) {
     try {
-        let body: { sessionId?: string } = {};
+        let body = { sessionId: '', path: '', userAgent: '' };
         
-        // Safely parse JSON body
         try {
             body = await request.json();
         } catch {
-            // Invalid JSON body
             return NextResponse.json({ success: true, visitors: 0 });
         }
         
-        const { sessionId } = body;
+        const { sessionId, userAgent } = body;
 
         if (!sessionId) {
             return NextResponse.json({ success: true, visitors: 0 });
         }
 
-        const supabase = createServerClient();
-
-        // Update session last activity - ignore errors
-        try {
-            await supabase
-                .from("sessions")
-                .update({
-                    last_activity_at: new Date().toISOString(),
-                    is_active: true
-                })
-                .eq("session_id", sessionId);
-        } catch {
-            // Ignore update errors
+        if (isBot(userAgent)) {
+            return NextResponse.json({ success: true, visitors: 0, bot: true });
         }
 
-        // Get active visitor count - ignore errors
+        const supabase = createServerClient();
+
+        try {
+            const { data: existing } = await supabase
+                .from("sessions")
+                .select("id")
+                .eq("session_id", sessionId)
+                .single();
+
+            if (existing) {
+                await supabase
+                    .from("sessions")
+                    .update({
+                        last_activity_at: new Date().toISOString(),
+                        is_active: true
+                    })
+                    .eq("session_id", sessionId);
+            } else {
+                await supabase.from("sessions").insert({
+                    session_id: sessionId,
+                    user_agent: userAgent || 'Unknown',
+                    device_type: 'desktop',
+                    started_at: new Date().toISOString(),
+                    last_activity_at: new Date().toISOString(),
+                    is_active: true,
+                    page_views: 1,
+                });
+            }
+        } catch {}
+
         let visitors = 0;
         try {
             const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-            const { count } = await supabase
+            const { data: sessions } = await supabase
                 .from("sessions")
-                .select("*", { count: "exact", head: true })
-                .gte("last_activity_at", fiveMinutesAgo);
-            visitors = count || 0;
+                .select("user_agent")
+                .gte("last_activity_at", fiveMinutesAgo)
+                .eq("is_active", true);
+            
+            const humanSessions = (sessions || []).filter((s: any) => !isBot(s.user_agent));
+            visitors = humanSessions.length;
         } catch {
             visitors = 0;
         }
@@ -58,7 +88,6 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// GET /api/analytics/heartbeat - Get active visitor count
 export async function GET() {
     try {
         const supabase = createServerClient();
@@ -66,11 +95,14 @@ export async function GET() {
         let visitors = 0;
         try {
             const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-            const { count } = await supabase
+            const { data: sessions } = await supabase
                 .from("sessions")
-                .select("*", { count: "exact", head: true })
-                .gte("last_activity_at", fiveMinutesAgo);
-            visitors = count || 0;
+                .select("user_agent")
+                .gte("last_activity_at", fiveMinutesAgo)
+                .eq("is_active", true);
+            
+            const humanSessions = (sessions || []).filter((s: any) => !isBot(s.user_agent));
+            visitors = humanSessions.length;
         } catch {
             visitors = 0;
         }

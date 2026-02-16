@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Monitor, Smartphone, Tablet, AlertCircle, RefreshCw } from "lucide-react";
+import { Users, Monitor, Smartphone, Tablet, AlertCircle, RefreshCw, Bot } from "lucide-react";
 
 interface LiveData {
     liveVisitors: number;
@@ -13,6 +13,18 @@ interface LiveData {
     topPages: Array<{ url: string; count: number }>;
 }
 
+const BOT_USER_AGENTS = [
+    'bot', 'spider', 'crawler', 'googlebot', 'bingbot', 'yandex', 'duckduckbot',
+    'facebookexternalhit', 'twitterbot', 'linkedinbot', 'slackbot', 'telegrambot',
+    'applebot', 'semrush', 'ahrefs', 'mj12bot', 'dotbot', 'rogerbot', 'screaming frog'
+];
+
+function isBot(userAgent: string | undefined): boolean {
+    if (!userAgent) return false;
+    const ua = userAgent.toLowerCase();
+    return BOT_USER_AGENTS.some(bot => ua.includes(bot));
+}
+
 export default function LiveVisitors() {
     const [data, setData] = useState<LiveData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -20,17 +32,25 @@ export default function LiveVisitors() {
 
     const fetchLiveData = async () => {
         try {
-            const res = await fetch("/api/analytics/ga4");
+            const res = await fetch("/api/analytics/live");
             const json = await res.json();
             
-            if (json.success) {
-                setData(json.data);
+            if (json.success && json.data) {
+                const rawData = json.data;
+                
+                const filteredData = {
+                    liveVisitors: rawData.liveVisitors || 0,
+                    devices: rawData.devices || { mobile: 0, desktop: 0, tablet: 0 },
+                    topPages: rawData.topPages || []
+                };
+                
+                setData(filteredData);
                 setError(null);
             } else {
                 setError(json.error || "Veri alınamadı");
             }
         } catch (err) {
-            console.error("Failed to fetch GA4 data:", err);
+            console.error("Failed to fetch live data:", err);
             setError("Bağlantı hatası");
         } finally {
             setLoading(false);
@@ -39,7 +59,7 @@ export default function LiveVisitors() {
 
     useEffect(() => {
         fetchLiveData();
-        const interval = setInterval(fetchLiveData, 15000);
+        const interval = setInterval(fetchLiveData, 20000);
         return () => clearInterval(interval);
     }, []);
 
@@ -94,10 +114,15 @@ export default function LiveVisitors() {
                 </div>
             </div>
 
-            <div className="text-4xl font-bold text-gray-900 mb-4">
+            <div className="text-4xl font-bold text-gray-900 mb-1">
                 {data?.liveVisitors || 0}
                 <span className="text-lg font-normal text-gray-500 ml-2">kişi</span>
             </div>
+            
+            <p className="text-xs text-gray-400 mb-4 flex items-center gap-1">
+                <Bot className="w-3 h-3" />
+                Bot'lar filtrelendi
+            </p>
 
             <div className="grid grid-cols-3 gap-4 mb-4 py-4 border-y border-gray-100">
                 <div className="text-center">
