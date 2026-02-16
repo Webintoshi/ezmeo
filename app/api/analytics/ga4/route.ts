@@ -16,7 +16,20 @@ function getAnalyticsClient() {
   }
 
   try {
-    const credentials = JSON.parse(credentialsStr);
+    let credentials;
+    
+    if (credentialsStr.startsWith("{")) {
+      credentials = JSON.parse(credentialsStr);
+    } else {
+      credentials = {
+        type: "service_account",
+        project_id: process.env.GA4_PROJECT_ID || "igneous-stone-487614-e1",
+        private_key: credentialsStr,
+        client_email: process.env.GA4_CLIENT_EMAIL || "ga4-api@igneous-stone-487614-e1.iam.gserviceaccount.com",
+      };
+    }
+    
+    console.log("Creating GA4 client with credentials...");
     analyticsClient = new BetaAnalyticsDataClient({
       credentials,
     });
@@ -30,10 +43,10 @@ function getAnalyticsClient() {
 
 export async function GET() {
   try {
-    console.log("GA4_PROPERTY_ID:", GA4_PROPERTY_ID);
+    console.log("Starting GA4 API request, Property ID:", GA4_PROPERTY_ID);
     
     const client = getAnalyticsClient();
-    console.log("Analytics client initialized");
+    console.log("GA4 client created successfully");
 
     const [realtimeReport] = await client.runRealtimeReport({
       property: `properties/${GA4_PROPERTY_ID}`,
@@ -98,6 +111,8 @@ export async function GET() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([url, count]) => ({ url, count }));
+
+    console.log("GA4 API success, visitors:", totalUsers);
 
     return NextResponse.json({
       success: true,
