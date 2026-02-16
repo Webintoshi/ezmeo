@@ -221,35 +221,35 @@ export function Footer() {
 
       {/* Bottom Bar - Minimal */}
       <div className="border-t border-white/10">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-white/50">
-            <p>
+        <div className="container mx-auto px-4 py-4 md:py-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6 text-xs md:text-sm text-white/50">
+            <p className="text-center md:text-left order-2 md:order-1">
               © {currentYear} {SITE_NAME}. Tüm hakları saklıdır.
             </p>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap justify-center items-center gap-3 md:gap-4 order-1 md:order-2">
               <a 
                 href="https://webintoshi.com/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="group flex items-center gap-2 px-3 py-1 rounded-full border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-300"
+                className="group flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-full border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-300"
               >
                 <div className="flex flex-col items-end">
-                  <span className="text-[6px] font-medium tracking-widest text-gray-500 uppercase leading-none mb-0.5">Designed by</span>
-                  <span className="text-[8px] font-bold tracking-[0.2em] text-white leading-none group-hover:text-gray-200 transition-colors">WEBINTOSH</span>
+                  <span className="text-[5px] md:text-[6px] font-medium tracking-widest text-gray-500 uppercase leading-none mb-0.5">Designed by</span>
+                  <span className="text-[7px] md:text-[8px] font-bold tracking-[0.15em] md:tracking-[0.2em] text-white leading-none group-hover:text-gray-200 transition-colors">WEBINTOSH</span>
                 </div>
-                <div className="h-3 w-[1px] bg-white/10 mx-0.5"></div>
+                <div className="h-2.5 md:h-3 w-[1px] bg-white/10 mx-0.5"></div>
                 <img 
                   src="/webintosh%20logo.svg" 
                   alt="Webintosh" 
-                  className="h-3 w-auto opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300"
+                  className="h-2.5 md:h-3 w-auto opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300"
                 />
               </a>
-              <div className="flex items-center gap-2 ml-4">
-                <span className="text-xs">Güvenli Ödeme</span>
-                <div className="flex gap-2">
-                  <div className="px-2 py-1 bg-white/10 rounded text-[10px] font-semibold">VISA</div>
-                  <div className="px-2 py-1 bg-white/10 rounded text-[10px] font-semibold">MC</div>
-                  <div className="px-2 py-1 bg-white/10 rounded text-[10px] font-semibold">AMEX</div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] md:text-xs">Güvenli Ödeme</span>
+                <div className="flex gap-1.5 md:gap-2">
+                  <div className="px-1.5 md:px-2 py-0.5 md:py-1 bg-white/10 rounded text-[8px] md:text-[10px] font-semibold">VISA</div>
+                  <div className="px-1.5 md:px-2 py-0.5 md:py-1 bg-white/10 rounded text-[8px] md:text-[10px] font-semibold">MC</div>
+                  <div className="px-1.5 md:px-2 py-0.5 md:py-1 bg-white/10 rounded text-[8px] md:text-[10px] font-semibold">AMEX</div>
                 </div>
               </div>
             </div>
