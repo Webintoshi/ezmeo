@@ -184,13 +184,15 @@ export function Footer() {
                 <span className="text-[5px] font-medium tracking-widest text-gray-400 uppercase leading-none">Designed by</span>
                 <span className="text-[9px] font-bold tracking-[0.15em] text-white leading-none">WEBINTOSH</span>
               </div>
-              <Image
-                src="/webintosh logo.svg"
-                alt="Webintosh"
-                width={16}
-                height={16}
-                className="h-4 w-auto brightness-0 invert"
-              />
+              <div className="relative w-4 h-4 flex-shrink-0">
+                <Image
+                  src="/webintosh logo.svg"
+                  alt="Webintosh"
+                  fill
+                  className="object-contain brightness-0 invert"
+                  sizes="16px"
+                />
+              </div>
             </a>
           </div>
         </div>
