@@ -17,6 +17,9 @@ import {
   Phone,
   Instagram,
   Facebook,
+  Coffee,
+  Cookie,
+  Cherry,
 } from "lucide-react";
 import { SITE_NAME, NAV_LINKS, ROUTES, CONTACT_INFO, SOCIAL_LINKS } from "@/lib/constants";
 import { useCart } from "@/lib/cart-context";
@@ -451,7 +454,7 @@ export function Header() {
                     ))}
                   </nav>
 
-                  {/* Compact Categories Grid - Icon Based */}
+                  {/* Compact Categories Grid - Lucide Icons */}
                   <div className="px-6 pb-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Kategoriler</h3>
@@ -467,8 +470,8 @@ export function Header() {
                         onClick={() => setIsMenuOpen(false)}
                         className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
                       >
-                        <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-2xl">
-                          🌰
+                        <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center">
+                          <Coffee className="w-6 h-6 text-amber-700" strokeWidth={1.5} />
                         </div>
                         <span className="text-[11px] font-bold text-gray-700 text-center leading-tight">
                           Fındık<br/>Ezmesi
@@ -481,8 +484,8 @@ export function Header() {
                         onClick={() => setIsMenuOpen(false)}
                         className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
                       >
-                        <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-2xl">
-                          🥜
+                        <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-red-100 rounded-2xl flex items-center justify-center">
+                          <Cookie className="w-6 h-6 text-orange-700" strokeWidth={1.5} />
                         </div>
                         <span className="text-[11px] font-bold text-gray-700 text-center leading-tight">
                           Fıstık<br/>Ezmesi
@@ -495,8 +498,8 @@ export function Header() {
                         onClick={() => setIsMenuOpen(false)}
                         className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
                       >
-                        <div className="w-12 h-12 bg-yellow-100 rounded-2xl flex items-center justify-center text-2xl">
-                          🌰
+                        <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-2xl flex items-center justify-center">
+                          <Cherry className="w-6 h-6 text-yellow-700" strokeWidth={1.5} />
                         </div>
                         <span className="text-[11px] font-bold text-gray-700 text-center leading-tight">
                           Kuruyemiş
