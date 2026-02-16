@@ -188,12 +188,12 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
     }
   }, [isOpen]);
 
-  // Fetch user data
+  // Fetch user data - sadece getSession kullan
   const fetchUserData = async () => {
     try {
       console.log("AdminSidebar: Fetching user data...");
       
-      // Get session
+      // Get session - tek kaynak
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -202,123 +202,80 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
         return;
       }
       
-      let user = sessionData?.session?.user;
-      
-      // If no session in getSession, try getUser
-      if (!user) {
-        console.log("AdminSidebar: No session, trying getUser...");
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError) {
-          console.error("AdminSidebar: GetUser error:", userError);
-          setLoading(false);
-          return;
-        }
-        user = userData?.user;
-      }
-
-      if (!user) {
-        console.log("AdminSidebar: No user found");
+      if (!sessionData?.session?.user) {
+        console.log("AdminSidebar: No session found");
         setLoading(false);
         return;
       }
-
+      
+      const user = sessionData.session.user;
       console.log("AdminSidebar: User authenticated:", user.id);
       console.log("AdminSidebar: User email:", user.email);
+      
       setUserEmail(user.email || "");
       
       let displayName: string | null = null;
       let userRole: string | null = null;
       
-      // First try user metadata (works without RLS)
+      // 1. Önce user_metadata dene
       const userMetadata = user.user_metadata || {};
-      console.log("AdminSidebar: Raw user_metadata:", JSON.stringify(userMetadata, null, 2));
+      console.log("AdminSidebar: user_metadata:", userMetadata);
       
-      displayName = userMetadata.full_name || 
-                   userMetadata.name || 
-                   (userMetadata.first_name && userMetadata.last_name ? 
-                    `${userMetadata.first_name} ${userMetadata.last_name}` : null) ||
-                   userMetadata.first_name ||
-                   null;
+      if (userMetadata.full_name) {
+        displayName = userMetadata.full_name;
+        console.log("AdminSidebar: Name from metadata.full_name:", displayName);
+      } else if (userMetadata.name) {
+        displayName = userMetadata.name;
+        console.log("AdminSidebar: Name from metadata.name:", displayName);
+      }
       
-      console.log("AdminSidebar: Display name from metadata:", displayName);
-      
-      // If not in metadata, try profile table
+      // 2. Sonra profile tablosu dene
       if (!displayName || !userRole) {
-        console.log("AdminSidebar: Checking profile table for user:", user.id);
+        console.log("AdminSidebar: Fetching profile for:", user.id);
         
-        // Try with service role bypass or just regular query
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .select("role, full_name, first_name, last_name, email")
+          .select("role, full_name")
           .eq("id", user.id)
-          .maybeSingle();
+          .single();
 
         if (profileError) {
-          console.error("AdminSidebar: Profile error:", profileError.message);
-        } else {
-          console.log("AdminSidebar: Profile query result:", profile);
-        }
-
-        if (profile) {
-          console.log("AdminSidebar: Profile found!");
-          if (!userRole && profile.role) userRole = profile.role;
+          console.error("AdminSidebar: Profile error:", profileError);
+        } else if (profile) {
+          console.log("AdminSidebar: Profile found:", profile);
           
-          // Try different name fields from profile
-          if (!displayName) {
-            if (profile.full_name) {
-              displayName = profile.full_name;
-              console.log("AdminSidebar: Using profile.full_name:", displayName);
-            } else if (profile.first_name || profile.last_name) {
-              displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
-              console.log("AdminSidebar: Using profile first/last name:", displayName);
-            }
+          if (profile.role) userRole = profile.role;
+          
+          if (!displayName && profile.full_name) {
+            displayName = profile.full_name;
+            console.log("AdminSidebar: Name from profile.full_name:", displayName);
           }
-        } else {
-          console.log("AdminSidebar: Profile not found for user id:", user.id);
         }
       }
       
-      // Set role
+      // 3. Role'ü set et
       if (userRole) {
         setRole(userRole);
-        console.log("AdminSidebar: Role set to:", userRole);
       }
       
-      // Set display name with fallback
-      if (displayName && displayName.trim()) {
-        console.log("AdminSidebar: Final display name:", displayName);
+      // 4. İsmi set et
+      if (displayName?.trim()) {
         setUserName(displayName.trim());
-      } else if (user.email && user.email.includes('@')) {
-        const emailName = user.email.split('@')[0];
-        console.log("AdminSidebar: Using email prefix:", emailName);
-        setUserName(emailName);
+      } else if (user.email?.includes('@')) {
+        setUserName(user.email.split('@')[0]);
       } else {
-        console.log("AdminSidebar: Using default name");
         setUserName("Admin Kullanıcı");
       }
       
     } catch (error) {
-      console.error("AdminSidebar: Unexpected error:", error);
+      console.error("AdminSidebar: Error:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Initial fetch
     fetchUserData();
-    
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("AdminSidebar: Auth state changed:", event);
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        fetchUserData();
-      }
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   const toggleMenu = (title: string) => {
