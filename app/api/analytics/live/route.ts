@@ -17,10 +17,11 @@ export async function GET() {
     try {
         const supabase = createServerClient();
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-        const { data: activeSessions, count: activeCount } = await supabase
+        const { data: activeSessions } = await supabase
             .from("sessions")
-            .select("*", { count: "exact" })
+            .select("*")
             .gte("last_activity_at", fiveMinutesAgo)
             .eq("is_active", true);
 
@@ -51,6 +52,22 @@ export async function GET() {
             .slice(0, 5)
             .map(([url, count]) => ({ url, count }));
 
+        const { data: abandonedCarts, count: abandonedCount } = await supabase
+            .from("abandoned_carts")
+            .select("*", { count: "exact" })
+            .eq("status", "active")
+            .gte("created_at", oneDayAgo);
+
+        const abandonedTotal = abandonedCarts?.reduce((sum, c) => sum + Number(c.total || 0), 0) || 0;
+
+        const { data: todayEvents } = await supabase
+            .from("events")
+            .select("event_type")
+            .gte("created_at", oneDayAgo);
+
+        const addToCartCount = todayEvents?.filter(e => e.event_type === "add_to_cart").length || 0;
+        const purchaseCount = todayEvents?.filter(e => e.event_type === "purchase").length || 0;
+
         return NextResponse.json({
             success: true,
             data: {
@@ -61,6 +78,14 @@ export async function GET() {
                     tablet: tabletCount,
                 },
                 topPages,
+                abandonedCarts: {
+                    count: abandonedCount || 0,
+                    total: abandonedTotal,
+                },
+                today: {
+                    addToCart: addToCartCount,
+                    purchases: purchaseCount,
+                },
             },
         });
     } catch (error) {
