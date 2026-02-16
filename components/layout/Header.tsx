@@ -451,37 +451,57 @@ export function Header() {
                     ))}
                   </nav>
 
-                  {/* Compact Categories Grid */}
+                  {/* Compact Categories Grid - Icon Based */}
                   <div className="px-6 pb-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Kategoriler</h3>
-                      <Link href="/urunler" onClick={() => setIsMenuOpen(false)} className="text-xs text-primary font-semibold">
+                      <Link href="/koleksiyon" onClick={() => setIsMenuOpen(false)} className="text-xs text-primary font-semibold">
                         Tümünü Gör
                       </Link>
                     </div>
                     
-                    <div className="grid grid-cols-4 gap-2">
-                      {categories.length === 0 ? (
-                        <div className="col-span-4 text-center py-4 text-gray-500 text-sm">
-                          Kategori bulunamadı
+                    <div className="grid grid-cols-3 gap-3">
+                      {/* Fındık Ezmesi */}
+                      <Link
+                        href="/kategori/findik-ezmesi"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
+                      >
+                        <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-2xl">
+                          🌰
                         </div>
-                      ) : (
-                        categories.slice(0, 8).map((category) => (
-                          <Link
-                            key={category.id}
-                            href={ROUTES.category(category.slug)}
-                            onClick={() => setIsMenuOpen(false)}
-                            className="flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
-                          >
-                            <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-xl">
-                              {category.icon}
-                            </div>
-                            <span className="text-[10px] font-bold text-gray-700 text-center leading-tight line-clamp-2">
-                              {category.name}
-                            </span>
-                          </Link>
-                        ))
-                      )}
+                        <span className="text-[11px] font-bold text-gray-700 text-center leading-tight">
+                          Fındık<br/>Ezmesi
+                        </span>
+                      </Link>
+
+                      {/* Fıstık Ezmesi */}
+                      <Link
+                        href="/kategori/fistik-ezmesi"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
+                      >
+                        <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-2xl">
+                          🥜
+                        </div>
+                        <span className="text-[11px] font-bold text-gray-700 text-center leading-tight">
+                          Fıstık<br/>Ezmesi
+                        </span>
+                      </Link>
+
+                      {/* Kuruyemişler */}
+                      <Link
+                        href="/kategori/kuruyemisler"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-100 active:scale-95 transition-all hover:border-primary/50 hover:shadow-md"
+                      >
+                        <div className="w-12 h-12 bg-yellow-100 rounded-2xl flex items-center justify-center text-2xl">
+                          🌰
+                        </div>
+                        <span className="text-[11px] font-bold text-gray-700 text-center leading-tight">
+                          Kuruyemiş
+                        </span>
+                      </Link>
                     </div>
                   </div>
 
