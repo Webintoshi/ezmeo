@@ -1,28 +1,58 @@
 "use client";
 
-// Generate unique session ID
+const STORAGE_KEY = "ezmeo_session_id";
+
+const BOT_USER_AGENTS = [
+    'bot', 'spider', 'crawler', 'googlebot', 'bingbot', 'yandex',
+    'duckduckbot', 'facebookexternalhit', 'twitterbot', 'linkedinbot',
+    'slackbot', 'telegrambot', 'applebot', 'semrush', 'ahrefs',
+    'mj12bot', 'dotbot', 'rogerbot', 'screaming frog'
+];
+
+function isBot(userAgent: string | undefined): boolean {
+    if (!userAgent) return false;
+    const ua = userAgent.toLowerCase();
+    return BOT_USER_AGENTS.some(bot => ua.includes(bot));
+}
+
 function generateSessionId(): string {
     const timestamp = Date.now().toString(36);
     const randomPart = Math.random().toString(36).substring(2, 15);
-    return `${timestamp}-${randomPart}`;
+    return `sess_${timestamp}_${randomPart}`;
 }
 
-// Get or create session ID from localStorage
-function getSessionId(): string {
+export function getSessionId(): string {
     if (typeof window === "undefined") return "";
 
-    const storageKey = "ezmeo_session_id";
-    let sessionId = localStorage.getItem(storageKey);
+    let sessionId = localStorage.getItem(STORAGE_KEY);
+
+    if (!sessionId) {
+        const oldSessionId = sessionStorage.getItem(STORAGE_KEY);
+        if (oldSessionId) {
+            sessionId = oldSessionId.startsWith('sess_') ? oldSessionId : `sess_${oldSessionId}`;
+            localStorage.setItem(STORAGE_KEY, sessionId);
+            sessionStorage.removeItem(STORAGE_KEY);
+        }
+    }
+
+    if (sessionId && !sessionId.startsWith('sess_')) {
+        sessionId = `sess_${sessionId}`;
+        localStorage.setItem(STORAGE_KEY, sessionId);
+    }
 
     if (!sessionId) {
         sessionId = generateSessionId();
-        localStorage.setItem(storageKey, sessionId);
+        localStorage.setItem(STORAGE_KEY, sessionId);
     }
 
     return sessionId;
 }
 
-// Get device type
+export function isUserBot(): boolean {
+    if (typeof window === "undefined") return false;
+    return isBot(navigator.userAgent);
+}
+
 function getDeviceType(): string {
     if (typeof window === "undefined") return "unknown";
 
@@ -35,7 +65,6 @@ function getDeviceType(): string {
     return "desktop";
 }
 
-// Get browser name
 function getBrowser(): string {
     if (typeof window === "undefined") return "unknown";
 
@@ -50,7 +79,6 @@ function getBrowser(): string {
     return "Other";
 }
 
-// Get OS
 function getOS(): string {
     if (typeof window === "undefined") return "unknown";
 
@@ -65,7 +93,6 @@ function getOS(): string {
     return "Other";
 }
 
-// Get UTM parameters
 function getUTMParams() {
     if (typeof window === "undefined") return {};
 
@@ -78,28 +105,28 @@ function getUTMParams() {
     };
 }
 
-// Tracking class
 class Tracker {
     private sessionId: string = "";
     private heartbeatInterval: NodeJS.Timeout | null = null;
     private isInitialized: boolean = false;
+    private lastHeartbeat: number = 0;
 
     async init() {
         if (typeof window === "undefined" || this.isInitialized) return;
 
+        if (isBot(navigator.userAgent)) {
+            console.log('[Tracking] Bot detected, skipping');
+            return;
+        }
+
         this.sessionId = getSessionId();
         this.isInitialized = true;
 
-        // Create or update session
         await this.createSession();
-
-        // Start heartbeat to keep session active
         this.startHeartbeat();
 
-        // Track initial page view
         await this.trackPageView();
 
-        // Track page views on route change
         if (typeof window !== "undefined") {
             window.addEventListener("popstate", () => this.trackPageView());
         }
@@ -128,8 +155,12 @@ class Tracker {
     }
 
     private startHeartbeat() {
-        // Send heartbeat every 30 seconds
         this.heartbeatInterval = setInterval(async () => {
+            const now = Date.now();
+            if (now - this.lastHeartbeat < 10000) return;
+            
+            this.lastHeartbeat = now;
+            
             try {
                 await fetch("/api/analytics/heartbeat", {
                     method: "POST",
@@ -139,7 +170,7 @@ class Tracker {
             } catch (error) {
                 console.error("Heartbeat failed:", error);
             }
-        }, 30000);
+        }, 20000);
     }
 
     async trackPageView(customUrl?: string, customTitle?: string) {
@@ -207,7 +238,6 @@ class Tracker {
     }
 }
 
-// Singleton instance
 let trackerInstance: Tracker | null = null;
 
 export function getTracker(): Tracker {
@@ -217,14 +247,12 @@ export function getTracker(): Tracker {
     return trackerInstance;
 }
 
-// Convenience functions
 export const initTracking = () => getTracker().init();
 export const trackPageView = (url?: string, title?: string) => getTracker().trackPageView(url, title);
 export const trackEvent = (type: string, data?: Record<string, unknown>) => getTracker().trackEvent(type, data);
 export const trackCheckout = (step: string, items: unknown[], total: number, email?: string, phone?: string) =>
     getTracker().trackCheckout(step, items, total, email, phone);
 
-// Common event types
 export const EVENTS = {
     ADD_TO_CART: "add_to_cart",
     REMOVE_FROM_CART: "remove_from_cart",

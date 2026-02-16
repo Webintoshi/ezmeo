@@ -11,7 +11,6 @@ import { StoreInfoProvider } from "@/lib/store-info-context";
 import { QuickViewProvider } from "@/components/product/QuickViewProvider";
 import { LayoutWrapper } from "@/components/layout/LayoutWrapper";
 import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
-import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 import TrackingProvider from "@/components/TrackingProvider";
 import { Toaster } from "sonner";
 import PromotionalBannersPreload from "@/components/preload/PromotionalBannersPreload";
@@ -120,7 +119,6 @@ export default function RootLayout({
         </noscript>
         <PromotionalBannersPreload />
         <TrackingProvider>
-          <AnalyticsTracker />
           <StoreInfoProvider>
             <AuthProvider>
               <CartProvider>
