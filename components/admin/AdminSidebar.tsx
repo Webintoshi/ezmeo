@@ -220,41 +220,43 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
           let displayName: string | null = null;
           let userRole: string | null = null;
           
-          // First try profile table (most reliable)
-          console.log("AdminSidebar: Fetching profile for user:", user.id);
-          const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("role, full_name, first_name, last_name")
-            .eq("id", user.id)
-            .single();
-
-          if (profileError) {
-            console.error("AdminSidebar: Profile fetch error:", profileError);
-          }
-
-          if (profile) {
-            console.log("AdminSidebar: Profile found:", profile);
-            userRole = profile.role;
-            
-            // Try different name fields
-            if (profile.full_name) {
-              displayName = profile.full_name;
-            } else if (profile.first_name || profile.last_name) {
-              displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
-            }
-          }
+          // First try user metadata (bypasses RLS issues)
+          const userMetadata = user.user_metadata || {};
+          console.log("AdminSidebar: User metadata:", userMetadata);
           
-          // If not in profile, try user metadata
-          if (!displayName) {
-            const userMetadata = user.user_metadata || {};
-            console.log("AdminSidebar: User metadata:", userMetadata);
-            
-            displayName = userMetadata.full_name || 
-                         userMetadata.name || 
-                         (userMetadata.first_name && userMetadata.last_name ? 
-                          `${userMetadata.first_name} ${userMetadata.last_name}` : null) ||
-                         userMetadata.first_name ||
-                         null;
+          displayName = userMetadata.full_name || 
+                       userMetadata.name || 
+                       (userMetadata.first_name && userMetadata.last_name ? 
+                        `${userMetadata.first_name} ${userMetadata.last_name}` : null) ||
+                       userMetadata.first_name ||
+                       null;
+          
+          // If not in metadata, try profile table with maybeSingle() to avoid errors
+          if (!displayName || !userRole) {
+            console.log("AdminSidebar: Fetching profile for user:", user.id);
+            const { data: profile, error: profileError } = await supabase
+              .from("profiles")
+              .select("role, full_name, first_name, last_name")
+              .eq("id", user.id)
+              .maybeSingle();
+
+            if (profileError) {
+              console.error("AdminSidebar: Profile fetch error (RLS issue?):", profileError.message);
+            }
+
+            if (profile) {
+              console.log("AdminSidebar: Profile found:", profile);
+              if (!userRole && profile.role) userRole = profile.role;
+              
+              // Try different name fields
+              if (!displayName && profile.full_name) {
+                displayName = profile.full_name;
+              } else if (!displayName && (profile.first_name || profile.last_name)) {
+                displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+              }
+            } else {
+              console.log("AdminSidebar: No profile data returned - checking RLS policies");
+            }
           }
           
           // Set role
