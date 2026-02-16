@@ -8,24 +8,32 @@ let analyticsClient: BetaAnalyticsDataClient | null = null;
 function getAnalyticsClient() {
   if (analyticsClient) return analyticsClient;
 
-  const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
-    ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON)
-    : undefined;
-
-  if (!credentials) {
-    console.warn("Google Service Account credentials not found. Using default authentication.");
+  const credentialsStr = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  
+  if (!credentialsStr) {
+    console.error("GOOGLE_SERVICE_ACCOUNT_JSON is not set");
+    throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON environment variable is missing");
   }
 
-  analyticsClient = new BetaAnalyticsDataClient({
-    credentials: credentials || undefined,
-  });
+  try {
+    const credentials = JSON.parse(credentialsStr);
+    analyticsClient = new BetaAnalyticsDataClient({
+      credentials,
+    });
+  } catch (parseError) {
+    console.error("Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON:", parseError);
+    throw new Error("Invalid GOOGLE_SERVICE_ACCOUNT_JSON format");
+  }
 
   return analyticsClient;
 }
 
 export async function GET() {
   try {
+    console.log("GA4_PROPERTY_ID:", GA4_PROPERTY_ID);
+    
     const client = getAnalyticsClient();
+    console.log("Analytics client initialized");
 
     const [realtimeReport] = await client.runRealtimeReport({
       property: `properties/${GA4_PROPERTY_ID}`,
@@ -33,9 +41,6 @@ export async function GET() {
         {
           name: "unifiedScreenName",
         },
-        {
-          name: "deviceCategory",
-        },
       ],
       metrics: [
         {
@@ -44,7 +49,7 @@ export async function GET() {
       ],
     });
 
-    const realtimeReport2 = await client.runRealtimeReport({
+    const [deviceReport] = await client.runRealtimeReport({
       property: `properties/${GA4_PROPERTY_ID}`,
       metrics: [
         {
@@ -58,7 +63,7 @@ export async function GET() {
       ],
     });
 
-    const totalUsers = realtimeReport2[0]?.rows?.reduce(
+    const totalUsers = deviceReport.rows?.reduce(
       (sum: number, row: any) => sum + Number(row.metricValues[0]?.value || 0),
       0
     ) || 0;
@@ -69,13 +74,13 @@ export async function GET() {
       tablet: 0,
     };
 
-    realtimeReport2[0]?.rows?.forEach((row: any) => {
+    deviceReport.rows?.forEach((row: any) => {
       const deviceType = row.dimensionValues[0]?.value?.toLowerCase() || "desktop";
       const count = Number(row.metricValues[0]?.value || 0);
       
-      if (deviceType.includes("mobile") || deviceType === "mobile") {
+      if (deviceType.includes("mobile")) {
         devices.mobile += count;
-      } else if (deviceType.includes("tablet") || deviceType === "tablet") {
+      } else if (deviceType.includes("tablet")) {
         devices.tablet += count;
       } else {
         devices.desktop += count;
@@ -83,7 +88,7 @@ export async function GET() {
     });
 
     const pageGroups: Record<string, number> = {};
-    realtimeReport[0]?.rows?.forEach((row: any) => {
+    realtimeReport.rows?.forEach((row: any) => {
       const pageUrl = row.dimensionValues[0]?.value || "/";
       const count = Number(row.metricValues[0]?.value || 0);
       pageGroups[pageUrl] = (pageGroups[pageUrl] || 0) + count;
@@ -107,8 +112,7 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch GA4 data",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : "Failed to fetch GA4 data",
       },
       { status: 500 }
     );
