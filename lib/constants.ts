@@ -64,7 +64,7 @@ export const ROUTES = {
   home: "/",
   allProducts: "/urunler",
   products: "/urunler",
-  category: (slug: string) => `/kategori/${slug}`,
+  category: (slug: string) => `/koleksiyon/${slug}`,
   product: (slug: string) => `/urunler/${slug}`,
   cart: "/sepet",
   checkout: "/odeme",
@@ -92,7 +92,7 @@ export const NAV_LINKS = [
   { name: "Tüm Ürünler", href: ROUTES.allProducts },
   { name: "Fıstık Ezmeleri", href: ROUTES.category("fistik-ezmesi") },
   { name: "Fındık Ezmeleri", href: ROUTES.category("findik-ezmesi") },
-  { name: "Kuruyemişler", href: ROUTES.category("kuruyemis") },
+  { name: "Kuruyemişler", href: ROUTES.category("kuruyemisler") },
   { name: "SSS", href: "/sss" },
 ];
 
@@ -101,7 +101,7 @@ export const FOOTER_LINKS = {
   categories: [
     { name: "Fıstık Ezmeleri", href: ROUTES.category("fistik-ezmesi") },
     { name: "Fındık Ezmeleri", href: ROUTES.category("findik-ezmesi") },
-    { name: "Kuruyemişler", href: ROUTES.category("kuruyemis") },
+    { name: "Kuruyemişler", href: ROUTES.category("kuruyemisler") },
   ],
   useful: [
     { name: "Ana Sayfa", href: ROUTES.home },
