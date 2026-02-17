@@ -31,10 +31,10 @@ export function Footer() {
     <footer className="bg-[#fafafa] border-t border-gray-200">
       {/* Main Footer */}
       <div className="container mx-auto px-4 py-10 md:py-16 lg:py-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-12 gap-x-6 gap-y-8 lg:gap-8">
           
           {/* Brand Column */}
-          <div className="lg:col-span-4 text-center lg:text-left">
+          <div className="col-span-2 lg:col-span-4 text-center lg:text-left">
             <Link href="/" className="inline-block mb-5">
               <Image 
                 src="/logo.webp" 
@@ -85,63 +85,41 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Links Grid - 2 cols on mobile, individual on desktop */}
-          <div className="col-span-1 lg:col-span-6">
-            <div className="grid grid-cols-2 gap-x-6 gap-y-8 lg:gap-8">
-              {/* Ürünler */}
-              <div className="lg:col-span-1">
-                <h4 className="font-semibold text-sm text-gray-900 mb-3 lg:mb-5">Ürünler</h4>
-                <ul className="space-y-2 lg:space-y-3">
-                  <li><Link href="/urunler" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Tüm Ürünler</Link></li>
-                  <li><Link href="/kategori/fistik-ezmesi" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Fıstık Ezmeleri</Link></li>
-                  <li><Link href="/kategori/findik-ezmesi" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Fındık Ezmeleri</Link></li>
-                  <li><Link href="/kategori/kuruyemis" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Kuruyemişler</Link></li>
-                </ul>
-              </div>
-
-              {/* Kurumsal */}
-              <div className="lg:col-span-1">
-                <h4 className="font-semibold text-sm text-gray-900 mb-3 lg:mb-5">Kurumsal</h4>
-                <ul className="space-y-2 lg:space-y-3">
-                  <li><Link href="/hakkimizda" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Hakkımızda</Link></li>
-                  <li><Link href="/blog" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Blog</Link></li>
-                  <li><Link href="/iletisim" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">İletişim</Link></li>
-                  <li><Link href="/sss" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">SSS</Link></li>
-                </ul>
-              </div>
-
-              {/* Yardım */}
-              <div className="lg:col-span-1">
-                <h4 className="font-semibold text-sm text-gray-900 mb-3 lg:mb-5">Yardım</h4>
-                <ul className="space-y-2 lg:space-y-3">
-                  <li><Link href="/kargo" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Kargo & Teslimat</Link></li>
-                  <li><Link href="/iade" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">İade & Değişim</Link></li>
-                  <li><Link href="/gizlilik" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Gizlilik Politikası</Link></li>
-                  <li><Link href="/sartlar" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Hizmet Şartları</Link></li>
-                </ul>
-              </div>
-
-              {/* İletişim - Short version in links grid */}
-              <div className="lg:col-span-1 lg:hidden">
-                <h4 className="font-semibold text-sm text-gray-900 mb-3">İletişim</h4>
-                <ul className="space-y-2">
-                  <li>
-                    <a href={`mailto:${contactInfo.email}`} className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">
-                      {contactInfo.email}
-                    </a>
-                  </li>
-                  <li>
-                    <a href={`tel:${contactInfo.phone}`} className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">
-                      {contactInfo.phone}
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
+          {/* Ürünler */}
+          <div className="lg:col-span-2">
+            <h4 className="font-semibold text-sm text-gray-900 mb-3 lg:mb-5">Ürünler</h4>
+            <ul className="space-y-2 lg:space-y-3">
+              <li><Link href="/urunler" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Tüm Ürünler</Link></li>
+              <li><Link href="/kategori/fistik-ezmesi" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Fıstık Ezmeleri</Link></li>
+              <li><Link href="/kategori/findik-ezmesi" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Fındık Ezmeleri</Link></li>
+              <li><Link href="/kategori/kuruyemis" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Kuruyemişler</Link></li>
+            </ul>
           </div>
 
-          {/* Contact & Newsletter - Desktop only */}
-          <div className="hidden lg:block lg:col-span-2">
+          {/* Kurumsal */}
+          <div className="lg:col-span-2">
+            <h4 className="font-semibold text-sm text-gray-900 mb-3 lg:mb-5">Kurumsal</h4>
+            <ul className="space-y-2 lg:space-y-3">
+              <li><Link href="/hakkimizda" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Hakkımızda</Link></li>
+              <li><Link href="/blog" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Blog</Link></li>
+              <li><Link href="/iletisim" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">İletişim</Link></li>
+              <li><Link href="/sss" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">SSS</Link></li>
+            </ul>
+          </div>
+
+          {/* Yardım */}
+          <div className="lg:col-span-2">
+            <h4 className="font-semibold text-sm text-gray-900 mb-3 lg:mb-5">Yardım</h4>
+            <ul className="space-y-2 lg:space-y-3">
+              <li><Link href="/kargo" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Kargo & Teslimat</Link></li>
+              <li><Link href="/iade" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">İade & Değişim</Link></li>
+              <li><Link href="/gizlilik" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Gizlilik Politikası</Link></li>
+              <li><Link href="/sartlar" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Hizmet Şartları</Link></li>
+            </ul>
+          </div>
+
+          {/* Contact & Newsletter */}
+          <div className="col-span-2 lg:col-span-2">
             <h4 className="font-semibold text-sm text-gray-900 mb-5">İletişim</h4>
             <ul className="space-y-4 mb-8">
               <li>
@@ -178,8 +156,25 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Mobile Newsletter Section */}
-          <div className="lg:hidden">
+          {/* Mobile-only Contact Info */}
+          <div className="lg:hidden col-span-2">
+            <h4 className="font-semibold text-sm text-gray-900 mb-3">İletişim</h4>
+            <ul className="space-y-2">
+              <li>
+                <a href={`mailto:${contactInfo.email}`} className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">
+                  {contactInfo.email}
+                </a>
+              </li>
+              <li>
+                <a href={`tel:${contactInfo.phone}`} className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">
+                  {contactInfo.phone}
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Mobile-only Newsletter */}
+          <div className="lg:hidden col-span-2">
             <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
               <p className="text-sm font-medium text-gray-900 mb-2">%10 İndirim Kazan</p>
               <div className="relative">
