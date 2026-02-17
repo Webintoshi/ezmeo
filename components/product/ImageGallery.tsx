@@ -63,6 +63,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
     setFailedImages(prev => new Set([...prev, index]));
   };
 
+  // Touch events (mobile)
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -75,6 +76,41 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
     const diff = touchStartX.current - touchEndX.current;
     if (Math.abs(diff) > 50) {
       diff > 0 ? handleNext() : handlePrevious();
+    }
+  };
+
+  // Mouse events (desktop drag)
+  const [isDragging, setIsDragging] = useState(false);
+  const mouseStartX = useRef(0);
+  const mouseEndX = useRef(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    mouseStartX.current = e.clientX;
+    mouseEndX.current = e.clientX;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    mouseEndX.current = e.clientX;
+  };
+
+  const handleMouseUp = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    const diff = mouseStartX.current - mouseEndX.current;
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? handleNext() : handlePrevious();
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      const diff = mouseStartX.current - mouseEndX.current;
+      if (Math.abs(diff) > 50) {
+        diff > 0 ? handleNext() : handlePrevious();
+      }
     }
   };
 
@@ -218,13 +254,17 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           )}
         </div>
 
-        {/* Sağ: Ana Görsel - Swipe destekli */}
+        {/* Sağ: Ana Görsel - Swipe ve Drag destekli */}
         <div
-          className="relative h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm cursor-pointer"
+          className={`relative h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm cursor-${isDragging ? 'grabbing' : 'pointer'}`}
           onClick={() => setIsLightboxOpen(true)}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
         >
           {!isLoaded && !isFailed && (
             <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
