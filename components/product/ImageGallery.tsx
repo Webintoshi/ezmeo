@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 // Using native img tag to avoid R2 CORS issues with Next.js Image optimization
@@ -180,10 +180,20 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
   const checkScroll = useCallback(() => {
     if (thumbnailsRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = thumbnailsRef.current;
-      setCanScrollUp(scrollTop > 0);
-      setCanScrollDown(scrollTop < scrollHeight - clientHeight - 5);
+      const canUp = scrollTop > 5;
+      const canDown = scrollTop < scrollHeight - clientHeight - 5;
+      setCanScrollUp(canUp);
+      setCanScrollDown(canDown);
     }
   }, []);
+
+  // İlk yüklemede scroll durumunu kontrol et
+  useEffect(() => {
+    checkScroll();
+    // Resize olduğunda tekrar kontrol et
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [checkScroll, displayImages.length]);
 
   const scrollThumbnails = (direction: 'up' | 'down') => {
     if (thumbnailsRef.current) {
@@ -233,68 +243,38 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           
           {/* Yukarı ve Aşağı ok butonları - Alt kısımda yan yana */}
           {/* Mobilde >4, Desktop'ta >5 görsel varsa göster */}
-          <div className="flex items-center justify-center gap-2 mt-3 sm:hidden">
-            {displayImages.length > 4 && (
-              <>
-                <button
-                  onClick={() => scrollThumbnails('up')}
-                  disabled={!canScrollUp}
-                  className={`w-8 h-8 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center transition-all ${
-                    canScrollUp 
-                      ? 'opacity-100 hover:border-primary hover:text-primary' 
-                      : 'opacity-30 cursor-not-allowed'
-                  }`}
-                >
-                  <ChevronLeft className="w-4 h-4 -rotate-90" />
-                </button>
-                <button
-                  onClick={() => scrollThumbnails('down')}
-                  disabled={!canScrollDown}
-                  className={`w-8 h-8 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center transition-all ${
-                    canScrollDown 
-                      ? 'opacity-100 hover:border-primary hover:text-primary' 
-                      : 'opacity-30 cursor-not-allowed'
-                  }`}
-                >
-                  <ChevronRight className="w-4 h-4 -rotate-90" />
-                </button>
-              </>
-            )}
-          </div>
-          <div className="hidden sm:flex items-center justify-center gap-2 mt-3">
-            {displayImages.length > 5 && (
-              <>
-                <button
-                  onClick={() => scrollThumbnails('up')}
-                  disabled={!canScrollUp}
-                  className={`w-8 h-8 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center transition-all ${
-                    canScrollUp 
-                      ? 'opacity-100 hover:border-primary hover:text-primary' 
-                      : 'opacity-30 cursor-not-allowed'
-                  }`}
-                >
-                  <ChevronLeft className="w-4 h-4 -rotate-90" />
-                </button>
-                <button
-                  onClick={() => scrollThumbnails('down')}
-                  disabled={!canScrollDown}
-                  className={`w-8 h-8 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center transition-all ${
-                    canScrollDown 
-                      ? 'opacity-100 hover:border-primary hover:text-primary' 
-                      : 'opacity-30 cursor-not-allowed'
-                  }`}
-                >
-                  <ChevronRight className="w-4 h-4 -rotate-90" />
-                </button>
-              </>
-            )}
-          </div>
+          {displayImages.length > 4 && (
+            <div className="flex items-center justify-center gap-2 mt-3">
+              <button
+                onClick={() => scrollThumbnails('up')}
+                disabled={!canScrollUp}
+                className={`w-8 h-8 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center transition-all ${
+                  canScrollUp 
+                    ? 'opacity-100 hover:border-primary hover:text-primary' 
+                    : 'opacity-30 cursor-not-allowed'
+                }`}
+              >
+                <ChevronLeft className="w-4 h-4 -rotate-90" />
+              </button>
+              <button
+                onClick={() => scrollThumbnails('down')}
+                disabled={!canScrollDown}
+                className={`w-8 h-8 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center transition-all ${
+                  canScrollDown 
+                    ? 'opacity-100 hover:border-primary hover:text-primary' 
+                    : 'opacity-30 cursor-not-allowed'
+                }`}
+              >
+                <ChevronRight className="w-4 h-4 -rotate-90" />
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Sağ: Ana Görsel - Swipe ve Drag destekli, aspect-square ile beyaz alan yok */}
+        {/* Sağ: Ana Görsel - Swipe ve Drag destekli */}
         <div
-          className={`relative aspect-square bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm cursor-${isDragging ? 'grabbing' : 'pointer'}`}
-          onClick={() => setIsLightboxOpen(true)}
+          className={`relative aspect-square bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+          onClick={() => !isDragging && setIsLightboxOpen(true)}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -302,6 +282,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
+          style={{ touchAction: 'pan-y' }}
         >
           {!isLoaded && !isFailed && (
             <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
