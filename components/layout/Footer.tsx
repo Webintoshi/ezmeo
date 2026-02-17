@@ -31,10 +31,10 @@ export function Footer() {
     <footer className="bg-[#fafafa] border-t border-gray-200">
       {/* Main Footer */}
       <div className="container mx-auto px-4 py-10 md:py-16 lg:py-20">
-        <div className="grid grid-cols-2 lg:grid-cols-12 gap-x-6 gap-y-8 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-y-6 gap-x-8 lg:gap-8">
           
           {/* Brand Column */}
-          <div className="col-span-2 lg:col-span-4 text-center lg:text-left">
+          <div className="lg:col-span-4">
             <Link href="/" className="inline-block mb-5">
               <Image 
                 src="/logo.webp" 
@@ -50,7 +50,7 @@ export function Footer() {
             </p>
             
             {/* Social Links */}
-            <div className="flex gap-3 justify-center lg:justify-start">
+            <div className="flex gap-3">
               <a
                 href={socialLinks.instagram}
                 target="_blank"
@@ -85,9 +85,9 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Ürünler */}
+          {/* Links */}
           <div className="lg:col-span-2">
-            <h4 className="font-semibold text-sm text-gray-900 mb-3 lg:mb-5">Ürünler</h4>
+            <h4 className="font-semibold text-sm text-gray-900 mb-4 lg:mb-5">Ürünler</h4>
             <ul className="space-y-2 lg:space-y-3">
               <li><Link href="/urunler" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Tüm Ürünler</Link></li>
               <li><Link href="/kategori/fistik-ezmesi" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Fıstık Ezmeleri</Link></li>
@@ -96,9 +96,8 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Kurumsal */}
           <div className="lg:col-span-2">
-            <h4 className="font-semibold text-sm text-gray-900 mb-3 lg:mb-5">Kurumsal</h4>
+            <h4 className="font-semibold text-sm text-gray-900 mb-4 lg:mb-5">Kurumsal</h4>
             <ul className="space-y-2 lg:space-y-3">
               <li><Link href="/hakkimizda" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Hakkımızda</Link></li>
               <li><Link href="/blog" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Blog</Link></li>
@@ -107,9 +106,8 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Yardım */}
           <div className="lg:col-span-2">
-            <h4 className="font-semibold text-sm text-gray-900 mb-3 lg:mb-5">Yardım</h4>
+            <h4 className="font-semibold text-sm text-gray-900 mb-4 lg:mb-5">Yardım</h4>
             <ul className="space-y-2 lg:space-y-3">
               <li><Link href="/kargo" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">Kargo & Teslimat</Link></li>
               <li><Link href="/iade" className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">İade & Değişim</Link></li>
@@ -119,9 +117,9 @@ export function Footer() {
           </div>
 
           {/* Contact & Newsletter */}
-          <div className="col-span-2 lg:col-span-2">
-            <h4 className="font-semibold text-sm text-gray-900 mb-5">İletişim</h4>
-            <ul className="space-y-4 mb-8">
+          <div className="lg:col-span-2">
+            <h4 className="font-semibold text-sm text-gray-900 mb-4 lg:mb-5">İletişim</h4>
+            <ul className="space-y-3 lg:space-y-4 mb-6 lg:mb-8">
               <li>
                 <a href={`mailto:${contactInfo.email}`} className="flex items-center gap-3 text-gray-500 hover:text-[#7B1113] text-sm transition-colors group">
                   <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center group-hover:border-[#7B1113] transition-colors">
@@ -148,40 +146,6 @@ export function Footer() {
                   type="email"
                   placeholder="E-posta adresin"
                   className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113] transition-all"
-                />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#7B1113] text-white rounded-lg hover:bg-[#5d0e0f] transition-colors flex items-center justify-center">
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile-only Contact Info */}
-          <div className="lg:hidden col-span-2">
-            <h4 className="font-semibold text-sm text-gray-900 mb-3">İletişim</h4>
-            <ul className="space-y-2">
-              <li>
-                <a href={`mailto:${contactInfo.email}`} className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">
-                  {contactInfo.email}
-                </a>
-              </li>
-              <li>
-                <a href={`tel:${contactInfo.phone}`} className="text-gray-500 hover:text-[#7B1113] text-sm transition-colors">
-                  {contactInfo.phone}
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Mobile-only Newsletter */}
-          <div className="lg:hidden col-span-2">
-            <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
-              <p className="text-sm font-medium text-gray-900 mb-2">%10 İndirim Kazan</p>
-              <div className="relative">
-                <input
-                  type="email"
-                  placeholder="E-posta adresin"
-                  className="w-full px-4 py-2.5 pr-12 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#7B1113] focus:ring-1 focus:ring-[#7B1113] transition-all"
                 />
                 <button className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-[#7B1113] text-white rounded-lg hover:bg-[#5d0e0f] transition-colors flex items-center justify-center">
                   <ArrowRight className="w-4 h-4" />
