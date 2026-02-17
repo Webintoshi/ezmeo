@@ -8,6 +8,7 @@ const MAX_DIMENSIONS = {
     products: { width: 2048, height: 2048 },
     categories: { width: 1200, height: 1200 },
     banners: { width: 1920, height: 1080 },
+    "promo-banners": { width: 1920, height: 1350 },
     default: { width: 1920, height: 1920 }
 };
 
@@ -15,8 +16,16 @@ const THUMBNAIL_SIZES = {
     products: { width: 400, height: 400 },
     categories: { width: 300, height: 300 },
     banners: { width: 640, height: 360 },
+    "promo-banners": { width: 540, height: 675 },
     default: { width: 300, height: 300 }
 };
+
+function getFolderConfig(folder: string): string {
+    if (folder === 'promo-banners') return 'promo-banners';
+    if (folder === 'banners') return 'banners';
+    if (folder in MAX_DIMENSIONS) return folder;
+    return 'default';
+}
 
 interface ProcessedImage {
     buffer: Buffer;
@@ -25,14 +34,17 @@ interface ProcessedImage {
     height: number;
     originalSize: number;
     processedSize: number;
+    quality: number;
 }
 
 async function optimizeImage(
     inputBuffer: Buffer,
     folder: string,
-    targetFormat?: 'avif' | 'webp'
+    targetFormat?: 'avif' | 'webp',
+    quality: number = 80
 ): Promise<ProcessedImage> {
-    const dimensions = MAX_DIMENSIONS[folder as keyof typeof MAX_DIMENSIONS] || MAX_DIMENSIONS.default;
+    const configKey = getFolderConfig(folder);
+    const dimensions = MAX_DIMENSIONS[configKey as keyof typeof MAX_DIMENSIONS] || MAX_DIMENSIONS.default;
     
     const image = sharp(inputBuffer);
     const metadata = await image.metadata();
@@ -52,15 +64,13 @@ async function optimizeImage(
 
     if (targetFormat === 'avif') {
         processedImage = processedImage.avif({
-            quality: 80,
-            chromaSubsampling: '4:4:4',
+            quality: quality,
             effort: 6
         });
     } else {
         processedImage = processedImage.webp({
-            quality: 85,
-            effort: 6,
-            chromaSubsampling: '4:4:4'
+            quality: quality + 5,
+            effort: 6
         });
     }
 
@@ -73,7 +83,8 @@ async function optimizeImage(
         width: outputMetadata.width || metadata.width || 0,
         height: outputMetadata.height || metadata.height || 0,
         originalSize,
-        processedSize: outputBuffer.length
+        processedSize: outputBuffer.length,
+        quality
     };
 }
 
@@ -82,7 +93,8 @@ async function generateThumbnail(
     folder: string,
     format: 'avif' | 'webp'
 ): Promise<Buffer> {
-    const sizes = THUMBNAIL_SIZES[folder as keyof typeof THUMBNAIL_SIZES] || THUMBNAIL_SIZES.default;
+    const configKey = getFolderConfig(folder);
+    const sizes = THUMBNAIL_SIZES[configKey as keyof typeof THUMBNAIL_SIZES] || THUMBNAIL_SIZES.default;
     
     let thumbnail = sharp(inputBuffer)
         .resize(sizes.width, sizes.height, {
@@ -115,6 +127,7 @@ export async function POST(request: NextRequest) {
         const folder = (formData.get("folder") as string) || "products";
         const generateThumb = formData.get("thumbnail") !== "false";
         const preferredFormat = (formData.get("format") as 'avif' | 'webp' | 'auto') || 'auto';
+        const quality = parseInt(formData.get("quality") as string) || 80;
 
         if (!file) {
             return NextResponse.json(
@@ -144,7 +157,7 @@ export async function POST(request: NextRequest) {
 
         const targetFormat: 'avif' | 'webp' = preferredFormat === 'auto' ? 'avif' : preferredFormat;
 
-        const processed = await optimizeImage(inputBuffer, folder, targetFormat);
+        const processed = await optimizeImage(inputBuffer, folder, targetFormat, quality);
 
         const fileName = getFileName(file.name, processed.format);
         

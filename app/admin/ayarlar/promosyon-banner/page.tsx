@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Image as ImageIcon, Loader2, Save, Trash2, Plus, Smartphone, Monitor, Sparkles, Palette } from "lucide-react";
+import { Image as ImageIcon, Loader2, Save, Trash2, Plus, Smartphone, Monitor, Sparkles, Palette, Zap } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -17,6 +17,17 @@ interface PromoBanner {
   order: number;
   badge?: string;
   color?: string;
+  imageStats?: ImageStats;
+  mobileImageStats?: ImageStats;
+}
+
+interface ImageStats {
+  format: string;
+  width: number;
+  height: number;
+  originalSize: number;
+  processedSize: number;
+  savings: number;
 }
 
 const BADGE_OPTIONS = [
@@ -46,6 +57,7 @@ export default function PromoBannerSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<{ [key: string]: boolean }>({});
+  const [optimizing, setOptimizing] = useState<{ [key: string]: boolean }>({});
   const [activeImageTab, setActiveImageTab] = useState<{ [key: number]: 'desktop' | 'mobile' }>({});
 
   useEffect(() => {
@@ -138,7 +150,23 @@ export default function PromoBannerSettingsPage() {
 
       if (data.success) {
         handleUpdateBanner(bannerId, type === 'desktop' ? 'image' : 'mobileImage', data.url);
-        toast.success(`${type === 'desktop' ? 'Masaüstü' : 'Mobil'} görsel yüklendi.`);
+        
+        const stats: ImageStats = {
+          format: data.format,
+          width: data.width,
+          height: data.height,
+          originalSize: data.originalSize,
+          processedSize: data.processedSize,
+          savings: data.savings
+        };
+        
+        if (type === 'desktop') {
+          setBanners(banners.map(b => b.id === bannerId ? { ...b, imageStats: stats } : b));
+        } else {
+          setBanners(banners.map(b => b.id === bannerId ? { ...b, mobileImageStats: stats } : b));
+        }
+        
+        toast.success(`${type === 'desktop' ? 'Masaüstü' : 'Mobil'} görsel yüklendi. ${data.savings}% sıkıştırıldı!`);
       } else {
         throw new Error(data.error);
       }
@@ -147,6 +175,55 @@ export default function PromoBannerSettingsPage() {
       toast.error("Görsel yüklenirken hata oluştu.");
     } finally {
       setUploading(prev => ({ ...prev, [`${bannerId}-${type}`]: false }));
+    }
+  };
+
+  const handleOptimizeImage = async (bannerId: number, type: 'desktop' | 'mobile') => {
+    const banner = banners.find(b => b.id === bannerId);
+    const imageUrl = type === 'desktop' ? banner?.image : banner?.mobileImage;
+    
+    if (!imageUrl) {
+      toast.error("Optimize edilecek görsel bulunamadı.");
+      return;
+    }
+
+    setOptimizing(prev => ({ ...prev, [`${bannerId}-${type}`]: true }));
+
+    try {
+      const res = await fetch("/api/upload/optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl, folder: "promo-banners" })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        handleUpdateBanner(bannerId, type === 'desktop' ? 'image' : 'mobileImage', data.url);
+        
+        const stats: ImageStats = {
+          format: data.format,
+          width: data.width,
+          height: data.height,
+          originalSize: data.originalSize,
+          processedSize: data.processedSize,
+          savings: data.savings
+        };
+        
+        if (type === 'desktop') {
+          setBanners(banners.map(b => b.id === bannerId ? { ...b, imageStats: stats } : b));
+        } else {
+          setBanners(banners.map(b => b.id === bannerId ? { ...b, mobileImageStats: stats } : b));
+        }
+        
+        toast.success(`Görsel optimize edildi! ${data.savings}% daha küçük.`);
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      console.error("Optimize error:", error);
+      toast.error("Görsel optimize edilirken hata oluştu.");
+    } finally {
+      setOptimizing(prev => ({ ...prev, [`${bannerId}-${type}`]: false }));
     }
   };
 
@@ -280,13 +357,66 @@ export default function PromoBannerSettingsPage() {
                 </div>
 
                 {/* Quick URL Input */}
-                <input
-                  type="text"
-                  placeholder="veya görsel URL'si girin"
-                  value={activeImageTab[banner.id] === 'mobile' ? (banner.mobileImage || '') : banner.image}
-                  onChange={(e) => handleUpdateBanner(banner.id, activeImageTab[banner.id] === 'mobile' ? 'mobileImage' : 'image', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="veya görsel URL'si girin"
+                    value={activeImageTab[banner.id] === 'mobile' ? (banner.mobileImage || '') : banner.image}
+                    onChange={(e) => handleUpdateBanner(banner.id, activeImageTab[banner.id] === 'mobile' ? 'mobileImage' : 'image', e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                  {(activeImageTab[banner.id] === 'desktop' ? banner.image : banner.mobileImage) && 
+                   !(activeImageTab[banner.id] === 'desktop' ? banner.imageStats : banner.mobileImageStats) && (
+                    <button
+                      onClick={() => handleOptimizeImage(banner.id, activeImageTab[banner.id] || 'desktop')}
+                      disabled={optimizing[`${banner.id}-${activeImageTab[banner.id] || 'desktop'}`]}
+                      className="flex items-center gap-1 px-3 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg text-xs font-medium hover:from-violet-600 hover:to-purple-700 transition-all disabled:opacity-50"
+                      title="Görseli optimize et"
+                    >
+                      {optimizing[`${banner.id}-${activeImageTab[banner.id] || 'desktop'}`] ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Zap className="w-3.5 h-3.5" />
+                      )}
+                      Optimize
+                    </button>
+                  )}
+                </div>
+
+                {/* Image Stats Display */}
+                {(activeImageTab[banner.id] === 'desktop' ? banner.imageStats : banner.mobileImageStats) && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-green-800">
+                          {(activeImageTab[banner.id] === 'desktop' ? banner.imageStats : banner.mobileImageStats)?.format.toUpperCase()} • 
+                          {(activeImageTab[banner.id] === 'desktop' ? banner.imageStats : banner.mobileImageStats)?.width}×
+                          {(activeImageTab[banner.id] === 'desktop' ? banner.imageStats : banner.mobileImageStats)?.height}
+                        </div>
+                        <div className="text-xs text-green-600">
+                          {(((activeImageTab[banner.id] === 'desktop' ? banner.imageStats : banner.mobileImageStats)?.processedSize ?? 0) / 1024).toFixed(1)} KB
+                          <span className="mx-1">•</span>
+                          <span className="font-semibold">{((activeImageTab[banner.id] === 'desktop' ? banner.imageStats : banner.mobileImageStats)?.savings ?? 0)}% tasarruf</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (activeImageTab[banner.id] === 'desktop') {
+                          setBanners(banners.map(b => b.id === banner.id ? { ...b, imageStats: undefined } : b));
+                        } else {
+                          setBanners(banners.map(b => b.id === banner.id ? { ...b, mobileImageStats: undefined } : b));
+                        }
+                      }}
+                      className="text-green-600 hover:text-green-800 p-1"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Badge & Color Selection */}
