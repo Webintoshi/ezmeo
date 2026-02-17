@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase";
 import { PrizeAllocator } from "@/lib/lucky-wheel";
 import type { LuckyWheelConfig, LuckyWheelPrize, LuckyWheelSpin, LuckyWheelStats, LuckyWheelSimulationResult } from "@/types/lucky-wheel";
 
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const action = searchParams.get('action');
     const configId = searchParams.get('id') || DEFAULT_CONFIG_ID;
     
-    const supabase = createClient();
+    const supabase = createServerClient();
     
     if (action === 'stats') {
       const { data: spins, error } = await supabase
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, config, prizes, configId } = body;
     
-    const supabase = createClient();
+    const supabase = createServerClient();
     
     if (action === 'save') {
       const configIdToUse = configId || DEFAULT_CONFIG_ID;
@@ -256,7 +256,7 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 });
     }
     
-    const supabase = createClient();
+    const supabase = createServerClient();
     
     const { error } = await supabase
       .from('lucky_wheel_configs')

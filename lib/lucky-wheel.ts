@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase";
 import type {
   LuckyWheelConfig,
   LuckyWheelPrize,
@@ -77,10 +77,10 @@ export class PrizeAllocator {
 }
 
 export class SpinEngine {
-  private supabase: ReturnType<typeof createClient>;
+  private supabase: ReturnType<typeof createServerClient>;
 
   constructor() {
-    this.supabase = createClient();
+    this.supabase = createServerClient();
   }
 
   async executeSpin(request: LuckyWheelSpinRequest): Promise<LuckyWheelSpinResponse> {
