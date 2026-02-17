@@ -187,7 +187,9 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
 
   const scrollThumbnails = (direction: 'up' | 'down') => {
     if (thumbnailsRef.current) {
-      const scrollAmount = 80; // 72px + 8px gap
+      // Mobil: 80px (72px + 8px), Desktop: 112px (100px + 12px)
+      const isDesktop = window.innerWidth >= 640;
+      const scrollAmount = isDesktop ? 112 : 80;
       thumbnailsRef.current.scrollBy({
         top: direction === 'up' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
@@ -200,17 +202,16 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
   return (
     <div className="w-full">
       <div className="grid grid-cols-[72px_1fr] sm:grid-cols-[100px_1fr] gap-3 sm:gap-4 items-start">
-        {/* Sol: Dikey Thumbnails - En fazla 4 adet göster */}
+        {/* Sol: Dikey Thumbnails - Mobilde max 3, Desktop'ta max 5 görsel */}
         <div className="relative flex flex-col">
-          {/* Thumbnails container - Scroll edilebilir, max 4 görsel yüksekliği */}
+          {/* Thumbnails container - Scroll edilebilir */}
           <div 
             ref={thumbnailsRef}
             onScroll={checkScroll}
-            className="flex flex-col gap-2 sm:gap-3 overflow-y-auto scrollbar-hide"
+            className="flex flex-col gap-2 sm:gap-3 overflow-y-auto scrollbar-hide max-h-[240px] sm:max-h-[560px]"
             style={{ 
               scrollbarWidth: 'none', 
-              msOverflowStyle: 'none',
-              maxHeight: 'calc(4 * (72px + 8px))' // 4 görsel + gap
+              msOverflowStyle: 'none'
             }}
           >
             {displayImages.map((image, index) => (
@@ -234,8 +235,63 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           </div>
           
           {/* Yukarı ve Aşağı ok butonları - Alt kısımda yan yana */}
-          {displayImages.length > 4 && (
-            <div className="flex items-center justify-center gap-2 mt-3">
+          {/* Mobilde >3, Desktop'ta >5 görsel varsa göster */}
+          <div className="flex items-center justify-center gap-2 mt-3 sm:hidden">
+            {displayImages.length > 3 && (
+              <>
+                <button
+                  onClick={() => scrollThumbnails('up')}
+                  disabled={!canScrollUp}
+                  className={`w-8 h-8 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center transition-all ${
+                    canScrollUp 
+                      ? 'opacity-100 hover:border-primary hover:text-primary' 
+                      : 'opacity-30 cursor-not-allowed'
+                  }`}
+                >
+                  <ChevronLeft className="w-4 h-4 -rotate-90" />
+                </button>
+                <button
+                  onClick={() => scrollThumbnails('down')}
+                  disabled={!canScrollDown}
+                  className={`w-8 h-8 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center transition-all ${
+                    canScrollDown 
+                      ? 'opacity-100 hover:border-primary hover:text-primary' 
+                      : 'opacity-30 cursor-not-allowed'
+                  }`}
+                >
+                  <ChevronRight className="w-4 h-4 -rotate-90" />
+                </button>
+              </>
+            )}
+          </div>
+          <div className="hidden sm:flex items-center justify-center gap-2 mt-3">
+            {displayImages.length > 5 && (
+              <>
+                <button
+                  onClick={() => scrollThumbnails('up')}
+                  disabled={!canScrollUp}
+                  className={`w-8 h-8 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center transition-all ${
+                    canScrollUp 
+                      ? 'opacity-100 hover:border-primary hover:text-primary' 
+                      : 'opacity-30 cursor-not-allowed'
+                  }`}
+                >
+                  <ChevronLeft className="w-4 h-4 -rotate-90" />
+                </button>
+                <button
+                  onClick={() => scrollThumbnails('down')}
+                  disabled={!canScrollDown}
+                  className={`w-8 h-8 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center transition-all ${
+                    canScrollDown 
+                      ? 'opacity-100 hover:border-primary hover:text-primary' 
+                      : 'opacity-30 cursor-not-allowed'
+                  }`}
+                >
+                  <ChevronRight className="w-4 h-4 -rotate-90" />
+                </button>
+              </>
+            )}
+          </div>
               <button
                 onClick={() => scrollThumbnails('up')}
                 disabled={!canScrollUp}
