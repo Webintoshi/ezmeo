@@ -136,56 +136,95 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
     );
   }
 
+  // Scroll işlemleri için ref
+  const thumbnailsRef = useRef<HTMLDivElement>(null);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    if (thumbnailsRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = thumbnailsRef.current;
+      setCanScrollUp(scrollTop > 0);
+      setCanScrollDown(scrollTop < scrollHeight - clientHeight - 5);
+    }
+  }, []);
+
+  const scrollThumbnails = (direction: 'up' | 'down') => {
+    if (thumbnailsRef.current) {
+      const scrollAmount = 100;
+      thumbnailsRef.current.scrollBy({
+        top: direction === 'up' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+      setTimeout(checkScroll, 300);
+    }
+  };
+
   // ÇOKLU GÖRSEL - Sol thumbnails, Sağ ana görsel (Tüm cihazlar)
   return (
     <div className="w-full">
       <div className="grid grid-cols-[72px_1fr] sm:grid-cols-[100px_1fr] gap-3 sm:gap-4 h-[400px] sm:h-[500px] lg:h-[600px]">
-        {/* Sol: Dikey Thumbnails - Mobilde 3 adet göster */}
-        <div className="flex flex-col gap-2 sm:gap-3 h-full">
-          {/* Mobilde ilk 3 görsel - flex-1 ile eşit yükseklik */}
-          {displayImages.slice(0, 3).map((image, index) => (
+        {/* Sol: Dikey Thumbnails - Scroll edilebilir */}
+        <div className="relative flex flex-col h-full">
+          {/* Yukarı ok */}
+          {displayImages.length > 3 && (
             <button
-              key={index}
-              onClick={() => setSelectedIndex(index)}
-              className={`relative flex-1 w-full min-h-0 rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all ${
-                index === selectedIndex
-                  ? "border-primary ring-2 ring-primary/20"
-                  : "border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100"
+              onClick={() => scrollThumbnails('up')}
+              className={`absolute -top-2 left-1/2 -translate-x-1/2 z-10 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center transition-opacity ${
+                canScrollUp ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}
             >
-              <img
-                src={image}
-                alt={`${productName} - ${index + 1}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
+              <ChevronLeft className="w-3 h-3 text-gray-600 -rotate-90" />
             </button>
-          ))}
-          {/* Desktop'ta ek 2 görsel daha (toplam 5) */}
-          {displayImages.slice(3, 5).map((image, index) => (
+          )}
+          
+          {/* Thumbnails container - Scroll edilebilir */}
+          <div 
+            ref={thumbnailsRef}
+            onScroll={checkScroll}
+            className="flex flex-col gap-2 sm:gap-3 overflow-y-auto scrollbar-hide h-full py-1"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {displayImages.map((image, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedIndex(index)}
+                className={`relative aspect-square w-full flex-shrink-0 rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all ${
+                  index === selectedIndex
+                    ? "border-primary ring-2 ring-primary/20"
+                    : "border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100"
+                }`}
+              >
+                <img
+                  src={image}
+                  alt={`${productName} - ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </button>
+            ))}
+          </div>
+          
+          {/* Aşağı ok */}
+          {displayImages.length > 3 && (
             <button
-              key={index + 3}
-              onClick={() => setSelectedIndex(index + 3)}
-              className={`relative flex-1 w-full min-h-0 rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all hidden sm:block ${
-                index + 3 === selectedIndex
-                  ? "border-primary ring-2 ring-primary/20"
-                  : "border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100"
+              onClick={() => scrollThumbnails('down')}
+              className={`absolute -bottom-2 left-1/2 -translate-x-1/2 z-10 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center transition-opacity ${
+                canScrollDown ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}
             >
-              <img
-                src={image}
-                alt={`${productName} - ${index + 4}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
+              <ChevronRight className="w-3 h-3 text-gray-600 rotate-90" />
             </button>
-          ))}
+          )}
         </div>
 
-        {/* Sağ: Ana Görsel - Section yüksekliği sol kolonla eşit */}
+        {/* Sağ: Ana Görsel - Swipe destekli */}
         <div
           className="relative h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm cursor-pointer"
           onClick={() => setIsLightboxOpen(true)}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           {!isLoaded && !isFailed && (
             <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
