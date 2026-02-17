@@ -323,16 +323,18 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
 
           {displayImages.length > 1 && (
             <>
+              {/* Sol Ok - Masaüstünde sabit görünür */}
               <button
                 onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 hover:opacity-100 transition-all hover:bg-white hover:scale-110"
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-100 transition-all hover:bg-white hover:scale-110 z-10"
                 aria-label="Önceki"
               >
                 <ChevronLeft className="w-5 h-5 text-gray-700" />
               </button>
+              {/* Sağ Ok - Masaüstünde sabit görünür */}
               <button
                 onClick={(e) => { e.stopPropagation(); handleNext(); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 hover:opacity-100 transition-all hover:bg-white hover:scale-110"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-100 transition-all hover:bg-white hover:scale-110 z-10"
                 aria-label="Sonraki"
               >
                 <ChevronRight className="w-5 h-5 text-gray-700" />
