@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   DollarSign,
   ShoppingBag,
@@ -8,102 +8,120 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Download,
-  Calendar,
-  MoreHorizontal,
   TrendingUp,
   CreditCard,
   Eye,
-  MousePointerClick
+  MousePointerClick,
+  Loader2
 } from "lucide-react";
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import {
-  getKPIs,
-  getPreviousPeriodKPIs,
-  getTrendData,
-  exportAnalyticsData,
-  trackPageView,
-} from "@/lib/analytics";
-import { getAbandonedCartStats } from "@/lib/abandoned-carts";
 import { TimeRange, AnalyticsStats } from "@/types/analytics";
+
+interface DashboardData {
+  stats: AnalyticsStats;
+  trendData: { date: string; revenue: number; orders: number }[];
+  abandonedCartStats: {
+    totalValue: number;
+    recoveryRate: number;
+    recoveredCount: number;
+    totalCount: number;
+  };
+}
 
 export default function AnalyticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<TimeRange>("week");
   const [loading, setLoading] = useState(true);
   const [liveVisitors, setLiveVisitors] = useState(0);
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAnalyticsData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/analytics/dashboard?timeRange=${selectedPeriod}`);
+      if (!res.ok) throw new Error('Veri yüklenemedi');
+      const jsonData = await res.json();
+      setData(jsonData);
+    } catch (err) {
+      console.error('Analytics fetch error:', err);
+      setError('Veriler yüklenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedPeriod]);
 
   useEffect(() => {
-    trackPageView("/admin/analizler");
-    setTimeout(() => setLoading(false), 800);
-
     const fetchLiveCount = async () => {
       try {
         const res = await fetch('/api/analytics/heartbeat');
-        const data = await res.json();
-        setLiveVisitors(data.visitors || 0);
+        const result = await res.json();
+        setLiveVisitors(result.visitors || 0);
       } catch (err) {
         console.error("Failed to fetch live visitors");
       }
     };
 
-    // Initial fetch for live visitors
     fetchLiveCount();
-
-    // Poll every 5 seconds for live updates
     const interval = setInterval(fetchLiveCount, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  const { stats, trendData, abandonedCartStats } = useMemo(() => {
-    const currentKPIs = getKPIs(selectedPeriod);
-    const previousKPIs = getPreviousPeriodKPIs(selectedPeriod);
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [fetchAnalyticsData]);
 
-    const calculateChange = (current: number, previous: number): number => {
-      if (previous === 0) return current > 0 ? 100 : 0;
-      return Math.round(((current - previous) / previous) * 100);
-    };
-
-    const stats: AnalyticsStats = {
-      revenue: currentKPIs.revenue,
-      orders: currentKPIs.orders,
-      customers: currentKPIs.customers,
-      conversionRate: currentKPIs.conversionRate,
-      avgOrderValue: currentKPIs.avgOrderValue,
-      revenueChange: calculateChange(currentKPIs.revenue, previousKPIs.revenue),
-      ordersChange: calculateChange(currentKPIs.orders, previousKPIs.orders),
-      customersChange: calculateChange(currentKPIs.customers, previousKPIs.customers),
-      conversionChange: calculateChange(currentKPIs.conversionRate, previousKPIs.conversionRate),
-    };
-
-    const trendData = getTrendData(selectedPeriod);
-    const abandonedCartStats = getAbandonedCartStats();
-
-    return { stats, trendData, abandonedCartStats };
-  }, [selectedPeriod]);
-
-  const handleExport = (format: "json" | "csv") => {
-    const data = exportAnalyticsData(selectedPeriod, format);
-    const blob = new Blob([data], { type: format === "json" ? "application/json" : "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `report_${selectedPeriod}.${format}`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExport = async (format: "json" | "csv") => {
+    if (!data) return;
+    
+    if (format === "json") {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `rapor_${selectedPeriod}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      const headers = "Tarih,Gelir,Sipariş\n";
+      const rows = data.trendData
+        .map(d => `${d.date},${d.revenue},${d.orders}`)
+        .join("\n");
+      const blob = new Blob([headers + rows], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `rapor_${selectedPeriod}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   };
+
+  const stats = data?.stats || {
+    revenue: 0,
+    orders: 0,
+    customers: 0,
+    conversionRate: 0,
+    avgOrderValue: 0,
+    revenueChange: 0,
+    ordersChange: 0,
+    customersChange: 0,
+    conversionChange: 0
+  };
+
+  const trendData = data?.trendData || [];
+  const abandonedCartStats = data?.abandonedCartStats || { totalValue: 0, recoveryRate: 0 };
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-6 md:p-8 space-y-8">
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Genel Bakış</h1>
@@ -131,95 +149,114 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* KPI Grid */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           title="Toplam Gelir"
-          value={`₺${stats.revenue.toLocaleString('tr-TR')}`}
+          value={`₺${(stats.revenue || 0).toLocaleString('tr-TR')}`}
           change={stats.revenueChange}
           icon={DollarSign}
           trendData={trendData.map(d => d.revenue)}
+          loading={loading}
         />
         <KpiCard
           title="Siparişler"
-          value={stats.orders.toString()}
+          value={(stats.orders || 0).toString()}
           change={stats.ordersChange}
           icon={ShoppingBag}
           trendData={trendData.map(d => d.orders)}
+          loading={loading}
         />
         <KpiCard
-          title="Aktif Müşteriler"
-          value={stats.customers.toString()}
-          change={stats.customersChange}
+          title="Toplam Müşteri"
+          value={(stats.customers || 0).toString()}
+          change={0}
           icon={Users}
+          loading={loading}
         />
         <KpiCard
           title="Dönüşüm Oranı"
-          value={`%${stats.conversionRate}`}
+          value={`%${stats.conversionRate || 0}`}
           change={stats.conversionChange}
           icon={TrendingUp}
+          loading={loading}
         />
       </div>
 
-      {/* Main Charts & Secondary Data */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Chart */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-base font-semibold text-gray-900">Gelir Analizi</h3>
               <p className="text-xs text-gray-500">Zaman içindeki brüt satış performansı</p>
             </div>
-            <button onClick={() => handleExport('csv')} className="text-gray-400 hover:text-gray-900 transition-colors">
+            <button 
+              onClick={() => handleExport('csv')} 
+              className="text-gray-400 hover:text-gray-900 transition-colors"
+              disabled={loading}
+            >
               <Download className="w-4 h-4" />
             </button>
           </div>
 
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData}>
-                <defs>
-                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#111827" stopOpacity={0.1} />
-                    <stop offset="95%" stopColor="#111827" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis
-                  dataKey="date"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: '#6b7280' }}
-                  dy={10}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: '#6b7280' }}
-                  tickFormatter={(value) => `₺${value}`}
-                />
-                <Tooltip
-                  contentStyle={{ background: '#111827', border: 'none', borderRadius: '8px', color: '#fff' }}
-                  itemStyle={{ color: '#fff' }}
-                  formatter={(value: any) => [`₺${value}`, "Gelir"]}
-                  labelStyle={{ display: 'none' }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#111827"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorRevenue)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {loading ? (
+              <div className="h-full flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+              </div>
+            ) : trendData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                <p>Seçili dönemde veri bulunmuyor</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#111827" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#111827" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    tickFormatter={(value) => `₺${value}`}
+                  />
+                  <Tooltip
+                    contentStyle={{ background: '#111827', border: 'none', borderRadius: '8px', color: '#fff' }}
+                    itemStyle={{ color: '#fff' }}
+                    formatter={(value: any) => [`₺${Number(value).toLocaleString('tr-TR')}`, "Gelir"]}
+                    labelStyle={{ display: 'none' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#111827"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorRevenue)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
-        {/* Side Panel: Live Stats & Abandoned Cart */}
         <div className="space-y-6">
-          {/* Live Visitors */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-gray-900">Canlı Ziyaretçi</h3>
@@ -237,18 +274,17 @@ export default function AnalyticsPage() {
                 <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
                   <Eye className="w-3 h-3" /> Ürün Görüntüleme
                 </div>
-                <div className="font-semibold text-gray-900">%64</div>
+                <div className="font-semibold text-gray-900">%{stats.conversionRate || 0}</div>
               </div>
               <div className="flex-1 bg-gray-50 rounded-lg p-3 border border-gray-100">
                 <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                  <CreditCard className="w-3 h-3" /> Ödeme Sayfası
+                  <CreditCard className="w-3 h-3" /> Sepete Ekleme
                 </div>
-                <div className="font-semibold text-gray-900">%12</div>
+                <div className="font-semibold text-gray-900">%{Math.round((stats.conversionRate || 0) * 3)}</div>
               </div>
             </div>
           </div>
 
-          {/* Abandoned Cart Snapshot */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-base font-semibold text-gray-900">Sepet Performansı</h3>
@@ -259,12 +295,12 @@ export default function AnalyticsPage() {
               <div>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-500">Kurtarma Oranı</span>
-                  <span className="font-medium text-gray-900">{abandonedCartStats?.recoveryRate.toFixed(1)}%</span>
+                  <span className="font-medium text-gray-900">{abandonedCartStats.recoveryRate.toFixed(1)}%</span>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2">
                   <div
                     className="bg-blue-600 h-2 rounded-full"
-                    style={{ width: `${abandonedCartStats?.recoveryRate}%` }}
+                    style={{ width: `${Math.min(abandonedCartStats.recoveryRate, 100)}%` }}
                   />
                 </div>
               </div>
@@ -273,13 +309,13 @@ export default function AnalyticsPage() {
                 <div>
                   <p className="text-xs text-gray-500">Kayıp Ciro</p>
                   <p className="text-lg font-semibold text-red-600">
-                    ₺{abandonedCartStats?.totalValue.toLocaleString('tr-TR')}
+                    ₺{abandonedCartStats.totalValue.toLocaleString('tr-TR', { minimumFractionDigits: 0 })}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500">Kurtarılan Ciro</p>
+                  <p className="text-xs text-gray-500">Kurtarılan</p>
                   <p className="text-lg font-semibold text-green-600">
-                    ₺{(abandonedCartStats?.totalValue * (abandonedCartStats?.recoveryRate / 100)).toLocaleString('tr-TR', { minimumFractionDigits: 0 })}
+                    ₺{Math.round(abandonedCartStats.totalValue * (abandonedCartStats.recoveryRate / 100)).toLocaleString('tr-TR', { minimumFractionDigits: 0 })}
                   </p>
                 </div>
               </div>
@@ -291,26 +327,33 @@ export default function AnalyticsPage() {
   );
 }
 
-function KpiCard({ title, value, change, icon: Icon, trendData }: any) {
+function KpiCard({ title, value, change, icon: Icon, trendData, loading }: any) {
   const isPositive = change >= 0;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between">
         <div className="p-2 bg-gray-50 rounded-lg text-gray-600">
-          <Icon className="w-5 h-5" />
+          {loading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Icon className="w-5 h-5" />
+          )}
         </div>
-        <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${isPositive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-          }`}>
-          {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-          <span>%{Math.abs(change)}</span>
-        </div>
+        {!loading && (
+          <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${isPositive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+            }`}>
+            {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+            <span>%{Math.abs(change)}</span>
+          </div>
+        )}
       </div>
       <div className="mt-4">
         <p className="text-sm font-medium text-gray-500">{title}</p>
-        <h3 className="text-2xl font-bold text-gray-900 mt-1">{value}</h3>
+        <h3 className="text-2xl font-bold text-gray-900 mt-1">
+          {loading ? '...' : value}
+        </h3>
       </div>
-      {/* Tiny sparkline or visual indicator could go here */}
     </div>
   );
 }

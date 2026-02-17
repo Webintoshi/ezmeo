@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { variants, ...productData } = body;
+        const { variants, discount_rules, ...productData } = body;
 
         console.log('POST /api/products - productData.images:', productData.images);
         console.log('POST /api/products - body images count:', body.images?.length);
@@ -167,7 +167,61 @@ export async function POST(request: NextRequest) {
         const { createServerClient } = await import("@/lib/supabase");
         const supabase = createServerClient();
 
-        // 1. Ana ürünü oluştur
+        // Validation: Zorunlu alanlar
+        const validationErrors: string[] = [];
+        if (!productData.name || productData.name.trim() === '') {
+            validationErrors.push("Ürün adı gereklidir");
+        }
+        if (!productData.slug || productData.slug.trim() === '') {
+            validationErrors.push("URL slug gereklidir");
+        }
+        if (!productData.description || productData.description.trim() === '') {
+            validationErrors.push("Ürün açıklaması gereklidir");
+        }
+        if (!productData.short_description || productData.short_description.trim() === '') {
+            validationErrors.push("Kısa açıklama gereklidir");
+        }
+        if (!productData.category) {
+            validationErrors.push("Kategori seçilmelidir");
+        }
+        
+        if (validationErrors.length > 0) {
+            return NextResponse.json(
+                { success: false, error: validationErrors.join(", "), code: "VALIDATION_ERROR" },
+                { status: 400 }
+            );
+        }
+
+        // 1. Slug benzersizlik kontrolü
+        if (productData.slug) {
+            const { data: existingProduct } = await supabase
+                .from("products")
+                .select("id")
+                .eq("slug", productData.slug)
+                .single();
+
+            if (existingProduct) {
+                const uniqueSlug = `${productData.slug}-${Date.now().toString(36)}`;
+                productData.slug = uniqueSlug;
+                console.log("Slug changed to:", uniqueSlug);
+            }
+        }
+
+        // 2. Görselleri normalize et - images_v2 formatını düzelt (camelCase -> snake_case)
+        let normalizedImagesV2 = productData.images_v2 || [];
+        if (normalizedImagesV2.length > 0) {
+            normalizedImagesV2 = normalizedImagesV2.map((img: any, idx: number) => ({
+                url: img.url,
+                alt: img.alt || "",
+                is_primary: img.isPrimary !== undefined ? img.isPrimary : (idx === 0),
+                sort_order: img.sortOrder !== undefined ? img.sortOrder : idx,
+            }));
+        }
+
+        // images array'ini de güncelle (geriye uyumluluk için)
+        const normalizedImages = productData.images || normalizedImagesV2.map((img: any) => img.url);
+
+        // 3. Ana ürünü oluştur
         const { data: product, error: productError } = await supabase
             .from("products")
             .insert({
@@ -175,8 +229,8 @@ export async function POST(request: NextRequest) {
                 slug: productData.slug,
                 description: productData.description || null,
                 short_description: productData.short_description || null,
-                images: productData.images || [],
-                images_v2: productData.images_v2 || [],
+                images: normalizedImages,
+                images_v2: normalizedImagesV2,
                 category: productData.category || null,
                 subcategory: productData.subcategory || null,
                 tags: productData.tags || [],
@@ -190,7 +244,6 @@ export async function POST(request: NextRequest) {
                 high_protein: productData.high_protein || false,
                 rating: productData.rating || 5,
                 review_count: productData.review_count || 0,
-                // Yeni alanlar
                 status: productData.status || 'published',
                 is_draft: productData.is_draft || false,
                 published_at: productData.published_at || new Date().toISOString(),
@@ -219,7 +272,6 @@ export async function POST(request: NextRequest) {
                 ingredients: productData.ingredients || null,
                 storage_conditions: productData.storage_conditions || null,
                 shelf_life_days: productData.shelf_life_days || null,
-                // Makro besin değerleri
                 calories: productData.calories || 0,
                 protein: productData.protein || 0,
                 carbs: productData.carbs || 0,
@@ -232,24 +284,27 @@ export async function POST(request: NextRequest) {
             .select()
             .single();
 
-        if (productError) throw productError;
+        if (productError) {
+            console.error("Product insert error:", productError);
+            throw productError;
+        }
 
         console.log("Product created with ID:", product.id);
         
-        // 2. Varyantları ekle
+        // 4. Varyantları ekle (benzersiz SKU oluştur)
         if (variants && Array.isArray(variants) && variants.length > 0) {
             console.log("Processing variants, count:", variants.length);
             console.log("Variants data:", JSON.stringify(variants, null, 2));
             
-            const variantsToInsert = variants.map((v: any) => ({
+            const variantsToInsert = variants.map((v: any, idx: number) => ({
                 product_id: product.id,
                 name: v.name,
-                weight: v.weight,
-                price: v.price,
+                weight: String(v.weight || 0),
+                price: v.price || 0,
                 original_price: v.original_price || null,
                 cost: v.cost || null,
-                stock: v.stock,
-                sku: v.sku,
+                stock: v.stock || 0,
+                sku: v.sku || `EZM-${Date.now().toString(36)}-${idx}`,
                 barcode: v.barcode || null,
                 group_name: v.group_name || null,
                 unit: v.unit || 'adet',
@@ -273,7 +328,31 @@ export async function POST(request: NextRequest) {
             console.log("No variants to insert");
         }
 
-        // 3. Tam ürünü döndür
+        // 5. İndirim kurallarını product_discount_rules tablosuna kaydet
+        if (discount_rules && Array.isArray(discount_rules) && discount_rules.length > 0) {
+            console.log("Processing discount rules, count:", discount_rules.length);
+            
+            const discountRulesToInsert = discount_rules.map((rule: any) => ({
+                product_id: product.id,
+                name: rule.name,
+                type: rule.type,
+                config: rule.config || {},
+                is_active: rule.isActive !== false,
+                priority: 0,
+            }));
+
+            const { error: discountError } = await supabase
+                .from("product_discount_rules")
+                .insert(discountRulesToInsert);
+
+            if (discountError) {
+                console.error("Discount rules insert error:", discountError);
+            } else {
+                console.log("Discount rules inserted successfully");
+            }
+        }
+
+        // 6. Tam ürünü döndür
         const { data: fullProduct } = await supabase
             .from("products")
             .select("*, variants:product_variants(*)")
@@ -295,11 +374,12 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
     try {
         const body = await request.json();
-        const { id, variants, deleted_images, ...updates } = body;
+        const { id, variants, discount_rules, deleted_images, ...updates } = body;
 
         console.log("PUT /api/products - ID:", id);
         console.log("PUT /api/products - Updates:", updates);
         console.log("PUT /api/products - Variants:", variants);
+        console.log("PUT /api/products - Discount rules:", discount_rules);
         console.log("PUT /api/products - Deleted images:", deleted_images);
 
         if (!id) {
@@ -312,33 +392,54 @@ export async function PUT(request: NextRequest) {
         const { createServerClient } = await import("@/lib/supabase");
         const supabase = createServerClient();
 
-        // 1. Mevcut ürünü al (görselleri filtrelemek için)
+        // 1. Slug benzersizlik kontrolü (güncelleme sırasında)
+        if (updates.slug) {
+            const { data: existingProduct } = await supabase
+                .from("products")
+                .select("id")
+                .eq("slug", updates.slug)
+                .neq("id", id)
+                .single();
+
+            if (existingProduct) {
+                updates.slug = `${updates.slug}-${Date.now().toString(36)}`;
+                console.log("Slug changed to:", updates.slug);
+            }
+        }
+
+        // 2. Mevcut ürünü al (görselleri filtrelemek için)
         const { data: existingProduct } = await supabase
             .from("products")
             .select("images")
             .eq("id", id)
             .single();
 
-        // 2. Silinen görselleri R2'den de sil
+        // 3. Silinen görselleri R2'den de sil
         if (deleted_images && Array.isArray(deleted_images)) {
             const { deleteFromR2 } = await import("@/lib/r2");
             for (const key of deleted_images) {
-                // Key is in format "products/filename" from R2
                 await deleteFromR2(key);
             }
         }
 
-        // 3. Görselleri filtrele - silinenleri çıkar
-        let finalImages = updates.images || [];
-        console.log('PUT /api/products - updates.images:', updates.images);
-        console.log('PUT /api/products - existingProduct.images:', existingProduct?.images);
-        console.log('PUT /api/products - finalImages:', finalImages);
+        // 4. Görselleri normalize et - images_v2 formatını düzelt
+        let normalizedImagesV2 = updates.images_v2 || [];
+        if (normalizedImagesV2.length > 0) {
+            normalizedImagesV2 = normalizedImagesV2.map((img: any, idx: number) => ({
+                url: img.url,
+                alt: img.alt || "",
+                is_primary: img.isPrimary !== undefined ? img.isPrimary : (idx === 0),
+                sort_order: img.sortOrder !== undefined ? img.sortOrder : idx,
+            }));
+        }
+
+        let finalImages = updates.images || normalizedImagesV2.map((img: any) => img.url);
 
         if (deleted_images && Array.isArray(deleted_images) && existingProduct?.images) {
             finalImages = finalImages.filter((img: string) => !deleted_images.includes(img));
         }
 
-        // 3. Ana ürünü güncelle (variants olmadan)
+        // 5. Ana ürünü güncelle
         const { data: product, error: productError } = await supabase
             .from("products")
             .update({
@@ -347,7 +448,7 @@ export async function PUT(request: NextRequest) {
                 description: updates.description,
                 short_description: updates.short_description,
                 images: finalImages,
-                images_v2: updates.images_v2 || [],
+                images_v2: normalizedImagesV2,
                 category: updates.category,
                 subcategory: updates.subcategory,
                 tags: updates.tags,
@@ -361,7 +462,6 @@ export async function PUT(request: NextRequest) {
                 high_protein: updates.high_protein || false,
                 rating: updates.rating,
                 review_count: updates.review_count,
-                // Yeni alanlar
                 status: updates.status || 'published',
                 is_draft: updates.is_draft || false,
                 published_at: updates.published_at,
@@ -390,7 +490,6 @@ export async function PUT(request: NextRequest) {
                 ingredients: updates.ingredients || null,
                 storage_conditions: updates.storage_conditions || null,
                 shelf_life_days: updates.shelf_life_days || null,
-                // Makro besin değerleri
                 calories: updates.calories || 0,
                 protein: updates.protein || 0,
                 carbs: updates.carbs || 0,
@@ -409,17 +508,15 @@ export async function PUT(request: NextRequest) {
             throw new Error(`Product update failed: ${productError.message}`);
         }
 
-        // 4. Varyantları güncelle
+        // 6. Varyantları güncelle
         if (variants && Array.isArray(variants)) {
             console.log("Updating variants, count:", variants.length);
 
-            // Mevcut variant'ları al
             const { data: existingVariants } = await supabase
                 .from("product_variants")
                 .select("id, product_id")
                 .eq("product_id", id);
 
-            // Siparişi olan variant'ları bul
             const { data: variantsWithOrders } = await supabase
                 .from("order_items")
                 .select("variant_id")
@@ -428,7 +525,6 @@ export async function PUT(request: NextRequest) {
 
             const orderedVariantIds = new Set(variantsWithOrders?.map(v => v.variant_id) || []);
             
-            // Siparişli variant ID'lerini koru, siparişsiz olanları sil
             const variantsToDelete = existingVariants
                 ?.filter(v => !orderedVariantIds.has(v.id))
                 .map(v => v.id) || [];
@@ -445,22 +541,20 @@ export async function PUT(request: NextRequest) {
                 }
             }
 
-            // Yeni variant'ları ekle (siparişi olanların yerine değil)
             const newVariants = variants.filter((v: any) => !v.id);
             const existingVariantsToUpdate = variants.filter((v: any) => v.id && !orderedVariantIds.has(v.id));
 
-            // Mevcut variant'ları güncelle
             for (const v of existingVariantsToUpdate) {
                 const { error: updateError } = await supabase
                     .from("product_variants")
                     .update({
                         name: v.name,
-                        weight: v.weight,
-                        price: v.price,
+                        weight: String(v.weight || 0),
+                        price: v.price || 0,
                         original_price: v.original_price || null,
                         cost: v.cost || null,
-                        stock: v.stock,
-                        sku: v.sku,
+                        stock: v.stock || 0,
+                        sku: v.sku || `EZM-${Date.now().toString(36)}`,
                         barcode: v.barcode || null,
                         group_name: v.group_name || null,
                         unit: v.unit || 'adet',
@@ -475,17 +569,16 @@ export async function PUT(request: NextRequest) {
                 }
             }
 
-            // Yeni variant'ları ekle
             if (newVariants.length > 0) {
-                const variantsToInsert = newVariants.map((v: any) => ({
+                const variantsToInsert = newVariants.map((v: any, idx: number) => ({
                     product_id: id,
                     name: v.name,
-                    weight: v.weight,
-                    price: v.price,
+                    weight: String(v.weight || 0),
+                    price: v.price || 0,
                     original_price: v.original_price || null,
                     cost: v.cost || null,
-                    stock: v.stock,
-                    sku: v.sku,
+                    stock: v.stock || 0,
+                    sku: v.sku || `EZM-${Date.now().toString(36)}-${idx}`,
                     barcode: v.barcode || null,
                     group_name: v.group_name || null,
                     unit: v.unit || 'adet',
@@ -507,7 +600,44 @@ export async function PUT(request: NextRequest) {
             }
         }
 
-        // 5. Güncellenmiş ürünü variant'larla birlikte döndür
+        // 7. İndirim kurallarını güncelle
+        if (discount_rules && Array.isArray(discount_rules)) {
+            console.log("Updating discount rules, count:", discount_rules.length);
+            
+            // Mevcut indirim kurallarını sil
+            const { error: deleteDiscountError } = await supabase
+                .from("product_discount_rules")
+                .delete()
+                .eq("product_id", id);
+
+            if (deleteDiscountError) {
+                console.error("Delete discount rules error:", deleteDiscountError);
+            }
+
+            // Yeni indirim kurallarını ekle
+            if (discount_rules.length > 0) {
+                const discountRulesToInsert = discount_rules.map((rule: any) => ({
+                    product_id: id,
+                    name: rule.name,
+                    type: rule.type,
+                    config: rule.config || {},
+                    is_active: rule.isActive !== false,
+                    priority: 0,
+                }));
+
+                const { error: discountError } = await supabase
+                    .from("product_discount_rules")
+                    .insert(discountRulesToInsert);
+
+                if (discountError) {
+                    console.error("Discount rules insert error:", discountError);
+                } else {
+                    console.log("Discount rules updated successfully");
+                }
+            }
+        }
+
+        // 8. Güncellenmiş ürünü variant'larla birlikte döndür
         const { data: fullProduct, error: fetchError } = await supabase
             .from("products")
             .select("*, variants:product_variants(*)")
