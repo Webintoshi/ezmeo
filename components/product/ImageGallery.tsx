@@ -139,14 +139,15 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
   // ÇOKLU GÖRSEL - Sol thumbnails, Sağ ana görsel (Tüm cihazlar)
   return (
     <div className="w-full">
-      <div className="grid grid-cols-[80px_1fr] sm:grid-cols-[100px_1fr] gap-3 sm:gap-4">
-        {/* Sol: Dikey Thumbnails */}
-        <div className="flex flex-col gap-2 sm:gap-3">
-          {displayImages.slice(0, 5).map((image, index) => (
+      <div className="grid grid-cols-[72px_1fr] sm:grid-cols-[100px_1fr] gap-3 sm:gap-4 h-[400px] sm:h-[500px] lg:h-[600px]">
+        {/* Sol: Dikey Thumbnails - Mobilde 3 adet göster */}
+        <div className="flex flex-col gap-2 sm:gap-3 h-full">
+          {/* Mobilde ilk 3 görsel - flex-1 ile eşit yükseklik */}
+          {displayImages.slice(0, 3).map((image, index) => (
             <button
               key={index}
               onClick={() => setSelectedIndex(index)}
-              className={`relative aspect-square w-full rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all ${
+              className={`relative flex-1 w-full min-h-0 rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all ${
                 index === selectedIndex
                   ? "border-primary ring-2 ring-primary/20"
                   : "border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100"
@@ -160,11 +161,30 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
               />
             </button>
           ))}
+          {/* Desktop'ta ek 2 görsel daha (toplam 5) */}
+          {displayImages.slice(3, 5).map((image, index) => (
+            <button
+              key={index + 3}
+              onClick={() => setSelectedIndex(index + 3)}
+              className={`relative flex-1 w-full min-h-0 rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all hidden sm:block ${
+                index + 3 === selectedIndex
+                  ? "border-primary ring-2 ring-primary/20"
+                  : "border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100"
+              }`}
+            >
+              <img
+                src={image}
+                alt={`${productName} - ${index + 4}`}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </button>
+          ))}
         </div>
 
-        {/* Sağ: Ana Görsel */}
+        {/* Sağ: Ana Görsel - Section yüksekliği sol kolonla eşit */}
         <div
-          className="relative aspect-square bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm cursor-pointer"
+          className="relative h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm cursor-pointer"
           onClick={() => setIsLightboxOpen(true)}
         >
           {!isLoaded && !isFailed && (
