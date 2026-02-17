@@ -292,30 +292,6 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
               </>
             )}
           </div>
-              <button
-                onClick={() => scrollThumbnails('up')}
-                disabled={!canScrollUp}
-                className={`w-8 h-8 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center transition-all ${
-                  canScrollUp 
-                    ? 'opacity-100 hover:border-primary hover:text-primary' 
-                    : 'opacity-30 cursor-not-allowed'
-                }`}
-              >
-                <ChevronLeft className="w-4 h-4 -rotate-90" />
-              </button>
-              <button
-                onClick={() => scrollThumbnails('down')}
-                disabled={!canScrollDown}
-                className={`w-8 h-8 bg-white border border-gray-200 rounded-lg shadow-sm flex items-center justify-center transition-all ${
-                  canScrollDown 
-                    ? 'opacity-100 hover:border-primary hover:text-primary' 
-                    : 'opacity-30 cursor-not-allowed'
-                }`}
-              >
-                <ChevronRight className="w-4 h-4 -rotate-90" />
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Sağ: Ana Görsel - Swipe ve Drag destekli, aspect-square ile beyaz alan yok */}
