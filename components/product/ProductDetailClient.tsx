@@ -224,91 +224,60 @@ export function ProductDetailClient({
               <ImageGallery images={product.images} productName={product.name} />
             </div>
 
-            {/* Right: Product Info - Modern Redesign */}
-            <div className="space-y-6">
-              {/* Brand & Category Badge */}
-              <div className="flex items-center gap-3">
-                <span className="px-4 py-1.5 rounded-full bg-[#7B1113] text-white text-sm font-medium">
-                  {product.brand || "Ezmeo"}
-                </span>
-                {product.category && (
-                  <span className="text-sm text-[#6b4b4c]">
-                    {product.category}
-                  </span>
-                )}
-              </div>
+            {/* Right: Product Info - Clean Modern Design */}
+            <div className="space-y-5">
+              {/* Title - Responsive & Clean */}
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#7B1113] leading-snug">
+                {product.name}
+              </h1>
 
-              {/* Title & Rating */}
-              <div>
-                <h1 className="text-3xl lg:text-4xl font-semibold text-[#7B1113] leading-tight mb-4">
-                  {product.name}
-                </h1>
-                
-                {/* Rating */}
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-5 w-5 ${
-                          i < Math.floor(product.rating || 0)
-                            ? "fill-amber-400 text-amber-400"
-                            : "fill-gray-200 text-gray-200"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-[#7B1113] font-medium">{product.rating || 0}</span>
-                  <span className="text-[#6b4b4c]">
-                    ({product.reviewCount || 0} değerlendirme)
-                  </span>
+              {/* Rating - Compact */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${
+                        i < Math.floor(product.rating || 0)
+                          ? "fill-amber-400 text-amber-400"
+                          : "fill-gray-200 text-gray-200"
+                      }`}
+                    />
+                  ))}
                 </div>
+                <span className="text-sm text-[#6b4b4c]">
+                  ({product.reviewCount || 0} değerlendirme)
+                </span>
               </div>
 
               {/* Short Description */}
-              <p className="text-[#6b4b4c] text-lg leading-relaxed">
+              <p className="text-[#6b4b4c] leading-relaxed">
                 {product.shortDescription}
               </p>
 
-              {/* Badges */}
+              {/* Badges - Compact */}
               <div className="flex flex-wrap gap-2">
-                {product.new && (
-                  <span className="px-4 py-2 bg-[#7B1113] text-white text-sm font-medium rounded-full">
-                    ✨ Yeni
-                  </span>
-                )}
                 {discountPercent > 0 && (
-                  <span className="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-full">
-                    %{discountPercent} İndirim
+                  <span className="px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded-full">
+                    %{discountPercent} İNDİRİM
                   </span>
                 )}
                 {product.sugarFree && (
-                  <span className="px-4 py-2 bg-[#F3E0E1] text-[#7B1113] text-sm font-medium rounded-full">
+                  <span className="px-3 py-1 bg-[#F3E0E1] text-[#7B1113] text-xs font-medium rounded-full">
                     Şekersiz
                   </span>
                 )}
                 {product.vegan && (
-                  <span className="px-4 py-2 bg-[#F3E0E1] text-[#7B1113] text-sm font-medium rounded-full">
+                  <span className="px-3 py-1 bg-[#F3E0E1] text-[#7B1113] text-xs font-medium rounded-full">
                     Vegan
                   </span>
                 )}
                 {product.glutenFree && (
-                  <span className="px-4 py-2 bg-[#F3E0E1] text-[#7B1113] text-sm font-medium rounded-full">
+                  <span className="px-3 py-1 bg-[#F3E0E1] text-[#7B1113] text-xs font-medium rounded-full">
                     Glutensiz
                   </span>
                 )}
               </div>
-
-              {/* Stock Status */}
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${isOutOfStock ? 'bg-gray-400' : variant.stock <= 5 ? 'bg-amber-500' : 'bg-green-500'}`} />
-                <span className={`text-sm font-medium ${stockStatus.color}`}>
-                  {stockStatus.text}
-                </span>
-              </div>
-
-              {/* Divider */}
-              <div className="h-px bg-[#7B1113]/10" />
 
               {/* Variant Selector */}
               <VariantSelector
@@ -321,21 +290,28 @@ export function ProductDetailClient({
               <div className="h-px bg-[#7B1113]/10" />
 
               {/* Price & Quantity Section */}
-              <div className="bg-white rounded-2xl p-6 border border-[#7B1113]/10">
-                {/* Price */}
-                <div className="flex items-baseline gap-3 mb-4">
-                  <span className="text-4xl font-bold text-[#7B1113]">
+              <div className="bg-white rounded-2xl p-5 sm:p-6 border border-[#7B1113]/10">
+                {/* Price & Stock */}
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                  <span className="text-3xl sm:text-4xl font-bold text-[#7B1113]">
                     {variant.price} ₺
                   </span>
                   {variant.originalPrice && (
-                    <span className="text-xl text-[#6b4b4c] line-through">
+                    <span className="text-lg sm:text-xl text-[#6b4b4c] line-through">
                       {variant.originalPrice} ₺
                     </span>
                   )}
+                  {/* Stock Status - Next to Price */}
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    <div className={`w-2 h-2 rounded-full ${isOutOfStock ? 'bg-gray-400' : variant.stock <= 5 ? 'bg-amber-500' : 'bg-green-500'}`} />
+                    <span className={`text-xs sm:text-sm font-medium ${stockStatus.color}`}>
+                      {stockStatus.text}
+                    </span>
+                  </div>
                 </div>
                 
                 {/* Unit Price */}
-                <p className="text-sm text-[#6b4b4c] mb-6">
+                <p className="text-sm text-[#6b4b4c] mb-5">
                   {(variant.price / (variant.weight / 100)).toFixed(2)} ₺ / 100g
                 </p>
 
