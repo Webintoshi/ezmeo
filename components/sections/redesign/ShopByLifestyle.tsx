@@ -2,7 +2,6 @@
 
 import { Leaf, WheatOff, Sprout, Beef, Salad, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 
 interface LifestyleItem {
   name: string;
@@ -61,29 +60,22 @@ export default function ShopByLifestyle() {
     <section className="py-10 md:py-20 bg-white overflow-hidden" id="shop-by-lifestyle">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-8 md:mb-12"
-        >
+        <div className="text-center mb-8 md:mb-12 opacity-0 animate-[fadeIn_0.6s_ease-out_forwards]">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
             Yaşam Tarzına Göre
           </h2>
           <p className="text-gray-500 text-sm md:text-base">
             Size en uygun beslenme şeklini keşfedin
           </p>
-        </motion.div>
+        </div>
         
         {/* Desktop: Grid / Mobile: Scrollable */}
         <div className="hidden sm:grid sm:grid-cols-3 md:grid-cols-5 gap-4 lg:gap-6 xl:gap-8">
           {lifestyles.map((item, index) => (
-            <motion.div
+            <div
               key={item.name}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
+              className="opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]"
+              style={{ animationDelay: `${index * 0.1}s` }}
             >
               <Link
                 href={item.link}
@@ -107,7 +99,7 @@ export default function ShopByLifestyle() {
                   {item.desc}
                 </p>
               </Link>
-            </motion.div>
+            </div>
           ))}
         </div>
 
@@ -115,13 +107,10 @@ export default function ShopByLifestyle() {
         <div className="sm:hidden">
           <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 pb-4">
             {lifestyles.map((item, index) => (
-              <motion.div
+              <div
                 key={item.name}
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-                className="flex-shrink-0 w-[140px] snap-start"
+                className="flex-shrink-0 w-[140px] snap-start opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]"
+                style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <Link
                   href={item.link}
@@ -145,7 +134,7 @@ export default function ShopByLifestyle() {
                     {item.desc}
                   </p>
                 </Link>
-              </motion.div>
+              </div>
             ))}
           </div>
 
@@ -163,11 +152,7 @@ export default function ShopByLifestyle() {
         </div>
 
         {/* View All Link */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="text-center mt-8 md:mt-12"
+        <div className="text-center mt-8 md:mt-12 opacity-0 animate-[fadeIn_0.6s_ease-out_forwards]" style={{ animationDelay: '0.3s' }}>
         >
           <Link
             href="/koleksiyon"
@@ -176,7 +161,7 @@ export default function ShopByLifestyle() {
             Tüm Ürünleri Keşfet
             <ArrowRight className="w-4 h-4" />
           </Link>
-        </motion.div>
+        </div>
       </div>
 
       <style jsx>{`

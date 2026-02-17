@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
 import { ChevronLeft, ChevronRight, ArrowRight, Sparkles, Percent, Clock } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 
 export interface PromoBanner {
   id: number;
@@ -22,9 +21,13 @@ export interface PromoBanner {
   endDate?: string;
 }
 
-export default function PromotionalBanners() {
-  const [banners, setBanners] = useState<PromoBanner[]>([]);
-  const [loading, setLoading] = useState(true);
+interface PromotionalBannersProps {
+  initialBanners?: PromoBanner[];
+}
+
+export default function PromotionalBanners({ initialBanners = [] }: PromotionalBannersProps) {
+  const [banners, setBanners] = useState<PromoBanner[]>(initialBanners);
+  const [loading, setLoading] = useState(!initialBanners.length);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -45,6 +48,12 @@ export default function PromotionalBanners() {
 
   useEffect(() => {
     async function fetchBanners() {
+      if (initialBanners.length > 0) {
+        setBanners(initialBanners);
+        setLoading(false);
+        return;
+      }
+
       try {
         const supabase = createBrowserClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -76,7 +85,7 @@ export default function PromotionalBanners() {
       }
     }
     fetchBanners();
-  }, []);
+  }, [initialBanners]);
 
   const getDefaultBadge = (order: number): string => {
     const badges = ["🔥 Çok Satan", "✨ Yeni", "🌿 Organik"];
@@ -240,23 +249,11 @@ export default function PromotionalBanners() {
     >
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-10 md:mb-14"
-        >
-          <motion.span 
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#7B1113] text-white text-sm font-medium mb-4 shadow-lg"
-          >
+        <div className="text-center mb-10 md:mb-14 opacity-0 animate-[fadeIn_0.6s_ease-out_forwards]">
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#7B1113] text-white text-sm font-medium mb-4 shadow-lg">
             <Sparkles className="w-4 h-4" />
             Özel Kampanyalar
-          </motion.span>
+          </span>
           
           <h2 className="text-3xl md:text-5xl font-bold text-[#7B1113] mb-4 tracking-tight">
             Kaçırılmayacak Fırsatlar
@@ -265,19 +262,13 @@ export default function PromotionalBanners() {
           <p className="text-[#6b4b4c] text-base md:text-lg max-w-lg mx-auto">
             Sınırlı süreli indirimler ve özel kampanyaları keşfedin
           </p>
-        </motion.div>
+        </div>
 
         {/* Desktop: Featured Layout (1 Large + 2 Small) */}
         <div className="hidden lg:block">
           <div className="grid grid-cols-12 gap-6">
             {/* Featured Large Card */}
-            <motion.div 
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="col-span-7"
-            >
+            <div className="col-span-7 opacity-0 animate-[fadeIn_0.6s_ease-out_forwards]">
               <Link href={sortedBanners[0]?.buttonLink || "#"}>
                 <div className="group relative aspect-[16/9] rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500">
                   {/* Background Image */}
@@ -316,18 +307,15 @@ export default function PromotionalBanners() {
                   </div>
                 </div>
               </Link>
-            </motion.div>
+            </div>
 
             {/* Side Small Cards */}
             <div className="col-span-5 flex flex-col gap-6">
               {sortedBanners.slice(1, 3).map((banner, idx) => (
-                <motion.div 
+                <div 
                   key={banner.id}
-                  initial={{ opacity: 0, x: 30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: (idx + 1) * 0.1 }}
-                  className="flex-1"
+                  className="flex-1 opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]"
+                  style={{ animationDelay: `${(idx + 1) * 0.1}s` }}
                 >
                   <Link href={banner.buttonLink}>
                     <div className="group relative h-full min-h-[180px] rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500">
@@ -359,7 +347,7 @@ export default function PromotionalBanners() {
                       </div>
                     </div>
                   </Link>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
@@ -368,13 +356,10 @@ export default function PromotionalBanners() {
         {/* Tablet: 2 Column Grid */}
         <div className="hidden md:grid lg:hidden grid-cols-2 gap-6">
           {sortedBanners.map((banner, idx) => (
-            <motion.div 
+            <div 
               key={banner.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              className={idx === 0 ? "col-span-2" : ""}
+              className={`${idx === 0 ? "col-span-2" : ""} opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]`}
+              style={{ animationDelay: `${idx * 0.1}s` }}
             >
               <Link href={banner.buttonLink}>
                 <div className={`group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 ${idx === 0 ? "aspect-[21/9]" : "aspect-[16/10]"}`}>
@@ -406,7 +391,7 @@ export default function PromotionalBanners() {
                   </div>
                 </div>
               </Link>
-            </motion.div>
+            </div>
           ))}
         </div>
 
@@ -421,13 +406,10 @@ export default function PromotionalBanners() {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {sortedBanners.map((banner, idx) => (
-            <motion.div 
+            <div 
               key={banner.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              className="flex-shrink-0 w-[85vw] snap-center"
+              className="flex-shrink-0 w-[85vw] snap-center opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]"
+              style={{ animationDelay: `${idx * 0.1}s` }}
             >
               <Link href={banner.buttonLink}>
                 <div className="group relative aspect-[16/10] rounded-2xl overflow-hidden shadow-lg">
@@ -462,7 +444,7 @@ export default function PromotionalBanners() {
                   </div>
                 </div>
               </Link>
-            </motion.div>
+            </div>
           ))}
         </div>
 

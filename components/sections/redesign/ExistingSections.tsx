@@ -4,7 +4,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight, Leaf, Shield, Check, Truck, Clock, Sparkles, Mail, Send, Award, Heart, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
@@ -77,14 +76,8 @@ export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
     <section className="relative w-full overflow-hidden">
       {/* Aspect Ratio Container - Mobile: 3/4, Desktop: 16/9 */}
       <div className="relative w-full aspect-[3/4] sm:aspect-[4/5] md:aspect-[16/9] lg:aspect-[21/9] max-h-[900px]">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={current}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.7 }}
-          className="absolute inset-0"
+        <div
+          className="absolute inset-0 transition-opacity duration-700"
         >
           <div className="absolute inset-0 hidden md:block">
             <Image
@@ -107,29 +100,20 @@ export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
             />
           </div>
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent md:from-black/60 md:via-black/30" />
-        </motion.div>
-      </AnimatePresence>
+        </div>
 
       <div className="absolute inset-0 z-10 flex items-center">
         <div className="container mx-auto px-4 sm:px-6">
         <div className="max-w-lg sm:max-w-xl md:max-w-2xl">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={current}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -30 }}
-              transition={{ duration: 0.5 }}
+            <div
+              className="opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]"
             >
               {slide.title && (
-                <motion.span
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2 }}
+                <span
                   className="inline-block px-3 py-1 sm:px-4 sm:py-1.5 bg-white/20 backdrop-blur-sm text-white text-xs sm:text-sm font-medium rounded-full mb-4 sm:mb-6"
                 >
                   {slide.title}
-                </motion.span>
+                </span>
               )}
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black text-white mb-3 sm:mb-4 leading-tight">
                 {slide.alt}
@@ -148,8 +132,7 @@ export function HeroSection({ slides = [] }: { slides?: HeroSlide[] }) {
                   <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Link>
               )}
-            </motion.div>
-          </AnimatePresence>
+            </div>
         </div>
       </div>
       </div>
@@ -281,12 +264,7 @@ export function Newsletter() {
       <div className="container mx-auto px-4 sm:px-6 relative z-10">
         <div className="max-w-2xl mx-auto">
           {subscribed ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-8 sm:p-12 text-center"
-            >
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-8 sm:p-12 text-center opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]">
               {/* Success Icon */}
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[#F3E0E1] flex items-center justify-center">
                 <Check className="w-10 h-10 text-[#7B1113]" />
@@ -302,26 +280,14 @@ export function Newsletter() {
                 <Sparkles className="w-4 h-4" />
                 İlk siparişinizde geçerli
               </div>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center"
-            >
+            <div className="text-center opacity-0 animate-[fadeIn_0.6s_ease-out_forwards]">
               {/* Badge */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium mb-6"
-              >
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium mb-6 opacity-0 animate-[fadeIn_0.4s_ease-out_forwards]" style={{ animationDelay: '0.1s' }}>
                 <Mail className="w-4 h-4" />
                 E-Bülten
-              </motion.div>
+              </div>
 
               {/* Title */}
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
@@ -384,7 +350,7 @@ export function Newsletter() {
                   <span className="text-white font-semibold">5.000+</span> kişi katıldı
                 </span>
               </div>
-            </motion.div>
+            </div>
           )}
         </div>
       </div>

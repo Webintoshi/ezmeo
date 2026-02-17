@@ -1,28 +1,33 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Product } from "@/types/product";
-import { getAllProducts } from "@/lib/products";
+import { getLimitedProducts } from "@/lib/products";
 import { ROUTES } from "@/lib/constants";
 import { ProductCard } from "@/components/product/ProductCard";
-import { Loader2, Package, ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { Package, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 8;
 
-export default function BestSellers() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function BestSellers({ initialProducts }: { initialProducts?: Product[] }) {
+  const [products, setProducts] = useState<Product[]>(initialProducts || []);
+  const [loading, setLoading] = useState(!initialProducts);
 
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
+    if (initialProducts) {
+      setProducts(initialProducts);
+      setLoading(false);
+      return;
+    }
+
     async function loadProducts() {
       try {
-        const data = await getAllProducts();
+        const data = await getLimitedProducts(16);
         setProducts(data);
       } catch (err) {
         console.error("Failed to load products", err);
@@ -31,35 +36,10 @@ export default function BestSellers() {
       }
     }
     loadProducts();
-  }, []);
+  }, [initialProducts]);
 
   const displayedProducts = products.slice(0, displayCount);
   const hasMore = displayCount < products.length;
-
-  const handleLoadMore = useCallback(() => {
-    if (isLoadingMore || !hasMore) return;
-    
-    setIsLoadingMore(true);
-    setTimeout(() => {
-      setDisplayCount((prev) => Math.min(prev + ITEMS_PER_PAGE, products.length));
-      setIsLoadingMore(false);
-    }, 500);
-  }, [hasMore, isLoadingMore, products.length]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 &&
-        hasMore &&
-        !isLoadingMore
-      ) {
-        handleLoadMore();
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [handleLoadMore, hasMore, isLoadingMore]);
 
   if (loading) {
     return (
@@ -117,12 +97,7 @@ export default function BestSellers() {
     <section className="py-10 md:py-20 bg-white" id="best-sellers">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 md:mb-12"
-        >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 md:mb-12 opacity-0 animate-[fadeIn_0.6s_ease-out_forwards]">
           <div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
               Ürünler
@@ -140,7 +115,7 @@ export default function BestSellers() {
             Tümünü Gör
             <ArrowRight className="w-4 h-4" />
           </Link>
-        </motion.div>
+        </div>
 
         {/* Products Grid - Responsive Gap */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
@@ -152,28 +127,6 @@ export default function BestSellers() {
             />
           ))}
         </div>
-
-        {/* Load More */}
-        {hasMore && (
-          <div className="flex justify-center mt-10 md:mt-12">
-            <button
-              onClick={handleLoadMore}
-              disabled={isLoadingMore}
-              className="px-8 py-3 bg-stone-100 text-gray-700 rounded-full font-medium hover:bg-stone-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {isLoadingMore ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Yükleniyor...
-                </>
-              ) : (
-                "Daha Fazla Ürün"
-              )}
-            </button>
-          </div>
-        )}
-
-
 
         {/* Mobile: View All Button */}
         <div className="flex sm:hidden justify-center mt-8">

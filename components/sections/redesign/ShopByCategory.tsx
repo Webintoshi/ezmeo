@@ -3,14 +3,17 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
 import { CategoryInfo } from "@/types/product";
 import { fetchCategories } from "@/lib/categories";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 
-export default function ShopByCategory() {
-  const [categories, setCategories] = useState<CategoryInfo[]>([]);
-  const [loading, setLoading] = useState(true);
+interface ShopByCategoryProps {
+  initialCategories?: CategoryInfo[];
+}
+
+export default function ShopByCategory({ initialCategories = [] }: ShopByCategoryProps) {
+  const [categories, setCategories] = useState<CategoryInfo[]>(initialCategories);
+  const [loading, setLoading] = useState(!initialCategories.length);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -31,6 +34,12 @@ export default function ShopByCategory() {
   }, []);
 
   useEffect(() => {
+    if (initialCategories.length > 0) {
+      setCategories(initialCategories);
+      setLoading(false);
+      return;
+    }
+
     async function loadCategories() {
       try {
         const data = await fetchCategories();
@@ -44,7 +53,7 @@ export default function ShopByCategory() {
       }
     }
     loadCategories();
-  }, []);
+  }, [initialCategories]);
 
   // Scroll tracking for mobile indicator
   const handleScroll = useCallback(() => {
@@ -118,24 +127,12 @@ export default function ShopByCategory() {
     >
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header - Premium Editorial Style */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-10 md:mb-14"
-        >
+        <div className="text-center mb-10 md:mb-14 opacity-0 animate-[fadeIn_0.6s_ease-out_forwards]">
           {/* Eyebrow Badge */}
-          <motion.span 
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#7B1113]/10 text-[#7B1113] text-sm font-medium mb-4 border border-[#7B1113]/20"
-          >
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#7B1113]/10 text-[#7B1113] text-sm font-medium mb-4 border border-[#7B1113]/20">
             <span className="w-2 h-2 rounded-full bg-[#7B1113]" />
             Koleksiyonlar
-          </motion.span>
+          </span>
           
           {/* Main Title */}
           <h2 
@@ -149,7 +146,7 @@ export default function ShopByCategory() {
           <p className="text-[#6b4b4c] text-base md:text-lg max-w-lg mx-auto">
             Doğal lezzetleri keşfedin, size özel seçkilerimizi inceleyin
           </p>
-        </motion.div>
+        </div>
 
         {/* Cards Container */}
         <div className="relative">
@@ -163,13 +160,10 @@ export default function ShopByCategory() {
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {categories.map((cat, index) => (
-              <motion.div
+              <div
                 key={cat.id}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
-                className="flex-shrink-0 w-[280px] sm:w-[320px] md:w-auto snap-center"
+                className="flex-shrink-0 w-[280px] sm:w-[320px] md:w-auto snap-center opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]"
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <Link
                   href={`/koleksiyon/${cat.slug}`}
@@ -191,7 +185,6 @@ export default function ShopByCategory() {
                         className="object-cover transition-transform duration-700 group-hover:scale-110"
                         sizes="(max-width: 768px) 320px, (max-width: 1200px) 33vw, 400px"
                         onError={() => handleImageError(cat.id)}
-                        unoptimized
                       />
                       
                       {/* Gradient Overlay - Bottom to Top */}
@@ -215,9 +208,7 @@ export default function ShopByCategory() {
 
                       {/* Bottom Content */}
                       <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
-                        <motion.div 
-                          className="transform transition-transform duration-500 group-hover:translate-y-[-4px]"
-                        >
+                        <div className="transform transition-transform duration-500 group-hover:translate-y-[-4px]">
                           {/* Category Name */}
                           <h3 className="text-xl md:text-2xl font-bold text-white mb-2 leading-tight">
                             {cat.name}
@@ -235,7 +226,7 @@ export default function ShopByCategory() {
                             Koleksiyonu Gör
                             <ArrowRight size={16} />
                           </span>
-                        </motion.div>
+                        </div>
                       </div>
 
                       {/* Shine Effect on Hover */}
@@ -245,7 +236,7 @@ export default function ShopByCategory() {
                     </div>
                   </div>
                 </Link>
-              </motion.div>
+              </div>
             ))}
           </div>
 
@@ -267,13 +258,7 @@ export default function ShopByCategory() {
         </div>
 
         {/* View All Link */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
-          className="text-center mt-12"
-        >
+        <div className="text-center mt-12 opacity-0 animate-[fadeIn_0.6s_ease-out_forwards]" style={{ animationDelay: '0.4s' }}>
           <Link
             href="/koleksiyon"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-[#7B1113] font-semibold border border-[#7B1113]/20 shadow-lg hover:shadow-xl hover:bg-[#7B1113] hover:text-white hover:border-[#7B1113] transition-all duration-300 group"
@@ -281,7 +266,7 @@ export default function ShopByCategory() {
             Tüm Kategorileri Keşfet
             <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
           </Link>
-        </motion.div>
+        </div>
       </div>
 
       {/* Custom Styles */}

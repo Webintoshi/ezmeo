@@ -594,6 +594,25 @@ export async function getAllProducts(): Promise<Product[]> {
   return data || [];
 }
 
+// Get limited products for homepage (optimized)
+export async function getLimitedProducts(limit: number = 8): Promise<Product[]> {
+  const { createServerClient } = await import("@/lib/supabase");
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, variants:product_variants(*)")
+    .eq("is_active", true)
+    .eq("status", "published")
+    .limit(limit);
+
+  if (error) {
+    console.error("Error fetching limited products:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
 export const PRODUCTS: Product[] = [];
 
 export async function getProductSlug(): Promise<string[]> {
