@@ -14,42 +14,42 @@ interface LifestyleItem {
 
 export default function ShopByLifestyle() {
   const lifestyles: LifestyleItem[] = [
-    { 
-      name: "Vegan", 
-      icon: Leaf, 
-      desc: "Bitkisel beslenme", 
+    {
+      name: "Vegan",
+      icon: Leaf,
+      desc: "Bitkisel beslenme",
       color: "text-emerald-600",
       bgColor: "bg-emerald-100",
       link: "/koleksiyon?vegan=true"
     },
-    { 
-      name: "Glutensiz", 
-      icon: WheatOff, 
-      desc: "Gluten içermez", 
+    {
+      name: "Glutensiz",
+      icon: WheatOff,
+      desc: "Gluten içermez",
       color: "text-amber-600",
       bgColor: "bg-amber-100",
       link: "/koleksiyon?glutenFree=true"
     },
-    { 
-      name: "Paleo", 
-      icon: Sprout, 
-      desc: "Atalardan gelen", 
+    {
+      name: "Paleo",
+      icon: Sprout,
+      desc: "Atalardan gelen",
       color: "text-lime-600",
       bgColor: "bg-lime-100",
       link: "/koleksiyon?paleo=true"
     },
-    { 
-      name: "Keto", 
-      icon: Beef, 
-      desc: "Düşük karbonhidrat", 
+    {
+      name: "Keto",
+      icon: Beef,
+      desc: "Düşük karbonhidrat",
       color: "text-rose-600",
       bgColor: "bg-rose-100",
       link: "/koleksiyon?keto=true"
     },
-    { 
-      name: "Bitkisel", 
-      icon: Salad, 
-      desc: "Doğal içerik", 
+    {
+      name: "Bitkisel",
+      icon: Salad,
+      desc: "Doğal içerik",
       color: "text-sky-600",
       bgColor: "bg-sky-100",
       link: "/koleksiyon?plantBased=true"
@@ -68,7 +68,7 @@ export default function ShopByLifestyle() {
             Size en uygun beslenme şeklini keşfedin
           </p>
         </div>
-        
+
         {/* Desktop: Grid / Mobile: Scrollable */}
         <div className="hidden sm:grid sm:grid-cols-3 md:grid-cols-5 gap-4 lg:gap-6 xl:gap-8">
           {lifestyles.map((item, index) => (
@@ -90,7 +90,7 @@ export default function ShopByLifestyle() {
                 `}>
                   <item.icon className={`w-8 h-8 lg:w-10 lg:h-10 ${item.color}`} strokeWidth={1.5} />
                 </div>
-                
+
                 {/* Text */}
                 <h3 className="font-semibold text-gray-900 text-base lg:text-lg mb-1 group-hover:text-primary transition-colors">
                   {item.name}
@@ -125,7 +125,7 @@ export default function ShopByLifestyle() {
                   `}>
                     <item.icon className={`w-10 h-10 ${item.color}`} strokeWidth={1.5} />
                   </div>
-                  
+
                   {/* Text */}
                   <h3 className="font-semibold text-gray-900 text-sm mb-0.5">
                     {item.name}
@@ -143,9 +143,8 @@ export default function ShopByLifestyle() {
             {lifestyles.map((_, idx) => (
               <div
                 key={idx}
-                className={`h-1.5 rounded-full transition-all ${
-                  idx === 0 ? 'w-4 bg-primary' : 'w-1.5 bg-gray-300'
-                }`}
+                className={`h-1.5 rounded-full transition-all ${idx === 0 ? 'w-4 bg-primary' : 'w-1.5 bg-gray-300'
+                  }`}
               />
             ))}
           </div>
@@ -153,7 +152,6 @@ export default function ShopByLifestyle() {
 
         {/* View All Link */}
         <div className="text-center mt-8 md:mt-12 opacity-0 animate-[fadeIn_0.6s_ease-out_forwards]" style={{ animationDelay: '0.3s' }}>
-        >
           <Link
             href="/koleksiyon"
             className="inline-flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-900 rounded-full font-medium text-sm hover:bg-gray-200 transition-colors"
