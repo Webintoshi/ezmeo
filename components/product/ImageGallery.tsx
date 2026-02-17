@@ -187,11 +187,8 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
 
   const scrollThumbnails = (direction: 'up' | 'down') => {
     if (thumbnailsRef.current) {
-      // Mobil: 80px (72px + 8px), Desktop: 112px (100px + 12px)
-      const isDesktop = window.innerWidth >= 640;
-      const scrollAmount = isDesktop ? 112 : 80;
       thumbnailsRef.current.scrollBy({
-        top: direction === 'up' ? -scrollAmount : scrollAmount,
+        top: direction === 'up' ? -100 : 100,
         behavior: 'smooth'
       });
       setTimeout(checkScroll, 300);
@@ -208,7 +205,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           <div 
             ref={thumbnailsRef}
             onScroll={checkScroll}
-            className="flex flex-col gap-2 sm:gap-3 overflow-y-auto scrollbar-hide max-h-[240px] sm:max-h-[560px]"
+            className="flex flex-col gap-2 sm:gap-3 overflow-y-auto scrollbar-hide max-h-[320px] sm:max-h-[560px]"
             style={{ 
               scrollbarWidth: 'none', 
               msOverflowStyle: 'none'
@@ -235,9 +232,9 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           </div>
           
           {/* Yukarı ve Aşağı ok butonları - Alt kısımda yan yana */}
-          {/* Mobilde >3, Desktop'ta >5 görsel varsa göster */}
+          {/* Mobilde >4, Desktop'ta >5 görsel varsa göster */}
           <div className="flex items-center justify-center gap-2 mt-3 sm:hidden">
-            {displayImages.length > 3 && (
+            {displayImages.length > 4 && (
               <>
                 <button
                   onClick={() => scrollThumbnails('up')}
