@@ -46,8 +46,7 @@ export default function BlogListingPage() {
   const progress = getContentProgress();
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8 space-y-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">

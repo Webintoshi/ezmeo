@@ -31,8 +31,7 @@ export default function CmsDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8 space-y-8">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Link href="/admin" className="p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-gray-200">

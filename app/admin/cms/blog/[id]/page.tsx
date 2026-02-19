@@ -7,8 +7,7 @@ import Link from "next/link";
 export default function EditBlogPostPage({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-4 mb-6">
           <Link
             href="/admin/cms/blog"
             className="p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-gray-200"
