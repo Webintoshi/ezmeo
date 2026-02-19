@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// Basit skor hesaplama
 function calculateScore(hasTitle: boolean, hasDesc: boolean, hasImage: boolean): number {
     let score = 0;
     if (hasTitle) score += 40;
@@ -23,7 +22,6 @@ function calculateScore(hasTitle: boolean, hasDesc: boolean, hasImage: boolean):
     return score;
 }
 
-// Renkli skor göstergesi
 function ScoreBadge({ score }: { score: number }) {
     let color = "bg-red-500";
     let text = "Geliştirilmeli";
@@ -36,19 +34,18 @@ function ScoreBadge({ score }: { score: number }) {
     }
     
     return (
-        <div className="flex items-center gap-2">
-            <div className={`w-12 h-12 rounded-full ${color} flex items-center justify-center text-white font-bold text-lg`}>
+        <div className="flex items-center gap-3">
+            <div className={`w-16 h-16 rounded-full ${color} flex items-center justify-center text-white font-bold text-2xl`}>
                 {score}
             </div>
             <div>
-                <div className="font-semibold text-gray-900">{text}</div>
-                <div className="text-xs text-gray-500">SEO Puanı</div>
+                <div className="font-semibold text-gray-900 text-lg">{text}</div>
+                <div className="text-sm text-gray-500">Genel SEO Puanı</div>
             </div>
         </div>
     );
 }
 
-// Basit ilerleme çubuğu
 function ProgressBar({ completed, total }: { completed: number; total: number }) {
     const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
     return (
@@ -63,7 +60,6 @@ function ProgressBar({ completed, total }: { completed: number; total: number })
     );
 }
 
-// Büyük menü kartı
 function BigCard({ 
     href, 
     icon: Icon, 
@@ -81,27 +77,28 @@ function BigCard({
     count: number;
     completed: number;
 }) {
-    const progress = count > 0 ? Math.round((completed / count) * 100) : 0;
+    const percent = count > 0 ? Math.round((completed / count) * 100) : 0;
     
     return (
         <Link href={href} className="group block">
-            <div className="bg-white rounded-2xl p-6 shadow-sm border-2 border-gray-100 hover:border-blue-300 hover:shadow-lg transition-all">
-                <div className="flex items-start justify-between mb-4">
-                    <div className={`w-14 h-14 rounded-xl ${color} flex items-center justify-center`}>
-                        <Icon className="w-7 h-7 text-white" />
+            <div className="bg-white rounded-2xl p-8 shadow-sm border-2 border-gray-100 hover:border-blue-300 hover:shadow-xl transition-all h-full">
+                <div className="flex items-start justify-between mb-6">
+                    <div className={`w-16 h-16 rounded-xl ${color} flex items-center justify-center shadow-lg`}>
+                        <Icon className="w-8 h-8 text-white" />
                     </div>
                     <ChevronRight className="w-6 h-6 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
                 </div>
                 
-                <h3 className="text-xl font-bold text-gray-900 mb-1">{title}</h3>
-                <p className="text-gray-500 text-sm mb-4">{subtitle}</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{title}</h3>
+                <p className="text-gray-500 mb-6">{subtitle}</p>
                 
-                <div className="space-y-2">
+                <div className="space-y-3">
                     <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Tamamlanan</span>
                         <span className="font-semibold text-gray-900">{completed} / {count}</span>
                     </div>
                     <ProgressBar completed={completed} total={count} />
+                    <div className="text-right text-xs text-gray-400">%{percent} tamamlandı</div>
                 </div>
             </div>
         </Link>
@@ -124,17 +121,14 @@ export default function SEODashboard() {
     const loadData = async () => {
         setLoading(true);
         try {
-            // Ürünleri çek
             const productsRes = await fetch("/api/products");
             const productsData = await productsRes.json();
             const products = productsData.products || [];
             
-            // Kategorileri çek
             const categoriesRes = await fetch("/api/categories");
             const categoriesData = await categoriesRes.json();
             const categories = categoriesData.categories || [];
 
-            // Ürün istatistikleri
             let productCompleted = 0;
             let productTotalScore = 0;
             products.forEach((p: any) => {
@@ -146,7 +140,6 @@ export default function SEODashboard() {
                 if (score >= 60) productCompleted++;
             });
 
-            // Kategori istatistikleri
             let categoryCompleted = 0;
             let categoryTotalScore = 0;
             categories.forEach((c: any) => {
@@ -157,7 +150,6 @@ export default function SEODashboard() {
                 if (score >= 60) categoryCompleted++;
             });
 
-            // Statik sayfalar (bu veriler API'den gelmiyor, sabit)
             const staticPages = [
                 { name: "Ana Sayfa", hasTitle: true, hasDesc: true },
                 { name: "Hakkımızda", hasTitle: true, hasDesc: true },
@@ -218,9 +210,8 @@ export default function SEODashboard() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-            {/* Header */}
             <div className="bg-white shadow-sm">
-                <div className="max-w-5xl mx-auto px-6 py-8">
+                <div className="max-w-7xl mx-auto px-6 py-8">
                     <div className="flex items-center gap-4 mb-2">
                         <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                             <Rocket className="w-6 h-6 text-white" />
@@ -233,41 +224,39 @@ export default function SEODashboard() {
                 </div>
             </div>
 
-            <div className="max-w-5xl mx-auto px-6 py-8">
-                {/* Genel Skor */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm mb-8">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-900 mb-1">Genel SEO Durumun</h2>
-                            <p className="text-gray-500 text-sm">Tüm sayfalarının ortalama puanı</p>
+            <div className="max-w-7xl mx-auto px-6 py-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <div className="bg-white rounded-2xl p-6 shadow-sm">
+                        <div className="flex items-center gap-4">
+                            <ScoreBadge score={stats.overallScore} />
                         </div>
-                        <ScoreBadge score={stats.overallScore} />
                     </div>
                     
-                    {stats.overallScore < 80 && (
-                        <div className="mt-6 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-                            <div className="flex items-start gap-3">
-                                <Target className="w-5 h-5 text-yellow-600 mt-0.5" />
-                                <div>
-                                    <p className="font-medium text-yellow-900">SEO'nu geliştirmek için:</p>
-                                    <ul className="mt-2 space-y-1 text-sm text-yellow-800">
-                                        <li>• Tüm ürünlerine başlık ve açıklama ekle</li>
-                                        <li>• Her ürüne en az 1 fotoğraf yükle</li>
-                                        <li>• Kategori sayfalarını doldur</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    <div className="bg-white rounded-2xl p-6 shadow-sm">
+                        <div className="text-3xl font-bold text-blue-600">{stats.products.total}</div>
+                        <div className="text-gray-500">Toplam Ürün</div>
+                        <div className="text-sm text-green-600 mt-1">{stats.products.completed} tamamlandı</div>
+                    </div>
+                    
+                    <div className="bg-white rounded-2xl p-6 shadow-sm">
+                        <div className="text-3xl font-bold text-purple-600">{stats.categories.total}</div>
+                        <div className="text-gray-500">Toplam Kategori</div>
+                        <div className="text-sm text-green-600 mt-1">{stats.categories.completed} tamamlandı</div>
+                    </div>
+                    
+                    <div className="bg-white rounded-2xl p-6 shadow-sm">
+                        <div className="text-3xl font-bold text-green-600">{stats.pages.total}</div>
+                        <div className="text-gray-500">Toplam Sayfa</div>
+                        <div className="text-sm text-green-600 mt-1">{stats.pages.completed} tamamlandı</div>
+                    </div>
                 </div>
 
-                {/* Ana Menü */}
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                     <Zap className="w-5 h-5 text-yellow-500" />
                     Neyi Düzenlemek İstiyorsun?
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <BigCard
                         href="/admin/seo-killer/urunler"
                         icon={Package}
@@ -299,8 +288,9 @@ export default function SEODashboard() {
                     />
                 </div>
 
-                {/* Eksikler Listesi */}
-                {(stats.products.total - stats.products.completed > 0 || stats.categories.total - stats.categories.completed > 0) && (
+                {(stats.products.total - stats.products.completed > 0 || 
+                  stats.categories.total - stats.categories.completed > 0 ||
+                  stats.pages.total - stats.pages.completed > 0) && (
                     <div className="bg-white rounded-2xl p-6 shadow-sm">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                             <AlertCircle className="w-5 h-5 text-orange-500" />
@@ -356,7 +346,6 @@ export default function SEODashboard() {
                     </div>
                 )}
 
-                {/* Başarı Mesajı */}
                 {stats.overallScore >= 80 && (
                     <div className="bg-green-50 rounded-2xl p-6 text-center">
                         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
