@@ -81,8 +81,9 @@ export default function ProductSEOPage() {
                 const issues: string[] = [];
                 let score = 100;
 
-                const metaTitle = (p.meta_title || p.seo_title || "") as string;
-                const metaDescription = (p.meta_description || p.seo_description || "") as string;
+                // Önce seo_title/seo_description kontrol et (yeni alanlar), sonra meta_title/meta_description (eski alanlar)
+                const metaTitle = (p.seo_title || p.meta_title || "") as string;
+                const metaDescription = (p.seo_description || p.meta_description || "") as string;
 
                 if (!metaTitle) {
                     issues.push("Meta başlık eksik");

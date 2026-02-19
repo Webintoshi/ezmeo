@@ -26,16 +26,23 @@ export async function generateMetadata({
     };
   }
 
-  const seoTitle = `${product.name} | Ezmeo`;
-  const seoDescription = product.shortDescription;
+  // Use seo_title/seo_description if available, fallback to defaults
+  const seoTitle = product.seo_title || `${product.name} | Ezmeo`;
+  const seoDescription = product.seo_description || product.shortDescription || product.description?.slice(0, 160) || "";
 
   return {
     title: seoTitle,
     description: seoDescription,
+    robots: {
+      index: true,
+      follow: true,
+    },
     openGraph: {
       title: seoTitle,
       description: seoDescription,
-      images: product.images?.[0] ? [product.images[0]] : [],
+      images: product.images && product.images.length > 0 && product.images[0] 
+        ? [product.images[0]] 
+        : ['/images/og-default.jpg'],
       type: "website",
       locale: "tr_TR",
       siteName: "Ezmeo",
@@ -45,7 +52,9 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: seoTitle,
       description: seoDescription,
-      images: product.images?.[0] ? [product.images[0]] : [],
+      images: product.images && product.images.length > 0 && product.images[0] 
+        ? [product.images[0]] 
+        : ['/images/og-default.jpg'],
     },
     alternates: {
       canonical: buildCanonicalUrl(baseSlug),
@@ -188,8 +197,8 @@ export default async function ProductDetailPage({
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
-    description: product.shortDescription || product.description?.slice(0, 160),
-    image: product.images?.[0],
+    description: product.seo_description || product.shortDescription || product.description?.slice(0, 160) || "",
+    image: product.images && product.images.length > 0 ? product.images[0] : null,
     url: `https://ezmeo.com/urunler/${baseSlug}`,
     brand: {
       "@type": "Brand",
