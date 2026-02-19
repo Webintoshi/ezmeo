@@ -51,6 +51,8 @@ interface Category {
   image: string | null;
   sort_order: number;
   is_active: boolean;
+  seo_title: string | null;
+  seo_description: string | null;
 }
 
 function transformProduct(dbProduct: DBProduct) {
@@ -138,9 +140,25 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
   }
   
+  // Use seo_title and seo_description if available, fallback to defaults
+  const title = category.seo_title || `${category.name} | Ezmeo`;
+  const description = category.seo_description || category.description || `${category.name} kategorisindeki ürünlerimizi keşfedin.`;
+  
   return {
-    title: `${category.name} | Ezmeo`,
-    description: category.description || `${category.name} kategorisindeki ürünlerimizi keşfedin.`,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      locale: "tr_TR",
+      siteName: "Ezmeo",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
   };
 }
 
