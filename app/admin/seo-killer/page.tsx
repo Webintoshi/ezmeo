@@ -17,7 +17,11 @@ import {
     Eye,
     ExternalLink,
     MoreHorizontal,
-    ChevronRight
+    ChevronRight,
+    BookOpen,
+    Layers,
+    Clock,
+    Sparkles
 } from "lucide-react";
 import Link from "next/link";
 
@@ -39,17 +43,46 @@ interface SEOStats {
     withMeta: number;
     withSchema: number;
     avgScore: number;
+    // SEO Hub özellikleri
+    totalPillars: number;
+    totalClusters: number;
+    avgWordCount: number;
+    freshContent: number;
+}
+
+// SEO Hub Content Stats
+interface ContentStats {
+    pillars: PillarStat[];
+}
+
+interface PillarStat {
+    id: string;
+    slug: string;
+    title: string;
+    description: string;
+    icon: string;
+    clusterCount: number;
+    publishedClusters: number;
+    avgWordCount: number;
+    lastUpdated: string;
+    status: "active" | "draft" | "archived";
 }
 
 export default function SEOKillerDashboard() {
     const [items, setItems] = useState<SEOItem[]>([]);
-    const [stats, setStats] = useState<SEOStats>({ totalItems: 0, withMeta: 0, withSchema: 0, avgScore: 0 });
+    const [stats, setStats] = useState<SEOStats>({ 
+        totalItems: 0, withMeta: 0, withSchema: 0, avgScore: 0,
+        totalPillars: 0, totalClusters: 0, avgWordCount: 0, freshContent: 0
+    });
+    const [contentStats, setContentStats] = useState<ContentStats>({ pillars: [] });
+    const [activeTab, setActiveTab] = useState<"technical" | "content">("technical");
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<"all" | "product" | "category" | "page">("all");
     const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
         loadSEOData();
+        loadContentData();
     }, []);
 
     const loadSEOData = async () => {
@@ -185,6 +218,40 @@ export default function SEOKillerDashboard() {
         }
     };
 
+    // SEO Hub - İçerik verilerini yükle
+    const loadContentData = async () => {
+        try {
+            const response = await fetch("/api/seo-hub/pillars");
+            const data = await response.json();
+            
+            if (data.pillars) {
+                setContentStats({ pillars: data.pillars });
+                
+                // İstatistikleri hesapla
+                const totalClusters = data.pillars.reduce((sum: number, p: PillarStat) => sum + p.clusterCount, 0);
+                const publishedClusters = data.pillars.reduce((sum: number, p: PillarStat) => sum + p.publishedClusters, 0);
+                const avgWordCount = data.pillars.length > 0
+                    ? Math.round(data.pillars.reduce((sum: number, p: PillarStat) => sum + p.avgWordCount, 0) / data.pillars.length)
+                    : 0;
+                const now = new Date();
+                const threeMonthsAgo = new Date(now.setMonth(now.getMonth() - 3));
+                const freshContent = data.pillars.filter((p: PillarStat) =>
+                    new Date(p.lastUpdated) > threeMonthsAgo
+                ).length;
+                
+                setStats(prev => ({
+                    ...prev,
+                    totalPillars: data.pillars.length,
+                    totalClusters,
+                    avgWordCount,
+                    freshContent
+                }));
+            }
+        } catch (error) {
+            console.error("Error loading content data:", error);
+        }
+    };
+
     const filteredItems = items
         .filter(item => filter === "all" || item.type === filter)
         .filter(item =>
@@ -262,63 +329,244 @@ export default function SEOKillerDashboard() {
                 </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Link
-                    href="/admin/seo-killer/urunler"
-                    className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all group"
+            {/* Tab Switcher */}
+            <div className="bg-gray-100 p-1 rounded-xl inline-flex">
+                <button
+                    onClick={() => setActiveTab("technical")}
+                    className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+                        activeTab === "technical"
+                            ? "bg-white text-gray-900 shadow-sm"
+                            : "text-gray-600 hover:text-gray-900"
+                    }`}
                 >
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Package className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <h3 className="font-semibold text-gray-900">Ürün SEO</h3>
-                                <p className="text-sm text-gray-500">Schema.org Product yapısı</p>
-                            </div>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                </Link>
-
-                <Link
-                    href="/admin/seo-killer/kategoriler"
-                    className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all group"
+                    <span className="flex items-center gap-2">
+                        <Rocket className="w-4 h-4" />
+                        Teknik SEO
+                    </span>
+                </button>
+                <button
+                    onClick={() => setActiveTab("content")}
+                    className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+                        activeTab === "content"
+                            ? "bg-white text-gray-900 shadow-sm"
+                            : "text-gray-600 hover:text-gray-900"
+                    }`}
                 >
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <FolderOpen className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <div>
-                                <h3 className="font-semibold text-gray-900">Kategori SEO</h3>
-                                <p className="text-sm text-gray-500">CollectionPage yapısı</p>
-                            </div>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                </Link>
-
-                <Link
-                    href="/admin/seo-killer/sayfalar"
-                    className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all group"
-                >
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <FileText className="w-5 h-5 text-green-600" />
-                            </div>
-                            <div>
-                                <h3 className="font-semibold text-gray-900">Sayfa SEO</h3>
-                                <p className="text-sm text-gray-500">WebPage & BreadcrumbList</p>
-                            </div>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                </Link>
+                    <span className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4" />
+                        İçerik SEO (Hub)
+                    </span>
+                </button>
             </div>
 
+            {activeTab === "technical" ? (
+                <>
+                    {/* Technical SEO Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                            <div className="text-2xl font-bold text-gray-900">{stats.totalItems}</div>
+                            <div className="text-sm text-gray-500">Toplam Sayfa</div>
+                        </div>
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                            <div className="text-2xl font-bold text-green-600">{stats.withMeta}</div>
+                            <div className="text-sm text-gray-500">Meta Tamamlanmış</div>
+                        </div>
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                            <div className="text-2xl font-bold text-blue-600">{stats.withSchema}</div>
+                            <div className="text-sm text-gray-500">Şema Tanımlı</div>
+                        </div>
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                            <div className={`text-2xl font-bold ${stats.avgScore >= 80 ? 'text-green-600' : stats.avgScore >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                {stats.avgScore}/100
+                            </div>
+                            <div className="text-sm text-gray-500">Ortalama Skor</div>
+                        </div>
+                    </div>
+
+                    {/* Quick Actions - Technical */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Link
+                            href="/admin/seo-killer/urunler"
+                            className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all group"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <Package className="w-5 h-5 text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900">Ürün SEO</h3>
+                                        <p className="text-sm text-gray-500">Schema.org Product yapısı</p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </Link>
+
+                        <Link
+                            href="/admin/seo-killer/kategoriler"
+                            className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all group"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <FolderOpen className="w-5 h-5 text-purple-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900">Kategori SEO</h3>
+                                        <p className="text-sm text-gray-500">CollectionPage yapısı</p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </Link>
+
+                        <Link
+                            href="/admin/seo-killer/sayfalar"
+                            className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all group"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <FileText className="w-5 h-5 text-green-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900">Sayfa SEO</h3>
+                                        <p className="text-sm text-gray-500">WebPage & BreadcrumbList</p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </Link>
+                    </div>
+                </>
+            ) : (
+                <>
+                    {/* Content SEO (SEO Hub) Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                            <div className="text-2xl font-bold text-gray-900">{stats.totalPillars}</div>
+                            <div className="text-sm text-gray-500">Toplam Pillar</div>
+                        </div>
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                            <div className="text-2xl font-bold text-green-600">{stats.totalClusters}</div>
+                            <div className="text-sm text-gray-500">Toplam İçerik</div>
+                        </div>
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                            <div className="text-2xl font-bold text-purple-600">{stats.avgWordCount}</div>
+                            <div className="text-sm text-gray-500">Ort. Kelime Sayısı</div>
+                        </div>
+                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                            <div className="text-2xl font-bold text-emerald-600">{stats.freshContent}</div>
+                            <div className="text-sm text-gray-500">Güncel İçerik (3 ay)</div>
+                        </div>
+                    </div>
+
+                    {/* Quick Actions - Content SEO */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Link
+                            href="/admin/seo-hub"
+                            className="bg-gradient-to-br from-indigo-50 to-purple-50 p-5 rounded-xl shadow-sm border border-indigo-100 hover:shadow-md transition-all group"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <Layers className="w-5 h-5 text-indigo-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900">Pillar Yönetimi</h3>
+                                        <p className="text-sm text-gray-500">Topikal otorite yapısı</p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </Link>
+
+                        <Link
+                            href="/admin/seo-killer/icerikler"
+                            className="bg-gradient-to-br from-orange-50 to-amber-50 p-5 rounded-xl shadow-sm border border-orange-100 hover:shadow-md transition-all group"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <BookOpen className="w-5 h-5 text-orange-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900">İçerikler</h3>
+                                        <p className="text-sm text-gray-500">Blog & Rehber yazıları</p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </Link>
+
+                        <Link
+                            href="/admin/seo-killer/geo-optimizasyon"
+                            className="bg-gradient-to-br from-pink-50 to-rose-50 p-5 rounded-xl shadow-sm border border-pink-100 hover:shadow-md transition-all group"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <Sparkles className="w-5 h-5 text-pink-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900">GEO Optimizasyonu</h3>
+                                        <p className="text-sm text-gray-500">LLM & AI uyumluluğu</p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </Link>
+                    </div>
+
+                    {/* Pillar Cards */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <Layers className="w-5 h-5 text-indigo-600" />
+                            Pillar Kategorileri
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {contentStats.pillars.map((pillar) => (
+                                <Link
+                                    key={pillar.id}
+                                    href={`/admin/seo-hub/pillars`}
+                                    className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all group"
+                                >
+                                    <div className="flex items-start justify-between mb-3">
+                                        <span className="text-3xl">{pillar.icon}</span>
+                                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                            pillar.status === "active"
+                                                ? "bg-green-100 text-green-800"
+                                                : "bg-gray-100 text-gray-800"
+                                        }`}>
+                                            {pillar.status === "active" ? "Aktif" : "Taslak"}
+                                        </span>
+                                    </div>
+                                    <h4 className="font-semibold text-gray-900 mb-1">{pillar.title}</h4>
+                                    <p className="text-sm text-gray-500 mb-3 line-clamp-2">{pillar.description}</p>
+                                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                                        <span className="flex items-center gap-1">
+                                            <FileText className="w-3 h-3" />
+                                            {pillar.clusterCount} içerik
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {new Date(pillar.lastUpdated).toLocaleDateString("tr-TR")}
+                                        </span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {activeTab === "technical" && (<>
+
+            </>)}
+
+            {activeTab === "technical" && (
+            <>
             {/* Search & Filter */}
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center">
                 <div className="relative flex-1 min-w-[200px]">
@@ -426,6 +674,8 @@ export default function SEOKillerDashboard() {
                     </table>
                 </div>
             </div>
+            </>
+            )}
         </div>
     );
 }

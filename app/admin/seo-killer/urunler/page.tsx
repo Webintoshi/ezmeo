@@ -12,8 +12,24 @@ import {
     ArrowLeft,
     Search,
     Code,
+    HelpCircle,
+    MessageSquare,
+    Clock,
+    Type,
+    Bot,
+    Lightbulb
 } from "lucide-react";
 import Link from "next/link";
+
+interface ProductFAQ {
+    question: string;
+    answer: string;
+}
+
+interface ProductGEO {
+    keyTakeaways: string[];  // Önemli Çıkarımlar (LLM'ler için)
+    entities: string[];      // Varlıklar (Product, Organization, vb.)
+}
 
 interface ProductSEO {
     id: string;
@@ -27,6 +43,11 @@ interface ProductSEO {
     schemaType: string;
     score: number;
     issues: string[];
+    // SEO Hub özellikleri
+    faq: ProductFAQ[];
+    geo: ProductGEO;
+    readingTime: number;  // dakika
+    wordCount: number;
 }
 
 export default function ProductSEOPage() {
@@ -36,8 +57,14 @@ export default function ProductSEOPage() {
     const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [editForm, setEditForm] = useState({ metaTitle: "", metaDescription: "" });
+    const [editForm, setEditForm] = useState({ 
+        metaTitle: "", 
+        metaDescription: "",
+        faq: [] as ProductFAQ[],
+        keyTakeaways: [] as string[]
+    });
     const [generating, setGenerating] = useState(false);
+    const [activeSection, setActiveSection] = useState<"meta" | "faq" | "geo">("meta");
 
     useEffect(() => {
         loadProducts();
@@ -148,7 +175,53 @@ export default function ProductSEOPage() {
         setEditForm({
             metaTitle: product.metaTitle,
             metaDescription: product.metaDescription,
+            faq: product.faq || [],
+            keyTakeaways: product.geo?.keyTakeaways || []
         });
+    };
+
+    // FAQ işlemleri
+    const addFAQ = () => {
+        setEditForm(prev => ({
+            ...prev,
+            faq: [...prev.faq, { question: "", answer: "" }]
+        }));
+    };
+
+    const updateFAQ = (index: number, field: "question" | "answer", value: string) => {
+        setEditForm(prev => ({
+            ...prev,
+            faq: prev.faq.map((f, i) => i === index ? { ...f, [field]: value } : f)
+        }));
+    };
+
+    const removeFAQ = (index: number) => {
+        setEditForm(prev => ({
+            ...prev,
+            faq: prev.faq.filter((_, i) => i !== index)
+        }));
+    };
+
+    // Key Takeaways işlemleri
+    const addKeyTakeaway = () => {
+        setEditForm(prev => ({
+            ...prev,
+            keyTakeaways: [...prev.keyTakeaways, ""]
+        }));
+    };
+
+    const updateKeyTakeaway = (index: number, value: string) => {
+        setEditForm(prev => ({
+            ...prev,
+            keyTakeaways: prev.keyTakeaways.map((k, i) => i === index ? value : k)
+        }));
+    };
+
+    const removeKeyTakeaway = (index: number) => {
+        setEditForm(prev => ({
+            ...prev,
+            keyTakeaways: prev.keyTakeaways.filter((_, i) => i !== index)
+        }));
     };
 
     const handleAIGenerate = (product: ProductSEO) => {
@@ -185,7 +258,7 @@ export default function ProductSEOPage() {
     };
 
     const generateSchemaPreview = (product: ProductSEO) => {
-        return {
+        const baseSchema: Record<string, unknown> = {
             "@context": "https://schema.org",
             "@type": "Product",
             "name": product.name,
@@ -201,6 +274,32 @@ export default function ProductSEOPage() {
                 "priceCurrency": "TRY",
                 "availability": "https://schema.org/InStock"
             }
+        };
+
+        // FAQPage schema ekle (varsa)
+        if (product.faq && product.faq.length > 0) {
+            baseSchema.mainEntity = product.faq.map(faq => ({
+                "@type": "Question",
+                "name": faq.question,
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": faq.answer
+                }
+            }));
+        }
+
+        return baseSchema;
+    };
+
+    // GEO/LLM için içerik önerisi
+    const generateGEOContent = (product: ProductSEO) => {
+        return {
+            keyTakeaways: product.geo?.keyTakeaways || [
+                `${product.name} %100 doğal içeriklerle hazırlanmıştır.`,
+                `Katkı maddesi içermez, şeker ilavesiz seçenek sunar.`,
+                `Sporcular ve sağlıklı beslenmeyi tercih edenler için idealdir.`
+            ],
+            entities: ["Product", "Food", "HealthFood", "Ezmeo"]
         };
     };
 
@@ -318,6 +417,55 @@ export default function ProductSEOPage() {
                         {/* Edit Form */}
                         {editingId === product.id && (
                             <div className="p-4 space-y-4 bg-gray-50">
+                                {/* Section Tabs */}
+                                <div className="flex gap-2 border-b border-gray-200">
+                                    <button
+                                        onClick={() => setActiveSection("meta")}
+                                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                                            activeSection === "meta"
+                                                ? "border-primary text-primary"
+                                                : "border-transparent text-gray-600 hover:text-gray-900"
+                                        }`}
+                                    >
+                                        <span className="flex items-center gap-1">
+                                            <Tag className="w-4 h-4" />
+                                            Meta Bilgileri
+                                        </span>
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveSection("faq")}
+                                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                                            activeSection === "faq"
+                                                ? "border-primary text-primary"
+                                                : "border-transparent text-gray-600 hover:text-gray-900"
+                                        }`}
+                                    >
+                                        <span className="flex items-center gap-1">
+                                            <HelpCircle className="w-4 h-4" />
+                                            FAQ Schema
+                                            {editForm.faq.length > 0 && (
+                                                <span className="ml-1 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
+                                                    {editForm.faq.length}
+                                                </span>
+                                            )}
+                                        </span>
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveSection("geo")}
+                                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                                            activeSection === "geo"
+                                                ? "border-primary text-primary"
+                                                : "border-transparent text-gray-600 hover:text-gray-900"
+                                        }`}
+                                    >
+                                        <span className="flex items-center gap-1">
+                                            <Bot className="w-4 h-4" />
+                                            GEO/LLM
+                                        </span>
+                                    </button>
+                                </div>
+
+                                {activeSection === "meta" && (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -352,6 +500,118 @@ export default function ProductSEOPage() {
                                         />
                                     </div>
                                 </div>
+                                )}
+
+                                {activeSection === "faq" && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h4 className="font-medium text-gray-900">Sıkça Sorulan Sorular</h4>
+                                            <p className="text-sm text-gray-500">Google FAQ rich snippet için soru-cevap ekleyin</p>
+                                        </div>
+                                        <button
+                                            onClick={addFAQ}
+                                            className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
+                                        >
+                                            + Soru Ekle
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {editForm.faq.map((faq, index) => (
+                                            <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 space-y-3">
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-600 mb-1">Soru</label>
+                                                    <input
+                                                        type="text"
+                                                        value={faq.question}
+                                                        onChange={(e) => updateFAQ(index, "question", e.target.value)}
+                                                        placeholder="Örn: Bu ürün vegan mı?"
+                                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-600 mb-1">Cevap</label>
+                                                    <textarea
+                                                        value={faq.answer}
+                                                        onChange={(e) => updateFAQ(index, "answer", e.target.value)}
+                                                        placeholder="Cevabı yazın..."
+                                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                                                        rows={2}
+                                                    />
+                                                </div>
+                                                <button
+                                                    onClick={() => removeFAQ(index)}
+                                                    className="text-xs text-red-600 hover:text-red-700"
+                                                >
+                                                    Kaldır
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {editForm.faq.length === 0 && (
+                                        <div className="text-center py-6 text-gray-500 text-sm bg-gray-100 rounded-lg">
+                                            Henüz FAQ eklenmemiş. "Soru Ekle" butonuna tıklayın.
+                                        </div>
+                                    )}
+                                </div>
+                                )}
+
+                                {activeSection === "geo" && (
+                                <div className="space-y-4">
+                                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-100">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Lightbulb className="w-5 h-5 text-purple-600" />
+                                            <h4 className="font-medium text-purple-900">GEO / LLM Optimizasyonu</h4>
+                                        </div>
+                                        <p className="text-sm text-purple-700">
+                                            Bu alan ChatGPT, Perplexity ve diğer AI sistemlerinin ürününüzü anlamasına yardımcı olur.
+                                        </p>
+                                    </div>
+                                    
+                                    <div>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div>
+                                                <h4 className="font-medium text-gray-900">Önemli Çıkarımlar (Key Takeaways)</h4>
+                                                <p className="text-sm text-gray-500">AI'ların ürününüz hakkında vurgulaması gereken ana noktalar</p>
+                                            </div>
+                                            <button
+                                                onClick={addKeyTakeaway}
+                                                className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
+                                            >
+                                                + Ekle
+                                            </button>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {editForm.keyTakeaways.map((takeaway, index) => (
+                                                <div key={index} className="flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={takeaway}
+                                                        onChange={(e) => updateKeyTakeaway(index, e.target.value)}
+                                                        placeholder={`Çıkarım ${index + 1}`}
+                                                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                                    />
+                                                    <button
+                                                        onClick={() => removeKeyTakeaway(index)}
+                                                        className="px-2 text-red-600 hover:text-red-700"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-blue-50 p-4 rounded-lg">
+                                        <h5 className="text-sm font-medium text-blue-900 mb-2">💡 Öneriler</h5>
+                                        <ul className="text-xs text-blue-700 space-y-1">
+                                            <li>• Her çıkarım kısa ve öz olmalı (max 100 karakter)</li>
+                                            <li>• Ürünün temel faydalarını vurgulayın</li>
+                                            <li>• Hedef kitlenin aradığı cevapları ekleyin</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                )}
 
                                 {/* Google Preview */}
                                 <div className="bg-white p-4 rounded-lg border border-gray-200">
