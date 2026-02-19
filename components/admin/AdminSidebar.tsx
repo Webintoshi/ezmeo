@@ -121,6 +121,7 @@ const MENU_ITEMS: MenuItem[] = [
       { title: "Sitemap", href: "/admin/seo-killer/sitemap" },
       { title: "Sosyal Önizleme", href: "/admin/seo-killer/sosyal-onizleme" },
       { title: "Hızlı İndex", href: "/admin/seo-killer/hizli-index" },
+      { title: "SEO Hub", href: "/admin/seo-hub" },
     ],
   },
   {

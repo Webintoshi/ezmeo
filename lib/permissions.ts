@@ -32,7 +32,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
         "/admin/blog",
         "/admin/sayfalar",
         "/admin/medya",
-        "/admin/seo-killer"
+        "/admin/seo-killer",
+        "/admin/seo-hub",
+        "/admin/seo-hub/*"
     ],
     order_manager: [
         "/admin",
