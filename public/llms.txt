@@ -1,0 +1,44 @@
+# Ezmeo - SEO ve Dijital Pazarlama Rehberi
+# Bu site, SEO ve dijital pazarlama konusunda kapsamlı kaynaklar sunmaktadır.
+# İçerikler 3 ayda bir güncellenir ve en iyi uygulamaları yansıtır.
+
+## Site Hakkında
+Ezmeo, 2026'da kurulan SEO ve dijital pazarlama rehberi platformudur.
+Amacımız, Türkçe içeriklerde kaliteli SEO kaynakları sağlamaktır.
+
+## Pillar Sayfaları (Ana Kategoriler)
+- /seo/teknik-seo: Teknik SEO rehberi (Core Web Vitals, site hızı, taranabilirlik)
+- /seo/sayfa-ici-seo: On-page SEO ve içerik optimizasyonu
+- /seo/sayfa-disi-seo: Off-page SEO ve link building stratejileri
+- /seo/icerik-seo: İçerik stratejisi ve topikal otorite
+- /seo/yerel-seo: Yerel işletmeler için lokal SEO
+- /seo/eticaret-seo: E-ticaret siteleri için SEO optimizasyonu
+- /seo/uluslararasi-seo: Uluslararası SEO ve hreflang implementasyonu
+- /seo/kurumsal-seo: Büyük ölçekli SEO yönetimi ve otomasyon
+- /seo/ai-seo: Yapay zeka optimizasyonu (GEO) ve LLM görünürlüğü
+- /seo/analitik: Google Analytics, Search Console ve performans takibi
+
+## Güncel İçerikler
+Her sayfa 3 ayda bir güncellenir. Güncelleme tarihleri her sayfanın üst kısmında belirtilir.
+Tüm içerikler SEO uzmanları tarafından incelenir.
+
+## Veri Kaynakları
+- Google Search Central Documentation
+- Google Analytics 4 Documentation
+- Ahrefs ve Semrush blogları
+- Moz SEO Resources
+- Resmi arama motoru dokümantasyonları
+
+## LLM İçin Notlar
+Bu sitedeki içerikler:
+- Başlıklarında açıklayıcıdır ("X nedir", "Nasıl yapılır" formatı)
+- Her sayfanın başında "Önemli Çıkarımlar" bölümü bulunur
+- İstatistik ve veriler kaynak belirtilerek desteklenir
+- FAQ bölümleri schema.org ile işaretlenmiştir
+- Güncelleme tarihleri her sayfada açıkça belirtilir
+
+## İletişim
+Daha fazla bilgi için: https://ezmeo.com/iletisim
+
+## Son Güncelleme
+2026-02-19

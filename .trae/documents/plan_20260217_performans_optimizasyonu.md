@@ -1,123 +1,150 @@
-# Performans Optimizasyonu Planı
+# Performans Optimizasyon Planı
 
 ## Mevcut Durum Analizi
 
-### Tespit Edilen Sorunlar
+### Tespit Edilen Performans Sorunları
 
-| Sorun | Etki | Öncelik |
-|-------|------|----------|
-| RedesignHome "use client" | Büyük JS bundle, geç render | 🔴 Critical |
-| Font (.otf) local yükleme | FOIT/FOUT, geç yükleme | 🔴 Critical |
-| Provider'lar sıralaması | İlk HTML geç geliyor | 🟠 High |
-| Görsel boyutları belirsiz | CLS (layout shift) | 🟠 High |
-| Third-party scriptler | Blocking render | 🟠 High |
+#### 1. Çok Fazla Client-Side Veri Çekme (Critical)
+- **RedesignHome**: Hero banner'ları Supabase'den client-side çekiyor
+- **BestSellers**: Tüm ürünleri Supabase'den çekiyor (BÜYÜK SORUN - tüm ürünler yükleniyor)
+- **ShopByCategory**: Kategorileri Supabase'den çekiyor
+- **PromotionalBanners**: Promo banner'ları Supabase'den çekiyor
+- **Header**: Kategorileri + arama fonksiyonu için ayrı çağrılar yapıyor
 
-## Optimizasyon Stratejisi
+**Etki**: Her bileşen yüklendiğinde ayrı API çağrısı yapılıyor = 5+ gereksiz network request
 
-### 1. Font Optimizasyonu (LCP)
+#### 2. Bundle Size Sorunları (High)
+- **framer-motion**: Büyük animasyon kütüphanesi, sadece basit animasyonlar için kullanılıyor
+- **recharts**: Analytics için kullanılıyor ama homepage'de yok
+- Tüm bileşenler "use client" = tamamı client-side render ediliyor
 
-**Sorun**: `next/font/local` ile .otf yükleniyor - bu fontun yüklenmesi için bekliyor
+#### 3. Image Optimizasyon Eksiklikleri (High)
+- Bazı görsellerde `unoptimized` flag'i kullanılmış (Next.js optimizasyonunu devre dışı bırakıyor)
+- LCP (Largest Contentful Paint) için hero görselleri priority olmalı
+- Boyutlandırma (sizes prop) her yerde doğru kullanılmamış
 
-**Çözüm**:
-```typescript
-// Önceki
-const quenda = localFont({
-  src: "./Quenda-Medium.otf",
-  variable: "--font-quenda",
-  display: "swap",
-});
+#### 4. Server vs Client Component Dağılımı (High)
+- Tüm bileşenler "use client" = React hydration gecikiyor
+- FCP (First Contentful Paint) gecikiyor
+- SEO için kötü
 
-// Sonraki - preload + font-display: optional
-const quenda = localFont({
-  src: [
-    {
-      path: "./Quenda-Medium.otf",
-      weight: "500",
-      style: "normal",
-    },
-  ],
-  variable: "--font-quenda",
-  display: "optional", // Hızlı render için
-  preload: true,
-});
-```
+---
 
-### 2. Critical CSS & JS (LCP)
+## Çözüm Öncelik Sırası
 
-**Sorun**: Tüm JS birden yükleniyor
+### 🔴 Phase 1: Hemen Yapılacak (Critical Impact)
 
-**Çözüm**:
-- `next/script` ile third-party scriptleri `lazyOnload` veya `afterInteractive`
-- Dynamic import kullanımı
-- Component lazy loading
+#### 1.1 Server-Side Rendering Entegrasyonu
+**Dosyalar:**
+- `app/page.tsx` → Server Component olarak kalacak
+- Bileşenleri Server Component olarak yeniden yapılandır
 
-### 3. Image LCP Optimizasyonu
+**Yapılacaklar:**
+- Ana sayfa verilerini `page.tsx` içinde server-side çek
+- static generation veya ISR kullan
+- Client-side fetch'leri kaldır
 
-**Sorun**: Hero görselleri geç yükleniyor
+#### 1.2 BestSellers Optimizasyonu
+**Sorun**: Tüm ürünler çekiliyor ama sadece 8 gösteriliyor
 
 **Çözüm**:
 ```typescript
-<Image
-  src="/hero.jpg"
-  alt="Hero"
-  width={1920}
-  height={1080}
-  priority={true} // LCP için critical
-  placeholder="blur"
-  blurDataURL="..." // Base64
-/>
+// Sadece limitli ürün çek
+.supabase
+  .from('products')
+  .select('*, variants:product_variants(*)')
+  .eq('is_active', true)
+  .eq('status', 'published')
+  .limit(8) // Sadece ilk 8 ürün
 ```
 
-### 4. CLS Önleme
+#### 1.3 Görsel Optimizasyonu
+- `unoptimized` flag'lerini kaldır
+- Tüm Next/Image bileşenlerine `priority` ekle (LCP için)
+- `sizes` prop'larını düzelt
 
-**Sorun**: Görseller yüklenirken layout kayıyor
+---
 
-**Çözüm**:
-- Tüm Image bileşenlerine width/height ekleme
-- aspect-ratio CSS kullanımı
-- Font display: optional ile fallback
+### 🟠 Phase 2: Kısa Vadeli (High Impact)
 
-### 5. Provider Optimizasyonu
+#### 2.1 Framer Motion Kaldırma/Değiştirme
+**Sorun**: ~40KB bundle size
 
-**Sorun**: Çok fazla nested provider render blocking yapıyor
+**Alternatifler:**
+1. CSS transitions kullan (önerilen)
+2. `motion` package'ı yerine daha hafif bir şey kullan
+3. Sadece gerekli bileşenlerde kullan
 
-**Çözüm**:
-- Statik içerik provider dışına çıkarma
-- Suspense kullanımı
+#### 2.2 Code Splitting
+- `dynamic()` import kullan
+- Aşağı kaydırıldığında yüklenecek bileşenleri lazy load et
 
-## Uygulama Adımları
+#### 2.3 Tek API Endpoint
+- Homepage verilerini tek bir endpoint'te birleştir
+- Örnek: `/api/homepage-data`
 
-### Adım 1: Font Display Optional
-- `display: "swap"` → `display: "optional"`
-- Fallback fontları tanımla
+---
 
-### Adım 2: Hero Görseller Priority
-- LCP görsellerine `priority={true}` ekle
-- Preload linkleri ekle
+### 🟡 Phase 3: Orta Vadeli (Medium Impact)
 
-### Adım 3: Script Loading Strategy
-- GTM `afterInteractive` → `lazyOnload`
-- Diğer scriptleri defer et
+#### 3.1 Image CDN Entegrasyonu
+- Cloudinary/Vercel Image Optimization
+- WebP/AVIF formatları
 
-### Adım 4: Dynamic Imports
-- Heavy componentleri lazy load
-- `next/dynamic` kullanımı
+#### 3.2 Caching Strategy
+- ISR (Incremental Static Regeneration) kullan
+- Revalidation sürelerini ayarla
 
-### Adım 5: Image Sizes
-- Tüm Image bileşenlerine sizes prop ekleme
-- Responsive breakpoint'ler tanımla
+#### 3.3 Third-Party Script Optimizasyonu
+- GTM'i `strategy="lazyOnload"` yerine `strategy="afterInteractive"` dene
 
-## Beklenen Sonuçlar
+---
 
-| Metric | Hedef | Önceki (Tahmin) |
-|--------|-------|------------------|
-| LCP | < 2.5s | ~4-5s |
-| CLS | < 0.1 | ~0.2 |
-| INP | < 200ms | ~300ms |
-| Total Bundle | < 200KB | ~400KB+ |
+## Önerilen Yapı
+
+### Yeni Mimari
+
+```
+app/
+├── page.tsx (Server Component - veri çekme burada)
+│   ├── await HeroSection({ slides }) // Server Component
+│   ├── await ShopByCategory({ categories }) // Server Component  
+│   ├── await BestSellers({ products }) // Server Component
+│   └── await PromotionalBanners({ banners }) // Server Component
+│
+├── components/
+│   ├── sections/
+│   │   ├── HeroSection.tsx (server or client with fetch)
+│   │   ├── BestSellers.tsx (artık sadece render)
+│   │   └── ...
+```
+
+---
+
+## Beklenen İyileştirmeler
+
+| Metrik | Şu Anki | Hedef |
+|--------|---------|-------|
+| LCP | ~4s | < 2.5s |
+| FCP | ~3s | < 1.8s |
+| TTI | ~5s | < 3.5s |
+| Bundle Size | ~500KB | < 250KB |
+| Network Requests | 10+ | 3-4 |
+
+---
+
+## Uygulama Sırası
+
+1. **Step 1**: BestSellers'daki gereksiz veri çekmeyi düzelt (sadece 8 ürün)
+2. **Step 2**: page.tsx'i Server Component olarak yeniden yapılandır
+3. **Step 3**: Görsel optimizasyonu (priority, unoptimized kaldır)
+4. **Step 4**: Framer motion'ı CSS transitions ile değiştir
+5. **Step 5**: Code splitting uygula
+
+---
 
 ## Notlar
 
-- Next.js 16 kullanılıyor - en son optimizasyonlar mevcut
-- R2 Cloudflare storage - CDNavantajı var
-- Sharp ile görsel optimizasyonu zaten yapılıyor
+- Analytics için gerekli `recharts` admin sayfasında kalabilir
+- `framer-motion` tamamen kaldırılabilir - yerine CSS animasyonları kullanılabilir
+- Supabase query'leri mutlaka `.limit()` ile sınırlandırılmalı
