@@ -37,14 +37,22 @@ export async function GET(request: NextRequest) {
           .eq('pillar_id', pillar.id)
           .eq('status', 'published');
 
-        // MDX dosyasını oku (varsa)
+        // MDX dosyasından oku (varsa) - dosya sistemini kullan
         let avgWordCount = 0;
         let lastUpdated = pillar.updated_at;
 
         try {
-          const { frontmatter } = await import(`@/content/seo/${pillar.slug}/index.mdx`);
-          avgWordCount = frontmatter.wordCount || 0;
-          lastUpdated = frontmatter.updatedAt || pillar.updated_at;
+          const fs = await import('fs');
+          const path = await import('path');
+          const matter = (await import('gray-matter')).default;
+
+          const mdxPath = path.join(process.cwd(), 'content', 'seo', pillar.slug, 'index.mdx');
+          if (fs.existsSync(mdxPath)) {
+            const fileContents = fs.readFileSync(mdxPath, 'utf8');
+            const { data } = matter(fileContents);
+            avgWordCount = data.wordCount || 0;
+            lastUpdated = data.updatedAt || pillar.updated_at;
+          }
         } catch {
           // MDX dosyası yok, Supabase verisini kullan
         }
