@@ -1,19 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
+import { buildSEOPrompt, buildCategorySEOPrompt, buildPageSEOPrompt, generateFallbackSEO } from "@/lib/seo-prompts";
 
-const TOSHI_API_KEY = process.env.TOSHI_AI_API_KEY || "";
+// Z.AI API Configuration
+const ZAI_API_KEY = process.env.ZAI_API_KEY || "";
+const ZAI_BASE_URL = process.env.ZAI_BASE_URL || "https://api.z.ai";
+const ZAI_MODEL = process.env.ZAI_MODEL || "glm-4";
 
 interface SEOGenerationRequest {
     type: "product" | "category" | "page";
     name: string;
     description?: string;
+    shortDescription?: string;
     category?: string;
-    keywords?: string[];
+    subcategory?: string;
+    tags?: string[];
+    features?: string[];
+    schemaType?: string;
 }
 
 export async function POST(request: NextRequest) {
     try {
         const body: SEOGenerationRequest = await request.json();
-        const { type, name, description, category, keywords } = body;
+        const { 
+            type, 
+            name, 
+            description, 
+            shortDescription,
+            category, 
+            subcategory,
+            tags,
+            features,
+            schemaType 
+        } = body;
 
         if (!name) {
             return NextResponse.json(
@@ -22,109 +40,63 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Build the SEO expert prompt
-        const systemPrompt = `Sen Türkiye'nin en iyi SEO uzmanısın. E-ticaret siteleri için meta başlık ve açıklama yazıyorsun.
-
-KURALLAR:
-1. Meta başlık 30-60 karakter arasında olmalı
-2. Meta açıklama 120-160 karakter arasında olmalı
-3. Anahtar kelimeler doğal şekilde kullanılmalı
-4. Türkçe karakterler doğru kullanılmalı
-5. Marka adı "Ezmeo" her zaman başlıkta yer almalı
-6. Call-to-action içermeli (örn: "Hemen sipariş verin", "Keşfedin")
-7. Benzersiz ve dikkat çekici olmalı
-8. Google arama sonuçlarında tıklanma oranını artıracak şekilde yazılmalı
-
-YANITINI SADECE JSON FORMATINDA VER:
-{
-  "metaTitle": "...",
-  "metaDescription": "..."
-}`;
-
-        let userPrompt = "";
-
+        // Build dynamic prompt based on type
+        let prompt: string;
+        
         if (type === "product") {
-            userPrompt = `Aşağıdaki ürün için SEO optimize meta başlık ve açıklama oluştur:
-
-Ürün Adı: ${name}
-${description ? `Ürün Açıklaması: ${description}` : ""}
-${category ? `Kategori: ${category}` : ""}
-${keywords?.length ? `Anahtar Kelimeler: ${keywords.join(", ")}` : ""}
-
-Bu bir doğal gıda / kuruyemiş ezmesi ürünüdür. Sağlıklı yaşam, doğal beslenme ve protein açısından zenginlik vurgulansın.`;
-        } else if (type === "category") {
-            userPrompt = `Aşağıdaki kategori sayfası için SEO optimize meta başlık ve açıklama oluştur:
-
-Kategori Adı: ${name}
-${description ? `Açıklama: ${description}` : ""}
-
-Bu bir e-ticaret sitesinin kategori sayfasıdır. Koleksiyon sayfası olarak düşün.`;
-        } else {
-            userPrompt = `Aşağıdaki sayfa için SEO optimize meta başlık ve açıklama oluştur:
-
-Sayfa Adı: ${name}
-${description ? `Sayfa Açıklaması: ${description}` : ""}
-
-Bu statik bir sayfa (${name}).`;
-        }
-
-        // Call AI API (Azure OpenAI compatible format)
-        const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${TOSHI_API_KEY}`,
-            },
-            body: JSON.stringify({
-                model: "gpt-4o-mini",
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: userPrompt }
-                ],
-                temperature: 0.7,
-                max_tokens: 300,
-            }),
-        });
-
-        if (!aiResponse.ok) {
-            const errorText = await aiResponse.text();
-            console.error("AI API Error:", errorText);
-
-            // Fallback to template-based generation
-            const fallbackResult = generateFallbackMeta(type, name, description);
-            return NextResponse.json({
-                success: true,
-                ...fallbackResult,
-                source: "fallback"
+            prompt = buildSEOPrompt({
+                name,
+                description,
+                shortDescription,
+                category,
+                subcategory,
+                tags,
+                features,
+                brand: "Ezmeo"
             });
+        } else if (type === "category") {
+            prompt = buildCategorySEOPrompt(name, description);
+        } else {
+            // page type
+            prompt = buildPageSEOPrompt(name, schemaType || "WebPage", description);
         }
 
-        const aiData = await aiResponse.json();
-        const content = aiData.choices?.[0]?.message?.content || "";
+        // Use Z.AI for generation
+        let aiResult: { metaTitle: string; metaDescription: string; keywords: string[]; rationale?: string } | null = null;
+        let source = "";
 
-        // Parse JSON response
-        try {
-            // Extract JSON from response (handle markdown code blocks)
-            const jsonMatch = content.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                const parsed = JSON.parse(jsonMatch[0]);
-                return NextResponse.json({
-                    success: true,
-                    metaTitle: parsed.metaTitle || "",
-                    metaDescription: parsed.metaDescription || "",
-                    source: "ai"
-                });
+        if (ZAI_API_KEY) {
+            try {
+                const zaiResult = await callZAIGeneration(prompt);
+                if (zaiResult) {
+                    aiResult = zaiResult;
+                    source = "zai_glm-4";
+                }
+            } catch (error) {
+                console.warn("Z.AI failed:", error);
             }
-        } catch (parseError) {
-            console.error("Failed to parse AI response:", parseError);
         }
 
-        // Fallback if parsing fails
-        const fallbackResult = generateFallbackMeta(type, name, description);
+        // Template fallback
+        if (!aiResult) {
+            const fallback = generateFallbackSEO(name, category);
+            aiResult = {
+                metaTitle: fallback.metaTitle,
+                metaDescription: fallback.metaDescription,
+                keywords: fallback.keywords,
+                rationale: "Template-based fallback (AI services unavailable)"
+            };
+            source = "template_fallback";
+        }
+
         return NextResponse.json({
             success: true,
-            ...fallbackResult,
-            source: "fallback"
+            metaTitle: aiResult.metaTitle,
+            metaDescription: aiResult.metaDescription,
+            keywords: aiResult.keywords,
+            rationale: aiResult.rationale,
+            source,
+            timestamp: new Date().toISOString()
         });
 
     } catch (error) {
@@ -136,24 +108,64 @@ Bu statik bir sayfa (${name}).`;
     }
 }
 
-function generateFallbackMeta(type: string, name: string, description?: string) {
-    let metaTitle = "";
-    let metaDescription = "";
+async function callZAIGeneration(prompt: string): Promise<{ metaTitle: string; metaDescription: string; keywords: string[]; rationale?: string } | null> {
+    // Z.AI uses /api/paas/v4/chat/completions endpoint
+    const response = await fetch(`${ZAI_BASE_URL}/api/paas/v4/chat/completions`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${ZAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+            model: ZAI_MODEL,
+            messages: [
+                {
+                    role: "system",
+                    content: "You are an expert SEO specialist. Always respond with valid JSON only."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            temperature: 0.7,
+            max_tokens: 1500,
+            response_format: { type: "json_object" }
+        }),
+    });
 
-    if (type === "product") {
-        metaTitle = `${name} | Doğal & Katkısız | Ezmeo`;
-        metaDescription = `${name} - ${description?.slice(0, 60) || "Doğal ve sağlıklı"}... Türkiye'nin en kaliteli doğal ezmeleri. %100 doğal. Hemen sipariş verin!`;
-    } else if (type === "category") {
-        metaTitle = `${name} Çeşitleri | Ezmeo`;
-        metaDescription = `En kaliteli ${name.toLowerCase()} çeşitleri. %100 doğal, şekersiz, katkısız. Ücretsiz kargo ile kapınıza gelsin!`;
-    } else {
-        metaTitle = `${name} | Ezmeo`;
-        metaDescription = `${name} - Ezmeo doğal gıda markası. Sağlıklı ve lezzetli ürünlerle tanışın.`;
+    if (!response.ok) {
+        const error = await response.text();
+        console.error("Z.AI API Error:", error);
+        return null;
     }
 
-    // Truncate to limits
-    metaTitle = metaTitle.slice(0, 60);
-    metaDescription = metaDescription.slice(0, 160);
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
 
-    return { metaTitle, metaDescription };
+    if (!content) {
+        console.error("Empty Z.AI response");
+        return null;
+    }
+
+    // Parse JSON response
+    try {
+        const parsed = JSON.parse(content);
+        
+        // Handle different response structures
+        if (parsed.metaTitle && parsed.metaDescription) {
+            return {
+                metaTitle: parsed.metaTitle,
+                metaDescription: parsed.metaDescription,
+                keywords: parsed.keywords || parsed.analysis?.mainKeywords || [],
+                rationale: parsed.rationale || parsed.analysis?.rationale
+            };
+        }
+        
+        console.error("Unexpected Z.AI response structure:", parsed);
+        return null;
+    } catch (parseError) {
+        console.error("Failed to parse Z.AI response:", parseError);
+        return null;
+    }
 }

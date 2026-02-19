@@ -22,6 +22,7 @@ import {
   TrendingUp,
   Lightbulb,
   ArrowRight,
+  ArrowLeft,
 } from "lucide-react";
 import { getBlogPosts, BLOG_CATEGORIES, SUGGESTED_PILLARS, getContentProgress, CONTENT_GUIDELINES } from "@/lib/blog";
 import { format } from "date-fns";
@@ -45,102 +46,112 @@ export default function BlogListingPage() {
   const progress = getContentProgress();
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Blog Yazıları</h1>
-          <p className="text-sm text-gray-500 mt-1">İçeriklerinizi yönetin ve stratejinizi oluşturun.</p>
-        </div>
-        <Link
-          href="/admin/cms/blog/yeni"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Yeni Yazı Ekle
-        </Link>
-      </div>
-
-      {/* View Toggle & Filters */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4">
-        <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
-          <button
-            onClick={() => setViewMode("list")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-              viewMode === "list"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/admin/cms"
+              className="p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-gray-200"
+            >
+              <ArrowLeft className="w-5 h-5 text-gray-600" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Blog Yazıları</h1>
+              <p className="text-sm text-gray-500 mt-1">İçeriklerinizi yönetin ve stratejinizi oluşturun.</p>
+            </div>
+          </div>
+          <Link
+            href="/admin/cms/blog/yeni"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors shadow-sm"
           >
-            <List className="w-4 h-4" />
-            Liste
-          </button>
-          <button
-            onClick={() => setViewMode("strategy")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-              viewMode === "strategy"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <Target className="w-4 h-4" />
-            İçerik Stratejisi
-          </button>
+            <Plus className="w-4 h-4" />
+            Yeni Yazı Ekle
+          </Link>
         </div>
 
-        <div className="flex-1" />
+        {/* View Toggle & Filters */}
+        <div className="bg-white p-2 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row gap-3">
+          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg flex-shrink-0">
+            <button
+              onClick={() => setViewMode("list")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === "list"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <List className="w-4 h-4" />
+              Liste
+            </button>
+            <button
+              onClick={() => setViewMode("strategy")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === "strategy"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Target className="w-4 h-4" />
+              Strateji
+            </button>
+          </div>
 
-        {viewMode === "list" && (
-          <>
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Yazılarda ara..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all text-sm"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-400" />
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all bg-white text-sm"
-              >
-                <option value="all">Tüm Kategoriler</option>
-                {BLOG_CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </>
+          <div className="flex-1" />
+
+          {viewMode === "list" && (
+            <>
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Yazılarda ara..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all text-sm"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-400" />
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all bg-white text-sm"
+                >
+                  <option value="all">Tüm Kategoriler</option>
+                  {BLOG_CATEGORIES.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+        </div>
+
+        {viewMode === "list" ? (
+          <ListView posts={filteredPosts} />
+        ) : (
+          <StrategyView posts={posts} progress={progress} />
         )}
       </div>
-
-      {viewMode === "list" ? (
-        <ListView posts={filteredPosts} />
-      ) : (
-        <StrategyView posts={posts} progress={progress} />
-      )}
     </div>
   );
 }
 
 function ListView({ posts }: { posts: BlogPost[] }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-100">
+            <tr className="bg-gray-50/50 border-b border-gray-100">
               <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Yazı</th>
               <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tip</th>
               <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Kategori</th>
-              <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">SEO Puanı</th>
+              <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">SEO</th>
               <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tarih</th>
               <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">İşlemler</th>
             </tr>
@@ -150,12 +161,12 @@ function ListView({ posts }: { posts: BlogPost[] }) {
               <tr key={post.id} className="hover:bg-gray-50/50 transition-colors group">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="hidden sm:block w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                    <div className="hidden sm:block w-12 h-12 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
                       {post.coverImage ? (
                         <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400">
-                          <Eye className="w-4 h-4" />
+                          <FileText className="w-5 h-5" />
                         </div>
                       )}
                     </div>
@@ -164,11 +175,15 @@ function ListView({ posts }: { posts: BlogPost[] }) {
                         {post.title}
                       </div>
                       <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                        <Eye className="w-3 h-3" /> {post.views} görüntüleme
+                        <span className="flex items-center gap-1">
+                          <Eye className="w-3 h-3" /> {post.views}
+                        </span>
                         {post.wordCount > 0 && (
                           <>
                             <span className="text-gray-300">|</span>
-                            <FileText className="w-3 h-3" /> {post.wordCount} kelime
+                            <span className="flex items-center gap-1">
+                              <FileText className="w-3 h-3" /> {post.wordCount} kelime
+                            </span>
                           </>
                         )}
                       </div>
@@ -194,7 +209,7 @@ function ListView({ posts }: { posts: BlogPost[] }) {
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-end gap-1">
                     <Link
                       href={`/admin/cms/blog/${post.id}`}
                       className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
@@ -214,13 +229,18 @@ function ListView({ posts }: { posts: BlogPost[] }) {
             ))}
             {posts.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                  Henüz yazı bulunmuyor.
+                <td colSpan={6} className="px-6 py-16 text-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <FileText className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Henüz yazı bulunmuyor</h3>
+                  <p className="text-gray-500 mb-4">İlk blog yazınızı oluşturarak başlayın.</p>
                   <Link
                     href="/admin/cms/blog/yeni"
-                    className="block mt-2 text-primary hover:underline"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
                   >
-                    İlk yazınızı oluşturun
+                    <Plus className="w-4 h-4" />
+                    Yeni Yazı Ekle
                   </Link>
                 </td>
               </tr>
@@ -240,55 +260,54 @@ function StrategyView({
   progress: { pillar: { total: number; target: number }; cluster: { total: number; target: number }; standalone: { total: number } };
 }) {
   const pillars = posts.filter((p) => p.topicType === "pillar");
-  const standalonePosts = posts.filter((p) => p.topicType === "standalone" || !p.topicType);
 
   return (
     <div className="space-y-6">
       {/* Progress Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-2xl p-6 text-white">
+        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <Target className="w-6 h-6" />
+            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+              <Target className="w-6 h-6 text-purple-600" />
             </div>
-            <span className="text-3xl font-bold">{progress.pillar.total}</span>
+            <span className="text-3xl font-bold text-gray-900">{progress.pillar.total}</span>
           </div>
-          <div className="text-sm text-purple-100">Pillar (Ana Konu)</div>
-          <div className="text-xs text-purple-200 mt-1">Hedef: {progress.pillar.target}</div>
-          <div className="mt-3 w-full bg-white/20 rounded-full h-2">
+          <div className="text-sm font-medium text-gray-900">Pillar (Ana Konu)</div>
+          <div className="text-xs text-gray-500 mt-1">Hedef: {progress.pillar.target}</div>
+          <div className="mt-3 w-full bg-gray-100 rounded-full h-2">
             <div
-              className="bg-white rounded-full h-2 transition-all"
+              className="bg-purple-500 rounded-full h-2 transition-all"
               style={{ width: `${Math.min((progress.pillar.total / progress.pillar.target) * 100, 100)}%` }}
             />
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white">
+        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <LayoutGrid className="w-6 h-6" />
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+              <LayoutGrid className="w-6 h-6 text-blue-600" />
             </div>
-            <span className="text-3xl font-bold">{progress.cluster.total}</span>
+            <span className="text-3xl font-bold text-gray-900">{progress.cluster.total}</span>
           </div>
-          <div className="text-sm text-blue-100">Cluster (Alt Konu)</div>
-          <div className="text-xs text-blue-200 mt-1">Hedef: {progress.cluster.target}</div>
-          <div className="mt-3 w-full bg-white/20 rounded-full h-2">
+          <div className="text-sm font-medium text-gray-900">Cluster (Alt Konu)</div>
+          <div className="text-xs text-gray-500 mt-1">Hedef: {progress.cluster.target}</div>
+          <div className="mt-3 w-full bg-gray-100 rounded-full h-2">
             <div
-              className="bg-white rounded-full h-2 transition-all"
+              className="bg-blue-500 rounded-full h-2 transition-all"
               style={{ width: `${Math.min((progress.cluster.total / progress.cluster.target) * 100, 100)}%` }}
             />
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-6 text-white">
+        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <FileText className="w-6 h-6" />
+            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+              <FileText className="w-6 h-6 text-emerald-600" />
             </div>
-            <span className="text-3xl font-bold">{progress.standalone.total}</span>
+            <span className="text-3xl font-bold text-gray-900">{progress.standalone.total}</span>
           </div>
-          <div className="text-sm text-emerald-100">Bağımsız Yazı</div>
-          <div className="text-xs text-emerald-200 mt-1">Blog yazıları</div>
+          <div className="text-sm font-medium text-gray-900">Bağımsız Yazı</div>
+          <div className="text-xs text-gray-500 mt-1">Blog yazıları</div>
         </div>
       </div>
 
@@ -304,7 +323,7 @@ function StrategyView({
           </div>
           <Link
             href="/admin/cms/blog/yeni?type=pillar"
-            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-sm font-medium transition-colors"
           >
             <Plus className="w-4 h-4" />
             Pillar Oluştur
@@ -324,7 +343,7 @@ function StrategyView({
                 className={`border-2 rounded-xl p-5 transition-all ${
                   existingPillar
                     ? "border-emerald-200 bg-emerald-50/30"
-                    : "border-gray-200 hover:border-purple-300"
+                    : "border-gray-200 hover:border-purple-300 hover:shadow-sm"
                 }`}
               >
                 <div className="flex items-start justify-between mb-3">
@@ -333,8 +352,8 @@ function StrategyView({
                     <p className="text-sm text-gray-500 mt-1">{pillar.description}</p>
                   </div>
                   {existingPillar ? (
-                    <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium">
-                      ✅ Oluşturuldu
+                    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium">
+                      ✓ Oluşturuldu
                     </span>
                   ) : (
                     <Link
@@ -359,7 +378,7 @@ function StrategyView({
 
                 {/* Suggested Clusters */}
                 <div className="space-y-2">
-                  <div className="text-xs font-medium text-gray-500 uppercase">Önerilen Cluster Yazıları</div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Önerilen Cluster Yazıları</div>
                   {pillar.suggestedClusters.slice(0, 3).map((clusterTitle, idx) => {
                     const existingCluster = clusters.find((c) => c.title === clusterTitle);
                     return (
@@ -405,7 +424,7 @@ function StrategyView({
                     {clusters.length < pillar.suggestedClusters.length && (
                       <Link
                         href={`/admin/cms/blog/yeni?type=cluster&pillarId=${existingPillar.id}`}
-                        className="inline-flex items-center gap-1 mt-3 text-sm text-primary hover:text-primary/80 font-medium"
+                        className="inline-flex items-center gap-1 mt-3 text-sm text-gray-900 hover:text-gray-700 font-medium"
                       >
                         Cluster ekle
                         <ArrowRight className="w-4 h-4" />
@@ -478,7 +497,6 @@ function SEOScoreBadge({ score }: { score: number }) {
         <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700 font-bold text-sm">
           {score}
         </div>
-        <span className="text-xs text-emerald-600 font-medium">Harika</span>
       </div>
     );
   } else if (score >= 60) {
@@ -487,16 +505,14 @@ function SEOScoreBadge({ score }: { score: number }) {
         <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 font-bold text-sm">
           {score}
         </div>
-        <span className="text-xs text-amber-600 font-medium">İyi</span>
       </div>
     );
   } else {
     return (
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-bold text-sm">
+        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-bold text-sm">
           {score || "-"}
         </div>
-        <span className="text-xs text-gray-500">Geliştirilmeli</span>
       </div>
     );
   }

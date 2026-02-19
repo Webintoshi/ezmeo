@@ -165,7 +165,15 @@ async function updateProduct(
     return product;
 }
 
-async function generateWithAI(product: ProductSEOViewModel): Promise<Partial<EditFormState>> {
+interface AIResponse {
+    metaTitle: string;
+    metaDescription: string;
+    keywords: string[];
+    rationale?: string;
+    source: string;
+}
+
+async function generateWithAI(product: ProductSEOViewModel): Promise<AIResponse> {
     const response = await fetch("/api/seo/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -173,6 +181,14 @@ async function generateWithAI(product: ProductSEOViewModel): Promise<Partial<Edi
             type: "product",
             name: product.name,
             description: product.description || product.short_description,
+            category: product.category,
+            tags: product.tags,
+            features: [
+                product.vegan && "Vegan",
+                product.gluten_free && "Glutensiz",
+                product.sugar_free && "Şekersiz",
+                product.high_protein && "Yüksek Protein"
+            ].filter(Boolean)
         }),
     });
 
@@ -187,9 +203,35 @@ async function generateWithAI(product: ProductSEOViewModel): Promise<Partial<Edi
     }
 
     return {
-        metaTitle: data.metaTitle || "",
-        metaDescription: data.metaDescription || "",
+        metaTitle: data.metaTitle,
+        metaDescription: data.metaDescription,
+        keywords: data.keywords,
+        rationale: data.rationale,
+        source: data.source
     };
+}
+
+// Typewriter effect for AI text
+async function typeWriterEffect(
+    text: string, 
+    setter: (value: string) => void, 
+    speed: number = 30
+): Promise<void> {
+    return new Promise((resolve) => {
+        let current = "";
+        let index = 0;
+        
+        const interval = setInterval(() => {
+            if (index < text.length) {
+                current += text[index];
+                setter(current);
+                index++;
+            } else {
+                clearInterval(interval);
+                resolve();
+            }
+        }, speed);
+    });
 }
 
 // ============================================================================
@@ -284,15 +326,39 @@ export default function ProductSEOPage() {
         setMessage(null);
 
         try {
-            const generated = await generateWithAI(product);
-            
+            // Show thinking state
             setEditForm(prev => ({
                 ...prev,
-                metaTitle: generated.metaTitle || prev.metaTitle,
-                metaDescription: generated.metaDescription || prev.metaDescription,
+                metaTitle: "🔍 Ürün analiz ediliyor...",
+                metaDescription: "Hedef kitle ve anahtar kelimeler belirleniyor..."
             }));
+
+            const generated = await generateWithAI(product);
             
-            setMessage({ type: "success", text: "Toshi AI ile başarıyla oluşturuldu!" });
+            // Typewriter effect for meta title
+            await typeWriterEffect(
+                generated.metaTitle,
+                (text) => setEditForm(prev => ({ ...prev, metaTitle: text })),
+                20
+            );
+            
+            // Typewriter effect for meta description
+            await typeWriterEffect(
+                generated.metaDescription,
+                (text) => setEditForm(prev => ({ ...prev, metaDescription: text })),
+                10
+            );
+            
+            // Build success message with rationale
+            let successMsg = `✨ SEO uzmanı (${generated.source}) ile oluşturuldu!`;
+            if (generated.rationale) {
+                successMsg += ` ${generated.rationale.slice(0, 100)}${generated.rationale.length > 100 ? '...' : ''}`;
+            }
+            if (generated.keywords?.length) {
+                successMsg += ` Anahtar kelimeler: ${generated.keywords.slice(0, 3).join(", ")}`;
+            }
+            
+            setMessage({ type: "success", text: successMsg });
         } catch (error) {
             console.error("AI generation failed:", error);
             setMessage({ 
@@ -650,7 +716,7 @@ function MetaSection({ product, editForm, isGenerating, isSaving, onUpdateMetaTi
             <div className="flex items-center justify-between pt-2">
                 <button onClick={onGenerateAI} disabled={isGenerating} className="flex items-center gap-2 px-4 py-2 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg text-sm font-medium disabled:opacity-50">
                     {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    {isGenerating ? "Oluşturuluyor..." : "Toshi AI ile Oluştur"}
+                    {isGenerating ? "🤖 SEO Uzmanı Düşünüyor..." : "✨ AI SEO Uzmanı ile Oluştur"}
                 </button>
                 <div className="flex gap-2">
                     <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">İptal</button>

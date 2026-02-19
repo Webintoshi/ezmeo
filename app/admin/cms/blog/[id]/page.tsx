@@ -1,24 +1,27 @@
 "use client";
 
-import { use } from "react";
 import { BlogForm } from "@/components/admin/BlogForm";
-import { getBlogPosts } from "@/lib/blog";
-import { notFound } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
-export default function EditBlogPostPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
-    const posts = getBlogPosts();
-    const post = posts.find(p => p.id === id);
-
-    if (!post) {
-        notFound();
-    }
-
-    return (
-        <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
-            <div className="max-w-5xl mx-auto">
-                <BlogForm initialData={post} />
-            </div>
+export default function EditBlogPostPage({ params }: { params: { id: string } }) {
+  return (
+    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex items-center gap-4 mb-6">
+          <Link
+            href="/admin/cms/blog"
+            className="p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-gray-200"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Yazıyı Düzenle</h1>
+            <p className="text-sm text-gray-500 mt-1">ID: {params.id}</p>
+          </div>
         </div>
-    );
+        <BlogForm />
+      </div>
+    </div>
+  );
 }
