@@ -70,7 +70,7 @@ AS $$
         SELECT 1
         FROM profiles
         WHERE id = auth.uid()
-          AND role = ANY(required_roles)
+          AND role::text = ANY(required_roles)
     );
 $$;
 
