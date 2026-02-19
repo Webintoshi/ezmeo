@@ -422,85 +422,107 @@ export async function PUT(request: NextRequest) {
             }
         }
 
-        // 4. Görselleri normalize et - images_v2 formatını düzelt
-        let normalizedImagesV2 = updates.images_v2 || [];
-        if (normalizedImagesV2.length > 0) {
-            normalizedImagesV2 = normalizedImagesV2.map((img: any, idx: number) => ({
-                url: img.url,
-                alt: img.alt || "",
-                is_primary: img.isPrimary !== undefined ? img.isPrimary : (idx === 0),
-                sort_order: img.sortOrder !== undefined ? img.sortOrder : idx,
-            }));
+        // 4. Görselleri normalize et - SADECE explicitly gönderildiyse
+        let normalizedImagesV2 = updates.images_v2;
+        let finalImages = updates.images;
+        
+        // Eğer görseller gönderilmemişse, mevcut değerleri koru (undefined bırak)
+        if (updates.images_v2 !== undefined) {
+            if (normalizedImagesV2.length > 0) {
+                normalizedImagesV2 = normalizedImagesV2.map((img: any, idx: number) => ({
+                    url: img.url,
+                    alt: img.alt || "",
+                    is_primary: img.isPrimary !== undefined ? img.isPrimary : (idx === 0),
+                    sort_order: img.sortOrder !== undefined ? img.sortOrder : idx,
+                }));
+            }
         }
 
-        let finalImages = updates.images || normalizedImagesV2.map((img: any) => img.url);
-
-        if (deleted_images && Array.isArray(deleted_images) && existingProduct?.images) {
-            finalImages = finalImages.filter((img: string) => !deleted_images.includes(img));
+        if (updates.images !== undefined) {
+            finalImages = updates.images;
+            if (deleted_images && Array.isArray(deleted_images) && existingProduct?.images) {
+                finalImages = finalImages.filter((img: string) => !deleted_images.includes(img));
+            }
+        } else if (normalizedImagesV2 !== undefined) {
+            // images gönderilmemiş ama images_v2 gönderilmişse
+            finalImages = normalizedImagesV2.map((img: any) => img.url);
         }
 
-        // 5. Ana ürünü güncelle
+        // 5. Build update object - SADECE gönderilen alanları içerecek
+        const updateData: any = {};
+        
+        // Sadece undefined olmayan alanları ekle
+        if (updates.name !== undefined) updateData.name = updates.name;
+        if (updates.slug !== undefined) updateData.slug = updates.slug;
+        if (updates.description !== undefined) updateData.description = updates.description;
+        if (updates.short_description !== undefined) updateData.short_description = updates.short_description;
+        
+        // Görseller SADECE explicitly gönderildiyse güncelle
+        if (finalImages !== undefined) updateData.images = finalImages;
+        if (normalizedImagesV2 !== undefined) updateData.images_v2 = normalizedImagesV2;
+        
+        if (updates.category !== undefined) updateData.category = updates.category;
+        if (updates.subcategory !== undefined) updateData.subcategory = updates.subcategory;
+        if (updates.tags !== undefined) updateData.tags = updates.tags;
+        if (updates.is_active !== undefined) updateData.is_active = updates.is_active;
+        if (updates.is_featured !== undefined) updateData.is_featured = updates.is_featured;
+        if (updates.is_bestseller !== undefined) updateData.is_bestseller = updates.is_bestseller;
+        if (updates.is_new !== undefined) updateData.is_new = updates.is_new;
+        if (updates.vegan !== undefined) updateData.vegan = updates.vegan;
+        if (updates.gluten_free !== undefined) updateData.gluten_free = updates.gluten_free;
+        if (updates.sugar_free !== undefined) updateData.sugar_free = updates.sugar_free;
+        if (updates.high_protein !== undefined) updateData.high_protein = updates.high_protein;
+        if (updates.rating !== undefined) updateData.rating = updates.rating;
+        if (updates.review_count !== undefined) updateData.review_count = updates.review_count;
+        if (updates.status !== undefined) updateData.status = updates.status;
+        if (updates.is_draft !== undefined) updateData.is_draft = updates.is_draft;
+        if (updates.published_at !== undefined) updateData.published_at = updates.published_at;
+        if (updates.tax_rate !== undefined) updateData.tax_rate = updates.tax_rate;
+        if (updates.brand !== undefined) updateData.brand = updates.brand;
+        if (updates.country_of_origin !== undefined) updateData.country_of_origin = updates.country_of_origin;
+        if (updates.sku !== undefined) updateData.sku = updates.sku;
+        if (updates.gtin !== undefined) updateData.gtin = updates.gtin;
+        if (updates.dimensions !== undefined) updateData.dimensions = updates.dimensions;
+        if (updates.related_products !== undefined) updateData.related_products = updates.related_products;
+        if (updates.complementary_products !== undefined) updateData.complementary_products = updates.complementary_products;
+        
+        // SEO alanları
+        if (updates.seo_title !== undefined) updateData.seo_title = updates.seo_title;
+        if (updates.seo_description !== undefined) updateData.seo_description = updates.seo_description;
+        if (updates.seo_keywords !== undefined) updateData.seo_keywords = updates.seo_keywords;
+        if (updates.seo_focus_keyword !== undefined) updateData.seo_focus_keyword = updates.seo_focus_keyword;
+        if (updates.og_image !== undefined) updateData.og_image = updates.og_image;
+        if (updates.canonical_url !== undefined) updateData.canonical_url = updates.canonical_url;
+        if (updates.seo_robots !== undefined) updateData.seo_robots = updates.seo_robots;
+        if (updates.faq !== undefined) updateData.faq = updates.faq;
+        if (updates.geo_data !== undefined) updateData.geo_data = updates.geo_data;
+        
+        // Diğer alanlar
+        if (updates.track_stock !== undefined) updateData.track_stock = updates.track_stock;
+        if (updates.low_stock_threshold !== undefined) updateData.low_stock_threshold = updates.low_stock_threshold;
+        if (updates.nutrition_basis !== undefined) updateData.nutrition_basis = updates.nutrition_basis;
+        if (updates.serving_size !== undefined) updateData.serving_size = updates.serving_size;
+        if (updates.serving_per_container !== undefined) updateData.serving_per_container = updates.serving_per_container;
+        if (updates.allergens !== undefined) updateData.allergens = updates.allergens;
+        if (updates.vitamins !== undefined) updateData.vitamins = updates.vitamins;
+        if (updates.ingredients !== undefined) updateData.ingredients = updates.ingredients;
+        if (updates.storage_conditions !== undefined) updateData.storage_conditions = updates.storage_conditions;
+        if (updates.shelf_life_days !== undefined) updateData.shelf_life_days = updates.shelf_life_days;
+        if (updates.calories !== undefined) updateData.calories = updates.calories;
+        if (updates.protein !== undefined) updateData.protein = updates.protein;
+        if (updates.carbs !== undefined) updateData.carbs = updates.carbs;
+        if (updates.fat !== undefined) updateData.fat = updates.fat;
+        if (updates.fiber !== undefined) updateData.fiber = updates.fiber;
+        if (updates.sugar !== undefined) updateData.sugar = updates.sugar;
+        if (updates.saturated_fat !== undefined) updateData.saturated_fat = updates.saturated_fat;
+        if (updates.sodium !== undefined) updateData.sodium = updates.sodium;
+
+        console.log("Update data:", updateData);
+
+        // Ana ürünü güncelle
         const { data: product, error: productError } = await supabase
             .from("products")
-            .update({
-                name: updates.name,
-                slug: updates.slug,
-                description: updates.description,
-                short_description: updates.short_description,
-                images: finalImages,
-                images_v2: normalizedImagesV2,
-                category: updates.category,
-                subcategory: updates.subcategory,
-                tags: updates.tags,
-                is_active: updates.is_active !== false,
-                is_featured: updates.is_featured || false,
-                is_bestseller: updates.is_bestseller || false,
-                is_new: updates.is_new || false,
-                vegan: updates.vegan || false,
-                gluten_free: updates.gluten_free || false,
-                sugar_free: updates.sugar_free || false,
-                high_protein: updates.high_protein || false,
-                rating: updates.rating,
-                review_count: updates.review_count,
-                status: updates.status || 'published',
-                is_draft: updates.is_draft || false,
-                published_at: updates.published_at,
-                tax_rate: updates.tax_rate || 10,
-                brand: updates.brand || 'Ezmeo',
-                country_of_origin: updates.country_of_origin || 'Türkiye',
-                sku: updates.sku || null,
-                gtin: updates.gtin || null,
-                dimensions: updates.dimensions || {},
-                related_products: updates.related_products || [],
-                complementary_products: updates.complementary_products || [],
-                seo_title: updates.seo_title || null,
-                seo_description: updates.seo_description || null,
-                seo_keywords: updates.seo_keywords || [],
-                seo_focus_keyword: updates.seo_focus_keyword || null,
-                og_image: updates.og_image || null,
-                canonical_url: updates.canonical_url || null,
-                seo_robots: updates.seo_robots || 'index,follow',
-                faq: updates.faq || [],
-                geo_data: updates.geo_data || { keyTakeaways: [], entities: [] },
-                track_stock: updates.track_stock !== false,
-                low_stock_threshold: updates.low_stock_threshold || 10,
-                nutrition_basis: updates.nutrition_basis || 'per_100g',
-                serving_size: updates.serving_size || 100,
-                serving_per_container: updates.serving_per_container || 1,
-                allergens: updates.allergens || [],
-                vitamins: updates.vitamins || {},
-                ingredients: updates.ingredients || null,
-                storage_conditions: updates.storage_conditions || null,
-                shelf_life_days: updates.shelf_life_days || null,
-                calories: updates.calories || 0,
-                protein: updates.protein || 0,
-                carbs: updates.carbs || 0,
-                fat: updates.fat || 0,
-                fiber: updates.fiber || 0,
-                sugar: updates.sugar || 0,
-                saturated_fat: updates.saturated_fat || 0,
-                sodium: updates.sodium || 0,
-            })
+            .update(updateData)
             .eq("id", id)
             .select()
             .single();
