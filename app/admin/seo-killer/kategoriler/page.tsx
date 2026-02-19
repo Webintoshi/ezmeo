@@ -388,6 +388,7 @@ export default function CategorySEOPage() {
                                 </div>
 
                                 {activeSection === "meta" && (
+                                <>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -420,9 +421,8 @@ export default function CategorySEOPage() {
                                         />
                                     </div>
                                 </div>
-
-                                {/* Google Preview */}
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                <div className="space-y-4 mt-4">
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
                                     <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
                                         <Eye className="w-3 h-3" />
                                         Google Önizleme
@@ -481,6 +481,8 @@ export default function CategorySEOPage() {
                                         </button>
                                     </div>
                                 </div>
+                                </div>
+                                </>
                                 )}
 
                                 {activeSection === "faq" && (
