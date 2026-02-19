@@ -1,176 +1,128 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildSEOPrompt, buildCategorySEOPrompt, buildPageSEOPrompt, generateFallbackSEO } from "@/lib/seo-prompts";
 
-// Z.AI API Configuration
-const ZAI_API_KEY = process.env.ZAI_API_KEY || "";
-const ZAI_BASE_URL = process.env.ZAI_BASE_URL || "https://api.z.ai";
-const ZAI_MODEL = process.env.ZAI_MODEL || "glm-4.7";
-
-interface SEOGenerationRequest {
-    type: "product" | "category" | "page";
-    name: string;
-    description?: string;
-    shortDescription?: string;
-    category?: string;
-    subcategory?: string;
-    tags?: string[];
-    features?: string[];
-    schemaType?: string;
-}
+// Z.AI Configuration
+const API_KEY = process.env.ZAI_API_KEY || "";
+const BASE_URL = "https://api.z.ai";
 
 export async function POST(request: NextRequest) {
-    try {
-        const body: SEOGenerationRequest = await request.json();
-        const { 
-            type, 
-            name, 
-            description, 
-            shortDescription,
-            category, 
-            subcategory,
-            tags,
-            features,
-            schemaType 
-        } = body;
+  try {
+    const body = await request.json();
+    const { type, name, description, category } = body;
 
-        if (!name) {
-            return NextResponse.json(
-                { success: false, error: "Name is required" },
-                { status: 400 }
-            );
-        }
-
-        // Build dynamic prompt based on type
-        let prompt: string;
-        
-        if (type === "product") {
-            prompt = buildSEOPrompt({
-                name,
-                description,
-                shortDescription,
-                category,
-                subcategory,
-                tags,
-                features,
-                brand: "Ezmeo"
-            });
-        } else if (type === "category") {
-            prompt = buildCategorySEOPrompt(name, description);
-        } else {
-            // page type
-            prompt = buildPageSEOPrompt(name, schemaType || "WebPage", description);
-        }
-
-        // Use Z.AI GLM-4.7 for generation
-        let aiResult: { metaTitle: string; metaDescription: string; keywords: string[]; rationale?: string } | null = null;
-        let source = "";
-
-        if (ZAI_API_KEY) {
-            try {
-                const zaiResult = await callZAIGeneration(prompt);
-                if (zaiResult) {
-                    aiResult = zaiResult;
-                    source = "zai_glm-4.7";
-                }
-            } catch (error) {
-                console.warn("Z.AI GLM-4.7 failed:", error);
-            }
-        }
-
-        // Template fallback
-        if (!aiResult) {
-            const fallback = generateFallbackSEO(name, category);
-            aiResult = {
-                metaTitle: fallback.metaTitle,
-                metaDescription: fallback.metaDescription,
-                keywords: fallback.keywords,
-                rationale: "Template-based fallback (Z.AI unavailable)"
-            };
-            source = "template_fallback";
-        }
-
-        return NextResponse.json({
-            success: true,
-            metaTitle: aiResult.metaTitle,
-            metaDescription: aiResult.metaDescription,
-            keywords: aiResult.keywords,
-            rationale: aiResult.rationale,
-            source,
-            timestamp: new Date().toISOString()
-        });
-
-    } catch (error) {
-        console.error("SEO Generation Error:", error);
-        return NextResponse.json(
-            { success: false, error: "Failed to generate SEO content" },
-            { status: 500 }
-        );
+    if (!name) {
+      return NextResponse.json(
+        { success: false, error: "Ürün adı gerekli" },
+        { status: 400 }
+      );
     }
-}
 
-async function callZAIGeneration(prompt: string): Promise<{ metaTitle: string; metaDescription: string; keywords: string[]; rationale?: string } | null> {
-    // Z.AI GLM-4.7 endpoint
-    const endpoint = `${ZAI_BASE_URL}/api/paas/v4/chat/completions`;
-    
-    console.log("Calling Z.AI:", { endpoint, model: ZAI_MODEL });
-    
-    const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${ZAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-            model: ZAI_MODEL, // glm-4.7
-            messages: [
-                {
-                    role: "system",
-                    content: "You are an expert SEO specialist. Always respond with valid JSON only."
-                },
-                {
-                    role: "user",
-                    content: prompt
-                }
-            ],
-            temperature: 0.7,
-            max_tokens: 1500,
-            response_format: { type: "json_object" }
-        }),
+    // API Key kontrolü
+    if (!API_KEY) {
+      console.error("ZAI_API_KEY bulunamadı!");
+      return NextResponse.json(
+        { 
+          success: true, 
+          metaTitle: `${name} | Ezmeo`,
+          metaDescription: `${name} ürünü Ezmeo kalitesiyle. Hemen sipariş ver!`,
+          source: "fallback_no_key"
+        }
+      );
+    }
+
+    // Basit prompt
+    const prompt = `Sen bir SEO uzmanısın. Bu ürün için meta başlık ve açıklama yaz:
+
+Ürün: ${name}
+Kategori: ${category || "Genel"}
+Açıklama: ${description || ""}
+
+KURALLAR:
+- Meta başlık: 50-60 karakter, ürün adı + fayda + | Ezmeo
+- Meta açıklama: 120-160 karakter, ikna edici, CTA içermeli
+- Emoji kullanma
+- Sadece JSON formatında yanıt ver
+
+ÖRNEK FORMAT:
+{
+  "metaTitle": "Doğal Fıstık Ezmesi 500gr | Şekersiz | Ezmeo",
+  "metaDescription": "%100 doğal fıstık ezmesi, şeker ilavesiz. Sporcular için ideal protein kaynağı. Hemen sipariş ver!"
+}`;
+
+    console.log("Z.AI isteği gönderiliyor...", { model: "glm-4.7", name });
+
+    // Z.AI API çağrısı
+    const response = await fetch(`${BASE_URL}/api/paas/v4/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "glm-4.7",
+        messages: [
+          { role: "system", content: "You are an SEO expert. Respond only in valid JSON format." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      })
     });
 
+    console.log("Z.AI yanıt durumu:", response.status);
+
     if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Z.AI API Error:", response.status, errorText);
-        return null;
+      const errorText = await response.text();
+      console.error("Z.AI hatası:", response.status, errorText);
+      throw new Error(`API hatası: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("Z.AI Response:", JSON.stringify(data, null, 2));
-    
+    console.log("Z.AI yanıtı:", JSON.stringify(data, null, 2));
+
     const content = data.choices?.[0]?.message?.content;
-
+    
     if (!content) {
-        console.error("Empty Z.AI response");
-        return null;
+      throw new Error("Boş yanıt");
     }
 
-    // Parse JSON response
+    // JSON parse
+    let result;
     try {
-        const parsed = JSON.parse(content);
-        
-        if (parsed.metaTitle && parsed.metaDescription) {
-            return {
-                metaTitle: parsed.metaTitle,
-                metaDescription: parsed.metaDescription,
-                keywords: parsed.keywords || parsed.analysis?.mainKeywords || [],
-                rationale: parsed.rationale || parsed.analysis?.rationale
-            };
-        }
-        
-        console.error("Unexpected Z.AI response structure:", parsed);
-        return null;
-    } catch (parseError) {
-        console.error("Failed to parse Z.AI response:", parseError, "Content:", content);
-        return null;
+      // Markdown code block temizleme
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        result = JSON.parse(jsonMatch[0]);
+      } else {
+        result = JSON.parse(content);
+      }
+    } catch (e) {
+      console.error("JSON parse hatası:", e, "İçerik:", content);
+      throw new Error("Yanıt JSON formatında değil");
     }
+
+    // Validasyon
+    if (!result.metaTitle || !result.metaDescription) {
+      throw new Error("Eksik alanlar");
+    }
+
+    return NextResponse.json({
+      success: true,
+      metaTitle: result.metaTitle.slice(0, 60),
+      metaDescription: result.metaDescription.slice(0, 160),
+      source: "zai_glm-4.7"
+    });
+
+  } catch (error) {
+    console.error("SEO Generation Hatası:", error);
+    
+    // Fallback
+    const { name, category } = await request.json().catch(() => ({ name: "Ürün", category: "" }));
+    
+    return NextResponse.json({
+      success: true,
+      metaTitle: `${name} | ${category || "Ezmeo"}`,
+      metaDescription: `${name} ürünü en uygun fiyatla Ezmeo'da! Hızlı kargo, kapıda ödeme. Hemen sipariş ver!`,
+      source: "fallback_error"
+    });
+  }
 }

@@ -165,15 +165,7 @@ async function updateProduct(
     return product;
 }
 
-interface AIResponse {
-    metaTitle: string;
-    metaDescription: string;
-    keywords: string[];
-    rationale?: string;
-    source: string;
-}
-
-async function generateWithAI(product: ProductSEOViewModel): Promise<AIResponse> {
+async function generateWithAI(product: ProductSEOViewModel): Promise<{metaTitle: string, metaDescription: string, source: string}> {
     const response = await fetch("/api/seo/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -181,14 +173,7 @@ async function generateWithAI(product: ProductSEOViewModel): Promise<AIResponse>
             type: "product",
             name: product.name,
             description: product.description || product.short_description,
-            category: product.category,
-            tags: product.tags,
-            features: [
-                product.vegan && "Vegan",
-                product.gluten_free && "Glutensiz",
-                product.sugar_free && "Şekersiz",
-                product.high_protein && "Yüksek Protein"
-            ].filter(Boolean)
+            category: product.category
         }),
     });
 
@@ -205,33 +190,8 @@ async function generateWithAI(product: ProductSEOViewModel): Promise<AIResponse>
     return {
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
-        keywords: data.keywords,
-        rationale: data.rationale,
         source: data.source
     };
-}
-
-// Typewriter effect for AI text
-async function typeWriterEffect(
-    text: string, 
-    setter: (value: string) => void, 
-    speed: number = 30
-): Promise<void> {
-    return new Promise((resolve) => {
-        let current = "";
-        let index = 0;
-        
-        const interval = setInterval(() => {
-            if (index < text.length) {
-                current += text[index];
-                setter(current);
-                index++;
-            } else {
-                clearInterval(interval);
-                resolve();
-            }
-        }, speed);
-    });
 }
 
 // ============================================================================
@@ -335,30 +295,20 @@ export default function ProductSEOPage() {
 
             const generated = await generateWithAI(product);
             
-            // Typewriter effect for meta title
-            await typeWriterEffect(
-                generated.metaTitle,
-                (text) => setEditForm(prev => ({ ...prev, metaTitle: text })),
-                20
-            );
+            // Direkt atama (typewriter kaldırıldı - sorun çıkarıyordu)
+            setEditForm(prev => ({
+                ...prev,
+                metaTitle: generated.metaTitle,
+                metaDescription: generated.metaDescription
+            }));
             
-            // Typewriter effect for meta description
-            await typeWriterEffect(
-                generated.metaDescription,
-                (text) => setEditForm(prev => ({ ...prev, metaDescription: text })),
-                10
-            );
-            
-            // Build success message with rationale
-            let successMsg = `✨ SEO uzmanı (${generated.source}) ile oluşturuldu!`;
-            if (generated.rationale) {
-                successMsg += ` ${generated.rationale.slice(0, 100)}${generated.rationale.length > 100 ? '...' : ''}`;
-            }
-            if (generated.keywords?.length) {
-                successMsg += ` Anahtar kelimeler: ${generated.keywords.slice(0, 3).join(", ")}`;
-            }
-            
-            setMessage({ type: "success", text: successMsg });
+            const isAI = generated.source.includes("zai");
+            setMessage({ 
+                type: "success", 
+                text: isAI 
+                    ? `✨ Z.AI (${generated.source}) ile başarıyla oluşturuldu!` 
+                    : `⚠️ Şablon kullanıldı (${generated.source})`
+            });
         } catch (error) {
             console.error("AI generation failed:", error);
             setMessage({ 
