@@ -247,15 +247,19 @@ export default function ProductSEOPage() {
                     id: productId,
                     seo_title: editForm.metaTitle,
                     seo_description: editForm.metaDescription,
+                    faq: editForm.faq,
+                    geo_data: { keyTakeaways: editForm.keyTakeaways, entities: [] }
                 }),
             });
 
-            if (res.ok) {
-                setMessage({ type: "success", text: "Meta bilgileri güncellendi!" });
+            const data = await res.json();
+
+            if (data.success) {
+                setMessage({ type: "success", text: "SEO bilgileri başarıyla kaydedildi!" });
                 setEditingId(null);
                 loadProducts();
             } else {
-                throw new Error("Update failed");
+                throw new Error(data.error || "Update failed");
             }
         } catch (error) {
             setMessage({ type: "error", text: "Güncelleme başarısız oldu." });

@@ -480,6 +480,8 @@ export async function PUT(request: NextRequest) {
                 og_image: updates.og_image || null,
                 canonical_url: updates.canonical_url || null,
                 seo_robots: updates.seo_robots || 'index,follow',
+                faq: updates.faq || [],
+                geo_data: updates.geo_data || { keyTakeaways: [], entities: [] },
                 track_stock: updates.track_stock !== false,
                 low_stock_threshold: updates.low_stock_threshold || 10,
                 nutrition_basis: updates.nutrition_basis || 'per_100g',

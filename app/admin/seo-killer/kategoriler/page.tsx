@@ -173,8 +173,10 @@ const CATEGORIES: CategorySEO[] = [
 ];
 
 export default function CategorySEOPage() {
-    const [categories, setCategories] = useState(CATEGORIES);
+    const [categories, setCategories] = useState<CategorySEO[]>([]);
+    const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [saving, setSaving] = useState<string | null>(null);
     const [editForm, setEditForm] = useState({ 
         metaTitle: "", 
         metaDescription: "",
@@ -184,6 +186,41 @@ export default function CategorySEOPage() {
     const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
     const [generating, setGenerating] = useState(false);
     const [activeSection, setActiveSection] = useState<"meta" | "faq" | "geo">("meta");
+
+    useEffect(() => {
+        loadCategories();
+    }, []);
+
+    const loadCategories = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch("/api/categories");
+            const data = await res.json();
+            
+            if (data.success) {
+                // Transform API data to match our interface
+                const transformedCategories: CategorySEO[] = data.categories.map((cat: any) => ({
+                    id: cat.id,
+                    name: cat.name,
+                    slug: cat.slug,
+                    description: cat.description || "",
+                    metaTitle: cat.seo_title || `\${cat.name} Çeşitleri | Doğal & Şekersiz | Ezmeo`,
+                    metaDescription: cat.seo_description || `\${cat.name} kategorisinde en kaliteli doğal ürünler. %100 doğal, şekersiz, katkısız.`,
+                    faq: cat.faq || [],
+                    geo: cat.geo_data || { keyTakeaways: [], entities: [] },
+                    wordCount: (cat.description || "").split(/\s+/).length,
+                    readingTime: 1,
+                    clusterCount: 0
+                }));
+                setCategories(transformedCategories);
+            }
+        } catch (error) {
+            console.error("Error loading categories:", error);
+            setMessage({ type: "error", text: "Kategoriler yüklenirken hata oluştu." });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleEdit = (cat: CategorySEO) => {
         setEditingId(cat.id);
@@ -264,14 +301,48 @@ export default function CategorySEOPage() {
         }
     };
 
-    const handleSave = (catId: string) => {
-        setCategories(prev => prev.map(c =>
-            c.id === catId
-                ? { ...c, metaTitle: editForm.metaTitle, metaDescription: editForm.metaDescription }
-                : c
-        ));
-        setMessage({ type: "success", text: "Kategori meta bilgileri güncellendi!" });
-        setEditingId(null);
+    const handleSave = async (catId: string) => {
+        setSaving(catId);
+        setMessage(null);
+        
+        try {
+            const res = await fetch("/api/categories", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: catId,
+                    seo_title: editForm.metaTitle,
+                    seo_description: editForm.metaDescription,
+                    faq: editForm.faq,
+                    geo_data: { keyTakeaways: editForm.keyTakeaways, entities: [] }
+                }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                setCategories(prev => prev.map(c =>
+                    c.id === catId
+                        ? { 
+                            ...c, 
+                            metaTitle: editForm.metaTitle, 
+                            metaDescription: editForm.metaDescription,
+                            faq: editForm.faq,
+                            geo: { keyTakeaways: editForm.keyTakeaways, entities: [] }
+                        }
+                        : c
+                ));
+                setMessage({ type: "success", text: "Kategori SEO bilgileri başarıyla kaydedildi!" });
+                setEditingId(null);
+            } else {
+                throw new Error(data.error || "Kayıt başarısız");
+            }
+        } catch (error) {
+            console.error("Save error:", error);
+            setMessage({ type: "error", text: "Kayıt başarısız oldu. Lütfen tekrar deneyin." });
+        } finally {
+            setSaving(null);
+        }
     };
 
     const generateSchemaPreview = (cat: CategorySEO) => {
@@ -474,10 +545,15 @@ export default function CategorySEOPage() {
                                         </button>
                                         <button
                                             onClick={() => handleSave(cat.id)}
-                                            className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+                                            disabled={saving === cat.id}
+                                            className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50"
                                         >
-                                            <Save className="w-4 h-4" />
-                                            Kaydet
+                                            {saving === cat.id ? (
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            ) : (
+                                                <Save className="w-4 h-4" />
+                                            )}
+                                            {saving === cat.id ? "Kaydediliyor..." : "Kaydet"}
                                         </button>
                                     </div>
                                 </div>
