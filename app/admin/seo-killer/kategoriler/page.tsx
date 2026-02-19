@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     FolderOpen,
     Save,
@@ -282,10 +282,11 @@ export default function CategorySEOPage() {
             const data = await res.json();
 
             if (data.success) {
-                setEditForm({
+                setEditForm(prev => ({
+                    ...prev,
                     metaTitle: data.metaTitle || "",
                     metaDescription: data.metaDescription || "",
-                });
+                }));
                 setMessage({
                     type: "success",
                     text: data.source === "ai" ? "Toshi AI ile oluşturuldu!" : "Şablon ile oluşturuldu."
