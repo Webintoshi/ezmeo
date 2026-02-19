@@ -6,7 +6,6 @@ import {
     Package,
     FolderOpen,
     FileText,
-    CheckCircle2,
     AlertCircle,
     ChevronRight,
     Star,
@@ -113,6 +112,7 @@ export default function SEODashboard() {
     const [stats, setStats] = useState({
         products: { total: 0, completed: 0, avgScore: 0 },
         categories: { total: 0, completed: 0, avgScore: 0 },
+        pages: { total: 0, completed: 0, avgScore: 0 },
         overallScore: 0
     });
     const [loading, setLoading] = useState(true);
@@ -157,9 +157,28 @@ export default function SEODashboard() {
                 if (score >= 60) categoryCompleted++;
             });
 
+            // Statik sayfalar (bu veriler API'den gelmiyor, sabit)
+            const staticPages = [
+                { name: "Ana Sayfa", hasTitle: true, hasDesc: true },
+                { name: "Hakkımızda", hasTitle: true, hasDesc: true },
+                { name: "İletişim", hasTitle: true, hasDesc: true },
+                { name: "SSS", hasTitle: true, hasDesc: true },
+                { name: "Gizlilik", hasTitle: false, hasDesc: false },
+                { name: "Şartlar", hasTitle: false, hasDesc: false },
+            ];
+            
+            let pageCompleted = 0;
+            let pageTotalScore = 0;
+            staticPages.forEach((p: any) => {
+                const score = calculateScore(p.hasTitle, p.hasDesc, true);
+                pageTotalScore += score;
+                if (score >= 60) pageCompleted++;
+            });
+
             const productAvg = products.length > 0 ? Math.round(productTotalScore / products.length) : 0;
             const categoryAvg = categories.length > 0 ? Math.round(categoryTotalScore / categories.length) : 0;
-            const overall = Math.round((productAvg + categoryAvg) / 2);
+            const pageAvg = Math.round(pageTotalScore / staticPages.length);
+            const overall = Math.round((productAvg + categoryAvg + pageAvg) / 3);
 
             setStats({
                 products: {
@@ -171,6 +190,11 @@ export default function SEODashboard() {
                     total: categories.length,
                     completed: categoryCompleted,
                     avgScore: categoryAvg
+                },
+                pages: {
+                    total: staticPages.length,
+                    completed: pageCompleted,
+                    avgScore: pageAvg
                 },
                 overallScore: overall
             });
@@ -243,7 +267,7 @@ export default function SEODashboard() {
                     Neyi Düzenlemek İstiyorsun?
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                     <BigCard
                         href="/admin/seo-killer/urunler"
                         icon={Package}
@@ -262,6 +286,16 @@ export default function SEODashboard() {
                         subtitle="Kategori sayfalarının SEO ayarları"
                         count={stats.categories.total}
                         completed={stats.categories.completed}
+                    />
+                    
+                    <BigCard
+                        href="/admin/seo-killer/sayfalar"
+                        icon={FileText}
+                        color="bg-green-500"
+                        title="Sayfalarım"
+                        subtitle="Ana sayfa, hakkımızda, iletişim vb."
+                        count={stats.pages.total}
+                        completed={stats.pages.completed}
                     />
                 </div>
 
@@ -301,6 +335,21 @@ export default function SEODashboard() {
                                         </div>
                                     </div>
                                     <ChevronRight className="w-5 h-5 text-orange-400" />
+                                </Link>
+                            )}
+                            
+                            {stats.pages.total - stats.pages.completed > 0 && (
+                                <Link href="/admin/seo-killer/sayfalar" className="flex items-center justify-between p-4 bg-green-50 rounded-xl hover:bg-green-100 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                            <FileText className="w-5 h-5 text-green-600" />
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-gray-900">{stats.pages.total - stats.pages.completed} sayfaya SEO ayarı gerekli</p>
+                                            <p className="text-sm text-gray-500">Başlık ve açıklama eklenmemiş</p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="w-5 h-5 text-green-400" />
                                 </Link>
                             )}
                         </div>
