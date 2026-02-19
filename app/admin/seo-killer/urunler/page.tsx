@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Package,
     Save,
@@ -17,168 +17,199 @@ import {
     Type,
     Bot,
     Lightbulb,
-    Tag
+    Tag,
+    Loader2,
+    ChevronLeft,
+    ChevronRight
 } from "lucide-react";
 import Link from "next/link";
+import type { 
+    ProductWithSEO, 
+    ProductSEOViewModel, 
+    ProductFAQ,
+    ProductApiResponse 
+} from "@/types/product-seo";
+import { toProductSEOViewModel } from "@/types/product-seo";
 
-interface ProductFAQ {
-    question: string;
-    answer: string;
-}
+// ============================================================================
+// COMPONENT INTERFACES
+// ============================================================================
 
-interface ProductGEO {
-    keyTakeaways: string[];  // Önemli Çıkarımlar (LLM'ler için)
-    entities: string[];      // Varlıklar (Product, Organization, vb.)
-}
-
-interface ProductSEO {
-    id: string;
-    name: string;
-    slug: string;
-    description: string;
-    images: string[];
-    price: number;
+interface EditFormState {
     metaTitle: string;
     metaDescription: string;
-    schemaType: string;
-    score: number;
-    issues: string[];
-    // SEO Hub özellikleri
     faq: ProductFAQ[];
-    geo: ProductGEO;
-    readingTime: number;  // dakika
-    wordCount: number;
+    keyTakeaways: string[];
 }
 
-export default function ProductSEOPage() {
-    const [products, setProducts] = useState<ProductSEO[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState<string | null>(null);
-    const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [editForm, setEditForm] = useState({ 
-        metaTitle: "", 
-        metaDescription: "",
-        faq: [] as ProductFAQ[],
-        keyTakeaways: [] as string[]
+interface MessageState {
+    type: "success" | "error";
+    text: string;
+}
+
+type SectionType = "meta" | "faq" | "geo";
+
+// ============================================================================
+// DEFAULT VALUES
+// ============================================================================
+
+const DEFAULT_GEO_ENTITIES = ["Product", "Offer", "Organization"];
+
+const EMPTY_FORM_STATE: EditFormState = {
+    metaTitle: "",
+    metaDescription: "",
+    faq: [],
+    keyTakeaways: []
+};
+
+// ============================================================================
+// API CLIENT
+// ============================================================================
+
+async function fetchProducts(page: number = 1, search: string = ""): Promise<{ products: ProductWithSEO[]; pagination: ProductApiResponse['pagination'] }> {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", "10");
+    if (search) params.set("search", search);
+    
+    const response = await fetch(`/api/products?${params.toString()}`, {
+        cache: "no-store"
     });
-    const [generating, setGenerating] = useState(false);
-    const [activeSection, setActiveSection] = useState<"meta" | "faq" | "geo">("meta");
 
-    useEffect(() => {
-        loadProducts();
-    }, []);
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
 
-    const loadProducts = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/products");
-            const data = await res.json();
-            const prods = data.products || [];
+    const data: ProductApiResponse = await response.json();
+    
+    if (!data.success) {
+        throw new Error(data.error || "Failed to fetch products");
+    }
 
-            const seoProducts: ProductSEO[] = prods.map((p: Record<string, unknown>) => {
-                const issues: string[] = [];
-                let score = 100;
+    return { 
+        products: data.products || [], 
+        pagination: data.pagination 
+    };
+}
 
-                // Önce seo_title/seo_description kontrol et (yeni alanlar), sonra meta_title/meta_description (eski alanlar)
-                const metaTitle = (p.seo_title || p.meta_title || "") as string;
-                const metaDescription = (p.seo_description || p.meta_description || "") as string;
-
-                if (!metaTitle) {
-                    issues.push("Meta başlık eksik");
-                    score -= 20;
-                } else if (metaTitle.length < 30 || metaTitle.length > 60) {
-                    issues.push("Meta başlık uzunluğu ideal değil");
-                    score -= 10;
-                }
-
-                if (!metaDescription) {
-                    issues.push("Meta açıklama eksik");
-                    score -= 20;
-                } else if (metaDescription.length < 120 || metaDescription.length > 160) {
-                    issues.push("Meta açıklama uzunluğu ideal değil");
-                    score -= 10;
-                }
-
-                if (!p.images || (p.images as string[]).length === 0) {
-                    issues.push("Ürün görseli yok");
-                    score -= 15;
-                }
-
-                const variants = (p.variants || []) as Array<{ price?: number }>;
-                const price = variants.length > 0 ? Number(variants[0]?.price || 0) : 0;
-
-                const description = (p.description || "") as string;
-                const wordCount = description.split(/\s+/).filter(w => w.length > 0).length;
-                
-                return {
-                    id: p.id as string,
-                    name: p.name as string || "",
-                    slug: p.slug as string || "",
-                    description,
-                    images: (p.images || []) as string[],
-                    price,
-                    metaTitle,
-                    metaDescription,
-                    schemaType: "Product",
-                    score: Math.max(0, score),
-                    issues,
-                    faq: (p.faq || []) as ProductFAQ[],
-                    geo: (p.geo || { keyTakeaways: [], entities: [] }) as ProductGEO,
-                    readingTime: Math.ceil(wordCount / 200) || 1,
-                    wordCount,
-                };
-            });
-
-            setProducts(seoProducts);
-        } catch (error) {
-            console.error("Failed to load products:", error);
-        } finally {
-            setLoading(false);
+async function updateProduct(
+    id: string, 
+    slug: string,
+    formState: EditFormState
+): Promise<ProductWithSEO> {
+    const payload = {
+        id,
+        seo_title: formState.metaTitle,
+        seo_description: formState.metaDescription,
+        faq: formState.faq,
+        geo_data: { 
+            keyTakeaways: formState.keyTakeaways, 
+            entities: DEFAULT_GEO_ENTITIES 
         }
     };
 
-    const generateWithToshiAI = async (product: ProductSEO) => {
-        setGenerating(true);
+    const response = await fetch("/api/products", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data: ProductApiResponse = await response.json();
+    
+    if (!data.success) {
+        throw new Error(data.error || "Failed to update product");
+    }
+
+    // Trigger revalidation
+    try {
+        await fetch("/api/revalidate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path: `/urunler/${slug}` })
+        });
+    } catch {
+        console.warn("Revalidation failed");
+    }
+
+    return data.product!;
+}
+
+async function generateWithAI(product: ProductSEOViewModel): Promise<Partial<EditFormState>> {
+    const response = await fetch("/api/seo/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            type: "product",
+            name: product.name,
+            description: product.description || product.short_description,
+        }),
+    });
+
+    if (!response.ok) {
+        throw new Error(`AI generation failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.success) {
+        throw new Error(data.error || "AI generation failed");
+    }
+
+    return {
+        metaTitle: data.metaTitle || "",
+        metaDescription: data.metaDescription || "",
+    };
+}
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+export default function ProductSEOPage() {
+    // State
+    const [products, setProducts] = useState<ProductSEOViewModel[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
+    const [editForm, setEditForm] = useState<EditFormState>(EMPTY_FORM_STATE);
+    const [message, setMessage] = useState<MessageState | null>(null);
+    const [generating, setGenerating] = useState(false);
+    const [activeSection, setActiveSection] = useState<SectionType>("meta");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState<ProductApiResponse['pagination']>();
+
+    // Load products
+    const loadProducts = useCallback(async () => {
+        setLoading(true);
         setMessage(null);
 
         try {
-            const res = await fetch("/api/seo/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    type: "product",
-                    name: product.name,
-                    description: product.description,
-                    category: "",
-                    keywords: [],
-                }),
-            });
-
-            const data = await res.json();
-
-            if (data.success) {
-                setEditForm({
-                    metaTitle: data.metaTitle || "",
-                    metaDescription: data.metaDescription || "",
-                });
-                setMessage({
-                    type: "success",
-                    text: data.source === "ai" ? "Toshi AI ile oluşturuldu!" : "Şablon ile oluşturuldu."
-                });
-            } else {
-                throw new Error(data.error);
-            }
+            const { products: rawProducts, pagination: pag } = await fetchProducts(page, searchQuery);
+            const viewModels = rawProducts.map(p => toProductSEOViewModel(p));
+            setProducts(viewModels);
+            setPagination(pag);
         } catch (error) {
-            console.error("AI generation failed:", error);
-            setMessage({ type: "error", text: "AI oluşturma başarısız oldu." });
+            console.error("Error loading products:", error);
+            setMessage({ 
+                type: "error", 
+                text: error instanceof Error ? error.message : "Ürünler yüklenirken hata oluştu." 
+            });
         } finally {
-            setGenerating(false);
+            setLoading(false);
         }
-    };
+    }, [page, searchQuery]);
 
-    const handleEdit = (product: ProductSEO) => {
+    useEffect(() => {
+        loadProducts();
+    }, [loadProducts]);
+
+    // Handlers
+    const handleEdit = useCallback((product: ProductSEOViewModel) => {
         setEditingId(product.id);
         setEditForm({
             metaTitle: product.metaTitle,
@@ -186,224 +217,222 @@ export default function ProductSEOPage() {
             faq: product.faq || [],
             keyTakeaways: product.geo?.keyTakeaways || []
         });
-    };
+        setActiveSection("meta");
+        setMessage(null);
+    }, []);
 
-    // FAQ işlemleri
-    const addFAQ = () => {
+    const handleCancel = useCallback(() => {
+        setEditingId(null);
+        setEditForm(EMPTY_FORM_STATE);
+        setMessage(null);
+    }, []);
+
+    const handleSave = useCallback(async (productId: string, productSlug: string) => {
+        setSaving(true);
+        setMessage(null);
+
+        try {
+            const updatedProduct = await updateProduct(productId, productSlug, editForm);
+            
+            setProducts(prev => prev.map(p =>
+                p.id === productId ? toProductSEOViewModel(updatedProduct) : p
+            ));
+            
+            setMessage({ type: "success", text: "Ürün SEO bilgileri kaydedildi! Sayfa cache'i temizlendi." });
+            setEditingId(null);
+            setEditForm(EMPTY_FORM_STATE);
+        } catch (error) {
+            console.error("Save error:", error);
+            setMessage({ 
+                type: "error", 
+                text: error instanceof Error ? error.message : "Kayıt başarısız oldu." 
+            });
+        } finally {
+            setSaving(false);
+        }
+    }, [editForm]);
+
+    const handleGenerateAI = useCallback(async (product: ProductSEOViewModel) => {
+        setGenerating(true);
+        setMessage(null);
+
+        try {
+            const generated = await generateWithAI(product);
+            
+            setEditForm(prev => ({
+                ...prev,
+                metaTitle: generated.metaTitle || prev.metaTitle,
+                metaDescription: generated.metaDescription || prev.metaDescription,
+            }));
+            
+            setMessage({ type: "success", text: "Toshi AI ile başarıyla oluşturuldu!" });
+        } catch (error) {
+            console.error("AI generation failed:", error);
+            setMessage({ 
+                type: "error", 
+                text: error instanceof Error ? error.message : "AI oluşturma başarısız oldu." 
+            });
+        } finally {
+            setGenerating(false);
+        }
+    }, []);
+
+    // Form handlers
+    const updateMetaTitle = useCallback((value: string) => {
+        setEditForm(prev => ({ ...prev, metaTitle: value }));
+    }, []);
+
+    const updateMetaDescription = useCallback((value: string) => {
+        setEditForm(prev => ({ ...prev, metaDescription: value }));
+    }, []);
+
+    const addFAQ = useCallback(() => {
         setEditForm(prev => ({
             ...prev,
             faq: [...prev.faq, { question: "", answer: "" }]
         }));
-    };
+    }, []);
 
-    const updateFAQ = (index: number, field: "question" | "answer", value: string) => {
+    const updateFAQ = useCallback((index: number, field: keyof ProductFAQ, value: string) => {
         setEditForm(prev => ({
             ...prev,
             faq: prev.faq.map((f, i) => i === index ? { ...f, [field]: value } : f)
         }));
-    };
+    }, []);
 
-    const removeFAQ = (index: number) => {
+    const removeFAQ = useCallback((index: number) => {
         setEditForm(prev => ({
             ...prev,
             faq: prev.faq.filter((_, i) => i !== index)
         }));
-    };
+    }, []);
 
-    // Key Takeaways işlemleri
-    const addKeyTakeaway = () => {
+    const addKeyTakeaway = useCallback(() => {
         setEditForm(prev => ({
             ...prev,
             keyTakeaways: [...prev.keyTakeaways, ""]
         }));
-    };
+    }, []);
 
-    const updateKeyTakeaway = (index: number, value: string) => {
+    const updateKeyTakeaway = useCallback((index: number, value: string) => {
         setEditForm(prev => ({
             ...prev,
             keyTakeaways: prev.keyTakeaways.map((k, i) => i === index ? value : k)
         }));
-    };
+    }, []);
 
-    const removeKeyTakeaway = (index: number) => {
+    const removeKeyTakeaway = useCallback((index: number) => {
         setEditForm(prev => ({
             ...prev,
             keyTakeaways: prev.keyTakeaways.filter((_, i) => i !== index)
         }));
-    };
+    }, []);
 
-    const handleAIGenerate = (product: ProductSEO) => {
-        generateWithToshiAI(product);
-    };
-
-    const handleSave = async (productId: string) => {
-        setSaving(productId);
-        setMessage(null);
-
-        try {
-            const res = await fetch("/api/products", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    id: productId,
-                    seo_title: editForm.metaTitle,
-                    seo_description: editForm.metaDescription,
-                    faq: editForm.faq,
-                    geo_data: { keyTakeaways: editForm.keyTakeaways, entities: [] }
-                }),
-            });
-
-            const data = await res.json();
-
-            if (data.success) {
-                setMessage({ type: "success", text: "SEO bilgileri başarıyla kaydedildi!" });
-                setEditingId(null);
-                loadProducts();
-            } else {
-                throw new Error(data.error || "Update failed");
-            }
-        } catch (error) {
-            setMessage({ type: "error", text: "Güncelleme başarısız oldu." });
-        } finally {
-            setSaving(null);
+    // Schema generator
+    const generateSchemaPreview = (product: ProductSEOViewModel) => ({
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": product.name,
+        "description": product.metaDescription,
+        "image": product.images?.[0] || "",
+        "offers": {
+            "@type": "Offer",
+            "price": product.variants?.[0]?.price || 0,
+            "priceCurrency": "TRY",
+            "availability": "https://schema.org/InStock"
         }
-    };
-
-    const generateSchemaPreview = (product: ProductSEO) => {
-        const baseSchema: Record<string, unknown> = {
-            "@context": "https://schema.org",
-            "@type": "Product",
-            "name": product.name,
-            "description": product.metaDescription || product.description.slice(0, 160),
-            "image": product.images[0] || "",
-            "brand": {
-                "@type": "Brand",
-                "name": "Ezmeo"
-            },
-            "offers": {
-                "@type": "Offer",
-                "price": product.price,
-                "priceCurrency": "TRY",
-                "availability": "https://schema.org/InStock"
-            }
-        };
-
-        // FAQPage schema ekle (varsa)
-        if (product.faq && product.faq.length > 0) {
-            baseSchema.mainEntity = product.faq.map(faq => ({
-                "@type": "Question",
-                "name": faq.question,
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": faq.answer
-                }
-            }));
-        }
-
-        return baseSchema;
-    };
-
-    // GEO/LLM için içerik önerisi
-    const generateGEOContent = (product: ProductSEO) => {
-        return {
-            keyTakeaways: product.geo?.keyTakeaways || [
-                `${product.name} %100 doğal içeriklerle hazırlanmıştır.`,
-                `Katkı maddesi içermez, şeker ilavesiz seçenek sunar.`,
-                `Sporcular ve sağlıklı beslenmeyi tercih edenler için idealdir.`
-            ],
-            entities: ["Product", "Food", "HealthFood", "Ezmeo"]
-        };
-    };
-
-    const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.slug.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const getScoreColor = (score: number) => {
-        if (score >= 80) return "text-green-600 bg-green-50";
-        if (score >= 60) return "text-yellow-600 bg-yellow-50";
-        return "text-red-600 bg-red-50";
-    };
-
-    if (loading) {
-        return (
-            <div className="space-y-6">
-                <div className="animate-pulse">
-                    <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                </div>
-            </div>
-        );
-    }
+    });
 
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <Link href="/admin/seo-killer" className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-2">
-                        <ArrowLeft className="w-4 h-4" />
-                        SEO Merkezi
-                    </Link>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <Package className="w-7 h-7 text-blue-600" />
-                        Ürün SEO Yönetimi
-                    </h1>
-                    <p className="text-gray-500 mt-1">
-                        Her ürün için Schema.org Product yapısı ile meta bilgilerini düzenleyin.
-                    </p>
-                </div>
-                <button
-                    onClick={loadProducts}
-                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                    <RefreshCw className="w-5 h-5" />
-                </button>
+            <div>
+                <Link href="/admin/seo-killer" className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-2">
+                    <ArrowLeft className="w-4 h-4" />
+                    SEO Merkezi
+                </Link>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <Package className="w-7 h-7 text-purple-600" />
+                    Ürün SEO Yönetimi
+                </h1>
+                <p className="text-gray-500 mt-1">
+                    Her ürün için Product şeması ile meta bilgilerini düzenleyin.
+                </p>
             </div>
 
-            {message && (
-                <div className={`p-4 rounded-xl flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
-                    {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-                    {message.text}
-                </div>
-            )}
-
             {/* Search */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <div className="relative">
+            <div className="flex gap-3">
+                <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && loadProducts()}
                         placeholder="Ürün ara..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
                 </div>
+                <button
+                    onClick={() => { setPage(1); loadProducts(); }}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                    <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
+            {/* Messages */}
+            {message && (
+                <div className={`p-4 rounded-xl flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+                    {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertTriangle className="w-5 h-5 flex-shrink-0" />}
+                    <span>{message.text}</span>
+                </div>
+            )}
+
+            {/* Loading */}
+            {loading && (
+                <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <span className="ml-3 text-gray-600">Ürünler yükleniyor...</span>
+                </div>
+            )}
+
             {/* Products List */}
-            <div className="space-y-4">
-                {filteredProducts.map((product) => (
-                    <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                {product.images[0] && (
-                                    <img
-                                        src={product.images[0]}
+            {!loading && products.map((product) => (
+                <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    {/* Card Header */}
+                    <div className="p-4 border-b border-gray-100">
+                        <div className="flex items-start justify-between">
+                            <div className="flex gap-4">
+                                {product.images?.[0] ? (
+                                    <img 
+                                        src={product.images[0]} 
                                         alt={product.name}
-                                        className="w-12 h-12 rounded-lg object-cover"
+                                        className="w-16 h-16 rounded-lg object-cover bg-gray-100"
                                     />
+                                ) : (
+                                    <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center">
+                                        <Package className="w-6 h-6 text-gray-400" />
+                                    </div>
                                 )}
                                 <div>
                                     <h3 className="font-semibold text-gray-900">{product.name}</h3>
                                     <p className="text-sm text-gray-500">/urunler/{product.slug}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className={`text-xs px-2 py-0.5 rounded-full ${product.score >= 80 ? 'bg-green-100 text-green-700' : product.score >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                                            SEO: {product.score}/100
+                                        </span>
+                                        {product.issues.length > 0 && (
+                                            <span className="text-xs text-orange-600">
+                                                {product.issues.length} sorun
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(product.score)}`}>
-                                    {product.score}/100
+                            <div className="flex items-center gap-2">
+                                <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700">
+                                    Product
                                 </span>
                                 {editingId !== product.id && (
                                     <button
@@ -415,287 +444,266 @@ export default function ProductSEOPage() {
                                 )}
                             </div>
                         </div>
+                    </div>
 
-                        {/* Issues */}
-                        {product.issues.length > 0 && editingId !== product.id && (
-                            <div className="px-4 py-2 bg-orange-50 border-b border-orange-100">
-                                <div className="flex items-center gap-2 text-sm text-orange-700">
-                                    <AlertTriangle className="w-4 h-4" />
-                                    {product.issues.join(" • ")}
-                                </div>
+                    {/* Edit Form */}
+                    {editingId === product.id && (
+                        <div className="p-4 space-y-4 bg-gray-50">
+                            {/* Tabs */}
+                            <div className="flex gap-2 border-b border-gray-200">
+                                <TabButton active={activeSection === "meta"} onClick={() => setActiveSection("meta")} label="Meta Bilgileri" />
+                                <TabButton active={activeSection === "faq"} onClick={() => setActiveSection("faq")} label="FAQ Schema" badge={editForm.faq.length} icon={<HelpCircle className="w-4 h-4" />} />
+                                <TabButton active={activeSection === "geo"} onClick={() => setActiveSection("geo")} label="GEO/LLM" icon={<Bot className="w-4 h-4" />} />
                             </div>
-                        )}
 
-                        {/* Edit Form */}
-                        {editingId === product.id && (
-                            <div className="p-4 space-y-4 bg-gray-50">
-                                {/* Section Tabs */}
-                                <div className="flex gap-2 border-b border-gray-200">
-                                    <button
-                                        onClick={() => setActiveSection("meta")}
-                                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                                            activeSection === "meta"
-                                                ? "border-primary text-primary"
-                                                : "border-transparent text-gray-600 hover:text-gray-900"
-                                        }`}
-                                    >
-                                        <span className="flex items-center gap-1">
-                                            <Tag className="w-4 h-4" />
-                                            Meta Bilgileri
-                                        </span>
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveSection("faq")}
-                                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                                            activeSection === "faq"
-                                                ? "border-primary text-primary"
-                                                : "border-transparent text-gray-600 hover:text-gray-900"
-                                        }`}
-                                    >
-                                        <span className="flex items-center gap-1">
-                                            <HelpCircle className="w-4 h-4" />
-                                            FAQ Schema
-                                            {editForm.faq.length > 0 && (
-                                                <span className="ml-1 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
-                                                    {editForm.faq.length}
-                                                </span>
-                                            )}
-                                        </span>
-                                    </button>
-                                    <button
-                                        onClick={() => setActiveSection("geo")}
-                                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                                            activeSection === "geo"
-                                                ? "border-primary text-primary"
-                                                : "border-transparent text-gray-600 hover:text-gray-900"
-                                        }`}
-                                    >
-                                        <span className="flex items-center gap-1">
-                                            <Bot className="w-4 h-4" />
-                                            GEO/LLM
-                                        </span>
-                                    </button>
-                                </div>
+                            {/* Meta Section */}
+                            {activeSection === "meta" && (
+                                <MetaSection
+                                    product={product}
+                                    editForm={editForm}
+                                    isGenerating={generating}
+                                    isSaving={saving}
+                                    onUpdateMetaTitle={updateMetaTitle}
+                                    onUpdateMetaDescription={updateMetaDescription}
+                                    onGenerateAI={() => handleGenerateAI(product)}
+                                    onSave={() => handleSave(product.id, product.slug)}
+                                    onCancel={handleCancel}
+                                />
+                            )}
 
-                                {activeSection === "meta" && (
-                                <>
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Meta Başlık
-                                                <span className={`ml-2 text-xs ${editForm.metaTitle.length >= 30 && editForm.metaTitle.length <= 60 ? 'text-green-600' : 'text-orange-600'}`}>
-                                                    ({editForm.metaTitle.length}/60)
-                                                </span>
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={editForm.metaTitle}
-                                                onChange={(e) => setEditForm({ ...editForm, metaTitle: e.target.value })}
-                                                placeholder="SEO dostu başlık..."
-                                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                                maxLength={60}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Meta Açıklama
-                                                <span className={`ml-2 text-xs ${editForm.metaDescription.length >= 120 && editForm.metaDescription.length <= 160 ? 'text-green-600' : 'text-orange-600'}`}>
-                                                    ({editForm.metaDescription.length}/160)
-                                                </span>
-                                            </label>
-                                            <textarea
-                                                value={editForm.metaDescription}
-                                                onChange={(e) => setEditForm({ ...editForm, metaDescription: e.target.value })}
-                                                placeholder="Ürün açıklaması..."
-                                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
-                                                rows={3}
-                                                maxLength={160}
-                                            />
-                                        </div>
-                                    </div>
+                            {/* FAQ Section */}
+                            {activeSection === "faq" && (
+                                <FAQSection
+                                    faq={editForm.faq}
+                                    onAdd={addFAQ}
+                                    onUpdate={updateFAQ}
+                                    onRemove={removeFAQ}
+                                />
+                            )}
 
-                                    {/* Google Preview */}
-                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                        <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                                            <Eye className="w-3 h-3" />
-                                            Google Önizleme
-                                        </div>
-                                        <div className="space-y-1">
-                                            <div className="text-blue-700 text-lg hover:underline cursor-pointer">
-                                                {editForm.metaTitle || product.name}
-                                            </div>
-                                            <div className="text-green-700 text-sm">
-                                                ezmeo.com › urunler › {product.slug}
-                                            </div>
-                                            <div className="text-gray-600 text-sm">
-                                                {editForm.metaDescription || product.description.slice(0, 160)}
-                                            </div>
-                                        </div>
-                                    </div>
+                            {/* GEO Section */}
+                            {activeSection === "geo" && (
+                                <GEOSection
+                                    keyTakeaways={editForm.keyTakeaways}
+                                    onAdd={addKeyTakeaway}
+                                    onUpdate={updateKeyTakeaway}
+                                    onRemove={removeKeyTakeaway}
+                                />
+                            )}
+                        </div>
+                    )}
+                </div>
+            ))}
 
-                                    {/* Schema Preview */}
-                                    <details className="bg-white rounded-lg border border-gray-200">
-                                        <summary className="px-4 py-2 cursor-pointer text-sm font-medium text-gray-700 flex items-center gap-2">
-                                            <Code className="w-4 h-4" />
-                                            Schema.org Önizleme (JSON-LD)
-                                        </summary>
-                                        <pre className="p-4 text-xs overflow-x-auto bg-gray-900 text-green-400 rounded-b-lg">
-                                            {JSON.stringify(generateSchemaPreview(product), null, 2)}
-                                        </pre>
-                                    </details>
-                                </>
-                                )}
+            {/* Pagination */}
+            {pagination && pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between">
+                    <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="flex items-center gap-1 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50"
+                    >
+                        <ChevronLeft className="w-4 h-4" /> Önceki
+                    </button>
+                    <span className="text-sm text-gray-600">
+                        Sayfa {page} / {pagination.totalPages} ({pagination.total} ürün)
+                    </span>
+                    <button
+                        onClick={() => setPage(p => Math.min(pagination.totalPages!, p + 1))}
+                        disabled={page === pagination.totalPages}
+                        className="flex items-center gap-1 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50"
+                    >
+                        Sonraki <ChevronRight className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
 
-                                {activeSection === "faq" && (
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <h4 className="font-medium text-gray-900">Sıkça Sorulan Sorular</h4>
-                                            <p className="text-sm text-gray-500">Google FAQ rich snippet için soru-cevap ekleyin</p>
-                                        </div>
-                                        <button
-                                            onClick={addFAQ}
-                                            className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
-                                        >
-                                            + Soru Ekle
-                                        </button>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {editForm.faq.map((faq, index) => (
-                                            <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 space-y-3">
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-600 mb-1">Soru</label>
-                                                    <input
-                                                        type="text"
-                                                        value={faq.question}
-                                                        onChange={(e) => updateFAQ(index, "question", e.target.value)}
-                                                        placeholder="Örn: Bu ürün vegan mı?"
-                                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-600 mb-1">Cevap</label>
-                                                    <textarea
-                                                        value={faq.answer}
-                                                        onChange={(e) => updateFAQ(index, "answer", e.target.value)}
-                                                        placeholder="Cevabı yazın..."
-                                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-                                                        rows={2}
-                                                    />
-                                                </div>
-                                                <button
-                                                    onClick={() => removeFAQ(index)}
-                                                    className="text-xs text-red-600 hover:text-red-700"
-                                                >
-                                                    Kaldır
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {editForm.faq.length === 0 && (
-                                        <div className="text-center py-6 text-gray-500 text-sm bg-gray-100 rounded-lg">
-                                            Henüz FAQ eklenmemiş. "Soru Ekle" butonuna tıklayın.
-                                        </div>
-                                    )}
-                                </div>
-                                )}
+// ============================================================================
+// SUB-COMPONENTS
+// ============================================================================
 
-                                {activeSection === "geo" && (
-                                <div className="space-y-4">
-                                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-100">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Lightbulb className="w-5 h-5 text-purple-600" />
-                                            <h4 className="font-medium text-purple-900">GEO / LLM Optimizasyonu</h4>
-                                        </div>
-                                        <p className="text-sm text-purple-700">
-                                            Bu alan ChatGPT, Perplexity ve diğer AI sistemlerinin ürününüzü anlamasına yardımcı olur.
-                                        </p>
-                                    </div>
-                                    
-                                    <div>
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div>
-                                                <h4 className="font-medium text-gray-900">Önemli Çıkarımlar (Key Takeaways)</h4>
-                                                <p className="text-sm text-gray-500">AI'ların ürününüz hakkında vurgulaması gereken ana noktalar</p>
-                                            </div>
-                                            <button
-                                                onClick={addKeyTakeaway}
-                                                className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
-                                            >
-                                                + Ekle
-                                            </button>
-                                        </div>
-                                        <div className="space-y-2">
-                                            {editForm.keyTakeaways.map((takeaway, index) => (
-                                                <div key={index} className="flex gap-2">
-                                                    <input
-                                                        type="text"
-                                                        value={takeaway}
-                                                        onChange={(e) => updateKeyTakeaway(index, e.target.value)}
-                                                        placeholder={`Çıkarım ${index + 1}`}
-                                                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                                    />
-                                                    <button
-                                                        onClick={() => removeKeyTakeaway(index)}
-                                                        className="px-2 text-red-600 hover:text-red-700"
-                                                    >
-                                                        ×
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+function TabButton({ active, onClick, label, badge, icon }: { active: boolean; onClick: () => void; label: string; badge?: number; icon?: React.ReactNode }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${active ? "border-primary text-primary" : "border-transparent text-gray-600 hover:text-gray-900"}`}
+        >
+            <span className="flex items-center gap-1">
+                {icon}
+                {label}
+                {badge !== undefined && badge > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded-full">{badge}</span>
+                )}
+            </span>
+        </button>
+    );
+}
 
-                                    <div className="bg-blue-50 p-4 rounded-lg">
-                                        <h5 className="text-sm font-medium text-blue-900 mb-2">💡 Öneriler</h5>
-                                        <ul className="text-xs text-blue-700 space-y-1">
-                                            <li>• Her çıkarım kısa ve öz olmalı (max 100 karakter)</li>
-                                            <li>• Ürünün temel faydalarını vurgulayın</li>
-                                            <li>• Hedef kitlenin aradığı cevapları ekleyin</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                )}
+function MetaSection({ product, editForm, isGenerating, isSaving, onUpdateMetaTitle, onUpdateMetaDescription, onGenerateAI, onSave, onCancel }: any) {
+    const titleLength = editForm.metaTitle.length;
+    const descLength = editForm.metaDescription.length;
+    
+    const generateSchemaPreview = (p: any) => ({
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": p.name,
+        "description": editForm.metaDescription || p.description,
+        "image": p.images?.[0] || "",
+        "offers": {
+            "@type": "Offer",
+            "price": p.variants?.[0]?.price || 0,
+            "priceCurrency": "TRY",
+            "availability": "https://schema.org/InStock"
+        }
+    });
+    
+    return (
+        <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Meta Başlık
+                        <span className={`ml-2 text-xs ${titleLength >= 30 && titleLength <= 60 ? 'text-green-600' : 'text-orange-600'}`}>
+                            ({titleLength}/60)
+                        </span>
+                    </label>
+                    <input
+                        type="text"
+                        value={editForm.metaTitle}
+                        onChange={(e) => onUpdateMetaTitle(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        maxLength={60}
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Meta Açıklama
+                        <span className={`ml-2 text-xs ${descLength >= 120 && descLength <= 160 ? 'text-green-600' : 'text-orange-600'}`}>
+                            ({descLength}/160)
+                        </span>
+                    </label>
+                    <textarea
+                        value={editForm.metaDescription}
+                        onChange={(e) => onUpdateMetaDescription(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                        rows={3}
+                        maxLength={160}
+                    />
+                </div>
+            </div>
 
-                                {/* Actions */}
-                                <div className="flex items-center justify-between">
-                                    <button
-                                        onClick={() => handleAIGenerate(product)}
-                                        disabled={generating}
-                                        className="flex items-center gap-2 px-4 py-2 text-purple-700 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-lg transition-all text-sm font-medium disabled:opacity-50 border border-purple-200"
-                                    >
-                                        {generating ? (
-                                            <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                                        ) : (
-                                            <Sparkles className="w-4 h-4" />
-                                        )}
-                                        {generating ? "Oluşturuluyor..." : "Toshi AI ile Oluştur"}
-                                    </button>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => setEditingId(null)}
-                                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm"
-                                        >
-                                            İptal
-                                        </button>
-                                        <button
-                                            onClick={() => handleSave(product.id)}
-                                            disabled={saving === product.id}
-                                            className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium disabled:opacity-50"
-                                        >
-                                            {saving === product.id ? (
-                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            ) : (
-                                                <Save className="w-4 h-4" />
-                                            )}
-                                            Kaydet
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+            {/* Google Preview */}
+            <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                    <Eye className="w-3 h-3" /> Google Önizleme
+                </div>
+                <div className="space-y-1">
+                    <div className="text-blue-700 text-lg hover:underline cursor-pointer truncate">
+                        {editForm.metaTitle || product.name}
+                    </div>
+                    <div className="text-green-700 text-sm">ezmeo.com › urunler › {product.slug}</div>
+                    <div className="text-gray-600 text-sm line-clamp-2">{editForm.metaDescription}</div>
+                </div>
+            </div>
+
+            {/* Schema Preview */}
+            <details className="bg-white rounded-lg border border-gray-200">
+                <summary className="px-4 py-2 cursor-pointer text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Code className="w-4 h-4" /> Schema.org Önizleme
+                </summary>
+                <pre className="p-4 text-xs overflow-x-auto bg-gray-900 text-green-400 rounded-b-lg max-h-64">
+                    {JSON.stringify(generateSchemaPreview(product), null, 2)}
+                </pre>
+            </details>
+
+            {/* Actions */}
+            <div className="flex items-center justify-between pt-2">
+                <button onClick={onGenerateAI} disabled={isGenerating} className="flex items-center gap-2 px-4 py-2 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg text-sm font-medium disabled:opacity-50">
+                    {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    {isGenerating ? "Oluşturuluyor..." : "Toshi AI ile Oluştur"}
+                </button>
+                <div className="flex gap-2">
+                    <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">İptal</button>
+                    <button onClick={onSave} disabled={isSaving} className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-medium disabled:opacity-50">
+                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                    </button>
+                </div>
+            </div>
+        </>
+    );
+}
+
+function FAQSection({ faq, onAdd, onUpdate, onRemove }: any) {
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h4 className="font-medium text-gray-900">Sıkça Sorulan Sorular</h4>
+                    <p className="text-sm text-gray-500">Google FAQ rich snippet için</p>
+                </div>
+                <button onClick={onAdd} className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20">+ Soru Ekle</button>
+            </div>
+            <div className="space-y-3">
+                {faq.map((item: any, index: number) => (
+                    <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 space-y-3">
+                        <input
+                            type="text"
+                            value={item.question}
+                            onChange={(e) => onUpdate(index, "question", e.target.value)}
+                            placeholder="Soru"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                        />
+                        <textarea
+                            value={item.answer}
+                            onChange={(e) => onUpdate(index, "answer", e.target.value)}
+                            placeholder="Cevap"
+                            rows={2}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none"
+                        />
+                        <button onClick={() => onRemove(index)} className="text-xs text-red-600">Kaldır</button>
                     </div>
                 ))}
+            </div>
+            {faq.length === 0 && (
+                <div className="text-center py-6 text-gray-500 text-sm bg-gray-100 rounded-lg">Henüz FAQ eklenmemiş.</div>
+            )}
+        </div>
+    );
+}
+
+function GEOSection({ keyTakeaways, onAdd, onUpdate, onRemove }: any) {
+    return (
+        <div className="space-y-4">
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                <div className="flex items-center gap-2 mb-2">
+                    <Lightbulb className="w-5 h-5 text-purple-600" />
+                    <h4 className="font-medium text-purple-900">GEO / LLM Optimizasyonu</h4>
+                </div>
+                <p className="text-sm text-purple-700">ChatGPT, Perplexity ve AI sistemlerinin ürününüzü anlamasına yardımcı olun.</p>
+            </div>
+            <div>
+                <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900">Önemli Çıkarımlar</h4>
+                    <button onClick={onAdd} className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg">+ Ekle</button>
+                </div>
+                <div className="space-y-2">
+                    {keyTakeaways.map((takeaway: string, index: number) => (
+                        <div key={index} className="flex gap-2">
+                            <input
+                                type="text"
+                                value={takeaway}
+                                onChange={(e) => onUpdate(index, e.target.value)}
+                                placeholder={`Çıkarım ${index + 1}`}
+                                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                            />
+                            <button onClick={() => onRemove(index)} className="px-2 text-red-600">×</button>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
