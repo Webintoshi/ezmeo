@@ -13,11 +13,11 @@ import {
     Search,
     Code,
     HelpCircle,
-    MessageSquare,
     Clock,
     Type,
     Bot,
-    Lightbulb
+    Lightbulb,
+    Tag
 } from "lucide-react";
 import Link from "next/link";
 
@@ -108,11 +108,14 @@ export default function ProductSEOPage() {
                 const variants = (p.variants || []) as Array<{ price?: number }>;
                 const price = variants.length > 0 ? Number(variants[0]?.price || 0) : 0;
 
+                const description = (p.description || "") as string;
+                const wordCount = description.split(/\s+/).filter(w => w.length > 0).length;
+                
                 return {
                     id: p.id as string,
                     name: p.name as string || "",
                     slug: p.slug as string || "",
-                    description: (p.description || "") as string,
+                    description,
                     images: (p.images || []) as string[],
                     price,
                     metaTitle,
@@ -120,6 +123,10 @@ export default function ProductSEOPage() {
                     schemaType: "Product",
                     score: Math.max(0, score),
                     issues,
+                    faq: (p.faq || []) as ProductFAQ[],
+                    geo: (p.geo || { keyTakeaways: [], entities: [] }) as ProductGEO,
+                    readingTime: Math.ceil(wordCount / 200) || 1,
+                    wordCount,
                 };
             });
 
@@ -466,40 +473,72 @@ export default function ProductSEOPage() {
                                 </div>
 
                                 {activeSection === "meta" && (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Meta Başlık
-                                            <span className={`ml-2 text-xs ${editForm.metaTitle.length >= 30 && editForm.metaTitle.length <= 60 ? 'text-green-600' : 'text-orange-600'}`}>
-                                                ({editForm.metaTitle.length}/60)
-                                            </span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={editForm.metaTitle}
-                                            onChange={(e) => setEditForm({ ...editForm, metaTitle: e.target.value })}
-                                            placeholder="SEO dostu başlık..."
-                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                            maxLength={60}
-                                        />
+                                <>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Meta Başlık
+                                                <span className={`ml-2 text-xs ${editForm.metaTitle.length >= 30 && editForm.metaTitle.length <= 60 ? 'text-green-600' : 'text-orange-600'}`}>
+                                                    ({editForm.metaTitle.length}/60)
+                                                </span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={editForm.metaTitle}
+                                                onChange={(e) => setEditForm({ ...editForm, metaTitle: e.target.value })}
+                                                placeholder="SEO dostu başlık..."
+                                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                                maxLength={60}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Meta Açıklama
+                                                <span className={`ml-2 text-xs ${editForm.metaDescription.length >= 120 && editForm.metaDescription.length <= 160 ? 'text-green-600' : 'text-orange-600'}`}>
+                                                    ({editForm.metaDescription.length}/160)
+                                                </span>
+                                            </label>
+                                            <textarea
+                                                value={editForm.metaDescription}
+                                                onChange={(e) => setEditForm({ ...editForm, metaDescription: e.target.value })}
+                                                placeholder="Ürün açıklaması..."
+                                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                                                rows={3}
+                                                maxLength={160}
+                                            />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Meta Açıklama
-                                            <span className={`ml-2 text-xs ${editForm.metaDescription.length >= 120 && editForm.metaDescription.length <= 160 ? 'text-green-600' : 'text-orange-600'}`}>
-                                                ({editForm.metaDescription.length}/160)
-                                            </span>
-                                        </label>
-                                        <textarea
-                                            value={editForm.metaDescription}
-                                            onChange={(e) => setEditForm({ ...editForm, metaDescription: e.target.value })}
-                                            placeholder="Ürün açıklaması..."
-                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
-                                            rows={3}
-                                            maxLength={160}
-                                        />
+
+                                    {/* Google Preview */}
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                        <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                                            <Eye className="w-3 h-3" />
+                                            Google Önizleme
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="text-blue-700 text-lg hover:underline cursor-pointer">
+                                                {editForm.metaTitle || product.name}
+                                            </div>
+                                            <div className="text-green-700 text-sm">
+                                                ezmeo.com › urunler › {product.slug}
+                                            </div>
+                                            <div className="text-gray-600 text-sm">
+                                                {editForm.metaDescription || product.description.slice(0, 160)}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+
+                                    {/* Schema Preview */}
+                                    <details className="bg-white rounded-lg border border-gray-200">
+                                        <summary className="px-4 py-2 cursor-pointer text-sm font-medium text-gray-700 flex items-center gap-2">
+                                            <Code className="w-4 h-4" />
+                                            Schema.org Önizleme (JSON-LD)
+                                        </summary>
+                                        <pre className="p-4 text-xs overflow-x-auto bg-gray-900 text-green-400 rounded-b-lg">
+                                            {JSON.stringify(generateSchemaPreview(product), null, 2)}
+                                        </pre>
+                                    </details>
+                                </>
                                 )}
 
                                 {activeSection === "faq" && (
@@ -612,36 +651,6 @@ export default function ProductSEOPage() {
                                     </div>
                                 </div>
                                 )}
-
-                                {/* Google Preview */}
-                                <div className="bg-white p-4 rounded-lg border border-gray-200">
-                                    <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-                                        <Eye className="w-3 h-3" />
-                                        Google Önizleme
-                                    </div>
-                                    <div className="space-y-1">
-                                        <div className="text-blue-700 text-lg hover:underline cursor-pointer">
-                                            {editForm.metaTitle || product.name}
-                                        </div>
-                                        <div className="text-green-700 text-sm">
-                                            ezmeo.com › urunler › {product.slug}
-                                        </div>
-                                        <div className="text-gray-600 text-sm">
-                                            {editForm.metaDescription || product.description.slice(0, 160)}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Schema Preview */}
-                                <details className="bg-white rounded-lg border border-gray-200">
-                                    <summary className="px-4 py-2 cursor-pointer text-sm font-medium text-gray-700 flex items-center gap-2">
-                                        <Code className="w-4 h-4" />
-                                        Schema.org Önizleme (JSON-LD)
-                                    </summary>
-                                    <pre className="p-4 text-xs overflow-x-auto bg-gray-900 text-green-400 rounded-b-lg">
-                                        {JSON.stringify(generateSchemaPreview(product), null, 2)}
-                                    </pre>
-                                </details>
 
                                 {/* Actions */}
                                 <div className="flex items-center justify-between">
