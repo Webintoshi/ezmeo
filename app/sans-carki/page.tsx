@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
-import SpinForm from "./SpinForm";
+import SpinForm from "@/components/lucky-wheel/SpinForm";
 
-const LuckyWheel = dynamic(() => import("./LuckyWheel"), { ssr: false });
+const LuckyWheel = dynamic(() => import("@/components/lucky-wheel/LuckyWheel"), { ssr: false });
 
 interface Prize {
   id: string;

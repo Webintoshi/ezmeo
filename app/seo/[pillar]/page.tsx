@@ -1,7 +1,7 @@
 // SEO Hub - Pillar Sayfası
 import { Metadata } from 'next';
 import Link from 'next/link';
-import notFound from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getAllPillarSlugs, getClusterSlugsByPillar, getMDXContent } from '@/lib/seo-content';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { generateBreadcrumbSchema, generateCollectionSchema } from '@/lib/seo-schema';
