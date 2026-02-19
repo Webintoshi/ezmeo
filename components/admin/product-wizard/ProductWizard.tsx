@@ -130,6 +130,9 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
             barcode: v.barcode,
             groupName: v.group_name,
             unit: v.unit || "adet",
+            images: v.images || [],
+            maxPurchaseQuantity: v.max_purchase_quantity,
+            warehouseLocation: v.warehouse_location,
           })),
           taxRate: p.tax_rate || 10,
           discountRules: p.discount_rules || [],
@@ -252,6 +255,34 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
       return;
     }
 
+    // Varyant validasyonu - en az bir varyant zorunlu
+    if (!formData.variants || formData.variants.length === 0) {
+      toast.error("En az bir varyant eklemelisiniz");
+      return;
+    }
+
+    // Her varyantın zorunlu alanlarını kontrol et
+    const invalidVariant = formData.variants.find(
+      v => !v.name || !v.name.trim() || !v.sku || !v.sku.trim() || v.price === undefined || v.price === null || v.stock === undefined || v.stock === null
+    );
+
+    if (invalidVariant) {
+      toast.error("Tüm varyantların isim, SKU, fiyat ve stok bilgisi olmalıdır");
+      return;
+    }
+
+    // Varyantların geçerliliğini kontrol et
+    for (const variant of formData.variants) {
+      if (variant.price < 0) {
+        toast.error("Varyant fiyatı negatif olamaz");
+        return;
+      }
+      if (variant.stock < 0) {
+        toast.error("Varyant stoğu negatif olamaz");
+        return;
+      }
+    }
+
     setSaving(true);
 
     try {
@@ -285,6 +316,9 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
           barcode: v.barcode,
           group_name: v.groupName,
           unit: v.unit,
+          images: v.images,
+          max_purchase_quantity: v.maxPurchaseQuantity,
+          warehouse_location: v.warehouseLocation,
         })),
         tax_rate: formData.taxRate,
         discount_rules: formData.discountRules,

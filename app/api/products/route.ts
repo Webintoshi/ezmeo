@@ -514,6 +514,36 @@ export async function PUT(request: NextRequest) {
         if (variants && Array.isArray(variants)) {
             console.log("Updating variants, count:", variants.length);
 
+            // VALIDATION: En az bir varyant zorunlu
+            if (variants.length === 0) {
+                return NextResponse.json(
+                    { success: false, error: "En az bir varyant zorunludur" },
+                    { status: 400 }
+                );
+            }
+
+            // VALIDATION: Her varyantın zorunlu alanlarını kontrol et
+            for (const v of variants) {
+                if (!v.name || !v.name.trim()) {
+                    return NextResponse.json(
+                        { success: false, error: "Tüm varyantların ismi olmalıdır" },
+                        { status: 400 }
+                    );
+                }
+                if (v.price === undefined || v.price === null || v.price < 0) {
+                    return NextResponse.json(
+                        { success: false, error: "Tüm varyantların geçerli bir fiyatı olmalıdır" },
+                        { status: 400 }
+                    );
+                }
+                if (v.stock === undefined || v.stock === null || v.stock < 0) {
+                    return NextResponse.json(
+                        { success: false, error: "Tüm varyantların geçerli bir stok değeri olmalıdır" },
+                        { status: 400 }
+                    );
+                }
+            }
+
             const { data: existingVariants } = await supabase
                 .from("product_variants")
                 .select("id, product_id")
@@ -526,10 +556,23 @@ export async function PUT(request: NextRequest) {
                 .neq("variant_id", null);
 
             const orderedVariantIds = new Set(variantsWithOrders?.map(v => v.variant_id) || []);
-            
+
+            // MEVCUT VARYANTLARLA KARŞILAŞTIR
+            // Sadece gelen listede OLMAYAN mevcut varyantları sil
+            const incomingVariantIds = new Set(
+                variants
+                    .filter((v: any) => v.id) // Sadece ID'si olanlar (yeni varyantlar değil)
+                    .map((v: any) => v.id)
+            );
+
             const variantsToDelete = existingVariants
-                ?.filter(v => !orderedVariantIds.has(v.id))
+                ?.filter(v =>
+                    !incomingVariantIds.has(v.id) && // Gelen listede yok
+                    !orderedVariantIds.has(v.id)    // Siparişi de yok
+                )
                 .map(v => v.id) || [];
+
+            console.log("Variants to delete:", variantsToDelete);
 
             if (variantsToDelete.length > 0) {
                 const { error: deleteError } = await supabase
@@ -541,6 +584,7 @@ export async function PUT(request: NextRequest) {
                     console.error("Variants delete error:", deleteError);
                     throw new Error(`Variants delete failed: ${deleteError.message}`);
                 }
+                console.log("Deleted variants:", variantsToDelete.length);
             }
 
             const newVariants = variants.filter((v: any) => !v.id);

@@ -94,7 +94,7 @@ export interface DiscountRule {
 export interface ProductVariant {
   id: string;
   name: string;
-  weight: number;
+  weight: number | string; // Veritabanında string, frontend'de number olabilir
   price: number;
   originalPrice?: number;
   cost?: number; // Maliyet
