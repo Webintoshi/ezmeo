@@ -221,7 +221,7 @@ export function ProductDetailClient({
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16">
             {/* Left: Image Gallery - UNCHANGED */}
             <div className="lg:sticky lg:top-28 lg:self-start">
-              <ImageGallery images={product.images} productName={product.name} />
+              <ImageGallery key={product.id} images={product.images} productName={product.name} />
             </div>
 
             {/* Right: Product Info - Clean Modern Design */}
