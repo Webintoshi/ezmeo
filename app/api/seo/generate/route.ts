@@ -4,7 +4,7 @@ import { buildSEOPrompt, buildCategorySEOPrompt, buildPageSEOPrompt, generateFal
 // Z.AI API Configuration
 const ZAI_API_KEY = process.env.ZAI_API_KEY || "";
 const ZAI_BASE_URL = process.env.ZAI_BASE_URL || "https://api.z.ai";
-const ZAI_MODEL = process.env.ZAI_MODEL || "glm-4";
+const ZAI_MODEL = process.env.ZAI_MODEL || "glm-4.7";
 
 interface SEOGenerationRequest {
     type: "product" | "category" | "page";
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
             prompt = buildPageSEOPrompt(name, schemaType || "WebPage", description);
         }
 
-        // Use Z.AI for generation
+        // Use Z.AI GLM-4.7 for generation
         let aiResult: { metaTitle: string; metaDescription: string; keywords: string[]; rationale?: string } | null = null;
         let source = "";
 
@@ -70,10 +70,10 @@ export async function POST(request: NextRequest) {
                 const zaiResult = await callZAIGeneration(prompt);
                 if (zaiResult) {
                     aiResult = zaiResult;
-                    source = "zai_glm-4";
+                    source = "zai_glm-4.7";
                 }
             } catch (error) {
-                console.warn("Z.AI failed:", error);
+                console.warn("Z.AI GLM-4.7 failed:", error);
             }
         }
 
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
                 metaTitle: fallback.metaTitle,
                 metaDescription: fallback.metaDescription,
                 keywords: fallback.keywords,
-                rationale: "Template-based fallback (AI services unavailable)"
+                rationale: "Template-based fallback (Z.AI unavailable)"
             };
             source = "template_fallback";
         }
@@ -109,15 +109,19 @@ export async function POST(request: NextRequest) {
 }
 
 async function callZAIGeneration(prompt: string): Promise<{ metaTitle: string; metaDescription: string; keywords: string[]; rationale?: string } | null> {
-    // Z.AI uses /api/paas/v4/chat/completions endpoint
-    const response = await fetch(`${ZAI_BASE_URL}/api/paas/v4/chat/completions`, {
+    // Z.AI GLM-4.7 endpoint
+    const endpoint = `${ZAI_BASE_URL}/api/paas/v4/chat/completions`;
+    
+    console.log("Calling Z.AI:", { endpoint, model: ZAI_MODEL });
+    
+    const response = await fetch(endpoint, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${ZAI_API_KEY}`,
         },
         body: JSON.stringify({
-            model: ZAI_MODEL,
+            model: ZAI_MODEL, // glm-4.7
             messages: [
                 {
                     role: "system",
@@ -135,12 +139,14 @@ async function callZAIGeneration(prompt: string): Promise<{ metaTitle: string; m
     });
 
     if (!response.ok) {
-        const error = await response.text();
-        console.error("Z.AI API Error:", error);
+        const errorText = await response.text();
+        console.error("Z.AI API Error:", response.status, errorText);
         return null;
     }
 
     const data = await response.json();
+    console.log("Z.AI Response:", JSON.stringify(data, null, 2));
+    
     const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
@@ -152,7 +158,6 @@ async function callZAIGeneration(prompt: string): Promise<{ metaTitle: string; m
     try {
         const parsed = JSON.parse(content);
         
-        // Handle different response structures
         if (parsed.metaTitle && parsed.metaDescription) {
             return {
                 metaTitle: parsed.metaTitle,
@@ -165,7 +170,7 @@ async function callZAIGeneration(prompt: string): Promise<{ metaTitle: string; m
         console.error("Unexpected Z.AI response structure:", parsed);
         return null;
     } catch (parseError) {
-        console.error("Failed to parse Z.AI response:", parseError);
+        console.error("Failed to parse Z.AI response:", parseError, "Content:", content);
         return null;
     }
 }
