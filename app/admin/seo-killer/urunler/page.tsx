@@ -80,14 +80,26 @@ async function fetchProducts(page: number = 1, search: string = ""): Promise<{ p
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data: ProductApiResponse = await response.json();
+    const data = await response.json();
     
     if (!data.success) {
         throw new Error(data.error || "Failed to fetch products");
     }
 
+    // Safely map products with null checks
+    const products = (data.products || []).map((p: any) => ({
+        ...p,
+        // Ensure arrays are never null
+        images: p.images || [],
+        variants: p.variants || [],
+        tags: p.tags || [],
+        seo_keywords: p.seo_keywords || [],
+        faq: p.faq || [],
+        geo_data: p.geo_data || { keyTakeaways: [], entities: [] }
+    }));
+
     return { 
-        products: data.products || [], 
+        products, 
         pagination: data.pagination 
     };
 }
@@ -118,11 +130,26 @@ async function updateProduct(
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data: ProductApiResponse = await response.json();
+    const data = await response.json();
     
     if (!data.success) {
         throw new Error(data.error || "Failed to update product");
     }
+
+    if (!data.product) {
+        throw new Error("No product returned from server");
+    }
+
+    // Normalize response
+    const product = {
+        ...data.product,
+        images: data.product.images || [],
+        variants: data.product.variants || [],
+        tags: data.product.tags || [],
+        seo_keywords: data.product.seo_keywords || [],
+        faq: data.product.faq || [],
+        geo_data: data.product.geo_data || { keyTakeaways: [], entities: [] }
+    };
 
     // Trigger revalidation
     try {
@@ -135,7 +162,7 @@ async function updateProduct(
         console.warn("Revalidation failed");
     }
 
-    return data.product!;
+    return product;
 }
 
 async function generateWithAI(product: ProductSEOViewModel): Promise<Partial<EditFormState>> {

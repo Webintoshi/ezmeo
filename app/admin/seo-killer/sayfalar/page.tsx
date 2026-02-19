@@ -73,13 +73,21 @@ async function fetchPages(): Promise<StaticPage[]> {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data: PageApiResponse = await response.json();
+    const data = await response.json();
     
     if (!data.success) {
         throw new Error(data.error || "Failed to fetch pages");
     }
 
-    return data.pages || [];
+    // Normalize pages with null checks
+    const pages = (data.pages || []).map((p: any) => ({
+        ...p,
+        seo_keywords: p.seo_keywords || [],
+        faq: p.faq || [],
+        geo_data: p.geo_data || { keyTakeaways: [], entities: [] }
+    }));
+
+    return pages;
 }
 
 async function updatePage(
