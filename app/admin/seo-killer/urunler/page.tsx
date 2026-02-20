@@ -275,37 +275,72 @@ export default function ProductSEOPage() {
         }
     }, [editForm]);
 
+    // Typewriter effect helper
+    const typewriterEffect = useCallback((text: string, field: "metaTitle" | "metaDescription", speed: number = 30) => {
+        return new Promise<void>((resolve) => {
+            let index = 0;
+            const interval = setInterval(() => {
+                if (index <= text.length) {
+                    setEditForm(prev => ({
+                        ...prev,
+                        [field]: text.slice(0, index)
+                    }));
+                    index++;
+                } else {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }, speed);
+        });
+    }, []);
+
     const handleGenerateAI = useCallback(async (product: ProductSEOViewModel) => {
         setGenerating(true);
         setMessage(null);
         setDebugInfo([]);
 
         try {
-            setEditForm(prev => ({
-                ...prev,
-                metaTitle: "🔍 AI düşünüyor...",
-                metaDescription: "Lütfen bekleyin..."
-            }));
+            // Loading states with dots animation
+            const thinkingStates = [
+                "🤖 AI SEO Uzmanı analiz ediyor",
+                "🤖 AI SEO Uzmanı analiz ediyor.",
+                "🤖 AI SEO Uzmanı analiz ediyor..",
+                "🤖 AI SEO Uzmanı analiz ediyor...",
+                "📝 Meta başlık oluşturuluyor...",
+                "📝 Meta başlık oluşturuluyor...",
+                "📄 Meta açıklama yazılıyor...",
+                "📄 Meta açıklama yazılıyor...",
+                "✨ Son kontroller yapılıyor..."
+            ];
+            
+            // Show loading animation
+            for (let i = 0; i < thinkingStates.length; i++) {
+                setEditForm(prev => ({
+                    ...prev,
+                    metaTitle: thinkingStates[i],
+                    metaDescription: "Lütfen bekleyin..."
+                }));
+                await new Promise(r => setTimeout(r, 400));
+            }
 
             const generated = await generateWithAI(product);
             
             if (generated.debug) {
                 setDebugInfo(generated.debug);
             }
-            setEditForm(prev => ({
-                ...prev,
-                metaTitle: generated.metaTitle,
-                metaDescription: generated.metaDescription
-            }));
+
+            // Typewriter effect for title
+            await typewriterEffect(generated.metaTitle, "metaTitle", 25);
             
-            const isAI = generated.source.includes("kimi") || generated.source.includes("zai");
-            const providerName = generated.source.includes("kimi") ? "Kimi K2.5" : 
-                                generated.source.includes("zai") ? "Z.AI" : "Şablon";
+            // Small pause before description
+            await new Promise(r => setTimeout(r, 300));
+            
+            // Typewriter effect for description (faster)
+            await typewriterEffect(generated.metaDescription, "metaDescription", 15);
+            
             setMessage({ 
-                type: isAI ? "success" : "error", 
-                text: isAI 
-                    ? `✨ ${providerName} ile başarıyla oluşturuldu!` 
-                    : `⚠️ Şablon kullanıldı (${generated.source}).`
+                type: "success", 
+                text: `✨ AI SEO Uzmanı başarıyla meta bilgileri oluşturdu!`
             });
         } catch (error) {
             console.error("AI generation failed:", error);
@@ -316,7 +351,7 @@ export default function ProductSEOPage() {
         } finally {
             setGenerating(false);
         }
-    }, []);
+    }, [typewriterEffect]);
 
     // Form handlers
     const updateMetaTitle = useCallback((value: string) => {
@@ -678,7 +713,7 @@ function MetaSection({ product, editForm, isGenerating, isSaving, onUpdateMetaTi
             <div className="flex items-center justify-between pt-2">
                 <button onClick={onGenerateAI} disabled={isGenerating} className="flex items-center gap-2 px-4 py-2 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg text-sm font-medium disabled:opacity-50">
                     {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    {isGenerating ? "🤖 Kimi K2.5 Düşünüyor..." : "✨ Kimi K2.5 ile Oluştur"}
+                    {isGenerating ? "🤖 AI SEO Uzmanı Düşünüyor..." : "✨ AI SEO Uzmanı ile Oluştur"}
                 </button>
                 <div className="flex gap-2">
                     <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">İptal</button>
