@@ -349,9 +349,26 @@ export default function ProductSEOPage() {
                 throw new Error(generated.error || "AI yanıt vermedi");
             }
             
+            // Truncate if needed (safety check)
+            let finalTitle = generated.metaTitle;
+            let finalDesc = generated.metaDescription;
+            
+            if (finalTitle.length > 60) {
+                finalTitle = finalTitle.substring(0, 57) + "...";
+            }
+            if (finalDesc.length > 160) {
+                finalDesc = finalDesc.substring(0, 157) + "...";
+            }
+            
+            setEditForm(prev => ({
+                ...prev,
+                metaTitle: finalTitle,
+                metaDescription: finalDesc
+            }));
+            
             setMessage({ 
                 type: "success", 
-                text: `✨ Toshi başarıyla SEO optimizasyonunu tamamladı!`
+                text: `Toshi SEO önerisini hazırladı!`
             });
         } catch (error) {
             console.error("AI generation failed:", error);
@@ -731,9 +748,22 @@ function MetaSection({ product, editForm, isGenerating, isSaving, aiSource, onUp
 
             {/* Actions */}
             <div className="flex items-center justify-between pt-2">
-                <button onClick={onGenerateAI} disabled={isGenerating} className="flex items-center gap-2 px-4 py-2 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg text-sm font-medium disabled:opacity-50">
-                    {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    {isGenerating ? "Toshi analiz ediyor..." : "Toshi ile SEO Oluştur"}
+                <button 
+                    onClick={onGenerateAI} 
+                    disabled={isGenerating} 
+                    className="group flex items-center gap-3 px-5 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+                >
+                    {isGenerating ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Toshi düşünüyor...</span>
+                        </>
+                    ) : (
+                        <>
+                            <span className="flex items-center justify-center w-6 h-6 bg-white/20 rounded-lg text-xs font-bold">T</span>
+                            <span>Toshi'den SEO Önerisi Al</span>
+                        </>
+                    )}
                 </button>
                 <div className="flex gap-2">
                     <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">İptal</button>
