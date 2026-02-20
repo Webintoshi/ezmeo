@@ -751,17 +751,17 @@ function MetaSection({ product, editForm, isGenerating, isSaving, aiSource, onUp
                 <button 
                     onClick={onGenerateAI} 
                     disabled={isGenerating} 
-                    className="group flex items-center gap-3 px-5 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2.5 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isGenerating ? (
                         <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Toshi düşünüyor...</span>
+                            <span>Toshi hazırlıyor...</span>
                         </>
                     ) : (
                         <>
-                            <span className="flex items-center justify-center w-6 h-6 bg-white/20 rounded-lg text-xs font-bold">T</span>
-                            <span>Toshi'den SEO Önerisi Al</span>
+                            <span className="flex items-center justify-center w-5 h-5 bg-white/10 rounded text-xs font-semibold">T</span>
+                            <span>Toshi'den öneri al</span>
                         </>
                     )}
                 </button>
