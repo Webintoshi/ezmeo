@@ -165,12 +165,11 @@ async function updateProduct(
     return product;
 }
 
-async function generateWithAI(product: ProductSEOViewModel): Promise<{metaTitle: string, metaDescription: string, source: string, debug?: string[]}> {
+async function generateWithAI(product: ProductSEOViewModel): Promise<{success: boolean, metaTitle: string, metaDescription: string, source: string, error?: string}> {
     const response = await fetch("/api/seo/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            type: "product",
             name: product.name,
             description: product.description || product.short_description,
             category: product.category
@@ -179,11 +178,15 @@ async function generateWithAI(product: ProductSEOViewModel): Promise<{metaTitle:
 
     const data = await response.json();
     
+    if (!response.ok || !data.success) {
+        throw new Error(data.error || "AI SEO uzmanı şu anda çalışamıyor");
+    }
+    
     return {
+        success: true,
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
-        source: data.source,
-        debug: data.debug
+        source: data.source
     };
 }
 
@@ -342,12 +345,13 @@ export default function ProductSEOPage() {
             // Typewriter effect for description (faster)
             await typewriterEffect(generated.metaDescription, "metaDescription", 15);
             
-            const isAI = generated.source === "gemini_ai";
+            if (!generated.success) {
+                throw new Error(generated.error || "AI yanıt vermedi");
+            }
+            
             setMessage({ 
                 type: "success", 
-                text: isAI 
-                    ? `✨ AI SEO Uzmanı (Gemini) başarıyla oluşturdu!` 
-                    : `⚠️ Şablon kullanıldı (AI devre dışı)`
+                text: `✨ Profesyonel SEO Uzmanı (Gemini AI) başarıyla oluşturdu!`
             });
         } catch (error) {
             console.error("AI generation failed:", error);
@@ -646,7 +650,6 @@ function MetaSection({ product, editForm, isGenerating, isSaving, aiSource, onUp
     
     // AI source badge kontrolü
     const isAIGenerated = aiSource === "gemini_ai";
-    const isTemplate = aiSource && aiSource.startsWith("template_");
     
     const generateSchemaPreview = (p: any) => ({
         "@context": "https://schema.org",
@@ -673,12 +676,7 @@ function MetaSection({ product, editForm, isGenerating, isSaving, aiSource, onUp
                         </span>
                         {isAIGenerated && (
                             <span className="ml-2 px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs rounded-full">
-                                🤖 AI
-                            </span>
-                        )}
-                        {isTemplate && (
-                            <span className="ml-2 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full">
-                                📝 Şablon
+                                🤖 Gemini AI
                             </span>
                         )}
                     </label>
