@@ -86,7 +86,7 @@ async function generateWithKimi(prompt: string): Promise<{ content: string; sour
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${KIMI_API_KEY}`,
+      "Authorization": KIMI_API_KEY,
     },
     body: JSON.stringify({
       model: KIMI_MODEL,
