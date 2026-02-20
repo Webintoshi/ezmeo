@@ -201,6 +201,7 @@ export default function ProductSEOPage() {
     const [message, setMessage] = useState<MessageState | null>(null);
     const [generating, setGenerating] = useState(false);
     const [debugInfo, setDebugInfo] = useState<string[]>([]); // Debug için
+    const [aiSource, setAiSource] = useState<string | null>(null); // AI source bilgisi
     const [activeSection, setActiveSection] = useState<SectionType>("meta");
     const [searchQuery, setSearchQuery] = useState("");
     const [page, setPage] = useState(1);
@@ -328,6 +329,9 @@ export default function ProductSEOPage() {
             if (generated.debug) {
                 setDebugInfo(generated.debug);
             }
+            
+            // Source bilgisini kaydet
+            setAiSource(generated.source || null);
 
             // Typewriter effect for title
             await typewriterEffect(generated.metaTitle, "metaTitle", 25);
@@ -338,9 +342,12 @@ export default function ProductSEOPage() {
             // Typewriter effect for description (faster)
             await typewriterEffect(generated.metaDescription, "metaDescription", 15);
             
+            const isAI = generated.source === "gemini_ai";
             setMessage({ 
                 type: "success", 
-                text: `✨ AI SEO Uzmanı başarıyla meta bilgileri oluşturdu!`
+                text: isAI 
+                    ? `✨ AI SEO Uzmanı (Gemini) başarıyla oluşturdu!` 
+                    : `⚠️ Şablon kullanıldı (AI devre dışı)`
             });
         } catch (error) {
             console.error("AI generation failed:", error);
@@ -553,6 +560,7 @@ export default function ProductSEOPage() {
                                     editForm={editForm}
                                     isGenerating={generating}
                                     isSaving={saving}
+                                    aiSource={aiSource}
                                     onUpdateMetaTitle={updateMetaTitle}
                                     onUpdateMetaDescription={updateMetaDescription}
                                     onGenerateAI={() => handleGenerateAI(product)}
@@ -632,9 +640,13 @@ function TabButton({ active, onClick, label, badge, icon }: { active: boolean; o
     );
 }
 
-function MetaSection({ product, editForm, isGenerating, isSaving, onUpdateMetaTitle, onUpdateMetaDescription, onGenerateAI, onSave, onCancel }: any) {
+function MetaSection({ product, editForm, isGenerating, isSaving, aiSource, onUpdateMetaTitle, onUpdateMetaDescription, onGenerateAI, onSave, onCancel }: any) {
     const titleLength = editForm.metaTitle.length;
     const descLength = editForm.metaDescription.length;
+    
+    // AI source badge kontrolü
+    const isAIGenerated = aiSource === "gemini_ai";
+    const isTemplate = aiSource && aiSource.startsWith("template_");
     
     const generateSchemaPreview = (p: any) => ({
         "@context": "https://schema.org",
@@ -659,6 +671,16 @@ function MetaSection({ product, editForm, isGenerating, isSaving, onUpdateMetaTi
                         <span className={`ml-2 text-xs ${titleLength >= 30 && titleLength <= 60 ? 'text-green-600' : 'text-orange-600'}`}>
                             ({titleLength}/60)
                         </span>
+                        {isAIGenerated && (
+                            <span className="ml-2 px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs rounded-full">
+                                🤖 AI
+                            </span>
+                        )}
+                        {isTemplate && (
+                            <span className="ml-2 px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full">
+                                📝 Şablon
+                            </span>
+                        )}
                     </label>
                     <input
                         type="text"
