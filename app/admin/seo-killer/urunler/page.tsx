@@ -298,12 +298,14 @@ export default function ProductSEOPage() {
                 metaDescription: generated.metaDescription
             }));
             
-            const isAI = generated.source.includes("zai");
+            const isAI = generated.source.includes("kimi") || generated.source.includes("zai");
+            const providerName = generated.source.includes("kimi") ? "Kimi K2.5" : 
+                                generated.source.includes("zai") ? "Z.AI" : "Şablon";
             setMessage({ 
                 type: isAI ? "success" : "error", 
                 text: isAI 
-                    ? `✨ Z.AI (${generated.source}) ile başarıyla oluşturuldu!` 
-                    : `⚠️ Şablon kullanıldı (${generated.source}). Debug: ${generated.debug?.join(" → ") || "Bilinmiyor"}`
+                    ? `✨ ${providerName} ile başarıyla oluşturuldu!` 
+                    : `⚠️ Şablon kullanıldı (${generated.source}).`
             });
         } catch (error) {
             console.error("AI generation failed:", error);
@@ -676,7 +678,7 @@ function MetaSection({ product, editForm, isGenerating, isSaving, onUpdateMetaTi
             <div className="flex items-center justify-between pt-2">
                 <button onClick={onGenerateAI} disabled={isGenerating} className="flex items-center gap-2 px-4 py-2 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg text-sm font-medium disabled:opacity-50">
                     {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    {isGenerating ? "🤖 SEO Uzmanı Düşünüyor..." : "✨ AI SEO Uzmanı ile Oluştur"}
+                    {isGenerating ? "🤖 Kimi K2.5 Düşünüyor..." : "✨ Kimi K2.5 ile Oluştur"}
                 </button>
                 <div className="flex gap-2">
                     <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">İptal</button>
