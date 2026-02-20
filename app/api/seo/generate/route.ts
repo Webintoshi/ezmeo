@@ -12,19 +12,35 @@ interface GeminiResponse {
   error?: { message: string; code: number };
 }
 
-function parseAIResponse(text: string): any {
+function extractJSON(text: string): any {
+  console.log("[Toshi] Raw AI response:", text.substring(0, 500));
+  
   try {
-    let cleanText = text.trim();
-    if (cleanText.startsWith("```json")) {
-      cleanText = cleanText.replace(/^```json\n?/, "").replace(/\n?```$/, "");
-    } else if (cleanText.startsWith("```")) {
-      cleanText = cleanText.replace(/^```\n?/, "").replace(/\n?```$/, "");
+    // Önce direkt JSON parse dene
+    return JSON.parse(text.trim());
+  } catch (e) {
+    // Markdown code block içinde mi?
+    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      try {
+        return JSON.parse(jsonMatch[1].trim());
+      } catch (e2) {
+        console.log("[Toshi] Code block parse failed");
+      }
     }
-    return JSON.parse(cleanText);
-  } catch (error) {
-    console.error("JSON parse error:", error);
-    return null;
+    
+    // Süslü parantezler arasını bul
+    const curlyMatch = text.match(/\{[\s\S]*\}/);
+    if (curlyMatch) {
+      try {
+        return JSON.parse(curlyMatch[0]);
+      } catch (e3) {
+        console.log("[Toshi] Curly brace extract failed");
+      }
+    }
   }
+  
+  return null;
 }
 
 async function callGeminiAPI(prompt: string): Promise<any> {
@@ -39,7 +55,7 @@ async function callGeminiAPI(prompt: string): Promise<any> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.5, maxOutputTokens: 2048 }
+      generationConfig: { temperature: 0.4, maxOutputTokens: 2048 }
     })
   });
 
@@ -59,75 +75,35 @@ async function callGeminiAPI(prompt: string): Promise<any> {
     throw new Error("Empty response from Gemini API");
   }
 
-  const parsed = parseAIResponse(text);
+  const parsed = extractJSON(text);
   if (!parsed) {
-    throw new Error("Invalid JSON response from AI");
+    throw new Error(`Invalid JSON response. Raw: ${text.substring(0, 200)}`);
   }
 
   return parsed;
 }
 
 function buildSEOPrompt(name: string, category?: string, description?: string): string {
-  return `Sen Toshi - 15 yıllık deneyimli, sertifikalı bir E-ticaret SEO uzmanısın.
+  return `Sen Toshi - 15 yillik deneyimli bir E-ticaret SEO uzmanisin.
 
-## ÜRÜN BİLGİLERİ
-Ürün Adı: ${name}
+URUN: ${name}
 ${category ? `Kategori: ${category}` : ''}
-${description ? `Mevcut Açıklama: ${description}` : ''}
+${description ? `Aciklama: ${description}` : ''}
 
-## GÖREVİN
-Bu ürün için Google SERP'da en yüksek CTR (Click-Through Rate) sağlayacak meta başlık ve açıklama oluştur.
+GOREV: Bu urun icin Google SERP'da en yuksek tiklanma orani saglayacak meta baslik ve aciklama olustur.
 
-## ALTIN KURALLAR (KESİNLİKLE UYULMASI ZORUNLU)
+KURALLAR:
+1. Meta baslik: 50-60 karakter arasi (Google 60'ta keser)
+2. Meta aciklama: 150-160 karakter arasi (Google 160'ta keser)  
+3. Marka | Ezmeo olarak SONDA olmali
+4. Urun neyse onu yaz: fistik ezmesi ise fistik, recel ise meyve
+5. Kesinlikle karakter limitlerini asma
 
-### META BAŞLIK KURALLARI
-- KESİNLİKLE 50-55 karakter arası olmalı (Google 60'ta keser)
-- Yapı: [Ana Ürün Adı] + [| Özellik/Fayda] + [| Ezmeo]
-- Marka "| Ezmeo" olarak SONDA olmalı
-- Büyük harf kullanımına dikkat et (her kelime başı büyük)
-- "Premium", "Doğal", "Organik", "Katkısız" gibi güç kelimeleri kullan
-- ASLA ürün adından uzaklaşma, meyve için meyve yaz, ezme için ezme yaz
-
-### META AÇIKLAMA KURALLARI  
-- KESİNLİKLE 150-155 karakter arası olmalı (Google 160'ta keser)
-- Yapı: [Fayda Cümlesi] + [Özellik] + [CTA]
-- Kesinlikle ikna edici, eylem çağrısı içeren dil kullan
-- "Hemen sipariş ver", "Kapıda öde", "Hızlı kargo" gibi CTA'lar kullan
-- Ürünün asıl faydasını vurgula
-- ASLA 160 karakteri aşma
-
-## ÇIKTI FORMATI (SADECE JSON - KESİN KARAKTER KONTROLÜ)
-\\\`\\\`\\\`json
+CIKTI FORMATI (SADECE JSON, baska hicbir sey yazma):
 {
-  "metaTitle": "KESİNLİKLE 50-55 karakter arası",
-  "metaDescription": "KESİNLİKLE 150-155 karakter arası"
-}
-\\\`\\\`\\\`
-
-## ÖRNEKLER
-
-✅ DOĞRU (Fıstık Ezmesi için):
-{
-  "metaTitle": "Şekersiz Fıstık Ezmesi | Doğal Protein Kaynağı | Ezmeo",
-  "metaDescription": "%100 doğal şekersiz fıstık ezmesi ile sağlıklı beslenin. Sporcular için ideal protein kaynağı. Hemen sipariş ver, kapıda öde!"
-}
-
-✅ DOĞRU (Reçel için):
-{
-  "metaTitle": "Ev Yapımı Çilek Reçeli | Katkısız Lezzet | Ezmeo", 
-  "metaDescription": "Gerçek çileklerden yapılan katkısız reçel. Kahvaltılarınıza doğal tat katın. Hemen sipariş ver, kapıda ödeme fırsatı!"
-}
-
-❌ YANLIŞ (Limit aşımı):
-{
-  "metaTitle": "Premium Şekersiz Fıstık Ezmesi | Katkısız Sağlıklı Lezzet | Ezmeo" (65 karakter - ÇOK UZUN)
-  "metaDescription": "Şekerden uzak, sağlıklı atıştırmalık mı arıyorsunuz? Ezmeo'nun %100 doğal, katkısız şekersiz fıstık ezmesiyle tanışın..." (227 karakter - ÇOK UZUN)
-}
-
-## EN ÖNEMLİ KURAL
-Ürün adı neyse onu kullan: "Vişne Reçeli" ise vişne hakkında yaz, "Fıstık Ezmesi" ise fıstık hakkında yaz. Asla üründen bağımsız genel cümleler kullanma.
-
-SADECE ve SADECE JSON çıktısı ver. Başlık ve açıklama KESİNLİKLE karakter limitlerine uymalı.`;
+  "metaTitle": "50-60 karakter arasi baslik | Ezmeo",
+  "metaDescription": "150-160 karakter arasi aciklama"
+}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -138,55 +114,47 @@ export async function POST(request: NextRequest) {
     if (!name) {
       return NextResponse.json({
         success: false,
-        error: "Ürün adı zorunludur"
+        error: "Urun adi zorunludur"
       }, { status: 400 });
     }
 
     if (!GEMINI_API_KEY) {
       return NextResponse.json({
         success: false,
-        error: "AI sistemi yapılandırılmamış (GEMINI_API_KEY eksik)"
+        error: "GEMINI_API_KEY eksik"
       }, { status: 500 });
     }
 
     const prompt = buildSEOPrompt(name, category, description);
     const aiResponse = await callGeminiAPI(prompt);
 
-    if (!aiResponse.metaTitle || !aiResponse.metaDescription) {
+    let title = aiResponse.metaTitle || "";
+    let desc = aiResponse.metaDescription || "";
+
+    // Hard limit enforcement
+    if (title.length > 60) title = title.substring(0, 57) + "...";
+    if (desc.length > 160) desc = desc.substring(0, 157) + "...";
+
+    if (!title || !desc) {
       return NextResponse.json({
         success: false,
-        error: "AI yanıtı eksik meta bilgileri içeriyor"
+        error: "AI yaniti eksik"
       }, { status: 500 });
-    }
-
-    // Karakter limiti kontrolü (hard validation)
-    const title = aiResponse.metaTitle;
-    const desc = aiResponse.metaDescription;
-    
-    if (title.length > 60) {
-      console.warn(`[Toshi] Title too long: ${title.length} chars - truncating`);
-      aiResponse.metaTitle = title.substring(0, 57) + "...";
-    }
-    
-    if (desc.length > 160) {
-      console.warn(`[Toshi] Description too long: ${desc.length} chars - truncating`);
-      aiResponse.metaDescription = desc.substring(0, 157) + "...";
     }
 
     return NextResponse.json({
       success: true,
-      metaTitle: aiResponse.metaTitle,
-      metaDescription: aiResponse.metaDescription,
+      metaTitle: title,
+      metaDescription: desc,
       source: "toshi_ai"
     });
 
   } catch (error: any) {
-    console.error("[Toshi] SEO Generation Error:", error);
+    console.error("[Toshi] Error:", error);
     
     return NextResponse.json({
       success: false,
-      error: `Toshi şu anda çalışamıyor: ${error.message}`,
-      hint: "Lütfen daha sonra tekrar deneyin veya manuel giriş yapın"
+      error: `Toshi calisamiyor: ${error.message}`
     }, { status: 500 });
   }
 }
