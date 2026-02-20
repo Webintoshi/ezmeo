@@ -165,7 +165,7 @@ async function updateProduct(
     return product;
 }
 
-async function generateWithAI(product: ProductSEOViewModel): Promise<{metaTitle: string, metaDescription: string, source: string}> {
+async function generateWithAI(product: ProductSEOViewModel): Promise<{metaTitle: string, metaDescription: string, source: string, debug?: string[]}> {
     const response = await fetch("/api/seo/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -177,20 +177,13 @@ async function generateWithAI(product: ProductSEOViewModel): Promise<{metaTitle:
         }),
     });
 
-    if (!response.ok) {
-        throw new Error(`AI generation failed: ${response.status}`);
-    }
-
     const data = await response.json();
     
-    if (!data.success) {
-        throw new Error(data.error || "AI generation failed");
-    }
-
     return {
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
-        source: data.source
+        source: data.source,
+        debug: data.debug
     };
 }
 
@@ -207,6 +200,7 @@ export default function ProductSEOPage() {
     const [editForm, setEditForm] = useState<EditFormState>(EMPTY_FORM_STATE);
     const [message, setMessage] = useState<MessageState | null>(null);
     const [generating, setGenerating] = useState(false);
+    const [debugInfo, setDebugInfo] = useState<string[]>([]); // Debug için
     const [activeSection, setActiveSection] = useState<SectionType>("meta");
     const [searchQuery, setSearchQuery] = useState("");
     const [page, setPage] = useState(1);
@@ -284,18 +278,20 @@ export default function ProductSEOPage() {
     const handleGenerateAI = useCallback(async (product: ProductSEOViewModel) => {
         setGenerating(true);
         setMessage(null);
+        setDebugInfo([]);
 
         try {
-            // Show thinking state
             setEditForm(prev => ({
                 ...prev,
-                metaTitle: "🔍 Ürün analiz ediliyor...",
-                metaDescription: "Hedef kitle ve anahtar kelimeler belirleniyor..."
+                metaTitle: "🔍 AI düşünüyor...",
+                metaDescription: "Lütfen bekleyin..."
             }));
 
             const generated = await generateWithAI(product);
             
-            // Direkt atama (typewriter kaldırıldı - sorun çıkarıyordu)
+            if (generated.debug) {
+                setDebugInfo(generated.debug);
+            }
             setEditForm(prev => ({
                 ...prev,
                 metaTitle: generated.metaTitle,
@@ -304,10 +300,10 @@ export default function ProductSEOPage() {
             
             const isAI = generated.source.includes("zai");
             setMessage({ 
-                type: "success", 
+                type: isAI ? "success" : "error", 
                 text: isAI 
                     ? `✨ Z.AI (${generated.source}) ile başarıyla oluşturuldu!` 
-                    : `⚠️ Şablon kullanıldı (${generated.source})`
+                    : `⚠️ Şablon kullanıldı (${generated.source}). Debug: ${generated.debug?.join(" → ") || "Bilinmiyor"}`
             });
         } catch (error) {
             console.error("AI generation failed:", error);
@@ -429,6 +425,20 @@ export default function ProductSEOPage() {
                 <div className={`p-4 rounded-xl flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
                     {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertTriangle className="w-5 h-5 flex-shrink-0" />}
                     <span>{message.text}</span>
+                </div>
+            )}
+
+            {/* Debug Info */}
+            {debugInfo.length > 0 && (
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Debug Bilgileri</h4>
+                    <div className="space-y-1">
+                        {debugInfo.map((info, idx) => (
+                            <div key={idx} className="text-xs font-mono text-gray-600">
+                                {idx + 1}. {info}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 

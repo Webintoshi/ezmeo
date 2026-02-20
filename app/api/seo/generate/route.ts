@@ -1,66 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Z.AI Configuration
-const API_KEY = process.env.ZAI_API_KEY || "";
-const BASE_URL = "https://api.z.ai";
+const API_KEY = process.env.ZAI_API_KEY;
+const MODEL = "glm-4.7";
 
 export async function POST(request: NextRequest) {
+  const debugLogs: string[] = [];
+  
   try {
     const body = await request.json();
-    const { type, name, description, category } = body;
+    const { name, description, category } = body;
 
-    if (!name) {
-      return NextResponse.json(
-        { success: false, error: "Ürün adı gerekli" },
-        { status: 400 }
-      );
-    }
+    debugLogs.push(`1. İstek alındı: ${name}`);
 
-    // API Key kontrolü
+    // API Key kontrol
     if (!API_KEY) {
-      console.error("ZAI_API_KEY bulunamadı!");
-      return NextResponse.json(
-        { 
-          success: true, 
-          metaTitle: `${name} | Ezmeo`,
-          metaDescription: `${name} ürünü Ezmeo kalitesiyle. Hemen sipariş ver!`,
-          source: "fallback_no_key"
-        }
-      );
+      debugLogs.push("2. HATA: ZAI_API_KEY tanımlı değil!");
+      return NextResponse.json({
+        success: false,
+        error: "API Key tanımlı değil",
+        debug: debugLogs,
+        metaTitle: `${name} | Ezmeo`,
+        metaDescription: `${name} ürünü Ezmeo'da!`,
+        source: "fallback_no_key"
+      });
     }
 
-    // Basit prompt
-    const prompt = `Sen bir SEO uzmanısın. Bu ürün için meta başlık ve açıklama yaz:
+    debugLogs.push("2. API Key mevcut");
+
+    // Prompt oluştur
+    const prompt = `Bu ürün için SEO meta başlık ve açıklama yaz.
 
 Ürün: ${name}
 Kategori: ${category || "Genel"}
 Açıklama: ${description || ""}
 
 KURALLAR:
-- Meta başlık: 50-60 karakter, ürün adı + fayda + | Ezmeo
-- Meta açıklama: 120-160 karakter, ikna edici, CTA içermeli
-- Emoji kullanma
-- Sadece JSON formatında yanıt ver
+- Meta başlık: Ürün adı geçmeli, 50-60 karakter, sonuna "| Ezmeo" ekle
+- Meta açıklama: 120-160 karakter, ikna edici, ürün özelliklerini vurgula
+- JSON formatında yanıt ver
 
-ÖRNEK FORMAT:
+ÖRNEK:
 {
-  "metaTitle": "Doğal Fıstık Ezmesi 500gr | Şekersiz | Ezmeo",
-  "metaDescription": "%100 doğal fıstık ezmesi, şeker ilavesiz. Sporcular için ideal protein kaynağı. Hemen sipariş ver!"
+  "metaTitle": "Şekersiz Fıstık Ezmesi 500gr | Doğal | Ezmeo",
+  "metaDescription": "%100 doğal fıstık ezmesi, şeker ilavesiz. Sporcular için ideal protein kaynağı. Hemen sipariş ver, kapıda öde!"
 }`;
 
-    console.log("Z.AI isteği gönderiliyor...", { model: "glm-4.7", name });
+    debugLogs.push("3. Z.AI API'ye istek gönderiliyor...");
 
-    // Z.AI API çağrısı
-    const response = await fetch(`${BASE_URL}/api/paas/v4/chat/completions`, {
+    // API çağrısı
+    const response = await fetch("https://api.z.ai/api/paas/v4/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${API_KEY}`
       },
       body: JSON.stringify({
-        model: "glm-4.7",
+        model: MODEL,
         messages: [
-          { role: "system", content: "You are an SEO expert. Respond only in valid JSON format." },
+          { role: "system", content: "Sen bir SEO uzmanısın. JSON formatında yanıt ver." },
           { role: "user", content: prompt }
         ],
         temperature: 0.7,
@@ -68,61 +65,53 @@ KURALLAR:
       })
     });
 
-    console.log("Z.AI yanıt durumu:", response.status);
+    debugLogs.push(`4. Z.AI yanıt durumu: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Z.AI hatası:", response.status, errorText);
-      throw new Error(`API hatası: ${response.status}`);
+      debugLogs.push(`5. HATA: ${response.status} - ${errorText.slice(0, 200)}`);
+      throw new Error(`API Hatası: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("Z.AI yanıtı:", JSON.stringify(data, null, 2));
+    debugLogs.push(`6. Z.AI yanıtı alındı: ${JSON.stringify(data).slice(0, 300)}`);
 
     const content = data.choices?.[0]?.message?.content;
     
     if (!content) {
+      debugLogs.push("7. HATA: Boş yanıt");
       throw new Error("Boş yanıt");
     }
 
     // JSON parse
     let result;
     try {
-      // Markdown code block temizleme
       const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        result = JSON.parse(jsonMatch[0]);
-      } else {
-        result = JSON.parse(content);
-      }
+      result = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(content);
+      debugLogs.push("8. JSON parse başarılı");
     } catch (e) {
-      console.error("JSON parse hatası:", e, "İçerik:", content);
-      throw new Error("Yanıt JSON formatında değil");
-    }
-
-    // Validasyon
-    if (!result.metaTitle || !result.metaDescription) {
-      throw new Error("Eksik alanlar");
+      debugLogs.push(`7. HATA: JSON parse - ${e}`);
+      throw new Error("JSON parse hatası");
     }
 
     return NextResponse.json({
       success: true,
-      metaTitle: result.metaTitle.slice(0, 60),
-      metaDescription: result.metaDescription.slice(0, 160),
-      source: "zai_glm-4.7"
+      metaTitle: result.metaTitle?.slice(0, 60) || `${name} | Ezmeo`,
+      metaDescription: result.metaDescription?.slice(0, 160) || `${name} ürünü Ezmeo'da!`,
+      source: "zai_glm-4.7",
+      debug: debugLogs
     });
 
-  } catch (error) {
-    console.error("SEO Generation Hatası:", error);
-    
-    // Fallback
-    const { name, category } = await request.json().catch(() => ({ name: "Ürün", category: "" }));
+  } catch (error: any) {
+    debugLogs.push(`HATA: ${error.message}`);
     
     return NextResponse.json({
-      success: true,
-      metaTitle: `${name} | ${category || "Ezmeo"}`,
-      metaDescription: `${name} ürünü en uygun fiyatla Ezmeo'da! Hızlı kargo, kapıda ödeme. Hemen sipariş ver!`,
-      source: "fallback_error"
+      success: true, // Frontend'de gösterilsin diye
+      metaTitle: "Ürün | Ezmeo",
+      metaDescription: "Ürün ürünü en uygun fiyatla Ezmeo'da! Hızlı kargo, kapıda ödeme.",
+      source: "fallback_error",
+      debug: debugLogs,
+      error: error.message
     });
   }
 }
