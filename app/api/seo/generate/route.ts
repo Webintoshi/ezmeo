@@ -11,7 +11,7 @@ const ZAI_MODEL = process.env.ZAI_MODEL || "GLM-4.7";
 
 // Kimi K2.5 Configuration (OpenAI Compatible)
 const KIMI_API_KEY = process.env.KIMI_API_KEY || "";
-const KIMI_BASE_URL = process.env.KIMI_BASE_URL || "https://api.moonshot.cn/v1";
+const KIMI_BASE_URL = process.env.KIMI_BASE_URL || "https://api.kimi.com/coding/v1";
 const KIMI_MODEL = process.env.KIMI_MODEL || "kimi-k2-5";
 
 // Provider priority: kimi > zai > fallback
