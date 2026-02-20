@@ -18,7 +18,7 @@ export interface ProductSEOContext {
 }
 
 /**
- * Main SEO Expert Prompt - Analyzes any product type
+ * Main SEO Expert Prompt - Analyzes any product type (Optimized for Gemini)
  */
 export function buildSEOPrompt(context: ProductSEOContext): string {
   const {
@@ -38,23 +38,26 @@ export function buildSEOPrompt(context: ProductSEOContext): string {
     .join(". ");
 
   return `
-Sen 15 yıllık deneyime sahip, uluslararası sertifikalı bir E-ticaret SEO stratejistsin.
-Google'ın E-E-A-T (Experience, Expertise, Authoritativeness, Trust) kriterlerine hakimsin.
+Sen E-ticaret SEO uzmanısın. Aşağıdaki ürün için meta başlık ve açıklama oluştur.
 
-## ANALİZ GÖREVİ
-Aşağıdaki ürün bilgilerini derinlemesine analiz et:
-- Ürün adından ürün kategorisini ve anahtar özelliklerini çıkar
-- Açıklamadan hedef kitleyi ve fayda proposition'ını belirle
-- E-ticaret SEO'sunda en yüksek dönüşüm sağlayan stratejiyi uygula
-
-## ÜRÜN BİLGİLERİ
-Ürün Adı: ${name}
+ÜRÜN: ${name}
 ${category ? `Kategori: ${category}` : ""}
-${subcategory ? `Alt Kategori: ${subcategory}` : ""}
 Açıklama: ${fullDescription}
-${tags.length > 0 ? `Etiketler: ${tags.join(", ")}` : ""}
-${features.length > 0 ? `Özellikler: ${features.join(", ")}` : ""}
 Marka: ${brand}
+
+KURALLAR:
+- Meta başlık: 50-60 karakter, marka sona eklenmeli (| ${brand})
+- Meta açıklama: 150-160 karakter, CTA içermeli
+- Türkçe karakterleri doğru kullan
+- SADECE JSON formatında yanıt ver, başka açıklama yok
+
+JSON FORMATI:
+\`\`\`json
+{
+  "metaTitle": "...",
+  "metaDescription": "..."
+}
+\`\`\``
 
 ## SEO ANALİZİ YAPMAN GEREKENLER
 
