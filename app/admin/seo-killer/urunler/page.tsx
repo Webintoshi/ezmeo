@@ -306,15 +306,15 @@ export default function ProductSEOPage() {
         try {
             // Loading states with dots animation
             const thinkingStates = [
-                "🤖 AI SEO Uzmanı analiz ediyor",
-                "🤖 AI SEO Uzmanı analiz ediyor.",
-                "🤖 AI SEO Uzmanı analiz ediyor..",
-                "🤖 AI SEO Uzmanı analiz ediyor...",
-                "📝 Meta başlık oluşturuluyor...",
-                "📝 Meta başlık oluşturuluyor...",
-                "📄 Meta açıklama yazılıyor...",
-                "📄 Meta açıklama yazılıyor...",
-                "✨ Son kontroller yapılıyor..."
+                "Toshi analiz ediyor",
+                "Toshi analiz ediyor.",
+                "Toshi analiz ediyor..",
+                "Toshi analiz ediyor...",
+                "Toshi meta başlık oluşturuyor...",
+                "Toshi meta başlık oluşturuyor...",
+                "Toshi meta açıklama yazıyor...",
+                "Toshi meta açıklama yazıyor...",
+                "Toshi son kontrolleri yapıyor..."
             ];
             
             // Show loading animation
@@ -351,7 +351,7 @@ export default function ProductSEOPage() {
             
             setMessage({ 
                 type: "success", 
-                text: `✨ Profesyonel SEO Uzmanı (Gemini AI) başarıyla oluşturdu!`
+                text: `✨ Toshi başarıyla SEO optimizasyonunu tamamladı!`
             });
         } catch (error) {
             console.error("AI generation failed:", error);
@@ -649,7 +649,7 @@ function MetaSection({ product, editForm, isGenerating, isSaving, aiSource, onUp
     const descLength = editForm.metaDescription.length;
     
     // AI source badge kontrolü
-    const isAIGenerated = aiSource === "gemini_ai";
+    const isAIGenerated = aiSource === "toshi_ai";
     
     const generateSchemaPreview = (p: any) => ({
         "@context": "https://schema.org",
@@ -675,8 +675,8 @@ function MetaSection({ product, editForm, isGenerating, isSaving, aiSource, onUp
                             ({titleLength}/60)
                         </span>
                         {isAIGenerated && (
-                            <span className="ml-2 px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs rounded-full">
-                                🤖 Gemini AI
+                            <span className="ml-2 text-xs font-medium text-purple-600">
+                                by Toshi
                             </span>
                         )}
                     </label>
@@ -733,7 +733,7 @@ function MetaSection({ product, editForm, isGenerating, isSaving, aiSource, onUp
             <div className="flex items-center justify-between pt-2">
                 <button onClick={onGenerateAI} disabled={isGenerating} className="flex items-center gap-2 px-4 py-2 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg text-sm font-medium disabled:opacity-50">
                     {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    {isGenerating ? "🤖 AI SEO Uzmanı Düşünüyor..." : "✨ AI SEO Uzmanı ile Oluştur"}
+                    {isGenerating ? "Toshi analiz ediyor..." : "Toshi ile SEO Oluştur"}
                 </button>
                 <div className="flex gap-2">
                     <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">İptal</button>

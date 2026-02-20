@@ -39,7 +39,7 @@ async function callGeminiAPI(prompt: string): Promise<any> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+      generationConfig: { temperature: 0.5, maxOutputTokens: 2048 }
     })
   });
 
@@ -68,63 +68,66 @@ async function callGeminiAPI(prompt: string): Promise<any> {
 }
 
 function buildSEOPrompt(name: string, category?: string, description?: string): string {
-  return `Sen 15 yıllık deneyimli, uluslararası sertifikalı bir E-ticaret SEO stratejistsin. 
-Google'ın E-E-A-T (Experience, Expertise, Authoritativeness, Trust) ve YMYL (Your Money Your Life) kriterlerine ustalıkla hakimsin.
-
-## MÜŞTERİ PROFİLİ
-Ezmeo.com - Premium doğal gıda ve katkısız ürünler satan bir e-ticaret markası. 
-Hedef kitle: Sağlıklı yaşamaya önem veren, kaliteli ürün arayan, orta-üst gelir grubu tüketiciler.
-Rekabet avantajı: %100 doğal, katkısız, geleneksel yöntemlerle üretim, kapıda ödeme.
+  return `Sen Toshi - 15 yıllık deneyimli, sertifikalı bir E-ticaret SEO uzmanısın.
 
 ## ÜRÜN BİLGİLERİ
 Ürün Adı: ${name}
 ${category ? `Kategori: ${category}` : ''}
-${description ? `Açıklama: ${description}` : ''}
+${description ? `Mevcut Açıklama: ${description}` : ''}
 
-## SEO STRATEJİ GÖREVİ
+## GÖREVİN
+Bu ürün için Google SERP'da en yüksek CTR (Click-Through Rate) sağlayacak meta başlık ve açıklama oluştur.
 
-1. **ANAHTAR KELİME ARAŞTIRMASI (Sanal)**
-   - Ürün adından yüksek hacimli, düşük rekabetli long-tail anahtar kelimeler çıkar
-   - Transactional intent (satın alma niyeti) olan kelimeler seç
-   - Yerel SEO için "online", "kapıda ödeme", "hızlı kargo" modifikatörlerini düşün
+## ALTIN KURALLAR (KESİNLİKLE UYULMASI ZORUNLU)
 
-2. **META BAŞLIK OPTİMİZASYONU**
-   - 50-60 karakter (Google SERP'da tam görünecek şekilde)
-   - Yapı: [Anahtar Kelime] + [Fayda/Özellik] + [| Ezmeo]
-   - Güç kelimeleri kullan: "Doğal", "Organik", "Premium", "Katkısız"
-   - Duygusal tetikleyiciler: "Lezzet", "Sağlık", "Kalite"
+### META BAŞLIK KURALLARI
+- KESİNLİKLE 50-55 karakter arası olmalı (Google 60'ta keser)
+- Yapı: [Ana Ürün Adı] + [| Özellik/Fayda] + [| Ezmeo]
+- Marka "| Ezmeo" olarak SONDA olmalı
+- Büyük harf kullanımına dikkat et (her kelime başı büyük)
+- "Premium", "Doğal", "Organik", "Katkısız" gibi güç kelimeleri kullan
+- ASLA ürün adından uzaklaşma, meyve için meyve yaz, ezme için ezme yaz
 
-3. **META AÇIKLAMA OPTİMİZASYONU**
-   - 150-160 karakter arası (kesilmeden görünecek)
-   - Yapı: [Sorun/İhtiyaç] + [Çözüm] + [Fayda] + [CTA]
-   - İkna edici, eylem çağrısı içeren dil
-   - "Hemen sipariş ver", "Kapıda öde", "Stokla sınırlı" gibi aciliyet unsurları
+### META AÇIKLAMA KURALLARI  
+- KESİNLİKLE 150-155 karakter arası olmalı (Google 160'ta keser)
+- Yapı: [Fayda Cümlesi] + [Özellik] + [CTA]
+- Kesinlikle ikna edici, eylem çağrısı içeren dil kullan
+- "Hemen sipariş ver", "Kapıda öde", "Hızlı kargo" gibi CTA'lar kullan
+- Ürünün asıl faydasını vurgula
+- ASLA 160 karakteri aşma
 
-4. **KATEGORİ TESPİTİ**
-   - Ürünün doğru kategorisini belirle (fıstık ezmesi, reçel, bal, vb.)
-   - Hedef kitlenin arama davranışını analiz et
-
-## ÇIKTI FORMATI (SADECE JSON)
+## ÇIKTI FORMATI (SADECE JSON - KESİN KARAKTER KONTROLÜ)
 \\\`\\\`\\\`json
 {
-  "metaTitle": "50-60 karakter arası, SEO uyumlu başlık",
-  "metaDescription": "150-160 karakter arası, ikna edici açıklama",
-  "keywords": ["5-10 adet long-tail anahtar kelime"],
-  "category": "Tespit edilen kategori",
-  "targetAudience": "Hedef kitle açıklaması",
-  "strategy": "Kullanılan SEO stratejisinin kısa açıklaması"
+  "metaTitle": "KESİNLİKLE 50-55 karakter arası",
+  "metaDescription": "KESİNLİKLE 150-155 karakter arası"
 }
 \\\`\\\`\\\`
 
-## KRİTİK KURALLAR
+## ÖRNEKLER
 
-1. Kesinlikle 50-60 karakter arası meta başlık yaz
-2. Kesinlikle 150-160 karakter arası meta açıklama yaz  
-3. Marka "| Ezmeo" olarak MUTLAKA sona eklensin
-4. CTA (Call-to-Action) MUTLAKA olsun
-5. Türkçe karakterleri doğru kullan (ı, İ, ş, ç, ö, ğ, ü)
-6. Rakip analizi yap, farklılaştırıcı özellikleri vurgula
-7. SADECE JSON çıktısı ver, başka açıklama EKLEME`;
+✅ DOĞRU (Fıstık Ezmesi için):
+{
+  "metaTitle": "Şekersiz Fıstık Ezmesi | Doğal Protein Kaynağı | Ezmeo",
+  "metaDescription": "%100 doğal şekersiz fıstık ezmesi ile sağlıklı beslenin. Sporcular için ideal protein kaynağı. Hemen sipariş ver, kapıda öde!"
+}
+
+✅ DOĞRU (Reçel için):
+{
+  "metaTitle": "Ev Yapımı Çilek Reçeli | Katkısız Lezzet | Ezmeo", 
+  "metaDescription": "Gerçek çileklerden yapılan katkısız reçel. Kahvaltılarınıza doğal tat katın. Hemen sipariş ver, kapıda ödeme fırsatı!"
+}
+
+❌ YANLIŞ (Limit aşımı):
+{
+  "metaTitle": "Premium Şekersiz Fıstık Ezmesi | Katkısız Sağlıklı Lezzet | Ezmeo" (65 karakter - ÇOK UZUN)
+  "metaDescription": "Şekerden uzak, sağlıklı atıştırmalık mı arıyorsunuz? Ezmeo'nun %100 doğal, katkısız şekersiz fıstık ezmesiyle tanışın..." (227 karakter - ÇOK UZUN)
+}
+
+## EN ÖNEMLİ KURAL
+Ürün adı neyse onu kullan: "Vişne Reçeli" ise vişne hakkında yaz, "Fıstık Ezmesi" ise fıstık hakkında yaz. Asla üründen bağımsız genel cümleler kullanma.
+
+SADECE ve SADECE JSON çıktısı ver. Başlık ve açıklama KESİNLİKLE karakter limitlerine uymalı.`;
 }
 
 export async function POST(request: NextRequest) {
@@ -156,23 +159,33 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
+    // Karakter limiti kontrolü (hard validation)
+    const title = aiResponse.metaTitle;
+    const desc = aiResponse.metaDescription;
+    
+    if (title.length > 60) {
+      console.warn(`[Toshi] Title too long: ${title.length} chars - truncating`);
+      aiResponse.metaTitle = title.substring(0, 57) + "...";
+    }
+    
+    if (desc.length > 160) {
+      console.warn(`[Toshi] Description too long: ${desc.length} chars - truncating`);
+      aiResponse.metaDescription = desc.substring(0, 157) + "...";
+    }
+
     return NextResponse.json({
       success: true,
       metaTitle: aiResponse.metaTitle,
       metaDescription: aiResponse.metaDescription,
-      keywords: aiResponse.keywords || [],
-      category: aiResponse.category || category || "belirsiz",
-      targetAudience: aiResponse.targetAudience || "",
-      strategy: aiResponse.strategy || "",
-      source: "gemini_ai"
+      source: "toshi_ai"
     });
 
   } catch (error: any) {
-    console.error("AI SEO Generation Error:", error);
+    console.error("[Toshi] SEO Generation Error:", error);
     
     return NextResponse.json({
       success: false,
-      error: `AI SEO uzmanı şu anda çalışamıyor: ${error.message}`,
+      error: `Toshi şu anda çalışamıyor: ${error.message}`,
       hint: "Lütfen daha sonra tekrar deneyin veya manuel giriş yapın"
     }, { status: 500 });
   }
