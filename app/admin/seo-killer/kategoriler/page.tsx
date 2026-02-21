@@ -172,6 +172,56 @@ async function generateWithAI(category: CategorySEOViewModel): Promise<Partial<E
     };
 }
 
+async function generateCategoryFAQWithAI(category: CategorySEOViewModel): Promise<{faq: CategoryFAQ[]}> {
+    const response = await fetch("/api/seo/category-faq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: category.name,
+            description: category.description,
+        }),
+    });
+
+    if (!response.ok) {
+        throw new Error(`AI FAQ generation failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.success) {
+        throw new Error(data.error || "AI FAQ generation failed");
+    }
+
+    return {
+        faq: data.faq || [],
+    };
+}
+
+async function generateCategoryGEOWithAI(category: CategorySEOViewModel): Promise<{takeaways: string[]}> {
+    const response = await fetch("/api/seo/category-geo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: category.name,
+            description: category.description,
+        }),
+    });
+
+    if (!response.ok) {
+        throw new Error(`AI GEO generation failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.success) {
+        throw new Error(data.error || "AI GEO generation failed");
+    }
+
+    return {
+        takeaways: data.takeaways || [],
+    };
+}
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -187,6 +237,8 @@ export default function CategorySEOPage() {
     const [editForm, setEditForm] = useState<EditFormState>(EMPTY_FORM_STATE);
     const [message, setMessage] = useState<MessageState | null>(null);
     const [generating, setGenerating] = useState<boolean>(false);
+    const [generatingFAQ, setGeneratingFAQ] = useState<boolean>(false);
+    const [generatingGEO, setGeneratingGEO] = useState<boolean>(false);
     const [activeSection, setActiveSection] = useState<SectionType>("meta");
     const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
@@ -311,6 +363,60 @@ export default function CategorySEOPage() {
             });
         } finally {
             setGenerating(false);
+        }
+    }, []);
+
+    const handleGenerateFAQ = useCallback(async (category: CategorySEOViewModel) => {
+        setGeneratingFAQ(true);
+        setMessage(null);
+
+        try {
+            const generated = await generateCategoryFAQWithAI(category);
+            
+            setEditForm(prev => ({
+                ...prev,
+                faq: [...prev.faq, ...generated.faq]
+            }));
+            
+            setMessage({
+                type: "success",
+                text: `Toshi ${generated.faq.length} adet kategori FAQ'sı oluşturdu!`
+            });
+        } catch (error) {
+            console.error("FAQ generation failed:", error);
+            setMessage({ 
+                type: "error", 
+                text: error instanceof Error ? error.message : "FAQ oluşturma başarısız oldu." 
+            });
+        } finally {
+            setGeneratingFAQ(false);
+        }
+    }, []);
+
+    const handleGenerateGEO = useCallback(async (category: CategorySEOViewModel) => {
+        setGeneratingGEO(true);
+        setMessage(null);
+
+        try {
+            const generated = await generateCategoryGEOWithAI(category);
+            
+            setEditForm(prev => ({
+                ...prev,
+                keyTakeaways: [...prev.keyTakeaways, ...generated.takeaways]
+            }));
+            
+            setMessage({
+                type: "success",
+                text: `Toshi ${generated.takeaways.length} adet GEO çıkarımı oluşturdu!`
+            });
+        } catch (error) {
+            console.error("GEO generation failed:", error);
+            setMessage({ 
+                type: "error", 
+                text: error instanceof Error ? error.message : "GEO oluşturma başarısız oldu." 
+            });
+        } finally {
+            setGeneratingGEO(false);
         }
     }, []);
 
@@ -446,12 +552,16 @@ export default function CategorySEOPage() {
                             isEditing={editingId === category.id}
                             isSaving={saving}
                             isGenerating={generating}
+                            isGeneratingFAQ={generatingFAQ}
+                            isGeneratingGEO={generatingGEO}
                             activeSection={activeSection}
                             editForm={editForm}
                             onEdit={() => handleEdit(category)}
                             onSave={() => handleSave(category.id, category.slug)}
                             onCancel={handleCancel}
                             onGenerateAI={() => handleGenerateAI(category)}
+                            onGenerateFAQ={() => handleGenerateFAQ(category)}
+                            onGenerateGEO={() => handleGenerateGEO(category)}
                             onSectionChange={setActiveSection}
                             onUpdateMetaTitle={updateMetaTitle}
                             onUpdateMetaDescription={updateMetaDescription}
@@ -478,12 +588,16 @@ interface CategoryCardProps {
     isEditing: boolean;
     isSaving: boolean;
     isGenerating: boolean;
+    isGeneratingFAQ: boolean;
+    isGeneratingGEO: boolean;
     activeSection: SectionType;
     editForm: EditFormState;
     onEdit: () => void;
     onSave: () => void;
     onCancel: () => void;
     onGenerateAI: () => void;
+    onGenerateFAQ: () => void;
+    onGenerateGEO: () => void;
     onSectionChange: (section: SectionType) => void;
     onUpdateMetaTitle: (value: string) => void;
     onUpdateMetaDescription: (value: string) => void;
@@ -500,12 +614,16 @@ function CategoryCard({
     isEditing,
     isSaving,
     isGenerating,
+    isGeneratingFAQ,
+    isGeneratingGEO,
     activeSection,
     editForm,
     onEdit,
     onSave,
     onCancel,
     onGenerateAI,
+    onGenerateFAQ,
+    onGenerateGEO,
     onSectionChange,
     onUpdateMetaTitle,
     onUpdateMetaDescription,
@@ -586,6 +704,11 @@ function CategoryCard({
                             onAdd={onAddFAQ}
                             onUpdate={onUpdateFAQ}
                             onRemove={onRemoveFAQ}
+                            onGenerateAI={onGenerateFAQ}
+                            isGenerating={isGeneratingFAQ}
+                            onSave={onSave}
+                            onCancel={onCancel}
+                            isSaving={isSaving}
                         />
                     )}
 
@@ -596,6 +719,11 @@ function CategoryCard({
                             onAdd={onAddKeyTakeaway}
                             onUpdate={onUpdateKeyTakeaway}
                             onRemove={onRemoveKeyTakeaway}
+                            onGenerateAI={onGenerateGEO}
+                            isGenerating={isGeneratingGEO}
+                            onSave={onSave}
+                            onCancel={onCancel}
+                            isSaving={isSaving}
                         />
                     )}
                 </div>
@@ -741,14 +869,19 @@ function MetaSection({
                 <button
                     onClick={onGenerateAI}
                     disabled={isGenerating}
-                    className="flex items-center gap-2 px-4 py-2 text-purple-700 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-lg transition-all text-sm font-medium disabled:opacity-50 border border-purple-200"
+                    className="flex items-center gap-2.5 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isGenerating ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Toshi hazırlıyor...</span>
+                        </>
                     ) : (
-                        <Sparkles className="w-4 h-4" />
+                        <>
+                            <span className="flex items-center justify-center w-5 h-5 bg-white/10 rounded text-xs font-semibold">T</span>
+                            <span>Toshi ile Oluştur</span>
+                        </>
                     )}
-                    {isGenerating ? "Oluşturuluyor..." : "Toshi AI ile Oluştur"}
                 </button>
                 <div className="flex gap-2">
                     <button
@@ -779,12 +912,22 @@ function FAQSection({
     faq,
     onAdd,
     onUpdate,
-    onRemove
+    onRemove,
+    onGenerateAI,
+    isGenerating,
+    onSave,
+    onCancel,
+    isSaving
 }: {
     faq: CategoryFAQ[];
     onAdd: () => void;
     onUpdate: (index: number, field: keyof CategoryFAQ, value: string) => void;
     onRemove: (index: number) => void;
+    onGenerateAI: () => void;
+    isGenerating: boolean;
+    onSave: () => void;
+    onCancel: () => void;
+    isSaving: boolean;
 }) {
     return (
         <div className="space-y-4">
@@ -793,12 +936,26 @@ function FAQSection({
                     <h4 className="font-medium text-gray-900">Sıkça Sorulan Sorular</h4>
                     <p className="text-sm text-gray-500">Google FAQ rich snippet için soru-cevap ekleyin</p>
                 </div>
-                <button
-                    onClick={onAdd}
-                    className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
-                >
-                    + Soru Ekle
-                </button>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={onGenerateAI} 
+                        disabled={isGenerating}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isGenerating ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <span className="flex items-center justify-center w-5 h-5 bg-white/10 rounded text-xs font-semibold">T</span>
+                        )}
+                        <span>{isGenerating ? "Toshi hazırlıyor..." : "Toshi ile Oluştur"}</span>
+                    </button>
+                    <button
+                        onClick={onAdd}
+                        className="px-3 py-2 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors font-medium"
+                    >
+                        + Soru Ekle
+                    </button>
+                </div>
             </div>
             
             <div className="space-y-3">
@@ -839,6 +996,15 @@ function FAQSection({
                     Henüz FAQ eklenmemiş. "Soru Ekle" butonuna tıklayın.
                 </div>
             )}
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-200">
+                <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">İptal</button>
+                <button onClick={onSave} disabled={isSaving} className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-medium disabled:opacity-50">
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                </button>
+            </div>
         </div>
     );
 }
@@ -847,12 +1013,22 @@ function GEOSection({
     keyTakeaways,
     onAdd,
     onUpdate,
-    onRemove
+    onRemove,
+    onGenerateAI,
+    isGenerating,
+    onSave,
+    onCancel,
+    isSaving
 }: {
     keyTakeaways: string[];
     onAdd: () => void;
     onUpdate: (index: number, value: string) => void;
     onRemove: (index: number) => void;
+    onGenerateAI: () => void;
+    isGenerating: boolean;
+    onSave: () => void;
+    onCancel: () => void;
+    isSaving: boolean;
 }) {
     return (
         <div className="space-y-4">
@@ -872,12 +1048,26 @@ function GEOSection({
                         <h4 className="font-medium text-gray-900">Önemli Çıkarımlar (Key Takeaways)</h4>
                         <p className="text-sm text-gray-500">AI'ların kategoriniz hakkında vurgulaması gereken ana noktalar</p>
                     </div>
-                    <button
-                        onClick={onAdd}
-                        className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
-                    >
-                        + Ekle
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={onGenerateAI} 
+                            disabled={isGenerating}
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isGenerating ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <span className="flex items-center justify-center w-5 h-5 bg-white/10 rounded text-xs font-semibold">T</span>
+                            )}
+                            <span>{isGenerating ? "Toshi hazırlıyor..." : "Toshi ile Oluştur"}</span>
+                        </button>
+                        <button
+                            onClick={onAdd}
+                            className="px-3 py-2 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors font-medium"
+                        >
+                            + Ekle
+                        </button>
+                    </div>
                 </div>
                 
                 <div className="space-y-2">
@@ -908,6 +1098,15 @@ function GEOSection({
                     <li>• Kategorinin temel faydalarını vurgulayın</li>
                     <li>• Müşterilerin aradığı cevapları ekleyin</li>
                 </ul>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-200">
+                <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">İptal</button>
+                <button onClick={onSave} disabled={isSaving} className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-medium disabled:opacity-50">
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                </button>
             </div>
         </div>
     );
