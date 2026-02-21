@@ -713,6 +713,9 @@ export default function ProductSEOPage() {
                                     onRemove={removeFAQ}
                                     onGenerateAI={() => handleGenerateFAQ(product)}
                                     isGenerating={generatingFAQ}
+                                    onSave={() => handleSave(product.id, product.slug)}
+                                    onCancel={handleCancel}
+                                    isSaving={saving}
                                 />
                             )}
 
@@ -725,6 +728,9 @@ export default function ProductSEOPage() {
                                     onRemove={removeKeyTakeaway}
                                     onGenerateAI={() => handleGenerateGEO(product)}
                                     isGenerating={generatingGEO}
+                                    onSave={() => handleSave(product.id, product.slug)}
+                                    onCancel={handleCancel}
+                                    isSaving={saving}
                                 />
                             )}
                         </div>
@@ -879,7 +885,7 @@ function MetaSection({ product, editForm, isGenerating, isSaving, aiSource, onUp
                     ) : (
                         <>
                             <span className="flex items-center justify-center w-5 h-5 bg-white/10 rounded text-xs font-semibold">T</span>
-                            <span>Toshi'den öneri al</span>
+                            <span>Toshi ile Oluştur</span>
                         </>
                     )}
                 </button>
@@ -895,7 +901,7 @@ function MetaSection({ product, editForm, isGenerating, isSaving, aiSource, onUp
     );
 }
 
-function FAQSection({ faq, onAdd, onUpdate, onRemove, onGenerateAI, isGenerating }: any) {
+function FAQSection({ faq, onAdd, onUpdate, onRemove, onGenerateAI, isGenerating, onSave, onCancel, isSaving }: any) {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -914,7 +920,7 @@ function FAQSection({ faq, onAdd, onUpdate, onRemove, onGenerateAI, isGenerating
                         ) : (
                             <span className="flex items-center justify-center w-5 h-5 bg-white/10 rounded text-xs font-semibold">T</span>
                         )}
-                        <span>{isGenerating ? "Toshi hazırlıyor..." : "Toshi'den FAQ al"}</span>
+                        <span>{isGenerating ? "Toshi hazırlıyor..." : "Toshi ile Oluştur"}</span>
                     </button>
                     <button onClick={onAdd} className="px-3 py-2 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 font-medium">+ Soru Ekle</button>
                 </div>
@@ -943,11 +949,20 @@ function FAQSection({ faq, onAdd, onUpdate, onRemove, onGenerateAI, isGenerating
             {faq.length === 0 && (
                 <div className="text-center py-6 text-gray-500 text-sm bg-gray-100 rounded-lg">Henüz FAQ eklenmemiş.</div>
             )}
+            
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-200">
+                <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">İptal</button>
+                <button onClick={onSave} disabled={isSaving} className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-medium disabled:opacity-50">
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                </button>
+            </div>
         </div>
     );
 }
 
-function GEOSection({ keyTakeaways, onAdd, onUpdate, onRemove, onGenerateAI, isGenerating }: any) {
+function GEOSection({ keyTakeaways, onAdd, onUpdate, onRemove, onGenerateAI, isGenerating, onSave, onCancel, isSaving }: any) {
     return (
         <div className="space-y-4">
             <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
@@ -971,7 +986,7 @@ function GEOSection({ keyTakeaways, onAdd, onUpdate, onRemove, onGenerateAI, isG
                             ) : (
                                 <span className="flex items-center justify-center w-5 h-5 bg-white/10 rounded text-xs font-semibold">T</span>
                             )}
-                            <span>{isGenerating ? "Toshi hazırlıyor..." : "Toshi'den çıkarım al"}</span>
+                            <span>{isGenerating ? "Toshi hazırlıyor..." : "Toshi ile Oluştur"}</span>
                         </button>
                         <button onClick={onAdd} className="px-3 py-2 text-sm bg-primary/10 text-primary rounded-lg font-medium">+ Ekle</button>
                     </div>
@@ -990,6 +1005,15 @@ function GEOSection({ keyTakeaways, onAdd, onUpdate, onRemove, onGenerateAI, isG
                         </div>
                     ))}
                 </div>
+            </div>
+            
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-200">
+                <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">İptal</button>
+                <button onClick={onSave} disabled={isSaving} className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-medium disabled:opacity-50">
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                </button>
             </div>
         </div>
     );
