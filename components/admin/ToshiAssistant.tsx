@@ -16,17 +16,36 @@ interface Message {
     text: string;
 }
 
+interface AlertInfo {
+    count: number;
+    summary: string;
+}
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 const STORAGE_KEY = "toshi_messages";
+const ALERT_CACHE_KEY = "toshi_alerts";
 const MAX_STORED_MESSAGES = 50;
 const MAX_GEMINI_MESSAGES = 10;
+const ALERT_CHECK_INTERVAL = 5 * 60 * 1000; // 5 dakika
 
-const QUICK_PROMPTS = [
-    "Sipariş özeti",
-    "Düşük stok uyarıları",
-    "Son siparişler",
-    "Müşteri istatistikleri",
-];
+// ─── Page-aware Quick Prompts ────────────────────────────────────────────────
+function getQuickPrompts(pathname: string): string[] {
+    if (pathname === "/admin" || pathname === "/admin/")
+        return ["Günlük özet", "Bekleyen siparişler", "Düşük stok uyarıları", "Müşteri istatistikleri"];
+    if (pathname.startsWith("/admin/siparisler"))
+        return ["Sipariş özeti", "Bekleyen siparişler", "Son siparişler", "En çok satılan ürün"];
+    if (pathname.startsWith("/admin/urunler"))
+        return ["Stok durumu", "Düşük stok uyarıları", "Ürün ara", "Kaç ürünüm var?"];
+    if (pathname.startsWith("/admin/musteriler"))
+        return ["Müşteri istatistikleri", "Bu ay yeni müşteri", "En çok harcayan kim?"];
+    if (pathname.startsWith("/admin/indirimler"))
+        return ["Aktif indirimler", "Kâr marjı hesapla", "İndirim önerisi"];
+    if (pathname.startsWith("/admin/analizler"))
+        return ["Gelir özeti", "Bu ay büyüme", "Ortalama sipariş değeri"];
+    if (pathname.startsWith("/admin/pazarlama"))
+        return ["Pazarlama önerisi", "Dönüşüm oranı nedir?", "Kampanya fikri"];
+    return ["Sipariş özeti", "Düşük stok uyarıları", "Son siparişler", "Müşteri istatistikleri"];
+}
 
 // ─── Page Context ────────────────────────────────────────────────────────────
 function getPageContext(pathname: string): string {
@@ -53,7 +72,7 @@ function getPageContext(pathname: string): string {
     return `Ezmeo web sitesi: ${pathname}`;
 }
 
-// ─── Simple Markdown Renderer (bold, code, lists) ───────────────────────────
+// ─── Simple Markdown Renderer ────────────────────────────────────────────────
 function renderText(text: string) {
     const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
     return parts.map((part, i) => {
@@ -79,8 +98,7 @@ function loadMessages(): Message[] {
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (!stored) return [];
-        const parsed = JSON.parse(stored) as Message[];
-        return parsed.slice(-MAX_STORED_MESSAGES);
+        return (JSON.parse(stored) as Message[]).slice(-MAX_STORED_MESSAGES);
     } catch {
         return [];
     }
@@ -88,19 +106,34 @@ function loadMessages(): Message[] {
 
 function saveMessages(messages: Message[]) {
     try {
-        const trimmed = messages.slice(-MAX_STORED_MESSAGES);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-    } catch {
-        // localStorage might be full or disabled
-    }
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(messages.slice(-MAX_STORED_MESSAGES))
+        );
+    } catch { }
 }
 
 function clearMessages() {
     try {
         localStorage.removeItem(STORAGE_KEY);
+    } catch { }
+}
+
+// ─── Alert cache helpers ─────────────────────────────────────────────────────
+function loadAlertCache(): { data: AlertInfo; ts: number } | null {
+    try {
+        const raw = localStorage.getItem(ALERT_CACHE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
     } catch {
-        // noop
+        return null;
     }
+}
+
+function saveAlertCache(data: AlertInfo) {
+    try {
+        localStorage.setItem(ALERT_CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+    } catch { }
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -112,6 +145,7 @@ export default function ToshiAssistant() {
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
+    const [alertInfo, setAlertInfo] = useState<AlertInfo | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -129,7 +163,84 @@ export default function ToshiAssistant() {
         }
     }, [isOpen, isMinimized]);
 
-    // ─── Open Handler (lazy init + load from localStorage) ──
+    // ─── Keyboard shortcut: Ctrl+K ──
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+                e.preventDefault();
+                if (isOpen) {
+                    inputRef.current?.focus();
+                } else {
+                    handleOpen();
+                }
+            }
+            // Escape to close
+            if (e.key === "Escape" && isOpen) {
+                setIsOpen(false);
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]);
+
+    // ─── Proactive Alert Check (admin pages only) ──
+    useEffect(() => {
+        if (!pathname.startsWith("/admin")) {
+            setAlertInfo(null);
+            return;
+        }
+
+        const checkAlerts = async () => {
+            // Check cache first
+            const cached = loadAlertCache();
+            if (cached && Date.now() - cached.ts < ALERT_CHECK_INTERVAL) {
+                setAlertInfo(cached.data);
+                return;
+            }
+
+            try {
+                const [ordersRes, productsRes] = await Promise.all([
+                    fetch("/api/orders?stats=true").then((r) => r.json()).catch(() => null),
+                    fetch("/api/products?limit=100").then((r) => r.json()).catch(() => null),
+                ]);
+
+                let count = 0;
+                const alerts: string[] = [];
+
+                const pending = ordersRes?.stats?.pending || 0;
+                if (pending > 0) {
+                    count += pending;
+                    alerts.push(`${pending} bekleyen sipariş`);
+                }
+
+                const lowStockProducts = (productsRes?.products || []).filter(
+                    (p: { variants?: { stock: number }[] }) =>
+                        p.variants?.some((v) => v.stock < 10)
+                );
+                if (lowStockProducts.length > 0) {
+                    count += lowStockProducts.length;
+                    alerts.push(`${lowStockProducts.length} düşük stoklu ürün`);
+                }
+
+                const info: AlertInfo = {
+                    count,
+                    summary: alerts.length > 0 ? alerts.join(" · ") : "",
+                };
+
+                setAlertInfo(info.count > 0 ? info : null);
+                saveAlertCache(info);
+            } catch {
+                // Silently fail — badge just won't show
+            }
+        };
+
+        checkAlerts();
+        const interval = setInterval(checkAlerts, ALERT_CHECK_INTERVAL);
+        return () => clearInterval(interval);
+    }, [pathname]);
+
+    // ─── Open Handler ──
     const handleOpen = () => {
         setIsOpen(true);
         setIsMinimized(false);
@@ -140,14 +251,16 @@ export default function ToshiAssistant() {
             if (stored.length > 0) {
                 setMessages(stored);
             } else {
-                const greeting: Message[] = [
-                    {
-                        role: "model",
-                        text: "Merhaba! Ben **Toshi** 👋 Ezmeo'nun AI asistanıyım.\n\nSana **gerçek zamanlı** sipariş, ürün ve müşteri verileriyle yardımcı olabilirim. Matematiksel hesaplamalar da yapabilirim.\n\nNe öğrenmek istersin?",
-                    },
-                ];
-                setMessages(greeting);
-                saveMessages(greeting);
+                // Auto-generate greeting with alert context
+                let greeting =
+                    "Merhaba! Ben **Toshi** 👋 Ezmeo'nun AI asistanıyım.\n\nSana **gerçek zamanlı** sipariş, ürün ve müşteri verileriyle yardımcı olabilirim. Matematiksel hesaplamalar da yapabilirim.";
+                if (alertInfo && alertInfo.count > 0) {
+                    greeting += `\n\n⚠️ **Dikkat:** ${alertInfo.summary}. Detay için sor!`;
+                }
+                greeting += "\n\nNe öğrenmek istersin?";
+                const msgs: Message[] = [{ role: "model", text: greeting }];
+                setMessages(msgs);
+                saveMessages(msgs);
             }
         }
     };
@@ -165,7 +278,6 @@ export default function ToshiAssistant() {
             setInput("");
             setIsLoading(true);
 
-            // Trim to last N messages for Gemini (token optimization)
             const trimmedForGemini = updatedMessages.slice(-MAX_GEMINI_MESSAGES);
             const history = trimmedForGemini.map((m) => ({
                 role: m.role,
@@ -238,6 +350,8 @@ export default function ToshiAssistant() {
         setInput("");
     };
 
+    const quickPrompts = getQuickPrompts(pathname);
+
     // ─── Render ────────────────────────────────────────────────────────────────
     return (
         <>
@@ -245,7 +359,7 @@ export default function ToshiAssistant() {
             {!isOpen && (
                 <button
                     onClick={handleOpen}
-                    aria-label="Toshi AI Asistanı Aç"
+                    aria-label="Toshi AI Asistanı Aç (Ctrl+K)"
                     className="fixed bottom-6 right-6 z-[9999] group"
                     style={{ filter: "drop-shadow(0 8px 24px rgba(124,58,237,0.45))" }}
                 >
@@ -255,13 +369,31 @@ export default function ToshiAssistant() {
                             background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)",
                         }}
                     >
+                        {/* Pulse ring */}
                         <span className="absolute inset-0 rounded-full animate-ping opacity-20 bg-violet-500" />
+                        {/* T letter */}
                         <span className="text-white text-xl font-bold tracking-tight select-none">
                             T
                         </span>
+
+                        {/* Alert Badge */}
+                        {alertInfo && alertInfo.count > 0 && (
+                            <span
+                                className="absolute -top-1 -right-1 min-w-[20px] h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-lg"
+                                style={{
+                                    animation: "toshi-badge-pulse 2s ease-in-out infinite",
+                                }}
+                            >
+                                {alertInfo.count > 9 ? "9+" : alertInfo.count}
+                            </span>
+                        )}
                     </div>
+
+                    {/* Tooltip */}
                     <span className="absolute right-16 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                        Toshi&apos;ye sor
+                        {alertInfo && alertInfo.count > 0
+                            ? alertInfo.summary
+                            : "Toshi'ye sor (Ctrl+K)"}
                     </span>
                 </button>
             )}
@@ -271,8 +403,8 @@ export default function ToshiAssistant() {
                 <div
                     className="fixed bottom-6 right-6 z-[9999] flex flex-col rounded-2xl shadow-2xl overflow-hidden"
                     style={{
-                        width: "360px",
-                        height: isMinimized ? "56px" : "520px",
+                        width: "380px",
+                        height: isMinimized ? "56px" : "540px",
                         background: "#fff",
                         border: "1px solid rgba(124,58,237,0.15)",
                         boxShadow:
@@ -322,7 +454,7 @@ export default function ToshiAssistant() {
                             </button>
                             <button
                                 onClick={() => setIsOpen(false)}
-                                title="Kapat"
+                                title="Kapat (Esc)"
                                 className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/20 transition-colors"
                             >
                                 <X className="w-3.5 h-3.5" />
@@ -385,10 +517,10 @@ export default function ToshiAssistant() {
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Quick Prompts */}
+                            {/* Quick Prompts — page-aware */}
                             {messages.filter((m) => m.role === "user").length === 0 && (
                                 <div className="px-4 pb-2 flex gap-1.5 flex-wrap bg-white border-t border-gray-100">
-                                    {QUICK_PROMPTS.map((qp) => (
+                                    {quickPrompts.map((qp) => (
                                         <button
                                             key={qp}
                                             onClick={() => sendMessage(qp)}
@@ -435,13 +567,21 @@ export default function ToshiAssistant() {
                                     </button>
                                 </div>
                                 <p className="text-center text-[10px] text-gray-300 mt-1.5">
-                                    Enter ile gönder · Shift+Enter yeni satır
+                                    Enter ile gönder · Ctrl+K kısayol · Esc kapat
                                 </p>
                             </div>
                         </>
                     )}
                 </div>
             )}
+
+            {/* Badge pulse animation */}
+            <style jsx global>{`
+        @keyframes toshi-badge-pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.15); }
+        }
+      `}</style>
         </>
     );
 }
