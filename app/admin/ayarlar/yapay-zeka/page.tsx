@@ -28,7 +28,7 @@ const PROVIDERS = [
         id: "gemini" as AIProvider,
         name: "Google Gemini",
         description: "Google'ın en güçlü yapay zekası. Function calling destekli.",
-        models: ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+        models: ["gemini-3.1-pro-preview", "gemini-3-pro-preview", "gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite-preview-06-17", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro"],
         color: "from-blue-500 to-cyan-500",
         bgColor: "bg-blue-50 border-blue-200",
         activeColor: "bg-blue-600",
@@ -220,8 +220,8 @@ export default function AISettingsPage() {
                             key={p.id}
                             onClick={() => selectProvider(p.id)}
                             className={`relative text-left p-5 rounded-xl border-2 transition-all duration-200 ${config.provider === p.id
-                                    ? `${p.bgColor} border-current shadow-md scale-[1.02]`
-                                    : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                                ? `${p.bgColor} border-current shadow-md scale-[1.02]`
+                                : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm"
                                 }`}
                         >
                             {p.badge && (
@@ -360,8 +360,8 @@ export default function AISettingsPage() {
                 {testResult && (
                     <div
                         className={`flex items-start gap-3 p-4 rounded-lg ${testResult.success
-                                ? "bg-green-50 border border-green-200"
-                                : "bg-red-50 border border-red-200"
+                            ? "bg-green-50 border border-green-200"
+                            : "bg-red-50 border border-red-200"
                             }`}
                     >
                         {testResult.success ? (
