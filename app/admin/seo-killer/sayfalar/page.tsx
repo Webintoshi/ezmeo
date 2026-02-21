@@ -164,6 +164,58 @@ async function generateWithAI(page: PageSEOViewModel): Promise<Partial<EditFormS
     };
 }
 
+async function generatePageFAQWithAI(page: PageSEOViewModel): Promise<{faq: PageFAQ[]}> {
+    const response = await fetch("/api/seo/page-faq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: page.name,
+            url: page.url,
+            description: page.metaDescription,
+        }),
+    });
+
+    if (!response.ok) {
+        throw new Error(`AI FAQ generation failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.success) {
+        throw new Error(data.error || "AI FAQ generation failed");
+    }
+
+    return {
+        faq: data.faq || [],
+    };
+}
+
+async function generatePageGEOWithAI(page: PageSEOViewModel): Promise<{takeaways: string[]}> {
+    const response = await fetch("/api/seo/page-geo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: page.name,
+            url: page.url,
+            description: page.metaDescription,
+        }),
+    });
+
+    if (!response.ok) {
+        throw new Error(`AI GEO generation failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.success) {
+        throw new Error(data.error || "AI GEO generation failed");
+    }
+
+    return {
+        takeaways: data.takeaways || [],
+    };
+}
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -176,6 +228,8 @@ export default function PageSEOPage() {
     const [editForm, setEditForm] = useState<EditFormState>(EMPTY_FORM_STATE);
     const [message, setMessage] = useState<MessageState | null>(null);
     const [generating, setGenerating] = useState(false);
+    const [generatingFAQ, setGeneratingFAQ] = useState(false);
+    const [generatingGEO, setGeneratingGEO] = useState(false);
     const [activeSection, setActiveSection] = useState<SectionType>("meta");
     const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -270,6 +324,60 @@ export default function PageSEOPage() {
             });
         } finally {
             setGenerating(false);
+        }
+    }, []);
+
+    const handleGenerateFAQ = useCallback(async (page: PageSEOViewModel) => {
+        setGeneratingFAQ(true);
+        setMessage(null);
+
+        try {
+            const generated = await generatePageFAQWithAI(page);
+            
+            setEditForm(prev => ({
+                ...prev,
+                faq: [...prev.faq, ...generated.faq]
+            }));
+            
+            setMessage({
+                type: "success",
+                text: `Toshi ${generated.faq.length} adet sayfa FAQ'sı oluşturdu!`
+            });
+        } catch (error) {
+            console.error("FAQ generation failed:", error);
+            setMessage({ 
+                type: "error", 
+                text: error instanceof Error ? error.message : "FAQ oluşturma başarısız." 
+            });
+        } finally {
+            setGeneratingFAQ(false);
+        }
+    }, []);
+
+    const handleGenerateGEO = useCallback(async (page: PageSEOViewModel) => {
+        setGeneratingGEO(true);
+        setMessage(null);
+
+        try {
+            const generated = await generatePageGEOWithAI(page);
+            
+            setEditForm(prev => ({
+                ...prev,
+                keyTakeaways: [...prev.keyTakeaways, ...generated.takeaways]
+            }));
+            
+            setMessage({
+                type: "success",
+                text: `Toshi ${generated.takeaways.length} adet GEO çıkarımı oluşturdu!`
+            });
+        } catch (error) {
+            console.error("GEO generation failed:", error);
+            setMessage({ 
+                type: "error", 
+                text: error instanceof Error ? error.message : "GEO oluşturma başarısız." 
+            });
+        } finally {
+            setGeneratingGEO(false);
         }
     }, []);
 
@@ -450,6 +558,11 @@ export default function PageSEOPage() {
                                     onAdd={addFAQ}
                                     onUpdate={updateFAQ}
                                     onRemove={removeFAQ}
+                                    onGenerateAI={() => handleGenerateFAQ(page)}
+                                    isGenerating={generatingFAQ}
+                                    onSave={() => handleSave(page.id, page.slug)}
+                                    onCancel={handleCancel}
+                                    isSaving={saving}
                                 />
                             )}
 
@@ -460,6 +573,11 @@ export default function PageSEOPage() {
                                     onAdd={addKeyTakeaway}
                                     onUpdate={updateKeyTakeaway}
                                     onRemove={removeKeyTakeaway}
+                                    onGenerateAI={() => handleGenerateGEO(page)}
+                                    isGenerating={generatingGEO}
+                                    onSave={() => handleSave(page.id, page.slug)}
+                                    onCancel={handleCancel}
+                                    isSaving={saving}
                                 />
                             )}
                         </div>
@@ -543,9 +661,18 @@ function MetaSection({ page, editForm, isGenerating, isSaving, onUpdateMetaTitle
 
             {/* Actions */}
             <div className="flex items-center justify-between pt-2">
-                <button onClick={onGenerateAI} disabled={isGenerating} className="flex items-center gap-2 px-4 py-2 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg text-sm font-medium disabled:opacity-50">
-                    {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    {isGenerating ? "Oluşturuluyor..." : "Toshi AI ile Oluştur"}
+                <button onClick={onGenerateAI} disabled={isGenerating} className="flex items-center gap-2.5 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isGenerating ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Toshi hazırlıyor...</span>
+                        </>
+                    ) : (
+                        <>
+                            <span className="flex items-center justify-center w-5 h-5 bg-white/10 rounded text-xs font-semibold">T</span>
+                            <span>Toshi ile Oluştur</span>
+                        </>
+                    )}
                 </button>
                 <div className="flex gap-2">
                     <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">İptal</button>
@@ -559,7 +686,7 @@ function MetaSection({ page, editForm, isGenerating, isSaving, onUpdateMetaTitle
     );
 }
 
-function FAQSection({ faq, onAdd, onUpdate, onRemove }: any) {
+function FAQSection({ faq, onAdd, onUpdate, onRemove, onGenerateAI, isGenerating, onSave, onCancel, isSaving }: any) {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -567,7 +694,21 @@ function FAQSection({ faq, onAdd, onUpdate, onRemove }: any) {
                     <h4 className="font-medium text-gray-900">Sıkça Sorulan Sorular</h4>
                     <p className="text-sm text-gray-500">Google FAQ rich snippet için</p>
                 </div>
-                <button onClick={onAdd} className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg">+ Soru Ekle</button>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={onGenerateAI} 
+                        disabled={isGenerating}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isGenerating ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <span className="flex items-center justify-center w-5 h-5 bg-white/10 rounded text-xs font-semibold">T</span>
+                        )}
+                        <span>{isGenerating ? "Toshi hazırlıyor..." : "Toshi ile Oluştur"}</span>
+                    </button>
+                    <button onClick={onAdd} className="px-3 py-2 text-sm bg-primary/10 text-primary rounded-lg font-medium">+ Soru Ekle</button>
+                </div>
             </div>
             <div className="space-y-3">
                 {faq.map((item: any, index: number) => (
@@ -579,11 +720,20 @@ function FAQSection({ faq, onAdd, onUpdate, onRemove }: any) {
                 ))}
             </div>
             {faq.length === 0 && <div className="text-center py-6 text-gray-500 text-sm bg-gray-100 rounded-lg">Henüz FAQ eklenmemiş.</div>}
+            
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-200">
+                <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">İptal</button>
+                <button onClick={onSave} disabled={isSaving} className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-medium disabled:opacity-50">
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                </button>
+            </div>
         </div>
     );
 }
 
-function GEOSection({ keyTakeaways, onAdd, onUpdate, onRemove }: any) {
+function GEOSection({ keyTakeaways, onAdd, onUpdate, onRemove, onGenerateAI, isGenerating, onSave, onCancel, isSaving }: any) {
     return (
         <div className="space-y-4">
             <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
@@ -593,7 +743,21 @@ function GEOSection({ keyTakeaways, onAdd, onUpdate, onRemove }: any) {
             <div>
                 <div className="flex items-center justify-between mb-3">
                     <h4 className="font-medium text-gray-900">Önemli Çıkarımlar</h4>
-                    <button onClick={onAdd} className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg">+ Ekle</button>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={onGenerateAI} 
+                            disabled={isGenerating}
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isGenerating ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <span className="flex items-center justify-center w-5 h-5 bg-white/10 rounded text-xs font-semibold">T</span>
+                            )}
+                            <span>{isGenerating ? "Toshi hazırlıyor..." : "Toshi ile Oluştur"}</span>
+                        </button>
+                        <button onClick={onAdd} className="px-3 py-2 text-sm bg-primary/10 text-primary rounded-lg font-medium">+ Ekle</button>
+                    </div>
                 </div>
                 <div className="space-y-2">
                     {keyTakeaways.map((takeaway: string, index: number) => (
@@ -603,6 +767,15 @@ function GEOSection({ keyTakeaways, onAdd, onUpdate, onRemove }: any) {
                         </div>
                     ))}
                 </div>
+            </div>
+            
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-200">
+                <button onClick={onCancel} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">İptal</button>
+                <button onClick={onSave} disabled={isSaving} className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-sm font-medium disabled:opacity-50">
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {isSaving ? "Kaydediliyor..." : "Kaydet"}
+                </button>
             </div>
         </div>
     );
