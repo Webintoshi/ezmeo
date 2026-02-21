@@ -10,12 +10,25 @@ import {
     ChevronDown,
 } from "lucide-react";
 
+// ─── Types ───────────────────────────────────────────────────────────────────
 interface Message {
     role: "user" | "model";
     text: string;
 }
 
-// Derive a human-readable page context string from pathname
+// ─── Constants ───────────────────────────────────────────────────────────────
+const STORAGE_KEY = "toshi_messages";
+const MAX_STORED_MESSAGES = 50;
+const MAX_GEMINI_MESSAGES = 10;
+
+const QUICK_PROMPTS = [
+    "Sipariş özeti",
+    "Düşük stok uyarıları",
+    "Son siparişler",
+    "Müşteri istatistikleri",
+];
+
+// ─── Page Context ────────────────────────────────────────────────────────────
 function getPageContext(pathname: string): string {
     const map: Record<string, string> = {
         "/admin": "Admin paneli ana sayfası (dashboard). Sipariş, ürün ve satış özeti görüntüleniyor.",
@@ -33,7 +46,6 @@ function getPageContext(pathname: string): string {
     };
     const exact = map[pathname];
     if (exact) return exact;
-    // Partial matches
     for (const [key, val] of Object.entries(map)) {
         if (pathname.startsWith(key) && key !== "/admin") return val;
     }
@@ -41,7 +53,7 @@ function getPageContext(pathname: string): string {
     return `Ezmeo web sitesi: ${pathname}`;
 }
 
-// Very simple markdown-like renderer (bold, code)
+// ─── Simple Markdown Renderer (bold, code, lists) ───────────────────────────
 function renderText(text: string) {
     const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
     return parts.map((part, i) => {
@@ -62,13 +74,36 @@ function renderText(text: string) {
     });
 }
 
-const QUICK_PROMPTS = [
-    "Bugün ne yapmalıyım?",
-    "Düşük stok uyarıları",
-    "Kâr marjı nasıl hesaplanır?",
-    "Bana yardımcı ol",
-];
+// ─── localStorage helpers ────────────────────────────────────────────────────
+function loadMessages(): Message[] {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return [];
+        const parsed = JSON.parse(stored) as Message[];
+        return parsed.slice(-MAX_STORED_MESSAGES);
+    } catch {
+        return [];
+    }
+}
 
+function saveMessages(messages: Message[]) {
+    try {
+        const trimmed = messages.slice(-MAX_STORED_MESSAGES);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+    } catch {
+        // localStorage might be full or disabled
+    }
+}
+
+function clearMessages() {
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+    } catch {
+        // noop
+    }
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 export default function ToshiAssistant() {
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
@@ -88,28 +123,36 @@ export default function ToshiAssistant() {
         scrollToBottom();
     }, [messages, scrollToBottom]);
 
-    // Focus input when opens
     useEffect(() => {
         if (isOpen && !isMinimized) {
             setTimeout(() => inputRef.current?.focus(), 100);
         }
     }, [isOpen, isMinimized]);
 
+    // ─── Open Handler (lazy init + load from localStorage) ──
     const handleOpen = () => {
         setIsOpen(true);
         setIsMinimized(false);
-        // Show greeting on first open
+
         if (!isInitialized) {
             setIsInitialized(true);
-            setMessages([
-                {
-                    role: "model",
-                    text: "Merhaba! Ben **Toshi** 👋 Ezmeo'nun AI asistanıyım. Sana siparişler, ürünler, analizler veya matematiksel hesaplamalar konusunda yardımcı olabilirim. Ne öğrenmek istersin?",
-                },
-            ]);
+            const stored = loadMessages();
+            if (stored.length > 0) {
+                setMessages(stored);
+            } else {
+                const greeting: Message[] = [
+                    {
+                        role: "model",
+                        text: "Merhaba! Ben **Toshi** 👋 Ezmeo'nun AI asistanıyım.\n\nSana **gerçek zamanlı** sipariş, ürün ve müşteri verileriyle yardımcı olabilirim. Matematiksel hesaplamalar da yapabilirim.\n\nNe öğrenmek istersin?",
+                    },
+                ];
+                setMessages(greeting);
+                saveMessages(greeting);
+            }
         }
     };
 
+    // ─── Send Message ──
     const sendMessage = useCallback(
         async (text?: string) => {
             const msgText = text ?? input.trim();
@@ -118,11 +161,13 @@ export default function ToshiAssistant() {
             const userMessage: Message = { role: "user", text: msgText };
             const updatedMessages = [...messages, userMessage];
             setMessages(updatedMessages);
+            saveMessages(updatedMessages);
             setInput("");
             setIsLoading(true);
 
-            // Build Gemini-formatted history (exclude greeting from model history for cleanliness)
-            const history = updatedMessages.map((m) => ({
+            // Trim to last N messages for Gemini (token optimization)
+            const trimmedForGemini = updatedMessages.slice(-MAX_GEMINI_MESSAGES);
+            const history = trimmedForGemini.map((m) => ({
                 role: m.role,
                 parts: [{ text: m.text }],
             }));
@@ -138,17 +183,34 @@ export default function ToshiAssistant() {
                 });
 
                 const data = await res.json();
-                const replyText =
-                    data.text ?? "Üzgünüm, bir hata oluştu. Tekrar dene.";
-                setMessages([...updatedMessages, { role: "model", text: replyText }]);
+
+                if (!res.ok || data.error) {
+                    const errorMsg = data.error || "Bir hata oluştu. Tekrar dene.";
+                    const withError = [
+                        ...updatedMessages,
+                        { role: "model" as const, text: `⚠️ ${errorMsg}` },
+                    ];
+                    setMessages(withError);
+                    saveMessages(withError);
+                } else {
+                    const replyText = data.text ?? "Üzgünüm, yanıt oluşturulamadı.";
+                    const withReply = [
+                        ...updatedMessages,
+                        { role: "model" as const, text: replyText },
+                    ];
+                    setMessages(withReply);
+                    saveMessages(withReply);
+                }
             } catch {
-                setMessages([
+                const withError = [
                     ...updatedMessages,
                     {
-                        role: "model",
-                        text: "Bağlantı hatası oluştu. İnternet bağlantını kontrol et.",
+                        role: "model" as const,
+                        text: "⚠️ Bağlantı hatası oluştu. İnternet bağlantını kontrol et.",
                     },
-                ]);
+                ];
+                setMessages(withError);
+                saveMessages(withError);
             } finally {
                 setIsLoading(false);
             }
@@ -164,15 +226,19 @@ export default function ToshiAssistant() {
     };
 
     const handleReset = () => {
-        setMessages([
+        const greeting: Message[] = [
             {
                 role: "model",
                 text: "Konuşma sıfırlandı! Ben **Toshi** 👋 Sana nasıl yardımcı olabilirim?",
             },
-        ]);
+        ];
+        setMessages(greeting);
+        clearMessages();
+        saveMessages(greeting);
         setInput("");
     };
 
+    // ─── Render ────────────────────────────────────────────────────────────────
     return (
         <>
             {/* Floating Button */}
@@ -189,14 +255,11 @@ export default function ToshiAssistant() {
                             background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)",
                         }}
                     >
-                        {/* Pulse ring */}
                         <span className="absolute inset-0 rounded-full animate-ping opacity-20 bg-violet-500" />
-                        {/* T letter */}
                         <span className="text-white text-xl font-bold tracking-tight select-none">
                             T
                         </span>
                     </div>
-                    {/* Tooltip */}
                     <span className="absolute right-16 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
                         Toshi&apos;ye sor
                     </span>
@@ -212,7 +275,8 @@ export default function ToshiAssistant() {
                         height: isMinimized ? "56px" : "520px",
                         background: "#fff",
                         border: "1px solid rgba(124,58,237,0.15)",
-                        boxShadow: "0 24px 64px rgba(124,58,237,0.18), 0 2px 16px rgba(0,0,0,0.08)",
+                        boxShadow:
+                            "0 24px 64px rgba(124,58,237,0.18), 0 2px 16px rgba(0,0,0,0.08)",
                         transition: "height 0.25s cubic-bezier(.4,0,.2,1)",
                     }}
                 >
@@ -232,7 +296,7 @@ export default function ToshiAssistant() {
                                     Toshi
                                 </p>
                                 <p className="text-violet-200 text-xs leading-tight">
-                                    AI Asistan · Her zaman aktif
+                                    AI Asistan · Gerçek zamanlı
                                 </p>
                             </div>
                         </div>
@@ -251,7 +315,9 @@ export default function ToshiAssistant() {
                             >
                                 <ChevronDown
                                     className="w-3.5 h-3.5 transition-transform duration-200"
-                                    style={{ transform: isMinimized ? "rotate(180deg)" : "rotate(0deg)" }}
+                                    style={{
+                                        transform: isMinimized ? "rotate(180deg)" : "rotate(0deg)",
+                                    }}
                                 />
                             </button>
                             <button
@@ -275,7 +341,9 @@ export default function ToshiAssistant() {
                                     >
                                         {msg.role === "model" && (
                                             <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
-                                                <span className="text-white text-[10px] font-bold">T</span>
+                                                <span className="text-white text-[10px] font-bold">
+                                                    T
+                                                </span>
                                             </div>
                                         )}
                                         <div
@@ -283,7 +351,10 @@ export default function ToshiAssistant() {
                                                     ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm"
                                                     : "bg-white text-gray-800 shadow-sm border border-gray-100 rounded-tl-sm"
                                                 }`}
-                                            style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+                                            style={{
+                                                whiteSpace: "pre-wrap",
+                                                wordBreak: "break-word",
+                                            }}
                                         >
                                             {msg.role === "model"
                                                 ? msg.text.split("\n").map((line, li) => (
@@ -299,18 +370,22 @@ export default function ToshiAssistant() {
                                 {isLoading && (
                                     <div className="flex justify-start">
                                         <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center flex-shrink-0 mr-2 mt-0.5">
-                                            <span className="text-white text-[10px] font-bold">T</span>
+                                            <span className="text-white text-[10px] font-bold">
+                                                T
+                                            </span>
                                         </div>
                                         <div className="bg-white border border-gray-100 shadow-sm px-3 py-2.5 rounded-2xl rounded-tl-sm flex items-center gap-1.5">
                                             <Loader2 className="w-3.5 h-3.5 text-violet-500 animate-spin" />
-                                            <span className="text-xs text-gray-400">Düşünüyor...</span>
+                                            <span className="text-xs text-gray-400">
+                                                Veri çekiliyor...
+                                            </span>
                                         </div>
                                     </div>
                                 )}
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Quick Prompts — show only before any user message */}
+                            {/* Quick Prompts */}
                             {messages.filter((m) => m.role === "user").length === 0 && (
                                 <div className="px-4 pb-2 flex gap-1.5 flex-wrap bg-white border-t border-gray-100">
                                     {QUICK_PROMPTS.map((qp) => (
@@ -352,7 +427,10 @@ export default function ToshiAssistant() {
                                     >
                                         <Send
                                             className="w-3.5 h-3.5"
-                                            style={{ color: input.trim() && !isLoading ? "#fff" : "#9ca3af" }}
+                                            style={{
+                                                color:
+                                                    input.trim() && !isLoading ? "#fff" : "#9ca3af",
+                                            }}
                                         />
                                     </button>
                                 </div>
