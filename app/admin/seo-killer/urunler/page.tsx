@@ -214,6 +214,30 @@ async function generateFAQWithAI(product: ProductSEOViewModel): Promise<{success
     };
 }
 
+async function generateGEOWithAI(product: ProductSEOViewModel): Promise<{success: boolean, takeaways: string[], source: string, error?: string}> {
+    const response = await fetch("/api/seo/geo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: product.name,
+            description: product.description || product.short_description,
+            category: product.category
+        }),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+        throw new Error(data.error || "Toshi GEO oluşturamıyor");
+    }
+    
+    return {
+        success: true,
+        takeaways: data.takeaways,
+        source: data.source
+    };
+}
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -228,6 +252,7 @@ export default function ProductSEOPage() {
     const [message, setMessage] = useState<MessageState | null>(null);
     const [generating, setGenerating] = useState(false);
     const [generatingFAQ, setGeneratingFAQ] = useState(false);
+    const [generatingGEO, setGeneratingGEO] = useState(false);
     const [debugInfo, setDebugInfo] = useState<string[]>([]); // Debug için
     const [aiSource, setAiSource] = useState<string | null>(null); // AI source bilgisi
     const [activeSection, setActiveSection] = useState<SectionType>("meta");
@@ -435,6 +460,38 @@ export default function ProductSEOPage() {
             });
         } finally {
             setGeneratingFAQ(false);
+        }
+    }, []);
+
+    const handleGenerateGEO = useCallback(async (product: ProductSEOViewModel) => {
+        setGeneratingGEO(true);
+        setMessage(null);
+
+        try {
+            const generated = await generateGEOWithAI(product);
+            
+            if (!generated.success) {
+                throw new Error(generated.error || "GEO oluşturulamadı");
+            }
+            
+            // Takeaways'leri form'a ekle (mevcutları koruyarak)
+            setEditForm(prev => ({
+                ...prev,
+                keyTakeaways: [...prev.keyTakeaways, ...generated.takeaways]
+            }));
+            
+            setMessage({ 
+                type: "success", 
+                text: `Toshi ${generated.takeaways.length} adet önemli çıkarım hazırladı!`
+            });
+        } catch (error) {
+            console.error("GEO generation failed:", error);
+            setMessage({ 
+                type: "error", 
+                text: error instanceof Error ? error.message : "GEO oluşturma başarısız oldu." 
+            });
+        } finally {
+            setGeneratingGEO(false);
         }
     }, []);
 
@@ -666,6 +723,8 @@ export default function ProductSEOPage() {
                                     onAdd={addKeyTakeaway}
                                     onUpdate={updateKeyTakeaway}
                                     onRemove={removeKeyTakeaway}
+                                    onGenerateAI={() => handleGenerateGEO(product)}
+                                    isGenerating={generatingGEO}
                                 />
                             )}
                         </div>
@@ -888,7 +947,7 @@ function FAQSection({ faq, onAdd, onUpdate, onRemove, onGenerateAI, isGenerating
     );
 }
 
-function GEOSection({ keyTakeaways, onAdd, onUpdate, onRemove }: any) {
+function GEOSection({ keyTakeaways, onAdd, onUpdate, onRemove, onGenerateAI, isGenerating }: any) {
     return (
         <div className="space-y-4">
             <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
@@ -901,7 +960,21 @@ function GEOSection({ keyTakeaways, onAdd, onUpdate, onRemove }: any) {
             <div>
                 <div className="flex items-center justify-between mb-3">
                     <h4 className="font-medium text-gray-900">Önemli Çıkarımlar</h4>
-                    <button onClick={onAdd} className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg">+ Ekle</button>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={onGenerateAI} 
+                            disabled={isGenerating}
+                            className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isGenerating ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <span className="flex items-center justify-center w-5 h-5 bg-white/10 rounded text-xs font-semibold">T</span>
+                            )}
+                            <span>{isGenerating ? "Toshi hazırlıyor..." : "Toshi'den çıkarım al"}</span>
+                        </button>
+                        <button onClick={onAdd} className="px-3 py-2 text-sm bg-primary/10 text-primary rounded-lg font-medium">+ Ekle</button>
+                    </div>
                 </div>
                 <div className="space-y-2">
                     {keyTakeaways.map((takeaway: string, index: number) => (
