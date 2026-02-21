@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Home, ArrowLeft, RotateCw, Menu } from "lucide-react";
+import ToshiAssistant from "@/components/admin/ToshiAssistant";
 
 export default function AdminLayout({
   children,
@@ -76,7 +77,7 @@ export default function AdminLayout({
   return (
     <div className="flex min-h-screen bg-[#f1f1f1] font-sans" style={{ fontFamily: 'var(--font-inter), Inter, system-ui, sans-serif' }}>
       <AdminSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      
+
       <main className="flex-1 overflow-y-auto h-screen">
         <div className="p-4 md:p-6 lg:p-8 pb-24 md:pb-8">
           {children}
@@ -94,7 +95,7 @@ export default function AdminLayout({
               <ArrowLeft className="w-6 h-6 text-gray-700" />
               <span className="text-xs font-medium text-gray-600">Geri</span>
             </button>
-            
+
             <button
               onClick={handleHome}
               className="flex flex-col items-center gap-1 p-3 rounded-xl bg-primary/10 hover:bg-primary/20 active:scale-95 transition-all min-w-[70px]"
@@ -121,6 +122,9 @@ export default function AdminLayout({
           </div>
         </div>
       )}
+
+      {/* Toshi AI Asistanı */}
+      <ToshiAssistant />
     </div>
   );
 }

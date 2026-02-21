@@ -14,7 +14,7 @@ import { SITE_NAME, SITE_DESCRIPTION } from "@/lib/constants";
 import TrackingProvider from "@/components/TrackingProvider";
 import { Toaster } from "sonner";
 import PromotionalBannersPreload from "@/components/preload/PromotionalBannersPreload";
-import ToshiAssistant from "@/components/admin/ToshiAssistant";
+
 
 const inter = Inter({
   subsets: ["latin"],
@@ -131,7 +131,6 @@ export default function RootLayout({
                     <LayoutWrapper>
                       {children}
                       <Toaster position="top-right" theme="light" />
-                      <ToshiAssistant />
                     </LayoutWrapper>
                   </QuickViewProvider>
                 </WishlistProvider>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-2.5-flash-preview-04-17";
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 const SYSTEM_PROMPT = `Sen Toshi'sin — Ezmeo'nun akıllı admin asistanı. Ezmeo, Türkiye merkezli bir e-ticaret platformudur; doğal fıstık ezmesi, badem ezmesi, fındık ezmesi ve benzeri ürünleri satar.
 
@@ -41,60 +41,68 @@ Sen her zaman Türkçe yanıt verirsin. Kullanıcı sana İngilizce yazsa bile T
 - "Toshi" olarak kendini tanıt, yapay zeka olduğunu saklamaya gerek yok`;
 
 export async function POST(req: NextRequest) {
-    if (!GEMINI_API_KEY) {
+    try {
+        if (!GEMINI_API_KEY) {
+            return NextResponse.json(
+                { error: "Gemini API anahtarı tanımlanmamış." },
+                { status: 500 }
+            );
+        }
+
+        const body = await req.json();
+        const { messages, context } = body as {
+            messages: { role: "user" | "model"; parts: [{ text: string }] }[];
+            context?: string;
+        };
+
+        if (!messages || messages.length === 0) {
+            return NextResponse.json({ error: "Mesaj bulunamadı." }, { status: 400 });
+        }
+
+        // Build system prompt with current page context
+        const systemWithContext = context
+            ? `${SYSTEM_PROMPT}\n\n## Mevcut Sayfa Bağlamı:\n${context}`
+            : SYSTEM_PROMPT;
+
+        const payload = {
+            system_instruction: {
+                parts: [{ text: systemWithContext }],
+            },
+            contents: messages,
+            generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 2048,
+            },
+        };
+
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+        const response = await fetch(geminiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error("Gemini API hatası:", response.status, errText);
+            return NextResponse.json(
+                { error: `Gemini API hatası (${response.status}). Lütfen tekrar dene.` },
+                { status: 500 }
+            );
+        }
+
+        const data = await response.json();
+        const text =
+            data.candidates?.[0]?.content?.parts?.[0]?.text ??
+            "Üzgünüm, yanıt oluşturulamadı.";
+
+        return NextResponse.json({ text });
+    } catch (err) {
+        console.error("Toshi API genel hata:", err);
         return NextResponse.json(
-            { error: "Gemini API anahtarı tanımlanmamış." },
+            { error: "Beklenmeyen bir hata oluştu. Lütfen tekrar dene." },
             { status: 500 }
         );
     }
-
-    const body = await req.json();
-    const { messages, context } = body as {
-        messages: { role: "user" | "model"; parts: [{ text: string }] }[];
-        context?: string;
-    };
-
-    if (!messages || messages.length === 0) {
-        return NextResponse.json({ error: "Mesaj bulunamadı." }, { status: 400 });
-    }
-
-    // Build system prompt with current page context
-    const systemWithContext = context
-        ? `${SYSTEM_PROMPT}\n\n## Mevcut Sayfa Bağlamı:\n${context}`
-        : SYSTEM_PROMPT;
-
-    const payload = {
-        system_instruction: {
-            parts: [{ text: systemWithContext }],
-        },
-        contents: messages,
-        generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-        },
-    };
-
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-
-    const response = await fetch(geminiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-        const errText = await response.text();
-        console.error("Gemini API hatası:", errText);
-        return NextResponse.json(
-            { error: "Gemini API yanıt vermedi. Lütfen tekrar dene." },
-            { status: response.status }
-        );
-    }
-
-    const data = await response.json();
-    const text =
-        data.candidates?.[0]?.content?.parts?.[0]?.text ??
-        "Üzgünüm, yanıt oluşturulamadı.";
-
-    return NextResponse.json({ text });
 }
