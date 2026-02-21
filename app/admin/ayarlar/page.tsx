@@ -9,7 +9,8 @@ import {
     ChevronRight,
     ShieldCheck,
     Globe2,
-    ImageIcon
+    ImageIcon,
+    Brain
 } from "lucide-react";
 import Link from "next/link";
 
@@ -62,6 +63,13 @@ const SETTINGS_SECTIONS = [
         icon: ImageIcon,
         href: "/admin/ayarlar/hero-banner",
         color: "bg-pink-50 text-pink-600",
+    },
+    {
+        title: "Yapay Zeka",
+        description: "Toshi AI asistan ve SEO araçları için provider ve API key ayarları.",
+        icon: Brain,
+        href: "/admin/ayarlar/yapay-zeka",
+        color: "bg-purple-50 text-purple-600",
     },
 ];
 

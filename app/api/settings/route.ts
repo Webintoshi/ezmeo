@@ -14,8 +14,11 @@ import {
     setAnnouncementBarSettings,
     getMarqueeSettings,
     setMarqueeSettings,
+    getAIProviderSettings,
+    setAIProviderSettings,
     SETTING_KEYS
 } from "@/lib/db/settings";
+import { testAIConnection } from "@/lib/ai";
 
 // GET /api/settings - Get settings
 export async function GET(request: NextRequest) {
@@ -48,6 +51,20 @@ export async function GET(request: NextRequest) {
         if (type === "marquee") {
             const settings = await getMarqueeSettings();
             return NextResponse.json({ success: true, marqueeSettings: settings });
+        }
+
+        if (type === "ai") {
+            const aiSettings = await getAIProviderSettings();
+            const hasEnvKey = !!process.env.GEMINI_API_KEY;
+            return NextResponse.json({
+                success: true,
+                aiSettings: aiSettings ? {
+                    provider: aiSettings.provider,
+                    apiKey: aiSettings.apiKey,
+                    model: aiSettings.model,
+                } : null,
+                hasEnvKey,
+            });
         }
 
         // Get specific setting by key
@@ -98,6 +115,18 @@ export async function POST(request: NextRequest) {
         if (type === "marquee" && marqueeSettings) {
             await setMarqueeSettings(marqueeSettings);
             return NextResponse.json({ success: true, message: "Marquee settings updated" });
+        }
+
+        // AI provider settings — save
+        if (type === "ai" && body.aiSettings) {
+            await setAIProviderSettings(body.aiSettings);
+            return NextResponse.json({ success: true, message: "AI provider settings updated" });
+        }
+
+        // AI provider settings — test connection
+        if (type === "ai-test" && body.aiSettings) {
+            const testResult = await testAIConnection(body.aiSettings);
+            return NextResponse.json({ success: true, testResult });
         }
 
         // Set generic setting by key

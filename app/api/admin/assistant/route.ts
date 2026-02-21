@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { callAIWithFunctions } from "@/lib/ai";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = "gemini-2.5-flash";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 const MAX_FUNCTION_CALLS = 3;
 
@@ -599,16 +598,9 @@ ${order.notes ? `Not: ${order.notes}` : ""}`;
     }
 }
 
-// ─── POST Handler (Multi-function loop) ──────────────────────────────────────
+// ─── POST Handler (Multi-function loop via shared AI utility) ────────────────
 export async function POST(req: NextRequest) {
     try {
-        if (!GEMINI_API_KEY) {
-            return NextResponse.json(
-                { error: "Gemini API anahtarı tanımlanmamış." },
-                { status: 500 }
-            );
-        }
-
         const body = await req.json();
         const { messages, context } = body as {
             messages: {
@@ -631,91 +623,15 @@ export async function POST(req: NextRequest) {
             ? `${SYSTEM_PROMPT}\n\n## Mevcut Sayfa Bağlamı:\n${context}`
             : SYSTEM_PROMPT;
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let contents: any[] = [...trimmedMessages];
-        let finalText = "";
-
-        for (let turn = 0; turn < MAX_FUNCTION_CALLS + 1; turn++) {
-            const payload = {
-                system_instruction: {
-                    parts: [{ text: systemWithContext }],
-                },
-                contents,
-                tools: [{ function_declarations: FUNCTION_DECLARATIONS }],
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 4096,
-                },
-            };
-
-            const response = await fetch(geminiUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-
-            if (!response.ok) {
-                const errText = await response.text();
-                console.error("Gemini API hatası:", response.status, errText);
-                return NextResponse.json(
-                    {
-                        error: `Gemini API hatası (${response.status}). Lütfen tekrar dene.`,
-                    },
-                    { status: 500 }
-                );
-            }
-
-            const data = await response.json();
-            const candidate = data.candidates?.[0];
-            const parts = candidate?.content?.parts || [];
-
-            const functionCallPart = parts.find(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (p: any) => p.functionCall
-            );
-
-            if (functionCallPart?.functionCall) {
-                const { name, args } = functionCallPart.functionCall;
-                console.log(`[Toshi] Function call #${turn + 1}: ${name}`, args);
-
-                const functionResult = await executeFunction(name, args || {});
-                console.log(
-                    `[Toshi] Result (${functionResult.length} chars): ${functionResult.substring(0, 80)}...`
-                );
-
-                contents = [
-                    ...contents,
-                    {
-                        role: "model",
-                        parts: [{ functionCall: { name, args: args || {} } }],
-                    },
-                    {
-                        role: "function",
-                        parts: [
-                            {
-                                functionResponse: {
-                                    name,
-                                    response: { result: functionResult },
-                                },
-                            },
-                        ],
-                    },
-                ];
-
-                if (turn >= MAX_FUNCTION_CALLS - 1) {
-                    finalText = functionResult;
-                    break;
-                }
-                continue;
-            }
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const textPart = parts.find((p: any) => p.text);
-            finalText = textPart?.text ?? "Üzgünüm, yanıt oluşturulamadı.";
-            break;
-        }
+        const finalText = await callAIWithFunctions({
+            messages: trimmedMessages,
+            functionDeclarations: FUNCTION_DECLARATIONS,
+            systemPrompt: systemWithContext,
+            executeFunction,
+            maxFunctionCalls: MAX_FUNCTION_CALLS,
+            temperature: 0.7,
+            maxTokens: 4096,
+        });
 
         return NextResponse.json({ text: finalText });
     } catch (err) {

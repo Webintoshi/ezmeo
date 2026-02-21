@@ -83,6 +83,7 @@ export const SETTING_KEYS = {
     NOTIFICATION_SETTINGS: "notification_settings",
     ANNOUNCEMENT_BAR: "announcement_bar",
     MARQUEE_SETTINGS: "marquee_settings",
+    AI_PROVIDER: "ai_provider",
 } as const;
 
 // =====================================================
@@ -241,4 +242,31 @@ export async function getMarqueeSettings(): Promise<MarqueeSettings> {
  */
 export async function setMarqueeSettings(settings: MarqueeSettings) {
     return setSetting(SETTING_KEYS.MARQUEE_SETTINGS, settings as unknown as Record<string, unknown>);
+}
+
+// =====================================================
+// AI PROVIDER SETTINGS
+// =====================================================
+
+export type AIProviderType = "gemini" | "claude" | "deepseek";
+
+export interface AIProviderSettings {
+    provider: AIProviderType;
+    apiKey: string;
+    model?: string;
+}
+
+/**
+ * Get AI provider settings
+ */
+export async function getAIProviderSettings(): Promise<AIProviderSettings | null> {
+    const data = await getSetting(SETTING_KEYS.AI_PROVIDER);
+    return data as AIProviderSettings | null;
+}
+
+/**
+ * Set AI provider settings
+ */
+export async function setAIProviderSettings(settings: AIProviderSettings) {
+    return setSetting(SETTING_KEYS.AI_PROVIDER, settings as unknown as Record<string, unknown>);
 }
