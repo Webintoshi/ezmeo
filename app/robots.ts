@@ -5,49 +5,137 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://ezmeo.com";
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
+      // Genel kurallar - tüm botlar için
       {
         userAgent: "*",
         allow: "/",
         disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
         crawlDelay: 2,
       },
-      // LLM botlarına SEO ve blog içerikleri için izin ver (GEO - Generative Engine Optimization)
+      
+      // OpenAI botları
       {
         userAgent: "GPTBot",
-        allow: ["/seo/", "/blog/"],
-        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        allow: ["/", "/urunler/", "/koleksiyon/", "/blog/"],
+        disallow: ["/admin/", "/api/", "/giris/", "/kayit/", "/sepet/", "/odeme/"],
+        crawlDelay: 5,
       },
       {
         userAgent: "ChatGPT-User",
-        allow: ["/seo/", "/blog/"],
-        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        allow: ["/", "/urunler/", "/koleksiyon/", "/blog/"],
+        disallow: ["/admin/", "/api/", "/giris/", "/kayit/", "/sepet/", "/odeme/"],
+        crawlDelay: 5,
       },
       {
-        userAgent: "ClaudeBot",
-        allow: ["/seo/", "/blog/"],
+        userAgent: "OAI-SearchBot",
+        allow: ["/", "/urunler/", "/koleksiyon/", "/blog/"],
         disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        crawlDelay: 5,
+      },
+      
+      // Anthropic botları
+      {
+        userAgent: "ClaudeBot",
+        allow: ["/", "/urunler/", "/koleksiyon/", "/blog/"],
+        disallow: ["/admin/", "/api/", "/giris/", "/kayit/", "/sepet/", "/odeme/"],
+        crawlDelay: 5,
       },
       {
         userAgent: "anthropic-ai",
-        allow: ["/seo/", "/blog/"],
+        allow: ["/", "/urunler/", "/koleksiyon/", "/blog/"],
         disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        crawlDelay: 5,
       },
-      {
-        userAgent: "CCBot",
-        allow: ["/seo/", "/blog/"],
-        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
-      },
-      {
-        userAgent: "PerplexityBot",
-        allow: ["/seo/", "/blog/"],
-        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
-      },
+      
+      // Google AI botları
       {
         userAgent: "Google-Extended",
-        allow: ["/seo/", "/blog/"],
+        allow: ["/", "/urunler/", "/koleksiyon/", "/blog/"],
         disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        crawlDelay: 5,
+      },
+      {
+        userAgent: "GoogleOther",
+        allow: ["/", "/urunler/", "/koleksiyon/"],
+        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        crawlDelay: 5,
+      },
+      
+      // Perplexity
+      {
+        userAgent: "PerplexityBot",
+        allow: ["/", "/urunler/", "/koleksiyon/", "/blog/"],
+        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        crawlDelay: 5,
+      },
+      
+      // Common Crawl (birçok AI tarafından kullanılır)
+      {
+        userAgent: "CCBot",
+        allow: ["/", "/urunler/", "/koleksiyon/"],
+        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        crawlDelay: 10,
+      },
+      
+      // Diğer AI/Data botları
+      {
+        userAgent: "Diffbot",
+        allow: ["/", "/urunler/"],
+        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        crawlDelay: 10,
+      },
+      {
+        userAgent: "Cohere-ai",
+        allow: ["/", "/urunler/", "/koleksiyon/"],
+        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        crawlDelay: 5,
+      },
+      {
+        userAgent: "ImagesiftBot",
+        allow: ["/"],
+        disallow: ["/admin/", "/api/"],
+        crawlDelay: 10,
+      },
+      {
+        userAgent: "Meta-ExternalAgent",
+        allow: ["/", "/urunler/"],
+        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        crawlDelay: 10,
+      },
+      {
+        userAgent: "FacebookBot",
+        allow: ["/"],
+        disallow: ["/admin/", "/api/"],
+        crawlDelay: 10,
+      },
+      {
+        userAgent: "PetalBot",
+        allow: ["/", "/urunler/"],
+        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        crawlDelay: 10,
+      },
+      {
+        userAgent: "YouBot",
+        allow: ["/", "/urunler/"],
+        disallow: ["/admin/", "/api/"],
+        crawlDelay: 10,
+      },
+      
+      // Arama motorları (daha hızlı tarama)
+      {
+        userAgent: "Googlebot",
+        allow: "/",
+        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        crawlDelay: 1,
+      },
+      {
+        userAgent: "Bingbot",
+        allow: "/",
+        disallow: ["/admin/", "/api/", "/giris/", "/kayit/"],
+        crawlDelay: 1,
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

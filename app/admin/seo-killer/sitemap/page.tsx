@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileCode, ExternalLink, Download, CheckCircle2, History } from "lucide-react";
+import { FileCode, ExternalLink, Download, CheckCircle2, History, Bot, Shield } from "lucide-react";
 
 export default function SitemapManagerPage() {
     const sitemapUrl = typeof window !== 'undefined' ? `${window.location.origin}/sitemap.xml` : 'https://ezmeo.com/sitemap.xml';
@@ -104,6 +104,64 @@ export default function SitemapManagerPage() {
                         <p className="text-xs text-blue-700 leading-relaxed">
                             Sitemap'inizi Google Search Console'a eklemek için URL'yi kopyalayın ve Search Console panelindeki "Sitemaps" bölümüne yapıştırın.
                         </p>
+                    </div>
+                </div>
+
+                {/* AI Bot Kontrolü Card */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
+                    <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <Bot className="w-5 h-5 text-purple-600" />
+                        AI Bot Kontrolü
+                    </h2>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Shield className="w-5 h-5 text-green-600" />
+                                <h3 className="font-semibold text-green-800 text-sm">Koruma Durumu</h3>
+                            </div>
+                            <p className="text-xs text-green-700 leading-relaxed">
+                                Robots.txt dosyanız 15+ AI botu için yapılandırılmış. Crawl-delay değerleri ile hız sınırlaması aktif.
+                            </p>
+                        </div>
+
+                        <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Bot className="w-5 h-5 text-purple-600" />
+                                <h3 className="font-semibold text-purple-800 text-sm">Yönetilen Botlar</h3>
+                            </div>
+                            <p className="text-xs text-purple-700 leading-relaxed">
+                                GPTBot, ClaudeBot, PerplexityBot, Google-Extended ve daha fazlası için özel kurallar tanımlı.
+                            </p>
+                        </div>
+
+                        <div className="bg-orange-50 p-4 rounded-lg border border-orange-100">
+                            <div className="flex items-center gap-2 mb-2">
+                                <FileCode className="w-5 h-5 text-orange-600" />
+                                <h3 className="font-semibold text-orange-800 text-sm">Robots.txt</h3>
+                            </div>
+                            <p className="text-xs text-orange-700 leading-relaxed">
+                                <a href="/robots.txt" target="_blank" className="hover:underline font-medium">
+                                    /robots.txt
+                                </a>{" "}
+                                dosyası dinamik olarak üretilmektedir. Değişiklikler otomatik uygulanır.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="mt-4 bg-gray-50 p-4 rounded-lg">
+                        <h4 className="font-medium text-gray-800 mb-2 text-sm">Engellenen Dizinler (Tüm Botlar İçin)</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {['/admin/', '/api/', '/giris/', '/kayit/', '/sepet/', '/odeme/'].map((path) => (
+                                <span key={path} className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded font-mono">
+                                    {path}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="mt-4 text-xs text-gray-500">
+                        <p>💡 Not: Robots.txt gönüllü uyum esasına dayanır. Kötü niyetli botları engellemek için ek güvenlik önlemleri (WAF, Rate Limiting) gerekebilir.</p>
                     </div>
                 </div>
             </div>
