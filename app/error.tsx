@@ -12,7 +12,23 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
+    // ChunkLoadError — auto-reload once to fetch new assets after deployment
+    const isChunkError =
+      error.name === "ChunkLoadError" ||
+      error.message?.includes("Loading chunk") ||
+      error.message?.includes("Failed to fetch dynamically imported module") ||
+      error.message?.includes("Importing a module script failed");
+
+    if (isChunkError) {
+      const reloaded = sessionStorage.getItem("chunk-reload");
+      if (!reloaded) {
+        sessionStorage.setItem("chunk-reload", "1");
+        window.location.reload();
+        return;
+      }
+      sessionStorage.removeItem("chunk-reload");
+    }
+
     console.error(error);
   }, [error]);
 
