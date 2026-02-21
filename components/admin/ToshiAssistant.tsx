@@ -26,41 +26,101 @@ const STORAGE_KEY = "toshi_messages";
 const ALERT_CACHE_KEY = "toshi_alerts";
 const MAX_STORED_MESSAGES = 50;
 const MAX_GEMINI_MESSAGES = 10;
-const ALERT_CHECK_INTERVAL = 5 * 60 * 1000; // 5 dakika
+const ALERT_CHECK_INTERVAL = 5 * 60 * 1000;
 
 // ─── Page-aware Quick Prompts ────────────────────────────────────────────────
 function getQuickPrompts(pathname: string): string[] {
     if (pathname === "/admin" || pathname === "/admin/")
-        return ["Günlük özet", "Bekleyen siparişler", "Düşük stok uyarıları", "Müşteri istatistikleri"];
+        return [
+            "Mağaza özeti",
+            "Bekleyen siparişler",
+            "Düşük stok uyarıları",
+            "Müşteri istatistikleri",
+        ];
     if (pathname.startsWith("/admin/siparisler"))
-        return ["Sipariş özeti", "Bekleyen siparişler", "Son siparişler", "En çok satılan ürün"];
+        return [
+            "Sipariş özeti",
+            "Bekleyen siparişler",
+            "Son siparişler",
+            "Bugünkü gelir",
+        ];
     if (pathname.startsWith("/admin/urunler"))
-        return ["Stok durumu", "Düşük stok uyarıları", "Ürün ara", "Kaç ürünüm var?"];
+        return [
+            "Stok durumu",
+            "Düşük stok uyarıları",
+            "Kategori listesi",
+            "Stok değeri hesapla",
+        ];
     if (pathname.startsWith("/admin/musteriler"))
-        return ["Müşteri istatistikleri", "Bu ay yeni müşteri", "En çok harcayan kim?"];
+        return [
+            "Müşteri istatistikleri",
+            "Bu ay yeni müşteri",
+            "Ortalama sipariş değeri nedir?",
+        ];
     if (pathname.startsWith("/admin/indirimler"))
-        return ["Aktif indirimler", "Kâr marjı hesapla", "İndirim önerisi"];
+        return [
+            "Aktif indirimler",
+            "%20 indirimde kâr marjı hesapla",
+            "İndirim önerisi",
+        ];
     if (pathname.startsWith("/admin/analizler"))
-        return ["Gelir özeti", "Bu ay büyüme", "Ortalama sipariş değeri"];
+        return [
+            "Mağaza özeti",
+            "Gelir analizi",
+            "Ortalama sipariş değeri",
+            "Büyüme oranı",
+        ];
     if (pathname.startsWith("/admin/pazarlama"))
-        return ["Pazarlama önerisi", "Dönüşüm oranı nedir?", "Kampanya fikri"];
-    return ["Sipariş özeti", "Düşük stok uyarıları", "Son siparişler", "Müşteri istatistikleri"];
+        return [
+            "Pazarlama önerisi",
+            "Kampanya fikri",
+            "Müşteri segmenti analizi",
+        ];
+    if (pathname.startsWith("/admin/cms"))
+        return [
+            "Blog yazısı önerisi",
+            "SEO ipuçları",
+            "İçerik stratejisi",
+        ];
+    if (pathname.startsWith("/admin/seo"))
+        return [
+            "SEO durumu",
+            "Anahtar kelime önerisi",
+            "Meta açıklama nasıl yazılır?",
+        ];
+    return [
+        "Mağaza özeti",
+        "Düşük stok uyarıları",
+        "Son siparişler",
+        "Yardım",
+    ];
 }
 
 // ─── Page Context ────────────────────────────────────────────────────────────
 function getPageContext(pathname: string): string {
     const map: Record<string, string> = {
-        "/admin": "Admin paneli ana sayfası (dashboard). Sipariş, ürün ve satış özeti görüntüleniyor.",
-        "/admin/siparisler": "Siparişler sayfası. Tüm siparişlerin listesi ve durum yönetimi.",
-        "/admin/urunler": "Ürünler sayfası. Ürün listesi, stok takibi ve ürün yönetimi.",
-        "/admin/musteriler": "Müşteriler sayfası. Müşteri listesi ve detayları.",
-        "/admin/indirimler": "İndirimler sayfası. Kupon ve kampanya yönetimi.",
-        "/admin/analizler": "Analizler sayfası. Satış grafikleri ve performans verileri.",
-        "/admin/cms": "CMS sayfası. Blog yazıları ve içerik yönetimi.",
-        "/admin/seo-killer": "SEO sayfası. Arama motoru optimizasyon ayarları.",
-        "/admin/pazarlama": "Pazarlama sayfası. Pazarlama araçları ve kampanyalar.",
-        "/admin/ayarlar": "Ayarlar sayfası. Mağaza konfigürasyon ayarları.",
-        "/admin/yoneticiler": "Yöneticiler sayfası. Admin kullanıcı yönetimi.",
+        "/admin":
+            "Admin paneli ana sayfası (dashboard). Sipariş, ürün ve satış özeti görüntüleniyor.",
+        "/admin/siparisler":
+            "Siparişler sayfası. Tüm siparişlerin listesi ve durum yönetimi.",
+        "/admin/urunler":
+            "Ürünler sayfası. Ürün listesi, stok takibi ve ürün yönetimi.",
+        "/admin/musteriler":
+            "Müşteriler sayfası. Müşteri listesi ve detayları.",
+        "/admin/indirimler":
+            "İndirimler sayfası. Kupon ve kampanya yönetimi.",
+        "/admin/analizler":
+            "Analizler sayfası. Satış grafikleri ve performans verileri.",
+        "/admin/cms":
+            "CMS sayfası. Blog yazıları ve içerik yönetimi.",
+        "/admin/seo-killer":
+            "SEO sayfası. Arama motoru optimizasyon ayarları.",
+        "/admin/pazarlama":
+            "Pazarlama sayfası. Pazarlama araçları ve kampanyalar.",
+        "/admin/ayarlar":
+            "Ayarlar sayfası. Mağaza konfigürasyon ayarları.",
+        "/admin/yoneticiler":
+            "Yöneticiler sayfası. Admin kullanıcı yönetimi.",
         "/admin/markets": "Marketler sayfası.",
     };
     const exact = map[pathname];
@@ -72,24 +132,88 @@ function getPageContext(pathname: string): string {
     return `Ezmeo web sitesi: ${pathname}`;
 }
 
-// ─── Simple Markdown Renderer ────────────────────────────────────────────────
-function renderText(text: string) {
+// ─── Enhanced Markdown Renderer ──────────────────────────────────────────────
+function renderLine(text: string): React.ReactNode[] {
+    // Bold + code + emoji rendering
     const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
     return parts.map((part, i) => {
         if (part.startsWith("**") && part.endsWith("**")) {
-            return <strong key={i}>{part.slice(2, -2)}</strong>;
+            return (
+                <strong key={i} className="font-semibold">
+                    {part.slice(2, -2)}
+                </strong>
+            );
         }
         if (part.startsWith("`") && part.endsWith("`")) {
             return (
                 <code
                     key={i}
-                    className="bg-purple-100 text-purple-800 text-xs px-1 py-0.5 rounded"
+                    className="bg-purple-100 text-purple-800 text-xs px-1 py-0.5 rounded font-mono"
                 >
                     {part.slice(1, -1)}
                 </code>
             );
         }
         return <span key={i}>{part}</span>;
+    });
+}
+
+function renderMessage(text: string) {
+    const lines = text.split("\n");
+    return lines.map((line, li) => {
+        const trimmed = line.trim();
+
+        // Heading-like lines (emoji + ALL CAPS)
+        if (/^[📊🛒📦👥⚠️🔴🟢🟡💰📈📉✅❌🎯⭐💡🔔🏷️]/.test(trimmed)) {
+            return (
+                <p key={li} className={`${li > 0 ? "mt-2" : ""} font-semibold`}>
+                    {renderLine(line)}
+                </p>
+            );
+        }
+
+        // Bullet points (- or · or •)
+        if (/^\s*[-·•]\s/.test(line)) {
+            const indent = line.match(/^(\s*)/)?.[1]?.length || 0;
+            const content = line.replace(/^\s*[-·•]\s*/, "");
+            return (
+                <div
+                    key={li}
+                    className="flex gap-1.5"
+                    style={{ paddingLeft: `${Math.min(indent, 4) * 4}px` }}
+                >
+                    <span className="text-violet-400 flex-shrink-0 mt-0.5">•</span>
+                    <span>{renderLine(content)}</span>
+                </div>
+            );
+        }
+
+        // Numbered lists
+        if (/^\s*\d+[.)]\s/.test(line)) {
+            const match = line.match(/^\s*(\d+)[.)]\s*(.*)/);
+            if (match) {
+                return (
+                    <div key={li} className="flex gap-1.5">
+                        <span className="text-violet-500 font-medium flex-shrink-0 min-w-[16px]">
+                            {match[1]}.
+                        </span>
+                        <span>{renderLine(match[2])}</span>
+                    </div>
+                );
+            }
+        }
+
+        // Empty lines → spacer
+        if (trimmed === "") {
+            return <div key={li} className="h-1" />;
+        }
+
+        // Normal paragraph
+        return (
+            <p key={li} className={li > 0 ? "mt-1" : ""}>
+                {renderLine(line)}
+            </p>
+        );
     });
 }
 
@@ -119,7 +243,6 @@ function clearMessages() {
     } catch { }
 }
 
-// ─── Alert cache helpers ─────────────────────────────────────────────────────
 function loadAlertCache(): { data: AlertInfo; ts: number } | null {
     try {
         const raw = localStorage.getItem(ALERT_CACHE_KEY);
@@ -132,7 +255,10 @@ function loadAlertCache(): { data: AlertInfo; ts: number } | null {
 
 function saveAlertCache(data: AlertInfo) {
     try {
-        localStorage.setItem(ALERT_CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+        localStorage.setItem(
+            ALERT_CACHE_KEY,
+            JSON.stringify({ data, ts: Date.now() })
+        );
     } catch { }
 }
 
@@ -149,6 +275,9 @@ export default function ToshiAssistant() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
+    // ─── Admin-only visibility ──
+    const isAdmin = pathname.startsWith("/admin");
+
     const scrollToBottom = useCallback(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, []);
@@ -163,8 +292,10 @@ export default function ToshiAssistant() {
         }
     }, [isOpen, isMinimized]);
 
-    // ─── Keyboard shortcut: Ctrl+K ──
+    // ─── Keyboard shortcut: Ctrl+K / Esc ──
     useEffect(() => {
+        if (!isAdmin) return;
+
         const handler = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && e.key === "k") {
                 e.preventDefault();
@@ -174,7 +305,6 @@ export default function ToshiAssistant() {
                     handleOpen();
                 }
             }
-            // Escape to close
             if (e.key === "Escape" && isOpen) {
                 setIsOpen(false);
             }
@@ -182,17 +312,16 @@ export default function ToshiAssistant() {
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen]);
+    }, [isOpen, isAdmin]);
 
     // ─── Proactive Alert Check (admin pages only) ──
     useEffect(() => {
-        if (!pathname.startsWith("/admin")) {
+        if (!isAdmin) {
             setAlertInfo(null);
             return;
         }
 
         const checkAlerts = async () => {
-            // Check cache first
             const cached = loadAlertCache();
             if (cached && Date.now() - cached.ts < ALERT_CHECK_INTERVAL) {
                 setAlertInfo(cached.data);
@@ -201,8 +330,12 @@ export default function ToshiAssistant() {
 
             try {
                 const [ordersRes, productsRes] = await Promise.all([
-                    fetch("/api/orders?stats=true").then((r) => r.json()).catch(() => null),
-                    fetch("/api/products?limit=100").then((r) => r.json()).catch(() => null),
+                    fetch("/api/orders?stats=true")
+                        .then((r) => r.json())
+                        .catch(() => null),
+                    fetch("/api/products?limit=100")
+                        .then((r) => r.json())
+                        .catch(() => null),
                 ]);
 
                 let count = 0;
@@ -231,14 +364,14 @@ export default function ToshiAssistant() {
                 setAlertInfo(info.count > 0 ? info : null);
                 saveAlertCache(info);
             } catch {
-                // Silently fail — badge just won't show
+                // Silently fail
             }
         };
 
         checkAlerts();
         const interval = setInterval(checkAlerts, ALERT_CHECK_INTERVAL);
         return () => clearInterval(interval);
-    }, [pathname]);
+    }, [isAdmin]);
 
     // ─── Open Handler ──
     const handleOpen = () => {
@@ -251,7 +384,6 @@ export default function ToshiAssistant() {
             if (stored.length > 0) {
                 setMessages(stored);
             } else {
-                // Auto-generate greeting with alert context
                 let greeting =
                     "Merhaba! Ben **Toshi** 👋 Ezmeo'nun AI asistanıyım.\n\nSana **gerçek zamanlı** sipariş, ürün ve müşteri verileriyle yardımcı olabilirim. Matematiksel hesaplamalar da yapabilirim.";
                 if (alertInfo && alertInfo.count > 0) {
@@ -350,6 +482,9 @@ export default function ToshiAssistant() {
         setInput("");
     };
 
+    // ─── Don't render on non-admin pages ──
+    if (!isAdmin) return null;
+
     const quickPrompts = getQuickPrompts(pathname);
 
     // ─── Render ────────────────────────────────────────────────────────────────
@@ -361,17 +496,18 @@ export default function ToshiAssistant() {
                     onClick={handleOpen}
                     aria-label="Toshi AI Asistanı Aç (Ctrl+K)"
                     className="fixed bottom-6 right-6 z-[9999] group"
-                    style={{ filter: "drop-shadow(0 8px 24px rgba(124,58,237,0.45))" }}
+                    style={{
+                        filter: "drop-shadow(0 8px 24px rgba(124,58,237,0.45))",
+                    }}
                 >
                     <div
                         className="relative w-14 h-14 rounded-full flex items-center justify-center transition-transform duration-200 group-hover:scale-110 group-active:scale-95"
                         style={{
-                            background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)",
+                            background:
+                                "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)",
                         }}
                     >
-                        {/* Pulse ring */}
                         <span className="absolute inset-0 rounded-full animate-ping opacity-20 bg-violet-500" />
-                        {/* T letter */}
                         <span className="text-white text-xl font-bold tracking-tight select-none">
                             T
                         </span>
@@ -381,7 +517,8 @@ export default function ToshiAssistant() {
                             <span
                                 className="absolute -top-1 -right-1 min-w-[20px] h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-lg"
                                 style={{
-                                    animation: "toshi-badge-pulse 2s ease-in-out infinite",
+                                    animation:
+                                        "toshi-badge-pulse 2s ease-in-out infinite",
                                 }}
                             >
                                 {alertInfo.count > 9 ? "9+" : alertInfo.count}
@@ -389,7 +526,6 @@ export default function ToshiAssistant() {
                         )}
                     </div>
 
-                    {/* Tooltip */}
                     <span className="absolute right-16 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
                         {alertInfo && alertInfo.count > 0
                             ? alertInfo.summary
@@ -403,8 +539,8 @@ export default function ToshiAssistant() {
                 <div
                     className="fixed bottom-6 right-6 z-[9999] flex flex-col rounded-2xl shadow-2xl overflow-hidden"
                     style={{
-                        width: "380px",
-                        height: isMinimized ? "56px" : "540px",
+                        width: "400px",
+                        height: isMinimized ? "56px" : "560px",
                         background: "#fff",
                         border: "1px solid rgba(124,58,237,0.15)",
                         boxShadow:
@@ -416,7 +552,8 @@ export default function ToshiAssistant() {
                     <div
                         className="flex items-center justify-between px-4 py-3 flex-shrink-0 select-none"
                         style={{
-                            background: "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)",
+                            background:
+                                "linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)",
                         }}
                     >
                         <div className="flex items-center gap-2.5">
@@ -448,7 +585,9 @@ export default function ToshiAssistant() {
                                 <ChevronDown
                                     className="w-3.5 h-3.5 transition-transform duration-200"
                                     style={{
-                                        transform: isMinimized ? "rotate(180deg)" : "rotate(0deg)",
+                                        transform: isMinimized
+                                            ? "rotate(180deg)"
+                                            : "rotate(0deg)",
                                     }}
                                 />
                             </button>
@@ -479,21 +618,16 @@ export default function ToshiAssistant() {
                                             </div>
                                         )}
                                         <div
-                                            className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${msg.role === "user"
+                                            className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${msg.role === "user"
                                                     ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm"
                                                     : "bg-white text-gray-800 shadow-sm border border-gray-100 rounded-tl-sm"
                                                 }`}
                                             style={{
-                                                whiteSpace: "pre-wrap",
                                                 wordBreak: "break-word",
                                             }}
                                         >
                                             {msg.role === "model"
-                                                ? msg.text.split("\n").map((line, li) => (
-                                                    <p key={li} className={li > 0 ? "mt-1" : ""}>
-                                                        {renderText(line)}
-                                                    </p>
-                                                ))
+                                                ? renderMessage(msg.text)
                                                 : msg.text}
                                         </div>
                                     </div>
@@ -517,7 +651,7 @@ export default function ToshiAssistant() {
                                 <div ref={messagesEndRef} />
                             </div>
 
-                            {/* Quick Prompts — page-aware */}
+                            {/* Quick Prompts */}
                             {messages.filter((m) => m.role === "user").length === 0 && (
                                 <div className="px-4 pb-2 flex gap-1.5 flex-wrap bg-white border-t border-gray-100">
                                     {quickPrompts.map((qp) => (
@@ -561,7 +695,9 @@ export default function ToshiAssistant() {
                                             className="w-3.5 h-3.5"
                                             style={{
                                                 color:
-                                                    input.trim() && !isLoading ? "#fff" : "#9ca3af",
+                                                    input.trim() && !isLoading
+                                                        ? "#fff"
+                                                        : "#9ca3af",
                                             }}
                                         />
                                     </button>
@@ -578,8 +714,13 @@ export default function ToshiAssistant() {
             {/* Badge pulse animation */}
             <style jsx global>{`
         @keyframes toshi-badge-pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.15); }
+          0%,
+          100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.15);
+          }
         }
       `}</style>
         </>
