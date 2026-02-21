@@ -190,6 +190,30 @@ async function generateWithAI(product: ProductSEOViewModel): Promise<{success: b
     };
 }
 
+async function generateFAQWithAI(product: ProductSEOViewModel): Promise<{success: boolean, faq: ProductFAQ[], source: string, error?: string}> {
+    const response = await fetch("/api/seo/faq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            name: product.name,
+            description: product.description || product.short_description,
+            category: product.category
+        }),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+        throw new Error(data.error || "Toshi FAQ oluşturamıyor");
+    }
+    
+    return {
+        success: true,
+        faq: data.faq,
+        source: data.source
+    };
+}
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -203,6 +227,7 @@ export default function ProductSEOPage() {
     const [editForm, setEditForm] = useState<EditFormState>(EMPTY_FORM_STATE);
     const [message, setMessage] = useState<MessageState | null>(null);
     const [generating, setGenerating] = useState(false);
+    const [generatingFAQ, setGeneratingFAQ] = useState(false);
     const [debugInfo, setDebugInfo] = useState<string[]>([]); // Debug için
     const [aiSource, setAiSource] = useState<string | null>(null); // AI source bilgisi
     const [activeSection, setActiveSection] = useState<SectionType>("meta");
@@ -380,6 +405,38 @@ export default function ProductSEOPage() {
             setGenerating(false);
         }
     }, [typewriterEffect]);
+
+    const handleGenerateFAQ = useCallback(async (product: ProductSEOViewModel) => {
+        setGeneratingFAQ(true);
+        setMessage(null);
+
+        try {
+            const generated = await generateFAQWithAI(product);
+            
+            if (!generated.success) {
+                throw new Error(generated.error || "FAQ oluşturulamadı");
+            }
+            
+            // FAQ'ları form'a ekle (mevcutları koruyarak)
+            setEditForm(prev => ({
+                ...prev,
+                faq: [...prev.faq, ...generated.faq]
+            }));
+            
+            setMessage({ 
+                type: "success", 
+                text: `Toshi ${generated.faq.length} adet FAQ önerisi hazırladı!`
+            });
+        } catch (error) {
+            console.error("FAQ generation failed:", error);
+            setMessage({ 
+                type: "error", 
+                text: error instanceof Error ? error.message : "FAQ oluşturma başarısız oldu." 
+            });
+        } finally {
+            setGeneratingFAQ(false);
+        }
+    }, []);
 
     // Form handlers
     const updateMetaTitle = useCallback((value: string) => {
@@ -597,6 +654,8 @@ export default function ProductSEOPage() {
                                     onAdd={addFAQ}
                                     onUpdate={updateFAQ}
                                     onRemove={removeFAQ}
+                                    onGenerateAI={() => handleGenerateFAQ(product)}
+                                    isGenerating={generatingFAQ}
                                 />
                             )}
 
@@ -777,7 +836,7 @@ function MetaSection({ product, editForm, isGenerating, isSaving, aiSource, onUp
     );
 }
 
-function FAQSection({ faq, onAdd, onUpdate, onRemove }: any) {
+function FAQSection({ faq, onAdd, onUpdate, onRemove, onGenerateAI, isGenerating }: any) {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -785,7 +844,21 @@ function FAQSection({ faq, onAdd, onUpdate, onRemove }: any) {
                     <h4 className="font-medium text-gray-900">Sıkça Sorulan Sorular</h4>
                     <p className="text-sm text-gray-500">Google FAQ rich snippet için</p>
                 </div>
-                <button onClick={onAdd} className="px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20">+ Soru Ekle</button>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={onGenerateAI} 
+                        disabled={isGenerating}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isGenerating ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <span className="flex items-center justify-center w-5 h-5 bg-white/10 rounded text-xs font-semibold">T</span>
+                        )}
+                        <span>{isGenerating ? "Toshi hazırlıyor..." : "Toshi'den FAQ al"}</span>
+                    </button>
+                    <button onClick={onAdd} className="px-3 py-2 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 font-medium">+ Soru Ekle</button>
+                </div>
             </div>
             <div className="space-y-3">
                 {faq.map((item: any, index: number) => (
