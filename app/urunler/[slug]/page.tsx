@@ -144,12 +144,24 @@ export default async function ProductDetailPage({
         supabaseError = variantsError;
       }
       
+      // Fetch all variant attribute values for matching (fallback)
+      const { data: allAttributeValues } = await supabase
+        .from('variant_attribute_values')
+        .select(`
+          id,
+          value,
+          color_code,
+          image_url,
+          attribute:variant_attributes(id, name)
+        `);
+      
       console.log('=== DEBUG Product Page ===');
       console.log('URL Slug:', urlSlug);
       console.log('Base Slug:', baseSlug);
       console.log('Product ID:', dbProduct.id);
       console.log('Variants count:', variants?.length || 0);
       console.log('Variants:', variants);
+      console.log('All Attribute Values:', allAttributeValues);
       console.log('========================');
 
       // Transform images_v2 to images format
@@ -165,15 +177,35 @@ export default async function ProductDetailPage({
       }
       
       // Transform variants with attributes
-      const transformedVariants = variants?.map((v: any) => ({
-        ...v,
-        originalPrice: v.original_price,
-        // Flatten attributes for easier access
-        attributes: v.attributes?.map((a: any) => ({
+      const transformedVariants = variants?.map((v: any) => {
+        // Get existing attributes from product_variant_attributes
+        let attrs = v.attributes?.map((a: any) => ({
           ...a.attribute_value,
           attribute: a.attribute_value?.attribute
-        })) || [],
-      })) || [];
+        })) || [];
+        
+        // FALLBACK: If no attributes, try to match variant name with attribute values
+        if (attrs.length === 0 && allAttributeValues) {
+          const matchedValue = allAttributeValues.find((av: any) => 
+            av.value?.toLowerCase() === v.name?.toLowerCase()
+          );
+          if (matchedValue) {
+            attrs = [{
+              id: matchedValue.id,
+              value: matchedValue.value,
+              color_code: matchedValue.color_code,
+              image_url: matchedValue.image_url,
+              attribute: matchedValue.attribute
+            }];
+          }
+        }
+        
+        return {
+          ...v,
+          originalPrice: v.original_price,
+          attributes: attrs,
+        };
+      }) || [];
 
       product = {
         ...dbProduct,
