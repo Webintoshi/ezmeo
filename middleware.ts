@@ -40,6 +40,21 @@ export function middleware(request: NextRequest) {
   const ip = request.ip || 'unknown';
   const url = request.nextUrl.pathname;
   
+  // Cache-Control headers for dynamic content - NO CACHE
+  const response = NextResponse.next({
+    request: {
+      headers: new Headers(request.headers),
+    },
+  });
+  
+  // Prevent caching for product pages and API calls
+  if (url.startsWith('/urunler/') || url.startsWith('/api/')) {
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    response.headers.set('Surrogate-Control', 'no-store');
+  }
+  
   // Static dosyaları kontrol etme
   const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2'];
   const isStatic = staticExtensions.some(ext => url.endsWith(ext));
@@ -91,12 +106,13 @@ export function middleware(request: NextRequest) {
 
     // AI botları için ek güvenlik header'ları
     if (isAIBot) {
-      const response = NextResponse.next();
+      // Use existing response if it has cache headers, otherwise create new
       
       // AI botlarına özel header'lar
-      response.headers.set('X-Robots-Tag', 'noai, noimageai');
-      response.headers.set('X-Bot-Type', 'AI');
-      response.headers.set('X-RateLimit-Limit', String(AI_BOT_RATE_LIMIT));
+      const botResponse = NextResponse.next();
+      botResponse.headers.set('X-Robots-Tag', 'noai, noimageai');
+      botResponse.headers.set('X-Bot-Type', 'AI');
+      botResponse.headers.set('X-RateLimit-Limit', String(AI_BOT_RATE_LIMIT));
       
       // Hassas sayfalar için erişim kontrolü
       if (url.startsWith('/admin') || url.startsWith('/api')) {
@@ -104,19 +120,19 @@ export function middleware(request: NextRequest) {
         return new NextResponse('Forbidden', { status: 403 });
       }
       
-      return response;
+      return botResponse;
     }
 
     // Genel botlar için
     if (isGeneralBot) {
-      const response = NextResponse.next();
+      const botResponse = NextResponse.next();
       
       // Ana sayfa ve ürün sayfaları için noindex (isteğe bağlı)
       if (url === '/' || url.startsWith('/urun') || url.startsWith('/koleksiyon')) {
-        // response.headers.set('X-Robots-Tag', 'noindex'); // İsterseniz aktif edin
+        // botResponse.headers.set('X-Robots-Tag', 'noindex'); // İsterseniz aktif edin
       }
       
-      return response;
+      return botResponse;
     }
   }
 
@@ -130,7 +146,7 @@ export function middleware(request: NextRequest) {
     }
   }
   
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
