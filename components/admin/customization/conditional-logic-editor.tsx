@@ -18,7 +18,7 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, ChevronDown, ChevronRight, And, Or } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 
 interface ConditionalLogicEditorProps {
   value?: ConditionalLogicGroup;
@@ -130,12 +130,8 @@ export function ConditionalLogicEditor({
             className="cursor-pointer"
             onClick={toggleOperator}
           >
-            {value?.operator === "and" ? (
-              <And className="w-3 h-3 mr-1" />
-            ) : (
-              <Or className="w-3 h-3 mr-1" />
-            )}
-            {value?.operator === "and" ? "VE" : "VEYA"}
+            {value?.operator === "and" ? "&&" : "||"}
+            <span className="ml-1">{value?.operator === "and" ? "VE" : "VEYA"}</span>
           </Badge>
           <span className="text-sm text-gray-500">
             şartları sağlandığında göster
