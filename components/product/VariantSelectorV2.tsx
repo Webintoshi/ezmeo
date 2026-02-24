@@ -109,6 +109,9 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
       hasColor: !!a.color_code
     }))
   };
+  
+  // Force debug to be visible
+  const debugHtml = JSON.stringify(debugInfo, null, 2).replace(/\n/g, '<br/>').replace(/ /g, '&nbsp;');
 
   // If no attributes found, show simple variant selector
   if (attrKeys.length === 0) {
@@ -147,9 +150,10 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
   return (
     <div className="space-y-6">
       {/* DEBUG INFO - Temporary for debugging */}
-      <div className="p-2 bg-yellow-100 text-xs font-mono rounded text-yellow-800 mb-4">
-        DEBUG: {JSON.stringify(debugInfo, null, 2)}
-      </div>
+      <div 
+        className="p-2 bg-yellow-100 text-xs font-mono rounded text-yellow-800 mb-4 whitespace-pre-wrap"
+        dangerouslySetInnerHTML={{ __html: `DEBUG:\n${debugHtml}` }}
+      />
       
       {attrKeys.map((attrId) => {
         const group = attributeGroups[attrId];
