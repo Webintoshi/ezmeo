@@ -19,7 +19,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/lib/cart-context";
 import { ImageGallery } from "@/components/product/ImageGallery";
-import { DynamicVariantSelector } from "@/components/product/DynamicVariantSelector";
+import { VariantSelectorV2 } from "@/components/product/VariantSelectorV2";
 import { NutritionLabel } from "@/components/product/NutritionLabel";
 import { ProductFeatures } from "@/components/product/ProductFeatures";
 import { ComplementaryProducts } from "@/components/product/ComplementaryProducts";
@@ -299,8 +299,8 @@ export function ProductDetailClient({
                 )}
               </div>
 
-              {/* Dynamic Variant Selector */}
-              <DynamicVariantSelector
+              {/* Variant Selector V2 */}
+              <VariantSelectorV2
                 variants={variants}
                 selectedIndex={selectedVariant}
                 onSelect={setSelectedVariant}
