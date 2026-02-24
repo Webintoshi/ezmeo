@@ -128,21 +128,35 @@ export function ProductDetailClient({
   const variants = product.variants || [];
   const variant = variants[selectedVariant] || variants[0];
 
-  // Combine product images with variant image (if variant has its own image)
+  // Get variant display images
   const displayImages = React.useMemo(() => {
     const baseImages = product.images || [];
     
-    // If variant has its own images, show variant image first
+    // Priority 1: Variant's own images (from variant.images)
     if (variant?.images && variant.images.length > 0) {
-      const variantImage = variant.images[0];
-      // Avoid duplicates
-      if (!baseImages.includes(variantImage)) {
-        return [variantImage, ...baseImages];
+      const variantImages = variant.images.filter((img: string) => img && img.length > 0);
+      if (variantImages.length > 0) {
+        // Combine variant image first, then product images
+        const combined = [...variantImages];
+        baseImages.forEach((img: string) => {
+          if (!combined.includes(img)) combined.push(img);
+        });
+        return combined;
       }
     }
     
+    // Priority 2: Attribute value images (from variant.attributes)
+    const attrImages = variant?.attributes?.map((attr: any) => attr.image_url).filter(Boolean) || [];
+    if (attrImages.length > 0) {
+      const combined = [...attrImages];
+      baseImages.forEach((img: string) => {
+        if (!combined.includes(img)) combined.push(img);
+      });
+      return combined;
+    }
+    
     return baseImages;
-  }, [product.images, variant?.images]);
+  }, [product.images, variant?.images, variant?.attributes]);
 
   if (!variant) {
     return (

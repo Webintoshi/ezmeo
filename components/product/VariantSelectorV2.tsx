@@ -10,6 +10,10 @@ interface VariantAttribute {
   value: string;
   color_code?: string | null;
   image_url?: string | null;
+  attribute?: {
+    id: string;
+    name: string;
+  };
 }
 
 interface ProductVariant {
@@ -30,48 +34,59 @@ interface Props {
 }
 
 export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) {
-  const [attributeGroups, setAttributeGroups] = useState<Map<string, { name: string; values: any[] }>>(new Map());
-  const [selectedValues, setSelectedValues] = useState<Map<string, string>>(new Map());
+  const [groups, setGroups] = useState<Map<string, { attrName: string; values: any[] }>>(new Map());
 
   useEffect(() => {
-    const groups = new Map();
+    console.log("Variants received:", variants);
+    console.log("Selected index:", selectedIndex);
     
-    variants.forEach((variant, idx) => {
+    const g = new Map();
+    
+    variants.forEach((variant, vIdx) => {
       variant.attributes?.forEach((attr) => {
-        const key = attr.id || attr.name;
-        if (!groups.has(key)) {
-          groups.set(key, { name: attr.name, values: [] });
+        // attribute.name veya attribute.attribute.name kullan
+        const attrName = attr.attribute?.name || attr.name || "Seçenek";
+        const attrId = attr.attribute?.id || attr.id || attrName;
+        
+        if (!g.has(attrId)) {
+          g.set(attrId, { attrName, values: [] });
         }
-        const exists = groups.get(key).values.find((v: any) => v.value === attr.value);
+        
+        const exists = g.get(attrId).values.find((v: any) => v.value === attr.value);
         if (!exists) {
-          groups.get(key).values.push({ ...attr, variantIndex: idx });
+          g.get(attrId).values.push({
+            ...attr,
+            variantIndex: vIdx,
+            displayName: attrName
+          });
         }
       });
     });
 
-    setAttributeGroups(groups);
-
-    // Set initial selected
-    const current = variants[selectedIndex];
-    const initial = new Map();
-    current?.attributes?.forEach((attr) => {
-      initial.set(attr.id || attr.name, attr.value);
-    });
-    setSelectedValues(initial);
-  }, [variants, selectedIndex]);
+    console.log("Attribute groups:", Array.from(g.entries()));
+    setGroups(g);
+  }, [variants]);
 
   const isColor = (name: string) => {
-    return name.toLowerCase().includes('renk') || name.toLowerCase().includes('color');
+    return name.toLowerCase().includes('renk') || 
+           name.toLowerCase().includes('color') ||
+           name.toLowerCase().includes('rengi');
   };
 
-  const handleSelect = (attrKey: string, value: string) => {
-    const newSelected = new Map(selectedValues);
-    newSelected.set(attrKey, value);
+  const getSelectedValue = (attrId: string) => {
+    const current = variants[selectedIndex];
+    const attr = current?.attributes?.find((a) => 
+      (a.attribute?.id || a.id || a.name) === attrId
+    );
+    return attr?.value;
+  };
 
+  const handleSelect = (attrId: string, value: string) => {
+    // Find variant with this attribute value
     const matchIndex = variants.findIndex((v) => {
-      return v.attributes?.every((attr) => {
-        const key = attr.id || attr.name;
-        return newSelected.get(key) === attr.value;
+      return v.attributes?.some((a) => {
+        const aId = a.attribute?.id || a.id || a.name;
+        return aId === attrId && a.value === value;
       });
     });
 
@@ -83,7 +98,7 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
   if (!variants || variants.length === 0) return null;
 
   // Tek varyant, nitelik yok
-  if (variants.length === 1 && attributeGroups.size === 0) {
+  if (variants.length === 1 && groups.size === 0) {
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -101,48 +116,59 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
 
   return (
     <div className="space-y-5">
-      {/* Attribute Groups */}
-      {Array.from(attributeGroups.entries()).map(([key, group]) => {
-        const isColorAttr = isColor(group.name);
-        const currentValue = selectedValues.get(key);
+      {Array.from(groups.entries()).map(([attrId, group]) => {
+        const isColorAttr = isColor(group.attrName);
+        const selectedValue = getSelectedValue(attrId);
 
         return (
-          <div key={key} className="space-y-3">
-            {/* Header */}
+          <div key={attrId} className="space-y-3">
+            {/* Header: NITELIK ADI — Seçili Değer */}
             <div className="flex items-center gap-2">
-              <span className="font-medium text-[#7B1113] uppercase tracking-wide">
-                {group.name}
+              <span className="font-medium text-[#7B1113] uppercase tracking-wide text-sm">
+                {group.attrName}
               </span>
-              <span className="text-gray-400">—</span>
-              <span className="text-[#6b4b4c]">{currentValue}</span>
+              {selectedValue && (
+                <>
+                  <span className="text-gray-400">—</span>
+                  <span className="text-[#6b4b4c] text-sm">{selectedValue}</span>
+                </>
+              )}
             </div>
 
-            {/* Color Swatches */}
+            {/* Color Swatches with Images */}
             {isColorAttr ? (
               <div className="flex flex-wrap gap-3">
                 {group.values.map((val: any, idx: number) => {
-                  const isSelected = currentValue === val.value;
+                  const isSelected = selectedValue === val.value;
                   const isOutOfStock = variants[val.variantIndex]?.stock <= 0;
+                  
+                  console.log(`Color ${val.value}:`, { image_url: val.image_url, color_code: val.color_code });
 
                   return (
                     <button
                       key={idx}
-                      onClick={() => !isOutOfStock && handleSelect(key, val.value)}
+                      onClick={() => !isOutOfStock && handleSelect(attrId, val.value)}
                       disabled={isOutOfStock}
                       className={cn(
-                        "relative w-14 h-14 rounded-full border-2 transition-all duration-200",
+                        "relative w-16 h-16 rounded-full border-2 transition-all duration-200 overflow-hidden",
                         isSelected
                           ? "border-[#7B1113] ring-2 ring-[#7B1113]/30"
                           : "border-gray-300 hover:border-gray-400",
                         isOutOfStock && "opacity-50 cursor-not-allowed"
                       )}
+                      title={val.value}
                     >
-                      <div className="absolute inset-1 rounded-full overflow-hidden">
+                      {/* Inner circle */}
+                      <div className="absolute inset-1 rounded-full overflow-hidden bg-gray-100">
                         {val.image_url ? (
                           <img
                             src={val.image_url}
                             alt={val.value}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error("Image failed to load:", val.image_url);
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
                           />
                         ) : val.color_code ? (
                           <div
@@ -150,15 +176,15 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
                             style={{ backgroundColor: val.color_code }}
                           />
                         ) : (
-                          <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs">
+                          <div className="w-full h-full flex items-center justify-center text-xs font-medium text-gray-600">
                             {val.value.slice(0, 2)}
                           </div>
                         )}
                       </div>
 
-                      {/* Selected indicator */}
+                      {/* Selected checkmark */}
                       {isSelected && (
-                        <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-full">
                           <div className="w-6 h-6 bg-[#7B1113] rounded-full flex items-center justify-center shadow-lg">
                             <Check className="w-4 h-4 text-white" />
                           </div>
@@ -172,13 +198,13 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
               /* Text Buttons */
               <div className="flex flex-wrap gap-2">
                 {group.values.map((val: any, idx: number) => {
-                  const isSelected = currentValue === val.value;
+                  const isSelected = selectedValue === val.value;
                   const isOutOfStock = variants[val.variantIndex]?.stock <= 0;
 
                   return (
                     <button
                       key={idx}
-                      onClick={() => !isOutOfStock && handleSelect(key, val.value)}
+                      onClick={() => !isOutOfStock && handleSelect(attrId, val.value)}
                       disabled={isOutOfStock}
                       className={cn(
                         "relative px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 border",
@@ -200,11 +226,11 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
         );
       })}
 
-      {/* Fallback: No attributes */}
-      {attributeGroups.size === 0 && variants.length > 1 && (
+      {/* Fallback */}
+      {groups.size === 0 && variants.length > 1 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="font-medium text-[#7B1113]">Seçenek</span>
+            <span className="font-medium text-[#7B1113]">Boyut</span>
             <span className="text-sm text-[#6b4b4c] bg-[#F3E0E1] px-3 py-1 rounded-full">
               {variants[selectedIndex]?.weight}g
             </span>
@@ -212,18 +238,14 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
           <div className="flex flex-wrap gap-2">
             {variants.map((v, idx) => {
               const isSelected = idx === selectedIndex;
-              const isOutOfStock = v.stock <= 0;
               return (
                 <button
                   key={v.id}
-                  onClick={() => !isOutOfStock && onSelect(idx)}
-                  disabled={isOutOfStock}
+                  onClick={() => onSelect(idx)}
                   className={cn(
                     "px-5 py-2.5 rounded-full text-sm font-medium border transition-all",
                     isSelected
                       ? "bg-[#7B1113] text-white border-[#7B1113]"
-                      : isOutOfStock
-                      ? "bg-gray-100 text-gray-400 border-gray-200"
                       : "bg-white text-[#7B1113] border-gray-300 hover:border-[#7B1113]"
                   )}
                 >
