@@ -19,7 +19,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/lib/cart-context";
 import { ImageGallery } from "@/components/product/ImageGallery";
-import { VariantSelector } from "@/components/product/VariantSelector";
+import { DynamicVariantSelector } from "@/components/product/DynamicVariantSelector";
 import { NutritionLabel } from "@/components/product/NutritionLabel";
 import { ProductFeatures } from "@/components/product/ProductFeatures";
 import { ComplementaryProducts } from "@/components/product/ComplementaryProducts";
@@ -128,6 +128,22 @@ export function ProductDetailClient({
   const variants = product.variants || [];
   const variant = variants[selectedVariant] || variants[0];
 
+  // Combine product images with variant image (if variant has its own image)
+  const displayImages = React.useMemo(() => {
+    const baseImages = product.images || [];
+    
+    // If variant has its own images, show variant image first
+    if (variant?.images && variant.images.length > 0) {
+      const variantImage = variant.images[0];
+      // Avoid duplicates
+      if (!baseImages.includes(variantImage)) {
+        return [variantImage, ...baseImages];
+      }
+    }
+    
+    return baseImages;
+  }, [product.images, variant?.images]);
+
   if (!variant) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 bg-[#FFF5F5]">
@@ -221,7 +237,11 @@ export function ProductDetailClient({
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16">
             {/* Left: Image Gallery - UNCHANGED */}
             <div className="lg:sticky lg:top-28 lg:self-start">
-              <ImageGallery key={product.id} images={product.images} productName={product.name} />
+              <ImageGallery 
+                key={`${product.id}-${selectedVariant}`} 
+                images={displayImages} 
+                productName={product.name} 
+              />
             </div>
 
             {/* Right: Product Info - Clean Modern Design */}
@@ -279,8 +299,8 @@ export function ProductDetailClient({
                 )}
               </div>
 
-              {/* Variant Selector */}
-              <VariantSelector
+              {/* Dynamic Variant Selector */}
+              <DynamicVariantSelector
                 variants={variants}
                 selectedIndex={selectedVariant}
                 onSelect={setSelectedVariant}

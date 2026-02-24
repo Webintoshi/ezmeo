@@ -120,10 +120,23 @@ export default async function ProductDetailPage({
       console.error('Product fetch error:', productError);
       supabaseError = productError;
     } else if (dbProduct) {
-      // Ayri olarak varyantlari cek (RLS sorunu varsa burada yakalariz)
+      // Ayri olarak varyantlari cek (nitelikleriyle birlikte)
       const { data: variants, error: variantsError } = await supabase
         .from("product_variants")
-        .select("*")
+        .select(`
+          *,
+          attributes:product_variant_attributes(
+            id,
+            attribute_value:variant_attribute_values(
+              id,
+              attribute_id,
+              value,
+              color_code,
+              image_url,
+              attribute:variant_attributes(id, name)
+            )
+          )
+        `)
         .eq("product_id", dbProduct.id);
       
       if (variantsError) {
@@ -151,13 +164,21 @@ export default async function ProductDetailPage({
         images = dbProduct.images.filter((img: any) => typeof img === 'string' && img.length > 0);
       }
       
+      // Transform variants with attributes
+      const transformedVariants = variants?.map((v: any) => ({
+        ...v,
+        originalPrice: v.original_price,
+        // Flatten attributes for easier access
+        attributes: v.attributes?.map((a: any) => ({
+          ...a.attribute_value,
+          attribute: a.attribute_value?.attribute
+        })) || [],
+      })) || [];
+
       product = {
         ...dbProduct,
         images,
-        variants: variants?.map((v: any) => ({
-          ...v,
-          originalPrice: v.original_price,
-        })) || [],
+        variants: transformedVariants,
       } as any;
     }
   } catch (error) {
