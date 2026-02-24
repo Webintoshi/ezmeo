@@ -95,7 +95,29 @@ export function DynamicVariantSelector({
     }
   };
 
-  if (variants.length <= 1 && attributes.size === 0) return null;
+  // Eğer hiç varyant yoksa gösterme
+  if (variants.length === 0) return null;
+
+  // Eğer tek varyant varsa ve nitelik yoksa, sadece bilgi göster
+  if (variants.length === 1 && attributes.size === 0) {
+    const variant = variants[0];
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="font-medium text-[#7B1113]">Seçenek</span>
+          <span className="text-sm text-[#6b4b4c] bg-[#F3E0E1] px-3 py-1 rounded-full">
+            {variant.weight}g
+          </span>
+        </div>
+        <div className="flex items-center gap-2 p-3 bg-[#F3E0E1]/50 rounded-xl border border-[#7B1113]/10">
+          <span className="font-medium text-[#7B1113]">{variant.name}</span>
+          {variant.stock <= 5 && variant.stock > 0 && (
+            <span className="text-xs text-amber-600">(Son {variant.stock} adet!)</span>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
