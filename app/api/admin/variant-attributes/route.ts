@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, values, colorCodes = {} } = body;
+    const { name, values, colorCodes = {}, imageUrls = {} } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
         attribute_id: attribute.id,
         value: value.trim(),
         color_code: colorCodes[value.trim()] || null,
+        image_url: imageUrls[value.trim()] || null,
         display_order: index,
         is_active: true,
       }));
@@ -157,7 +158,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, is_active, values, colorCodes = {} } = body;
+    const { id, name, is_active, values, colorCodes = {}, imageUrls = {} } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -205,6 +206,7 @@ export async function PUT(request: NextRequest) {
           attribute_id: id,
           value: value.trim(),
           color_code: colorCodes[value.trim()] || null,
+          image_url: imageUrls[value.trim()] || null,
           display_order: (existingValues?.length || 0) + index,
           is_active: true,
         }));

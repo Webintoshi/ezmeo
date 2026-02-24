@@ -11,6 +11,8 @@ import {
   AlertCircle,
   Check,
   Palette,
+  ImageIcon,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -19,22 +21,24 @@ interface ValueInput {
   id: string;
   value: string;
   colorCode: string;
+  imageUrl: string;
 }
 
 export default function NewVariantAttributePage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [values, setValues] = useState<ValueInput[]>([
-    { id: "1", value: "", colorCode: "" },
+    { id: "1", value: "", colorCode: "", imageUrl: "" },
   ]);
-  const [hasColorCodes, setHasColorCodes] = useState(false);
+  const [displayType, setDisplayType] = useState<"text" | "color" | "image">("text");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadingValueId, setUploadingValueId] = useState<string | null>(null);
 
   const addValue = () => {
     setValues((prev) => [
       ...prev,
-      { id: Date.now().toString(), value: "", colorCode: "" },
+      { id: Date.now().toString(), value: "", colorCode: "", imageUrl: "" },
     ]);
   };
 
@@ -50,6 +54,65 @@ export default function NewVariantAttributePage() {
     setValues((prev) =>
       prev.map((v) => (v.id === id ? { ...v, [field]: value } : v))
     );
+  };
+
+  const handleDisplayTypeChange = (type: "text" | "color" | "image") => {
+    setDisplayType(type);
+    // Clear other type values when switching
+    setValues((prev) =>
+      prev.map((v) => ({
+        ...v,
+        colorCode: type === "color" ? v.colorCode : "",
+        imageUrl: type === "image" ? v.imageUrl : "",
+      }))
+    );
+  };
+
+  const handleImageUpload = async (valueId: string, file: File) => {
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Sadece JPEG, PNG, WebP ve GIF dosyaları yüklenebilir");
+      return;
+    }
+
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Dosya boyutu en fazla 2MB olabilir");
+      return;
+    }
+
+    try {
+      setUploadingValueId(valueId);
+      
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "variant-attributes");
+      formData.append("thumbnail", "false");
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        updateValue(valueId, "imageUrl", data.url);
+        toast.success("Görsel yüklendi");
+      } else {
+        toast.error(data.error || "Görsel yüklenemedi");
+      }
+    } catch (error) {
+      toast.error("Görsel yüklenirken hata oluştu");
+    } finally {
+      setUploadingValueId(null);
+    }
+  };
+
+  const removeImage = (valueId: string) => {
+    updateValue(valueId, "imageUrl", "");
   };
 
   const validate = (): boolean => {
@@ -97,10 +160,19 @@ export default function NewVariantAttributePage() {
         .map((v) => v.value.trim());
 
       const colorCodes: Record<string, string> = {};
-      if (hasColorCodes) {
+      if (displayType === "color") {
         values.forEach((v) => {
           if (v.value.trim() && v.colorCode) {
             colorCodes[v.value.trim()] = v.colorCode;
+          }
+        });
+      }
+
+      const imageUrls: Record<string, string> = {};
+      if (displayType === "image") {
+        values.forEach((v) => {
+          if (v.value.trim() && v.imageUrl) {
+            imageUrls[v.value.trim()] = v.imageUrl;
           }
         });
       }
@@ -112,6 +184,7 @@ export default function NewVariantAttributePage() {
           name: name.trim(),
           values: validValues,
           colorCodes,
+          imageUrls,
         }),
       });
 
@@ -131,167 +204,254 @@ export default function NewVariantAttributePage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link
-          href="/admin/urunler/nitelikler"
-          className="p-2 hover:bg-gray-200 rounded-xl transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5 text-gray-600" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Yeni Nitelik</h1>
-          <p className="text-sm text-gray-500">
-            Ürün varyantları için yeni bir nitelik grubu oluşturun
-          </p>
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin/urunler/nitelikler"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-600" />
+            </Link>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Yeni Nitelik</h1>
+              <p className="text-sm text-gray-500">Ürün varyantları için yeni bir nitelik grubu oluşturun</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Nitelik Adı */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
-          <h2 className="font-semibold text-gray-900">Nitelik Bilgileri</h2>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Nitelik Adı <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Örn: Renk, Beden, Gramaj"
-              className={cn(
-                "w-full px-4 py-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all",
-                errors.name ? "border-red-300" : "border-gray-200"
-              )}
-            />
-            {errors.name && (
-              <p className="text-sm text-red-500">{errors.name}</p>
-            )}
-          </div>
-
-          {/* Renk Kodu Seçeneği */}
-          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-            <div className="flex items-center gap-2">
-              <Palette className="w-5 h-5 text-gray-500" />
-              <span className="text-sm text-gray-700">Renk kodu kullan?</span>
+      {/* Content */}
+      <div className="px-4 sm:px-6 lg:px-8 py-6">
+        <form onSubmit={handleSubmit} className="max-w-5xl mx-auto space-y-6">
+          {/* Nitelik Bilgileri */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+              <h2 className="font-semibold text-gray-900">Nitelik Bilgileri</h2>
             </div>
-            <button
-              type="button"
-              onClick={() => setHasColorCodes(!hasColorCodes)}
-              className={cn(
-                "ml-auto relative w-12 h-6 rounded-full transition-colors",
-                hasColorCodes ? "bg-primary" : "bg-gray-300"
-              )}
-            >
-              <span
-                className={cn(
-                  "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform",
-                  hasColorCodes ? "translate-x-6" : "translate-x-0"
-                )}
-              />
-            </button>
-          </div>
-          {hasColorCodes && (
-            <p className="text-xs text-gray-500">
-              Her değer için renk seçici görüntülenecektir.
-            </p>
-          )}
-        </div>
-
-        {/* Değerler */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Değerler</h2>
-            <span className="text-sm text-gray-500">
-              {values.filter((v) => v.value.trim()).length} değer
-            </span>
-          </div>
-
-          {errors.values && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
-              <AlertCircle className="w-4 h-4" />
-              {errors.values}
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {values.map((value, index) => (
-              <div
-                key={value.id}
-                className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
-              >
-                <span className="text-sm text-gray-400 w-6">{index + 1}</span>
-
-                {hasColorCodes && (
-                  <div className="relative">
-                    <input
-                      type="color"
-                      value={value.colorCode || "#000000"}
-                      onChange={(e) =>
-                        updateValue(value.id, "colorCode", e.target.value)
-                      }
-                      className="w-10 h-10 rounded-lg cursor-pointer border-0 p-0"
-                    />
-                  </div>
-                )}
-
+            
+            <div className="p-4 sm:p-6 space-y-6">
+              {/* Nitelik Adı */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nitelik Adı <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
-                  value={value.value}
-                  onChange={(e) =>
-                    updateValue(value.id, "value", e.target.value)
-                  }
-                  placeholder={`Değer ${index + 1}`}
-                  className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Örn: Renk, Beden, Gramaj"
+                  className={cn(
+                    "w-full px-4 py-3 bg-white border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all",
+                    errors.name ? "border-red-300" : "border-gray-200"
+                  )}
                 />
-
-                <button
-                  type="button"
-                  onClick={() => removeValue(value.id)}
-                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+                )}
               </div>
-            ))}
+
+              {/* Görünüm Tipi Seçimi */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Değer Görünümü
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleDisplayTypeChange("text")}
+                    className={cn(
+                      "flex items-center gap-3 p-4 rounded-lg border-2 transition-all text-left",
+                      displayType === "text"
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-gray-200 hover:border-gray-300"
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-lg font-bold">
+                      Aa
+                    </div>
+                    <div>
+                      <p className="font-medium">Sadece Metin</p>
+                      <p className="text-xs text-gray-500">Yazı olarak göster</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDisplayTypeChange("color")}
+                    className={cn(
+                      "flex items-center gap-3 p-4 rounded-lg border-2 transition-all text-left",
+                      displayType === "color"
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-gray-200 hover:border-gray-300"
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-400 to-blue-400 flex items-center justify-center">
+                      <Palette className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Renk Kodu</p>
+                      <p className="text-xs text-gray-500">Renk seçici ile</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDisplayTypeChange("image")}
+                    className={cn(
+                      "flex items-center gap-3 p-4 rounded-lg border-2 transition-all text-left",
+                      displayType === "image"
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-gray-200 hover:border-gray-300"
+                    )}
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <ImageIcon className="w-5 h-5 text-gray-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Görsel</p>
+                      <p className="text-xs text-gray-500">Resim yükle</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={addValue}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-primary hover:text-primary transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Değer Ekle
-          </button>
-        </div>
+          {/* Değerler */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-900">Değerler</h2>
+              <span className="text-sm text-gray-500">{values.filter((v) => v.value.trim()).length} değer</span>
+            </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3">
-          <Link
-            href="/admin/urunler/nitelikler"
-            className="px-6 py-3 text-gray-700 hover:bg-gray-100 rounded-xl font-medium transition-colors"
-          >
-            İptal
-          </Link>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Check className="w-4 h-4" />
-            )}
-            {loading ? "Kaydediliyor..." : "Kaydet"}
-          </button>
-        </div>
-      </form>
+            <div className="p-4 sm:p-6">
+              {errors.values && (
+                <div className="flex items-center gap-2 p-3 mb-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {errors.values}
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {values.map((value, index) => (
+                  <div 
+                    key={value.id} 
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg group hover:bg-gray-100 transition-colors"
+                  >
+                    <span className="text-sm text-gray-400 w-6 text-center flex-shrink-0">
+                      {index + 1}
+                    </span>
+
+                    {/* Görsel */}
+                    {displayType === "image" && (
+                      <div className="flex-shrink-0">
+                        {value.imageUrl ? (
+                          <div className="relative">
+                            <img
+                              src={value.imageUrl}
+                              alt={value.value}
+                              className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(value.id)}
+                              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-sm"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="w-12 h-12 bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                            {uploadingValueId === value.id ? (
+                              <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                            ) : (
+                              <Upload className="w-5 h-5 text-gray-400" />
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImageUpload(value.id, file);
+                              }}
+                              disabled={uploadingValueId === value.id}
+                            />
+                          </label>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Renk Kodu */}
+                    {displayType === "color" && (
+                      <div className="flex-shrink-0">
+                        <input
+                          type="color"
+                          value={value.colorCode || "#000000"}
+                          onChange={(e) => updateValue(value.id, "colorCode", e.target.value)}
+                          className="w-10 h-10 rounded-lg cursor-pointer border border-gray-200 p-1 bg-white"
+                        />
+                      </div>
+                    )}
+
+                    {/* Metin Input */}
+                    <input
+                      type="text"
+                      value={value.value}
+                      onChange={(e) => updateValue(value.id, "value", e.target.value)}
+                      placeholder={`Değer ${index + 1}`}
+                      className="flex-1 min-w-0 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    />
+
+                    {/* Sil Butonu */}
+                    <button
+                      type="button"
+                      onClick={() => removeValue(value.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={addValue}
+                className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-primary hover:text-primary transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Değer Ekle
+              </button>
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4">
+            <Link
+              href="/admin/urunler/nitelikler"
+              className="px-6 py-2.5 text-gray-700 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+            >
+              İptal
+            </Link>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4" />
+              )}
+              {loading ? "Kaydediliyor..." : "Kaydet"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
