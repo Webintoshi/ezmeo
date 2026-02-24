@@ -95,12 +95,14 @@ export function DynamicVariantSelector({
     }
   };
 
-  // Check if attribute is a color attribute
+  // Check if attribute is a color attribute or has images
   const isColorAttribute = (attrName: string, values: VariantAttributeValue[]) => {
     const colorKeywords = ['renk', 'color', 'colour', 'rengi'];
     const nameLower = attrName.toLowerCase();
-    return colorKeywords.some(keyword => nameLower.includes(keyword)) ||
-           values.some(v => v.color_code || v.image_url);
+    const isColorName = colorKeywords.some(keyword => nameLower.includes(keyword));
+    // Eğer değerlerden herhangi birinde görsel veya renk kodu varsa, görsel seçici göster
+    const hasVisuals = values.some(v => v.color_code || v.image_url);
+    return isColorName || hasVisuals;
   };
 
   // Eğer hiç varyant yoksa gösterme
@@ -143,7 +145,7 @@ export function DynamicVariantSelector({
               <span className="text-[#6b4b4c]">{selectedValue}</span>
             </div>
 
-            {isColor ? (
+            {isColor || values.some(v => v.image_url) ? (
               // Color/Image Selector - Circular Style (Example Image Style)
               <div className="flex flex-wrap gap-3">
                 {values.map((value, idx) => {

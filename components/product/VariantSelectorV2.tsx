@@ -58,11 +58,19 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
   });
 
   console.log("Attribute groups:", attributeGroups);
+  
+  // Debug: Check attribute names
+  Object.entries(attributeGroups).forEach(([id, group]) => {
+    console.log(`Attribute ID: ${id}, Name: "${group.name}", Values:`, group.values);
+  });
 
-  // Check if it's a color attribute
-  const isColor = (name: string) => {
+  // Check if it's a color attribute or has images
+  const isColor = (name: string, values: any[]) => {
     const lower = name.toLowerCase();
-    return lower.includes("renk") || lower.includes("color") || lower.includes("rengi");
+    const isColorName = lower.includes("renk") || lower.includes("color") || lower.includes("rengi");
+    // Eğer değerlerden herhangi birinde görsel varsa, görsel seçici göster
+    const hasImages = values.some(v => v.image_url || v.color_code);
+    return isColorName || hasImages;
   };
 
   // Get current selected value for an attribute
@@ -89,7 +97,18 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
 
   // Get attribute keys
   const attrKeys = Object.keys(attributeGroups);
-  console.log("Attribute keys:", attrKeys);
+  
+  // DEBUG: Show data structure
+  const debugInfo = {
+    variantCount: variants.length,
+    attributeKeys: attrKeys,
+    firstVariantAttrs: variants[0]?.attributes?.map((a: any) => ({
+      name: a.attribute?.name || a.name,
+      value: a.value,
+      hasImage: !!a.image_url,
+      hasColor: !!a.color_code
+    }))
+  };
 
   // If no attributes found, show simple variant selector
   if (attrKeys.length === 0) {
@@ -127,10 +146,15 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
 
   return (
     <div className="space-y-6">
+      {/* DEBUG INFO - Temporary for debugging */}
+      <div className="p-2 bg-yellow-100 text-xs font-mono rounded text-yellow-800 mb-4">
+        DEBUG: {JSON.stringify(debugInfo, null, 2)}
+      </div>
+      
       {attrKeys.map((attrId) => {
         const group = attributeGroups[attrId];
         const selectedValue = getSelectedValue(attrId);
-        const isColorAttr = isColor(group.name);
+        const isColorAttr = isColor(group.name, group.values);
 
         return (
           <div key={attrId} className="space-y-3">
@@ -148,7 +172,7 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
             </div>
 
             {/* Values */}
-            {isColorAttr ? (
+            {isColorAttr || group.values.some(v => v.image_url) ? (
               // COLOR SWATCHES with IMAGES
               <div className="flex flex-wrap gap-3">
                 {group.values.map((val, idx) => {
