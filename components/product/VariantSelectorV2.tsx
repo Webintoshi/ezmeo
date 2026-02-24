@@ -15,14 +15,7 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
 
   useEffect(() => {
     setMounted(true);
-    console.log("=== VARIANT SELECTOR DEBUG ===");
-    console.log("Variants:", variants);
-    console.log("Selected Index:", selectedIndex);
-    if (variants?.[selectedIndex]) {
-      console.log("Current variant attributes:", variants[selectedIndex].attributes);
-    }
-    console.log("==============================");
-  }, [variants, selectedIndex]);
+  }, []);
 
   if (!mounted || !variants || variants.length === 0) {
     return null;
@@ -57,12 +50,7 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
     });
   });
 
-  console.log("Attribute groups:", attributeGroups);
-  
-  // Debug: Check attribute names
-  Object.entries(attributeGroups).forEach(([id, group]) => {
-    console.log(`Attribute ID: ${id}, Name: "${group.name}", Values:`, group.values);
-  });
+
 
   // Check if it's a color attribute or has images
   const isColor = (name: string, values: any[]) => {
@@ -164,12 +152,6 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
 
   return (
     <div className="space-y-6">
-      {/* DEBUG INFO - Temporary for debugging */}
-      <div 
-        className="p-2 bg-yellow-100 text-xs font-mono rounded text-yellow-800 mb-4 whitespace-pre-wrap"
-        dangerouslySetInnerHTML={{ __html: `DEBUG:\n${debugHtml}` }}
-      />
-      
       {attrKeys.map((attrId) => {
         const group = attributeGroups[attrId];
         const selectedValue = getSelectedValue(attrId);
@@ -233,13 +215,9 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
                         )}
                       </div>
 
-                      {/* Selected indicator */}
+                      {/* Selected indicator - border only */}
                       {isSelected && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-full">
-                          <div className="w-6 h-6 bg-[#7B1113] rounded-full flex items-center justify-center shadow-lg">
-                            <Check className="w-4 h-4 text-white" />
-                          </div>
-                        </div>
+                        <div className="absolute inset-0 rounded-full border-2 border-[#7B1113]" />
                       )}
                     </button>
                   );

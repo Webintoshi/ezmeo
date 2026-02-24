@@ -314,13 +314,6 @@ export function ProductDetailClient({
               </div>
 
               {/* Variant Selector V2 */}
-              {/* DEBUG: Show variants info */}
-              <div className="p-2 bg-blue-100 text-xs font-mono rounded text-blue-800 mb-2">
-                DEBUG ProductDetailClient:<br/>
-                variants.length: {variants.length}<br/>
-                variants[0]?.attributes?.length: {variants[0]?.attributes?.length || 0}<br/>
-                variants[0]?.name: {variants[0]?.name || 'N/A'}
-              </div>
               <VariantSelectorV2
                 variants={variants}
                 selectedIndex={selectedVariant}

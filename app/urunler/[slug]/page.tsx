@@ -155,14 +155,7 @@ export default async function ProductDetailPage({
           attribute:variant_attributes(id, name)
         `);
       
-      console.log('=== DEBUG Product Page ===');
-      console.log('URL Slug:', urlSlug);
-      console.log('Base Slug:', baseSlug);
-      console.log('Product ID:', dbProduct.id);
-      console.log('Variants count:', variants?.length || 0);
-      console.log('Variants:', variants);
-      console.log('All Attribute Values:', allAttributeValues);
-      console.log('========================');
+      // Debug logging removed
 
       // Transform images_v2 to images format
       let images: string[] = [];

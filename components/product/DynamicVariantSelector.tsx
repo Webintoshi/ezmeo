@@ -190,13 +190,9 @@ export function DynamicVariantSelector({
                         )}
                       </div>
 
-                      {/* Selected checkmark overlay */}
+                      {/* Selected indicator - border only */}
                       {isSelected && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-6 h-6 bg-[#7B1113] rounded-full flex items-center justify-center shadow-lg">
-                            <Check className="w-4 h-4 text-white" />
-                          </div>
-                        </div>
+                        <div className="absolute inset-0 rounded-full border-2 border-[#7B1113]" />
                       )}
 
                       {/* Out of stock X */}
