@@ -12,6 +12,20 @@
   --secondary-foreground: #7B1113;
 
   --muted: #6b4b4c;
+  --muted-foreground: #6b4b4c;
+
+  /* shadcn/ui required variables */
+  --card: #FFFFFF;
+  --card-foreground: #7B1113;
+  --popover: #FFFFFF;
+  --popover-foreground: #7B11113;
+  --accent: #F1DADB;
+  --accent-foreground: #7B1113;
+  --destructive: #FF3B30;
+  --destructive-foreground: #FFFFFF;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #7B1113;
 
   /* Apple Design Tokens */
   --apple-blue: #0071E3;
@@ -55,6 +69,18 @@
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
   --color-apple-blue: var(--apple-blue);
   --color-apple-green: var(--apple-green);
