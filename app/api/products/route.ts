@@ -581,9 +581,10 @@ export async function PUT(request: NextRequest) {
 
             // MEVCUT VARYANTLARLA KARŞILAŞTIR
             // Sadece gelen listede OLMAYAN mevcut varyantları sil
+            // Frontend'den gelen 'variant-' ile başlayan ID'ler yeni varyantlardır
             const incomingVariantIds = new Set(
                 variants
-                    .filter((v: any) => v.id) // Sadece ID'si olanlar (yeni varyantlar değil)
+                    .filter((v: any) => v.id && !v.id.startsWith('variant-')) // Sadece gerçek UUID'ler (yeni varyantlar hariç)
                     .map((v: any) => v.id)
             );
 
@@ -609,8 +610,8 @@ export async function PUT(request: NextRequest) {
                 console.log("Deleted variants:", variantsToDelete.length);
             }
 
-            const newVariants = variants.filter((v: any) => !v.id);
-            const existingVariantsToUpdate = variants.filter((v: any) => v.id && !orderedVariantIds.has(v.id));
+            const newVariants = variants.filter((v: any) => !v.id || v.id.startsWith('variant-'));
+            const existingVariantsToUpdate = variants.filter((v: any) => v.id && !v.id.startsWith('variant-') && !orderedVariantIds.has(v.id));
 
             for (const v of existingVariantsToUpdate) {
                 const { error: updateError } = await supabase
