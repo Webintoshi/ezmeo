@@ -113,10 +113,25 @@ export function VariantSelectorV2({ variants, selectedIndex, onSelect }: Props) 
   // Force debug to be visible
   const debugHtml = JSON.stringify(debugInfo, null, 2).replace(/\n/g, '<br/>').replace(/ /g, '&nbsp;');
 
-  // If no attributes found, show simple variant selector
+  // DEBUG: Always show this to understand data structure
+  const showDebug = true; // Force debug for troubleshooting
+  
+  // If no attributes found, show simple variant selector with debug
   if (attrKeys.length === 0) {
     return (
       <div className="space-y-3">
+        {showDebug && (
+          <div className="p-2 bg-red-100 text-xs font-mono rounded text-red-800 mb-2">
+            DEBUG (NO ATTRIBUTES):<br/>
+            variants.length: {variants.length}<br/>
+            firstVariant: {variants[0] ? JSON.stringify({
+              id: variants[0].id,
+              name: variants[0].name,
+              hasAttributes: !!variants[0].attributes,
+              attrLength: variants[0].attributes?.length || 0
+            }) : 'none'}
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <span className="font-medium text-[#7B1113]">Boyut</span>
           <span className="text-sm text-[#6b4b4c] bg-[#F3E0E1] px-3 py-1 rounded-full">
