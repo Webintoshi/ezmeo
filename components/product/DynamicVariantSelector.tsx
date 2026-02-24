@@ -95,6 +95,14 @@ export function DynamicVariantSelector({
     }
   };
 
+  // Check if attribute is a color attribute
+  const isColorAttribute = (attrName: string, values: VariantAttributeValue[]) => {
+    const colorKeywords = ['renk', 'color', 'colour', 'rengi'];
+    const nameLower = attrName.toLowerCase();
+    return colorKeywords.some(keyword => nameLower.includes(keyword)) ||
+           values.some(v => v.color_code || v.image_url);
+  };
+
   // Eğer hiç varyant yoksa gösterme
   if (variants.length === 0) return null;
 
@@ -123,81 +131,24 @@ export function DynamicVariantSelector({
     <div className="space-y-6">
       {/* Dynamic Attribute Groups */}
       {Array.from(attributes.entries()).map(([attrName, values]) => {
-        const isColorAttribute = attrName.toLowerCase().includes('renk') || 
-                                values.some(v => v.color_code || v.image_url);
+        const isColor = isColorAttribute(attrName, values);
+        const selectedValue = selectedAttributes.get(attrName);
 
         return (
           <div key={attrName} className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-[#7B1113]">{attrName}</span>
-              <span className="text-sm text-[#6b4b4c] bg-[#F3E0E1] px-3 py-1 rounded-full">
-                {selectedAttributes.get(attrName)}
-              </span>
+            {/* Header: Nitelik Adı - Seçili Değer */}
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-[#7B1113] uppercase tracking-wide">{attrName}</span>
+              <span className="text-gray-400">—</span>
+              <span className="text-[#6b4b4c]">{selectedValue}</span>
             </div>
 
-            {isColorAttribute ? (
-              // Color/Image Selector - Circular
+            {isColor ? (
+              // Color/Image Selector - Circular Style (Example Image Style)
               <div className="flex flex-wrap gap-3">
                 {values.map((value, idx) => {
-                  const isSelected = selectedAttributes.get(attrName) === value.value;
-                  const isOutOfStock = variants[value.variantIndex as number]?.stock <= 0;
-
-                  return (
-                    <button
-                      key={`${value.id}-${idx}`}
-                      onClick={() => !isOutOfStock && handleAttributeSelect(attrName, value.value)}
-                      disabled={isOutOfStock}
-                      className={cn(
-                        "relative w-12 h-12 rounded-full border-2 transition-all duration-200 overflow-hidden",
-                        isSelected
-                          ? "border-[#7B1113] ring-2 ring-[#7B1113]/30 scale-110"
-                          : "border-gray-200 hover:border-[#7B1113]/50",
-                        isOutOfStock && "opacity-50 cursor-not-allowed grayscale"
-                      )}
-                      title={value.value}
-                    >
-                      {value.image_url ? (
-                        <img
-                          src={value.image_url}
-                          alt={value.value}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : value.color_code ? (
-                        <span
-                          className="w-full h-full block"
-                          style={{ backgroundColor: value.color_code }}
-                        />
-                      ) : (
-                        <span className="w-full h-full flex items-center justify-center text-xs font-medium text-gray-600 bg-gray-100">
-                          {value.value.slice(0, 2)}
-                        </span>
-                      )}
-
-                      {/* Selected indicator */}
-                      {isSelected && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                          <div className="w-5 h-5 bg-[#7B1113] rounded-full flex items-center justify-center">
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Out of stock X */}
-                      {isOutOfStock && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-white/60">
-                          <X className="w-5 h-5 text-gray-500" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              // Text/Button Selector
-              <div className="flex flex-wrap gap-2">
-                {values.map((value, idx) => {
-                  const isSelected = selectedAttributes.get(attrName) === value.value;
-                  const variantIndex = value.variantIndex as number;
+                  const isSelected = selectedValue === value.value;
+                  const variantIndex = (value as any).variantIndex;
                   const isOutOfStock = variants[variantIndex]?.stock <= 0;
 
                   return (
@@ -206,12 +157,76 @@ export function DynamicVariantSelector({
                       onClick={() => !isOutOfStock && handleAttributeSelect(attrName, value.value)}
                       disabled={isOutOfStock}
                       className={cn(
-                        "relative px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border-2",
+                        "relative w-14 h-14 rounded-full border-2 transition-all duration-200 overflow-hidden flex items-center justify-center",
                         isSelected
-                          ? "bg-[#7B1113] text-white border-[#7B1113] shadow-lg shadow-[#7B1113]/25"
+                          ? "border-[#7B1113] ring-2 ring-[#7B1113]/30" 
+                          : "border-gray-300 hover:border-gray-400",
+                        isOutOfStock && "opacity-50 cursor-not-allowed"
+                      )}
+                      title={value.value}
+                    >
+                      {/* Inner circle with image or color */}
+                      <div className={cn(
+                        "w-12 h-12 rounded-full overflow-hidden",
+                        isSelected ? "ring-2 ring-white" : ""
+                      )}>
+                        {value.image_url ? (
+                          <img
+                            src={value.image_url}
+                            alt={value.value}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : value.color_code ? (
+                          <span
+                            className="w-full h-full block"
+                            style={{ backgroundColor: value.color_code }}
+                          />
+                        ) : (
+                          <span className="w-full h-full flex items-center justify-center text-xs font-medium text-gray-600 bg-gray-100">
+                            {value.value.slice(0, 2)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Selected checkmark overlay */}
+                      {isSelected && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-6 h-6 bg-[#7B1113] rounded-full flex items-center justify-center shadow-lg">
+                            <Check className="w-4 h-4 text-white" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Out of stock X */}
+                      {isOutOfStock && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-full">
+                          <X className="w-6 h-6 text-gray-500" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              // Text/Button Selector (Pill style)
+              <div className="flex flex-wrap gap-2">
+                {values.map((value, idx) => {
+                  const isSelected = selectedValue === value.value;
+                  const variantIndex = (value as any).variantIndex;
+                  const isOutOfStock = variants[variantIndex]?.stock <= 0;
+
+                  return (
+                    <button
+                      key={`${value.id}-${idx}`}
+                      onClick={() => !isOutOfStock && handleAttributeSelect(attrName, value.value)}
+                      disabled={isOutOfStock}
+                      className={cn(
+                        "relative px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 border",
+                        isSelected
+                          ? "bg-[#7B1113] text-white border-[#7B1113] shadow-md"
                           : isOutOfStock
                             ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                            : "bg-white text-[#7B1113] border-[#7B1113]/20 hover:border-[#7B1113]/50"
+                            : "bg-white text-[#7B1113] border-gray-300 hover:border-[#7B1113]"
                       )}
                     >
                       <span className="flex items-center gap-2">
@@ -234,7 +249,7 @@ export function DynamicVariantSelector({
         );
       })}
 
-      {/* Fallback: Simple variant selector if no attributes */}
+      {/* Fallback: Simple variant selector if no attributes but multiple variants */}
       {attributes.size === 0 && variants.length > 1 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -255,12 +270,12 @@ export function DynamicVariantSelector({
                   onClick={() => !isOutOfStock && onSelect(index)}
                   disabled={isOutOfStock}
                   className={cn(
-                    "relative px-5 py-3 rounded-xl text-sm font-medium transition-all duration-200 border-2",
+                    "relative px-5 py-3 rounded-full text-sm font-medium transition-all duration-200 border",
                     isSelected
-                      ? "bg-[#7B1113] text-white border-[#7B1113] shadow-lg shadow-[#7B1113]/25"
+                      ? "bg-[#7B1113] text-white border-[#7B1113] shadow-md"
                       : isOutOfStock
                         ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                        : "bg-white text-[#7B1113] border-[#7B1113]/20 hover:border-[#7B1113]/50"
+                        : "bg-white text-[#7B1113] border-gray-300 hover:border-[#7B1113]"
                   )}
                 >
                   <span className="flex items-center gap-2">
