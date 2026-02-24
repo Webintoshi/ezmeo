@@ -24,6 +24,7 @@ interface VariantAttributeSelection {
   valueId: string;
   value: string;
   colorCode?: string | null;
+  imageUrl?: string | null;
 }
 
 export function StepPricing({
@@ -123,6 +124,7 @@ export function StepPricing({
         valueId,
         value: value.value,
         colorCode: value.color_code,
+        imageUrl: value.image_url,
       };
     } else {
       // Yeni nitelik ekle
@@ -134,6 +136,7 @@ export function StepPricing({
           valueId,
           value: value.value,
           colorCode: value.color_code,
+          imageUrl: value.image_url,
         },
       ];
     }
@@ -362,12 +365,18 @@ export function StepPricing({
                           >
                             <span className="font-medium">{attr.attributeName}:</span>
                             <span className="flex items-center gap-1">
-                              {attr.colorCode && (
+                              {attr.imageUrl ? (
+                                <img 
+                                  src={attr.imageUrl} 
+                                  alt={attr.value}
+                                  className="w-5 h-5 rounded object-cover border border-gray-200"
+                                />
+                              ) : attr.colorCode ? (
                                 <span
                                   className="w-3 h-3 rounded-full border border-gray-200"
                                   style={{ backgroundColor: attr.colorCode }}
                                 />
-                              )}
+                              ) : null}
                               {attr.value}
                             </span>
                             <button
@@ -416,7 +425,6 @@ export function StepPricing({
                               <option value="">Seçin...</option>
                               {attribute.values?.map((value) => (
                                 <option key={value.id} value={value.id}>
-                                  {value.color_code && "● "}
                                   {value.value}
                                 </option>
                               ))}

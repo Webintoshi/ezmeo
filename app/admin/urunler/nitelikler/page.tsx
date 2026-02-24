@@ -223,12 +223,18 @@ export default function VariantAttributesPage() {
                         key={value.id}
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 rounded-lg text-sm text-gray-700"
                       >
-                        {value.color_code && (
+                        {value.image_url ? (
+                          <img 
+                            src={value.image_url} 
+                            alt={value.value}
+                            className="w-5 h-5 rounded object-cover border border-gray-200"
+                          />
+                        ) : value.color_code ? (
                           <span
                             className="w-3 h-3 rounded-full border border-gray-200"
                             style={{ backgroundColor: value.color_code }}
                           />
-                        )}
+                        ) : null}
                         {value.value}
                       </span>
                     ))}
@@ -250,12 +256,18 @@ export default function VariantAttributesPage() {
                           key={value.id}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 rounded-lg text-sm text-gray-700"
                         >
-                          {value.color_code && (
+                          {value.image_url ? (
+                            <img 
+                              src={value.image_url} 
+                              alt={value.value}
+                              className="w-5 h-5 rounded object-cover border border-gray-200"
+                            />
+                          ) : value.color_code ? (
                             <span
                               className="w-3 h-3 rounded-full border border-gray-200"
                               style={{ backgroundColor: value.color_code }}
                             />
-                          )}
+                          ) : null}
                           {value.value}
                         </span>
                       ))}

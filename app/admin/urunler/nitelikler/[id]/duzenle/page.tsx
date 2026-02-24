@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,6 +12,8 @@ import {
   Check,
   Palette,
   Trash2,
+  Upload,
+  ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -26,11 +28,14 @@ export default function EditVariantAttributePage() {
   const router = useRouter();
   const params = useParams();
   const attributeId = params.id as string;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingValueId, setUploadingValueId] = useState<string | null>(null);
 
   const [attribute, setAttribute] = useState<VariantAttribute | null>(null);
   const [name, setName] = useState("");
   const [values, setValues] = useState<ValueInput[]>([]);
   const [hasColorCodes, setHasColorCodes] = useState(false);
+  const [hasImages, setHasImages] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -52,8 +57,9 @@ export default function EditVariantAttributePage() {
         setName(data.attribute.name);
         const existingValues = data.attribute.values || [];
         setValues(existingValues.map((v: VariantAttributeValue) => ({ ...v })));
-        // Eğer herhangi bir değerin color_code'u varsa, hasColorCodes true olsun
+        // Eğer herhangi bir değerin color_code'u veya image_url'i varsa
         setHasColorCodes(existingValues.some((v: VariantAttributeValue) => v.color_code));
+        setHasImages(existingValues.some((v: VariantAttributeValue) => v.image_url));
       } else {
         toast.error("Nitelik yüklenirken hata oluştu");
         router.push("/admin/urunler/nitelikler");
@@ -74,20 +80,19 @@ export default function EditVariantAttributePage() {
         attribute_id: attributeId,
         value: "",
         color_code: "",
+        image_url: "",
         display_order: prev.length,
         is_active: true,
         isNew: true,
       },
-    ]);
+    ]));
   };
 
   const removeValue = (id: string) => {
     const value = values.find((v) => v.id === id);
     if (value?.isNew) {
-      // Yeni eklenen değeri direkt sil
       setValues((prev) => prev.filter((v) => v.id !== id));
     } else {
-      // Mevcut değeri soft delete işaretle
       setValues((prev) =>
         prev.map((v) => (v.id === id ? { ...v, isDeleted: true } : v))
       );
@@ -98,6 +103,55 @@ export default function EditVariantAttributePage() {
     setValues((prev) =>
       prev.map((v) => (v.id === id ? { ...v, [field]: value } : v))
     );
+  };
+
+  // Görsel yükleme fonksiyonu
+  const handleImageUpload = async (valueId: string, file: File) => {
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Sadece JPEG, PNG, WebP ve GIF dosyaları yüklenebilir");
+      return;
+    }
+
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      toast.error("Dosya boyutu en fazla 2MB olabilir");
+      return;
+    }
+
+    try {
+      setUploadingValueId(valueId);
+      
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "variant-attributes");
+      formData.append("thumbnail", "false");
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        updateValue(valueId, "image_url", data.url);
+        setHasImages(true);
+        toast.success("Görsel yüklendi");
+      } else {
+        toast.error(data.error || "Görsel yüklenemedi");
+      }
+    } catch (error) {
+      toast.error("Görsel yüklenirken hata oluştu");
+    } finally {
+      setUploadingValueId(null);
+    }
+  };
+
+  const removeImage = (valueId: string) => {
+    updateValue(valueId, "image_url", "");
   };
 
   const validate = (): boolean => {
@@ -134,6 +188,7 @@ export default function EditVariantAttributePage() {
             attribute_id: attributeId,
             value: value.value,
             color_code: hasColorCodes ? value.color_code : null,
+            image_url: value.image_url || null,
           }),
         });
       }
@@ -156,6 +211,7 @@ export default function EditVariantAttributePage() {
             id: value.id,
             value: value.value,
             color_code: hasColorCodes ? value.color_code : null,
+            image_url: value.image_url || null,
           }),
         });
       }
@@ -262,27 +318,53 @@ export default function EditVariantAttributePage() {
             )}
           </div>
 
-          {/* Renk Kodu Seçeneği */}
-          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-            <div className="flex items-center gap-2">
-              <Palette className="w-5 h-5 text-gray-500" />
-              <span className="text-sm text-gray-700">Renk kodu kullan?</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setHasColorCodes(!hasColorCodes)}
-              className={cn(
-                "ml-auto relative w-12 h-6 rounded-full transition-colors",
-                hasColorCodes ? "bg-primary" : "bg-gray-300"
-              )}
-            >
-              <span
+          {/* Özellik Seçenekleri */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Renk Kodu Seçeneği */}
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-2">
+                <Palette className="w-5 h-5 text-gray-500" />
+                <span className="text-sm text-gray-700">Renk kodu kullan?</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHasColorCodes(!hasColorCodes)}
                 className={cn(
-                  "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform",
-                  hasColorCodes ? "translate-x-6" : "translate-x-0"
+                  "ml-auto relative w-12 h-6 rounded-full transition-colors",
+                  hasColorCodes ? "bg-primary" : "bg-gray-300"
                 )}
-              />
-            </button>
+              >
+                <span
+                  className={cn(
+                    "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform",
+                    hasColorCodes ? "translate-x-6" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+
+            {/* Görsel Seçeneği */}
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-gray-500" />
+                <span className="text-sm text-gray-700">Görsel kullan?</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHasImages(!hasImages)}
+                className={cn(
+                  "ml-auto relative w-12 h-6 rounded-full transition-colors",
+                  hasImages ? "bg-primary" : "bg-gray-300"
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform",
+                    hasImages ? "translate-x-6" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -302,47 +384,101 @@ export default function EditVariantAttributePage() {
             </div>
           )}
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {values.map((value, index) => {
               if (value.isDeleted) return null;
 
               return (
                 <div
                   key={value.id}
-                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl"
+                  className="p-4 bg-gray-50 rounded-xl space-y-3"
                 >
-                  <span className="text-sm text-gray-400 w-6">{index + 1}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-400 w-6">{index + 1}</span>
 
-                  {hasColorCodes && (
-                    <div className="relative">
-                      <input
-                        type="color"
-                        value={value.color_code || "#000000"}
-                        onChange={(e) =>
-                          updateValue(value.id, "color_code", e.target.value)
-                        }
-                        className="w-10 h-10 rounded-lg cursor-pointer border-0 p-0"
+                    {/* Görsel Yükleme */}
+                    {hasImages && (
+                      <div className="relative">
+                        {value.image_url ? (
+                          <div className="relative w-12 h-12">
+                            <img
+                              src={value.image_url}
+                              alt={value.value}
+                              className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(value.id)}
+                              className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="w-12 h-12 bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                            {uploadingValueId === value.id ? (
+                              <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                            ) : (
+                              <Upload className="w-5 h-5 text-gray-400" />
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImageUpload(value.id, file);
+                              }}
+                              disabled={uploadingValueId === value.id}
+                            />
+                          </label>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Renk Kodu */}
+                    {hasColorCodes && (
+                      <div className="relative">
+                        <input
+                          type="color"
+                          value={value.color_code || "#000000"}
+                          onChange={(e) =>
+                            updateValue(value.id, "color_code", e.target.value)
+                          }
+                          className="w-10 h-10 rounded-lg cursor-pointer border-0 p-0"
+                        />
+                      </div>
+                    )}
+
+                    <input
+                      type="text"
+                      value={value.value}
+                      onChange={(e) =>
+                        updateValue(value.id, "value", e.target.value)
+                      }
+                      placeholder={`Değer ${index + 1}`}
+                      className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => removeValue(value.id)}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Görsel Önizleme (Büyük) */}
+                  {hasImages && value.image_url && (
+                    <div className="pl-9">
+                      <img
+                        src={value.image_url}
+                        alt={value.value}
+                        className="w-24 h-24 rounded-lg object-cover border border-gray-200"
                       />
                     </div>
                   )}
-
-                  <input
-                    type="text"
-                    value={value.value}
-                    onChange={(e) =>
-                      updateValue(value.id, "value", e.target.value)
-                    }
-                    placeholder={`Değer ${index + 1}`}
-                    className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => removeValue(value.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
                 </div>
               );
             })}

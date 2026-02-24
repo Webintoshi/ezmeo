@@ -20,6 +20,7 @@ export interface VariantAttributeValue {
   attribute_id: string;
   value: string;
   color_code?: string | null;
+  image_url?: string | null;
   display_order: number;
   is_active: boolean;
   created_at?: string;
@@ -55,6 +56,7 @@ export interface CreateVariantAttributeValueInput {
   attribute_id: string;
   value: string;
   color_code?: string;
+  image_url?: string;
   display_order?: number;
 }
 
@@ -62,6 +64,7 @@ export interface UpdateVariantAttributeValueInput {
   id: string;
   value?: string;
   color_code?: string;
+  image_url?: string;
   display_order?: number;
   is_active?: boolean;
 }
@@ -73,6 +76,7 @@ export interface VariantAttributeSelection {
   valueId: string;
   value: string;
   colorCode?: string | null;
+  imageUrl?: string | null;
 }
 
 // API Response tipleri
