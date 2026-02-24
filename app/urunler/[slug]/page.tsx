@@ -62,9 +62,14 @@ export async function generateMetadata({
   };
 }
 
-// Generate static paths for all products at build time
+// Dynamic rendering for fresh data - NO CACHE
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+
+// Note: generateStaticParams disabled for dynamic content
+// If you want static generation, uncomment below and remove dynamic = 'force-dynamic' above
+/*
 export async function generateStaticParams() {
-  // Get all slugs from Supabase (including newly added products)
   try {
     const supabase = createServerClient();
     const { data: products } = await supabase
@@ -79,14 +84,10 @@ export async function generateStaticParams() {
     console.error("Failed to fetch slugs for static generation:", error);
   }
   
-  // Fallback to static data
   const allSlugs = await getProductSlug();
   return allSlugs.map((slug) => ({ slug }));
 }
-
-// Dynamic rendering for fresh data
-export const revalidate = 300; // 5 dakikada bir yeniden doğrula
-export const dynamic = 'force-static';
+*/
 
 // Server component
 export default async function ProductDetailPage({
