@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Tag, Plus, X, Percent, Calculator, Package, ChevronDown, Palette } from "lucide-react";
+import { Tag, Plus, X, Percent, Calculator, Package, ChevronDown, Palette, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ProductVariant, DiscountRule, TaxRate } from "@/types/product";
+import { ProductVariant, DiscountRule, TaxRate, ProductImage } from "@/types/product";
 import { VariantAttribute, VariantAttributeValue } from "@/types/variant-attributes";
 import { toast } from "sonner";
 
@@ -11,6 +11,7 @@ interface StepPricingProps {
   variants: ProductVariant[];
   taxRate: TaxRate;
   discountRules: DiscountRule[];
+  productImages: ProductImage[];
   onVariantsChange: (variants: ProductVariant[]) => void;
   onTaxRateChange: (taxRate: TaxRate) => void;
   onDiscountRulesChange: (rules: DiscountRule[]) => void;
@@ -31,6 +32,7 @@ export function StepPricing({
   variants,
   taxRate,
   discountRules,
+  productImages,
   onVariantsChange,
   onTaxRateChange,
   onDiscountRulesChange,
@@ -494,7 +496,64 @@ export function StepPricing({
                 )}
               </div>
 
-              {/* Group Name - Gizli, artık nitelikler kullanılıyor */}
+              {/* Variant Image Selector */}
+              {productImages.length > 0 && (
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4" />
+                    Varyant Görseli
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    {productImages.map((img, idx) => {
+                      const isSelected = variants[activeVariant].images?.[0] === img.url;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            const newImages = isSelected ? [] : [img.url];
+                            updateVariant(activeVariant, "images", newImages);
+                          }}
+                          className={cn(
+                            "relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all",
+                            isSelected 
+                              ? "border-emerald-500 ring-2 ring-emerald-500/20" 
+                              : "border-gray-200 hover:border-gray-300"
+                          )}
+                        >
+                          <img
+                            src={img.url}
+                            alt={img.alt || `Görsel ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
+                              <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
+                                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                    {/* Görseli kaldır */}
+                    {variants[activeVariant].images?.[0] && (
+                      <button
+                        type="button"
+                        onClick={() => updateVariant(activeVariant, "images", [])}
+                        className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-red-300 hover:text-red-500 transition-colors"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Bu varyant için ürün galerisinden bir görsel seçin. Müşteri bu varyanta tıkladığında bu görsel gösterilecek.
+                  </p>
+                </div>
+              )}
               
               {/* Weight */}
               <div className="space-y-2">

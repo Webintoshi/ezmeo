@@ -442,6 +442,7 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
             variants={formData.variants}
             taxRate={formData.taxRate}
             discountRules={formData.discountRules}
+            productImages={formData.images}
             onVariantsChange={(variants) => updateFormData({ variants })}
             onTaxRateChange={(taxRate) => updateFormData({ taxRate })}
             onDiscountRulesChange={(discountRules) => updateFormData({ discountRules })}
