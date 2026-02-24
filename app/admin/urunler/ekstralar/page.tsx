@@ -58,7 +58,7 @@ export default async function CustomizationSchemasPage() {
             Ürünlere özel kişiselleştirme seçenekleri oluşturun ve yönetin
           </p>
         </div>
-        <Link href="/admin/urunler/ekstra/yeni">
+        <Link href="/admin/urunler/ekstralar/yeni">
           <Button className="bg-amber-600 hover:bg-amber-700">
             <Plus className="w-4 h-4 mr-2" />
             Yeni Şema Oluştur

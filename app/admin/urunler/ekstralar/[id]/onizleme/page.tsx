@@ -1,6 +1,6 @@
 // =====================================================
 // ADMIN - PREVIEW CUSTOMIZATION SCHEMA
-// /admin/urunler/ekstra/[id]/onizleme
+// /admin/urunler/ekstralar/[id]/onizleme
 // =====================================================
 
 import { Metadata } from "next";
@@ -73,7 +73,7 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            <Link href={`/admin/urunler/ekstra/${id}`}>
+            <Link href={`/admin/urunler/ekstralar/${id}`}>
               <Button variant="ghost" size="icon">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
@@ -86,7 +86,7 @@ export default async function PreviewPage({ params }: PreviewPageProps) {
             </div>
           </div>
 
-          <Link href={`/admin/urunler/ekstra/${id}`}>
+          <Link href={`/admin/urunler/ekstralar/${id}`}>
             <Button variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Editöre Dön

@@ -1,6 +1,6 @@
 // =====================================================
 // ADMIN - EDIT CUSTOMIZATION SCHEMA
-// /admin/urunler/ekstra/[id]
+// /admin/urunler/ekstralar/[id]
 // =====================================================
 
 import { Metadata } from "next";

@@ -1,6 +1,6 @@
 // =====================================================
 // ADMIN - CREATE NEW CUSTOMIZATION SCHEMA
-// /admin/urunler/ekstra/yeni
+// /admin/urunler/ekstralar/yeni
 // =====================================================
 
 "use client";
@@ -88,7 +88,7 @@ export default function NewSchemaPage() {
       }
 
       toast.success("Şema başarıyla oluşturuldu");
-      router.push(`/admin/urunler/ekstra/${schema.id}`);
+      router.push(`/admin/urunler/ekstralar/${schema.id}`);
     } catch (error) {
       console.error("Error creating schema:", error);
       toast.error("Şema oluşturulurken bir hata oluştu");
@@ -101,7 +101,7 @@ export default function NewSchemaPage() {
     <div className="container mx-auto py-8 px-4 max-w-3xl">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Link href="/admin/urunler/ekstra">
+        <Link href="/admin/urunler/ekstralar">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -243,7 +243,7 @@ export default function NewSchemaPage() {
 
             {/* Submit */}
             <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-100">
-              <Link href="/admin/urunler/ekstra">
+              <Link href="/admin/urunler/ekstralar">
                 <Button type="button" variant="outline">
                   İptal
                 </Button>

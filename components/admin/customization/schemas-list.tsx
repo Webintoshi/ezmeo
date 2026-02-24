@@ -227,7 +227,7 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
             Ürünlere kişiselleştirme seçenekleri eklemek için ilk şemanızı oluşturun.
             Örneğin: Telefon modeli seçimi, lazer kazıma, paket seçimi gibi.
           </p>
-          <Link href="/admin/urunler/ekstra/yeni">
+          <Link href="/admin/urunler/ekstralar/yeni">
             <Button className="bg-amber-600 hover:bg-amber-700">
               <Plus className="w-4 h-4 mr-2" />
               İlk Şemayı Oluştur
@@ -279,13 +279,13 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <Link href={`/admin/urunler/ekstra/${schema.id}`}>
+                    <Link href={`/admin/urunler/ekstralar/${schema.id}`}>
                       <DropdownMenuItem>
                         <Edit className="w-4 h-4 mr-2" />
                         Düzenle
                       </DropdownMenuItem>
                     </Link>
-                    <Link href={`/admin/urunler/ekstra/${schema.id}/onizleme`}>
+                    <Link href={`/admin/urunler/ekstralar/${schema.id}/onizleme`}>
                       <DropdownMenuItem>
                         <Eye className="w-4 h-4 mr-2" />
                         Önizleme
@@ -338,7 +338,7 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
                     {schema.is_active ? "Aktif" : "Pasif"}
                   </span>
                 </div>
-                <Link href={`/admin/urunler/ekstra/${schema.id}`}>
+                <Link href={`/admin/urunler/ekstralar/${schema.id}`}>
                   <Button variant="outline" size="sm">
                     Düzenle
                   </Button>
