@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -28,8 +28,6 @@ export default function EditVariantAttributePage() {
   const router = useRouter();
   const params = useParams();
   const attributeId = params.id as string;
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadingValueId, setUploadingValueId] = useState<string | null>(null);
 
   const [attribute, setAttribute] = useState<VariantAttribute | null>(null);
   const [name, setName] = useState("");
@@ -39,6 +37,7 @@ export default function EditVariantAttributePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadingValueId, setUploadingValueId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAttribute();
@@ -57,7 +56,6 @@ export default function EditVariantAttributePage() {
         setName(data.attribute.name);
         const existingValues = data.attribute.values || [];
         setValues(existingValues.map((v: VariantAttributeValue) => ({ ...v })));
-        // Eğer herhangi bir değerin color_code'u veya image_url'i varsa
         setHasColorCodes(existingValues.some((v: VariantAttributeValue) => v.color_code));
         setHasImages(existingValues.some((v: VariantAttributeValue) => v.image_url));
       } else {
@@ -73,19 +71,17 @@ export default function EditVariantAttributePage() {
   };
 
   const addValue = () => {
-    setValues((prev) => [
-      ...prev,
-      {
-        id: `new-${Date.now()}`,
-        attribute_id: attributeId,
-        value: "",
-        color_code: "",
-        image_url: "",
-        display_order: prev.length,
-        is_active: true,
-        isNew: true,
-      },
-    ]));
+    const newValue: ValueInput = {
+      id: `new-${Date.now()}`,
+      attribute_id: attributeId,
+      value: "",
+      color_code: "",
+      image_url: "",
+      display_order: values.length,
+      is_active: true,
+      isNew: true,
+    };
+    setValues((prev) => [...prev, newValue]);
   };
 
   const removeValue = (id: string) => {
@@ -105,7 +101,6 @@ export default function EditVariantAttributePage() {
     );
   };
 
-  // Görsel yükleme fonksiyonu
   const handleImageUpload = async (valueId: string, file: File) => {
     if (!file) return;
 
@@ -115,7 +110,7 @@ export default function EditVariantAttributePage() {
       return;
     }
 
-    const maxSize = 2 * 1024 * 1024; // 2MB
+    const maxSize = 2 * 1024 * 1024;
     if (file.size > maxSize) {
       toast.error("Dosya boyutu en fazla 2MB olabilir");
       return;
@@ -178,7 +173,6 @@ export default function EditVariantAttributePage() {
     setSaving(true);
 
     try {
-      // Yeni değerleri ekle
       const newValues = values.filter((v) => v.isNew && !v.isDeleted && v.value.trim());
       for (const value of newValues) {
         await fetch("/api/admin/variant-attributes/values", {
@@ -193,7 +187,6 @@ export default function EditVariantAttributePage() {
         });
       }
 
-      // Silinen değerleri soft delete yap
       const deletedValues = values.filter((v) => v.isDeleted && !v.isNew);
       for (const value of deletedValues) {
         await fetch(`/api/admin/variant-attributes/values?id=${value.id}`, {
@@ -201,7 +194,6 @@ export default function EditVariantAttributePage() {
         });
       }
 
-      // Mevcut değerleri güncelle
       const existingValues = values.filter((v) => !v.isNew && !v.isDeleted);
       for (const value of existingValues) {
         await fetch("/api/admin/variant-attributes/values", {
@@ -216,7 +208,6 @@ export default function EditVariantAttributePage() {
         });
       }
 
-      // Nitelik adını güncelle
       await fetch("/api/admin/variant-attributes", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -268,7 +259,6 @@ export default function EditVariantAttributePage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
@@ -293,9 +283,7 @@ export default function EditVariantAttributePage() {
         </button>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Nitelik Adı */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
           <h2 className="font-semibold text-gray-900">Nitelik Bilgileri</h2>
 
@@ -318,9 +306,7 @@ export default function EditVariantAttributePage() {
             )}
           </div>
 
-          {/* Özellik Seçenekleri */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Renk Kodu Seçeneği */}
             <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center gap-2">
                 <Palette className="w-5 h-5 text-gray-500" />
@@ -343,7 +329,6 @@ export default function EditVariantAttributePage() {
               </button>
             </div>
 
-            {/* Görsel Seçeneği */}
             <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center gap-2">
                 <ImageIcon className="w-5 h-5 text-gray-500" />
@@ -368,13 +353,10 @@ export default function EditVariantAttributePage() {
           </div>
         </div>
 
-        {/* Değerler */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-gray-900">Değerler</h2>
-            <span className="text-sm text-gray-500">
-              {activeValues.length} değer
-            </span>
+            <span className="text-sm text-gray-500">{activeValues.length} değer</span>
           </div>
 
           {errors.values && (
@@ -389,14 +371,10 @@ export default function EditVariantAttributePage() {
               if (value.isDeleted) return null;
 
               return (
-                <div
-                  key={value.id}
-                  className="p-4 bg-gray-50 rounded-xl space-y-3"
-                >
+                <div key={value.id} className="p-4 bg-gray-50 rounded-xl space-y-3">
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-gray-400 w-6">{index + 1}</span>
 
-                    {/* Görsel Yükleme */}
                     {hasImages && (
                       <div className="relative">
                         {value.image_url ? (
@@ -436,26 +414,19 @@ export default function EditVariantAttributePage() {
                       </div>
                     )}
 
-                    {/* Renk Kodu */}
                     {hasColorCodes && (
-                      <div className="relative">
-                        <input
-                          type="color"
-                          value={value.color_code || "#000000"}
-                          onChange={(e) =>
-                            updateValue(value.id, "color_code", e.target.value)
-                          }
-                          className="w-10 h-10 rounded-lg cursor-pointer border-0 p-0"
-                        />
-                      </div>
+                      <input
+                        type="color"
+                        value={value.color_code || "#000000"}
+                        onChange={(e) => updateValue(value.id, "color_code", e.target.value)}
+                        className="w-10 h-10 rounded-lg cursor-pointer border-0 p-0"
+                      />
                     )}
 
                     <input
                       type="text"
                       value={value.value}
-                      onChange={(e) =>
-                        updateValue(value.id, "value", e.target.value)
-                      }
+                      onChange={(e) => updateValue(value.id, "value", e.target.value)}
                       placeholder={`Değer ${index + 1}`}
                       className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                     />
@@ -469,7 +440,6 @@ export default function EditVariantAttributePage() {
                     </button>
                   </div>
 
-                  {/* Görsel Önizleme (Büyük) */}
                   {hasImages && value.image_url && (
                     <div className="pl-9">
                       <img
@@ -494,7 +464,6 @@ export default function EditVariantAttributePage() {
           </button>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center justify-end gap-3">
           <Link
             href="/admin/urunler/nitelikler"
