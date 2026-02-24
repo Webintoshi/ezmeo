@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Tag, Plus, X, Percent, Calculator } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Tag, Plus, X, Percent, Calculator, Package, ChevronDown, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProductVariant, DiscountRule, TaxRate } from "@/types/product";
+import { VariantAttribute, VariantAttributeValue } from "@/types/variant-attributes";
 import { toast } from "sonner";
 
 interface StepPricingProps {
@@ -16,6 +17,15 @@ interface StepPricingProps {
   errors: Record<string, string>;
 }
 
+// Varyant için nitelik seçimi
+interface VariantAttributeSelection {
+  attributeId: string;
+  attributeName: string;
+  valueId: string;
+  value: string;
+  colorCode?: string | null;
+}
+
 export function StepPricing({
   variants,
   taxRate,
@@ -26,6 +36,30 @@ export function StepPricing({
   errors,
 }: StepPricingProps) {
   const [activeVariant, setActiveVariant] = useState<number | null>(0);
+  const [attributes, setAttributes] = useState<VariantAttribute[]>([]);
+  const [loadingAttributes, setLoadingAttributes] = useState(true);
+  const [showNewAttributeForm, setShowNewAttributeForm] = useState<string | null>(null);
+  const [newAttributeValue, setNewAttributeValue] = useState("");
+
+  // Nitelikleri yükle
+  useEffect(() => {
+    fetchAttributes();
+  }, []);
+
+  const fetchAttributes = async () => {
+    try {
+      setLoadingAttributes(true);
+      const response = await fetch("/api/admin/variant-attributes?withValues=true");
+      const data = await response.json();
+      if (data.success) {
+        setAttributes(data.attributes);
+      }
+    } catch (error) {
+      console.error("Error fetching attributes:", error);
+    } finally {
+      setLoadingAttributes(false);
+    }
+  };
 
   const addVariant = () => {
     const newVariant: ProductVariant = {
@@ -57,6 +91,114 @@ export function StepPricing({
     const newVariants = [...variants];
     newVariants[index] = { ...newVariants[index], [field]: value };
     onVariantsChange(newVariants);
+  };
+
+  // Nitelik ekle/çıkar
+  const toggleVariantAttribute = (
+    variantIndex: number,
+    attributeId: string,
+    valueId: string
+  ) => {
+    const variant = variants[variantIndex];
+    const currentAttributes: VariantAttributeSelection[] =
+      (variant as any).attributes || [];
+
+    const attribute = attributes.find((a) => a.id === attributeId);
+    const value = attribute?.values?.find((v) => v.id === valueId);
+
+    if (!attribute || !value) return;
+
+    // Aynı nitelikten başka bir değer seçiliyse, onu değiştir
+    const existingIndex = currentAttributes.findIndex(
+      (a) => a.attributeId === attributeId
+    );
+
+    let newAttributes: VariantAttributeSelection[];
+    if (existingIndex >= 0) {
+      // Mevcut değeri güncelle
+      newAttributes = [...currentAttributes];
+      newAttributes[existingIndex] = {
+        attributeId,
+        attributeName: attribute.name,
+        valueId,
+        value: value.value,
+        colorCode: value.color_code,
+      };
+    } else {
+      // Yeni nitelik ekle
+      newAttributes = [
+        ...currentAttributes,
+        {
+          attributeId,
+          attributeName: attribute.name,
+          valueId,
+          value: value.value,
+          colorCode: value.color_code,
+        },
+      ];
+    }
+
+    updateVariant(variantIndex, "attributes" as any, newAttributes);
+
+    // Varyant adını otomatik güncelle (opsiyonel)
+    const attributeNames = newAttributes.map((a) => a.value).join(" / ");
+    if (attributeNames) {
+      updateVariant(variantIndex, "name", attributeNames);
+    }
+  };
+
+  // Nitelik kaldır
+  const removeVariantAttribute = (variantIndex: number, attributeId: string) => {
+    const variant = variants[variantIndex];
+    const currentAttributes: VariantAttributeSelection[] =
+      (variant as any).attributes || [];
+
+    const newAttributes = currentAttributes.filter(
+      (a) => a.attributeId !== attributeId
+    );
+
+    updateVariant(variantIndex, "attributes" as any, newAttributes);
+
+    // Varyant adını güncelle
+    const attributeNames = newAttributes.map((a) => a.value).join(" / ");
+    updateVariant(
+      variantIndex,
+      "name",
+      attributeNames || `${variantIndex + 1}. Varyant`
+    );
+  };
+
+  // Yeni nitelik değeri ekle (anında)
+  const addNewAttributeValue = async (attributeId: string) => {
+    if (!newAttributeValue.trim()) return;
+
+    try {
+      const response = await fetch("/api/admin/variant-attributes/values", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          attribute_id: attributeId,
+          value: newAttributeValue.trim(),
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        // Nitelikleri yeniden yükle
+        await fetchAttributes();
+        // Yeni eklenen değeri seç
+        if (activeVariant !== null) {
+          toggleVariantAttribute(activeVariant, attributeId, data.value.id);
+        }
+        setNewAttributeValue("");
+        setShowNewAttributeForm(null);
+        toast.success("Değer eklendi");
+      } else {
+        toast.error(data.error || "Değer eklenemedi");
+      }
+    } catch (error) {
+      toast.error("Değer eklenirken hata oluştu");
+    }
   };
 
   const calculateMargin = (price: number, cost: number = 0) => {
@@ -143,21 +285,28 @@ export function StepPricing({
         {/* Variant Tabs */}
         {variants.length > 1 && (
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
-            {variants.map((variant, index) => (
-              <button
-                key={variant.id}
-                type="button"
-                onClick={() => setActiveVariant(index)}
-                className={cn(
-                  "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
-                  activeVariant === index
-                    ? "bg-gray-900 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                )}
-              >
-                {variant.name || `Varyant ${index + 1}`}
-              </button>
-            ))}
+            {variants.map((variant, index) => {
+              const attrs = (variant as any).attributes || [];
+              const displayName = attrs.length > 0 
+                ? attrs.map((a: any) => a.value).join(" / ")
+                : (variant.name || `Varyant ${index + 1}`);
+              
+              return (
+                <button
+                  key={variant.id}
+                  type="button"
+                  onClick={() => setActiveVariant(index)}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
+                    activeVariant === index
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  )}
+                >
+                  {displayName}
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -166,7 +315,7 @@ export function StepPricing({
           <div className="bg-white border border-gray-200 rounded-2xl p-6 space-y-6">
             <div className="flex items-center justify-between">
               <h5 className="font-bold text-gray-900">
-                {variants[activeVariant].name || "Varyant Detayları"}
+                Varyant Detayları
               </h5>
               {variants.length > 1 && (
                 <button
@@ -179,9 +328,146 @@ export function StepPricing({
               )}
             </div>
 
+            {/* Variant Attributes Section */}
+            <div className="bg-gray-50 rounded-xl p-4 space-y-4">
+              <div className="flex items-center gap-2">
+                <Package className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Nitelikler</span>
+                <span className="text-xs text-gray-400">(İsteğe bağlı)</span>
+              </div>
+
+              {loadingAttributes ? (
+                <div className="text-sm text-gray-500">Yükleniyor...</div>
+              ) : attributes.length === 0 ? (
+                <div className="text-sm text-gray-500">
+                  Henüz nitelik tanımlanmamış.{" "}
+                  <a
+                    href="/admin/urunler/nitelikler"
+                    target="_blank"
+                    className="text-emerald-600 hover:underline"
+                  >
+                    Nitelik oluştur
+                  </a>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Selected Attributes Display */}
+                  {((variants[activeVariant] as any).attributes || []).length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {((variants[activeVariant] as any).attributes as VariantAttributeSelection[]).map(
+                        (attr) => (
+                          <div
+                            key={attr.attributeId}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-lg text-sm"
+                          >
+                            <span className="font-medium">{attr.attributeName}:</span>
+                            <span className="flex items-center gap-1">
+                              {attr.colorCode && (
+                                <span
+                                  className="w-3 h-3 rounded-full border border-gray-200"
+                                  style={{ backgroundColor: attr.colorCode }}
+                                />
+                              )}
+                              {attr.value}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                removeVariantAttribute(activeVariant, attr.attributeId)
+                              }
+                              className="ml-1 text-emerald-600 hover:text-emerald-800"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
+
+                  {/* Attribute Selectors */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {attributes.map((attribute) => {
+                      const selectedValue = (
+                        (variants[activeVariant] as any).attributes || []
+                      ).find((a: any) => a.attributeId === attribute.id);
+
+                      return (
+                        <div key={attribute.id} className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">
+                            {attribute.name}
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={selectedValue?.valueId || ""}
+                              onChange={(e) => {
+                                if (e.target.value === "__new__") {
+                                  setShowNewAttributeForm(attribute.id);
+                                } else if (e.target.value) {
+                                  toggleVariantAttribute(
+                                    activeVariant,
+                                    attribute.id,
+                                    e.target.value
+                                  );
+                                }
+                              }}
+                              className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all appearance-none"
+                            >
+                              <option value="">Seçin...</option>
+                              {attribute.values?.map((value) => (
+                                <option key={value.id} value={value.id}>
+                                  {value.color_code && "● "}
+                                  {value.value}
+                                </option>
+                              ))}
+                              <option value="__new__" className="text-emerald-600">
+                                + Yeni {attribute.name} Ekle
+                              </option>
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                          </div>
+
+                          {/* New Value Form */}
+                          {showNewAttributeForm === attribute.id && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <input
+                                type="text"
+                                value={newAttributeValue}
+                                onChange={(e) => setNewAttributeValue(e.target.value)}
+                                placeholder={`Yeni ${attribute.name}`}
+                                className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                                autoFocus
+                              />
+                              <button
+                                type="button"
+                                onClick={() => addNewAttributeValue(attribute.id)}
+                                className="px-3 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600"
+                              >
+                                Ekle
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowNewAttributeForm(null);
+                                  setNewAttributeValue("");
+                                }}
+                                className="px-3 py-2 bg-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-300"
+                              >
+                                İptal
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Variant Name */}
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-bold text-gray-700">
                   Varyant Adı <span className="text-rose-500">*</span>
                 </label>
@@ -200,18 +486,8 @@ export function StepPricing({
                 )}
               </div>
 
-              {/* Group Name */}
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Grup (Opsiyonel)</label>
-                <input
-                  type="text"
-                  value={variants[activeVariant].groupName || ""}
-                  onChange={(e) => updateVariant(activeVariant, "groupName", e.target.value)}
-                  placeholder="Örn: Gramaj"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
-                />
-              </div>
-
+              {/* Group Name - Gizli, artık nitelikler kullanılıyor */}
+              
               {/* Weight */}
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-700">Gramaj</label>

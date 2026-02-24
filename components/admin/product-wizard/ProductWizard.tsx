@@ -134,7 +134,7 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
             maxPurchaseQuantity: v.max_purchase_quantity,
             warehouseLocation: v.warehouse_location,
           })),
-          taxRate: p.tax_rate || 10,
+          taxRate: p.tax_rate ?? 10,
           discountRules: p.discount_rules || [],
           trackStock: p.track_stock !== false,
           lowStockThreshold: p.low_stock_threshold || 10,
