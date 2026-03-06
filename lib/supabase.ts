@@ -4,13 +4,25 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 let _supabase: SupabaseClient | null = null;
 
 function getSupabaseUrl(): string {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!url) throw new Error("NEXT_PUBLIC_SUPABASE_URL is not configured");
-    return url;
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!rawUrl) throw new Error("NEXT_PUBLIC_SUPABASE_URL is not configured");
+
+    const cleanedUrl = rawUrl.trim().replace(/^["']|["']$/g, "");
+    const normalizedUrl = /^https?:\/\//i.test(cleanedUrl) ? cleanedUrl : `https://${cleanedUrl}`;
+
+    try {
+        const parsed = new URL(normalizedUrl);
+        if (!parsed.hostname) {
+            throw new Error("missing hostname");
+        }
+        return parsed.toString().replace(/\/$/, "");
+    } catch {
+        throw new Error("NEXT_PUBLIC_SUPABASE_URL is malformed");
+    }
 }
 
 function getSupabaseAnonKey(): string {
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim().replace(/^["']|["']$/g, "");
     if (!key) throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured");
     return key;
 }
