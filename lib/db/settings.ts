@@ -1,4 +1,11 @@
 import { createServerClient } from "@/lib/supabase";
+import {
+    ShippingIntegrationSettings,
+} from "@/types/shipping-integration";
+import {
+    createDefaultShippingIntegrationSettings,
+    normalizeShippingIntegrationSettings,
+} from "@/lib/shipping-integrations";
 
 // =====================================================
 // SETTINGS OPERATIONS
@@ -77,6 +84,7 @@ export async function deleteSetting(key: string) {
 export const SETTING_KEYS = {
     PAYMENT_METHODS: "payment_methods",
     SHIPPING_OPTIONS: "shipping_options",
+    SHIPPING_INTEGRATIONS: "shipping_integrations",
     STORE_INFO: "store_info",
     SEO_SETTINGS: "seo_settings",
     EMAIL_SETTINGS: "email_settings",
@@ -144,6 +152,29 @@ export async function getShippingOptions(): Promise<ShippingOption[]> {
  */
 export async function setShippingOptions(options: ShippingOption[]) {
     return setSetting(SETTING_KEYS.SHIPPING_OPTIONS, { options });
+}
+
+/**
+ * Get shipping integrations
+ */
+export async function getShippingIntegrations(): Promise<ShippingIntegrationSettings> {
+    const data = await getSetting(SETTING_KEYS.SHIPPING_INTEGRATIONS);
+
+    if (!data) {
+        return createDefaultShippingIntegrationSettings();
+    }
+
+    return normalizeShippingIntegrationSettings(data as Partial<ShippingIntegrationSettings>);
+}
+
+/**
+ * Set shipping integrations
+ */
+export async function setShippingIntegrations(settings: ShippingIntegrationSettings) {
+    return setSetting(
+        SETTING_KEYS.SHIPPING_INTEGRATIONS,
+        settings as unknown as Record<string, unknown>,
+    );
 }
 
 /**
