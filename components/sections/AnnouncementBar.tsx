@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import Link from "next/link";
-import { createBrowserClient } from "@supabase/ssr";
+import { getBrowserSupabaseClient } from "@/lib/supabase-browser";
 
 interface AnnouncementSettings {
   message: string;
@@ -27,10 +27,7 @@ export function AnnouncementBar() {
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const supabase = createBrowserClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
+        const supabase = getBrowserSupabaseClient();
 
         const { data, error } = await supabase
           .from("settings")

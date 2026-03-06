@@ -1,11 +1,16 @@
 import { CategoryInfo } from "@/types/product";
-import { createBrowserClient } from "@supabase/ssr";
+import { getBrowserSupabaseClient } from "@/lib/supabase-browser";
+
+type CategoryAdminInput = Omit<CategoryInfo, "id" | "productCount"> & {
+  parent_id?: string | null;
+  sort_order?: number;
+  is_active?: boolean;
+  seo_title?: string;
+  seo_description?: string;
+};
 
 function getSupabase() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  return getBrowserSupabaseClient();
 }
 
 // Supabase'den kategorileri çek (Client-side)
@@ -112,7 +117,7 @@ export async function getCategoryById(id: string): Promise<CategoryInfo | undefi
 }
 
 // Kategori ekle (Admin için)
-export async function addCategory(category: Omit<CategoryInfo, "id" | "productCount">): Promise<void> {
+export async function addCategory(category: CategoryAdminInput): Promise<void> {
   const supabase = getSupabase();
 
   const { error } = await supabase.from("categories").insert({
@@ -121,18 +126,18 @@ export async function addCategory(category: Omit<CategoryInfo, "id" | "productCo
     description: category.description,
     image: category.image,
     icon: category.icon,
-    parent_id: (category as any).parent_id || null,
-    sort_order: (category as any).sort_order || 0,
-    is_active: (category as any).is_active !== false,
-    seo_title: (category as any).seo_title || null,
-    seo_description: (category as any).seo_description || null,
+    parent_id: category.parent_id || null,
+    sort_order: category.sort_order || 0,
+    is_active: category.is_active !== false,
+    seo_title: category.seo_title || null,
+    seo_description: category.seo_description || null,
   });
 
   if (error) throw error;
 }
 
 // Kategori güncelle (Admin için)
-export async function updateCategory(id: string, updatedCategory: Partial<CategoryInfo>): Promise<void> {
+export async function updateCategory(id: string, updatedCategory: Partial<CategoryAdminInput>): Promise<void> {
   const supabase = getSupabase();
 
   const { error } = await supabase
@@ -143,11 +148,11 @@ export async function updateCategory(id: string, updatedCategory: Partial<Catego
       description: updatedCategory.description,
       image: updatedCategory.image,
       icon: updatedCategory.icon,
-      parent_id: (updatedCategory as any).parent_id || null,
-      sort_order: (updatedCategory as any).sort_order || 0,
-      is_active: (updatedCategory as any).is_active !== false,
-      seo_title: (updatedCategory as any).seo_title || null,
-      seo_description: (updatedCategory as any).seo_description || null,
+      parent_id: updatedCategory.parent_id || null,
+      sort_order: updatedCategory.sort_order || 0,
+      is_active: updatedCategory.is_active !== false,
+      seo_title: updatedCategory.seo_title || null,
+      seo_description: updatedCategory.seo_description || null,
     })
     .eq("id", id);
 

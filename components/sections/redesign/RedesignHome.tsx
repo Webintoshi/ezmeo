@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { createBrowserClient } from "@supabase/ssr";
-import { HeroSection, Newsletter } from "./ExistingSections";
+import { useState, useEffect } from "react";
+import { getBrowserSupabaseClient } from "@/lib/supabase-browser";
+import { HeroSection } from "./ExistingSections";
 import ShopByCategory from "./ShopByCategory";
 import BestSellers from "./BestSellers";
 import PromotionalBanners from "./PromotionalBanners";
@@ -22,9 +22,9 @@ interface HeroSlide {
 
 interface HomepageData {
   heroBanners: HeroSlide[];
-  categories: any[];
-  products: any[];
-  promoBanners: any[];
+  categories: unknown[];
+  products: unknown[];
+  promoBanners: unknown[];
 }
 
 export default function RedesignHome() {
@@ -34,10 +34,7 @@ export default function RedesignHome() {
   useEffect(() => {
     async function fetchHomepageData() {
       try {
-        const supabase = createBrowserClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
+        const supabase = getBrowserSupabaseClient();
 
         // Fetch all data in parallel
         const [

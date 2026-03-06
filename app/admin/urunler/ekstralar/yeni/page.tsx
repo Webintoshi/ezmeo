@@ -18,7 +18,6 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
 import {
   createSchemaRequestSchema,
   generateSlug,
@@ -33,7 +32,6 @@ export default function NewSchemaPage() {
   const {
     register,
     handleSubmit,
-    watch,
     setValue,
     formState: { errors },
   } = useForm<CreateSchemaRequest>({
@@ -48,8 +46,6 @@ export default function NewSchemaPage() {
       },
     },
   });
-
-  const name = watch("name");
 
   // Auto-generate slug from name
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,29 +62,30 @@ export default function NewSchemaPage() {
       // Generate slug if not provided
       const slug = data.slug || generateSlug(data.name);
 
-      const { data: schema, error } = await supabase
-        .from("product_customization_schemas")
-        .insert({
+      const response = await fetch("/api/admin/customization/schemas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create",
           name: data.name,
           description: data.description,
-          slug: slug,
+          slug,
           settings: data.settings || {},
-          is_active: true,
-        })
-        .select()
-        .single();
+        }),
+      });
+      const result = await response.json();
 
-      if (error) {
-        if (error.code === "23505") {
+      if (!response.ok || !result.success) {
+        if (String(result?.error || "").includes("23505")) {
           toast.error("Bu slug zaten kullanılıyor. Lütfen farklı bir isim deneyin.");
         } else {
-          throw error;
+          throw new Error(result?.error || "Şema oluşturulamadı");
         }
         return;
       }
 
       toast.success("Şema başarıyla oluşturuldu");
-      router.push(`/admin/urunler/ekstralar/${schema.id}`);
+      router.push(`/admin/urunler/ekstralar/${result.schema.id}`);
     } catch (error) {
       console.error("Error creating schema:", error);
       toast.error("Şema oluşturulurken bir hata oluştu");
@@ -272,3 +269,4 @@ export default function NewSchemaPage() {
     </div>
   );
 }
+

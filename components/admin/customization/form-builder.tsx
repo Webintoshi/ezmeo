@@ -33,7 +33,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
 import {
   ArrowLeft,
   Save,
@@ -186,131 +185,26 @@ export function FormBuilder({ initialSchema }: FormBuilderProps) {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // 1. Update schema
-      const { error: schemaError } = await supabase
-        .from("product_customization_schemas")
-        .update({
-          name: schema.name,
-          description: schema.description,
-          settings: schema.settings,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", schema.id);
-
-      if (schemaError) throw schemaError;
-
-      // 2. Get existing steps
-      const { data: existingSteps } = await supabase
-        .from("product_customization_steps")
-        .select("id")
-        .eq("schema_id", schema.id);
-
-      const existingIds = new Set((existingSteps || []).map((s) => s.id));
-      const currentIds = new Set(steps.filter((s) => !s.id.startsWith("temp-")).map((s) => s.id));
-      const idsToDelete = Array.from(existingIds).filter((id) => !currentIds.has(id));
-
-      // 3. Delete removed steps
-      if (idsToDelete.length > 0) {
-        await supabase
-          .from("product_customization_steps")
-          .delete()
-          .in("id", idsToDelete);
+      const response = await fetch("/api/admin/customization/schemas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save",
+          schema: {
+            id: schema.id,
+            name: schema.name,
+            description: schema.description,
+            settings: schema.settings,
+          },
+          steps,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result?.error || "Kaydetme iþlemi baþarýsýz");
       }
 
-      // 4. Upsert steps
-      for (const step of steps) {
-        const stepData = {
-          schema_id: schema.id,
-          type: step.type,
-          key: step.key,
-          label: step.label,
-          placeholder: step.placeholder,
-          help_text: step.help_text,
-          is_required: step.is_required,
-          validation_rules: step.validation_rules,
-          grid_width: step.grid_width,
-          style_config: step.style_config,
-          show_conditions: step.show_conditions,
-          price_config: step.price_config,
-          default_value: step.default_value,
-          sort_order: step.sort_order,
-        };
-
-        let stepId = step.id;
-        if (step.id.startsWith("temp-")) {
-          // Insert new step
-          const { data: newStep, error: insertError } = await supabase
-            .from("product_customization_steps")
-            .insert(stepData)
-            .select()
-            .single();
-
-          if (insertError) throw insertError;
-          stepId = newStep.id;
-        } else {
-          // Update existing step
-          const { error: updateError } = await supabase
-            .from("product_customization_steps")
-            .update(stepData)
-            .eq("id", step.id);
-
-          if (updateError) throw updateError;
-        }
-
-        // 5. Handle options for this step
-        if (step.options && step.options.length > 0) {
-          // Get existing options
-          const { data: existingOptions } = await supabase
-            .from("product_customization_options")
-            .select("id")
-            .eq("step_id", stepId);
-
-          const existingOptIds = new Set((existingOptions || []).map((o) => o.id));
-          const currentOptIds = new Set(step.options.filter((o) => !o.id?.startsWith("temp-")).map((o) => o.id));
-          const optIdsToDelete = Array.from(existingOptIds).filter((id) => !currentOptIds.has(id));
-
-          if (optIdsToDelete.length > 0) {
-            await supabase
-              .from("product_customization_options")
-              .delete()
-              .in("id", optIdsToDelete);
-          }
-
-          // Upsert options
-          for (const option of step.options) {
-            const optionData = {
-              step_id: stepId,
-              label: option.label,
-              value: option.value,
-              description: option.description,
-              image_url: option.image_url,
-              icon: option.icon,
-              color: option.color,
-              price_adjustment: option.price_adjustment,
-              price_adjustment_type: option.price_adjustment_type,
-              stock_quantity: option.stock_quantity,
-              track_stock: option.track_stock,
-              show_conditions: option.show_conditions,
-              sort_order: option.sort_order,
-              is_default: option.is_default,
-              is_disabled: option.is_disabled,
-            };
-
-            if (option.id?.startsWith("temp-")) {
-              await supabase
-                .from("product_customization_options")
-                .insert(optionData);
-            } else {
-              await supabase
-                .from("product_customization_options")
-                .update(optionData)
-                .eq("id", option.id);
-            }
-          }
-        }
-      }
-
-      toast.success("DeÄŸiÅŸiklikler kaydedildi");
+      toast.success("Deðiþiklikler kaydedildi");
       setIsDirty(false);
       router.refresh();
     } catch (error) {
@@ -477,3 +371,4 @@ function getDefaultLabel(type: CustomizationStep["type"]): string {
   };
   return labels[type] || "Yeni Alan";
 }
+

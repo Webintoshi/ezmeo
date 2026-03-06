@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
+import { getOrSetCachedValue } from "@/lib/cache/memory-cache";
 
 const BOT_USER_AGENTS = [
     'bot', 'spider', 'crawler', 'googlebot', 'bingbot', 'yandex', 'duckduckbot',
@@ -75,49 +76,30 @@ export async function POST(request: NextRequest) {
             }
         } catch {}
 
-        let visitors = 0;
-        try {
-            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-            const { data: sessions } = await supabase
-                .from("sessions")
-                .select("user_agent")
-                .gte("last_activity_at", fiveMinutesAgo)
-                .eq("is_active", true);
-            
-            const humanSessions = (sessions || []).filter((s: any) => !isBot(s.user_agent));
-            visitors = humanSessions.length;
-        } catch {
-            visitors = 0;
-        }
-
         return NextResponse.json({
             success: true,
-            visitors,
+            updated: true,
         });
     } catch (error) {
         console.error("Heartbeat error:", error);
-        return NextResponse.json({ success: true, visitors: 0 });
+        return NextResponse.json({ success: true, updated: false });
     }
 }
 
 export async function GET() {
     try {
-        const supabase = createServerClient();
-
-        let visitors = 0;
-        try {
+        const visitors = await getOrSetCachedValue("analytics:heartbeat:visitors", 5_000, async () => {
+            const supabase = createServerClient();
             const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
             const { data: sessions } = await supabase
                 .from("sessions")
                 .select("user_agent")
                 .gte("last_activity_at", fiveMinutesAgo)
                 .eq("is_active", true);
-            
-            const humanSessions = (sessions || []).filter((s: any) => !isBot(s.user_agent));
-            visitors = humanSessions.length;
-        } catch {
-            visitors = 0;
-        }
+
+            const humanSessions = (sessions || []).filter((s) => !isBot(s.user_agent));
+            return humanSessions.length;
+        });
 
         return NextResponse.json({
             success: true,

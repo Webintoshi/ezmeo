@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { createBrowserClient } from "@supabase/ssr";
+import { getBrowserSupabaseClient } from "@/lib/supabase-browser";
 import { ChevronLeft, ChevronRight, ArrowRight, Sparkles, Percent, Clock } from "lucide-react";
 
 export interface PromoBanner {
@@ -55,10 +55,7 @@ export default function PromotionalBanners({ initialBanners = [] }: PromotionalB
       }
 
       try {
-        const supabase = createBrowserClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
+        const supabase = getBrowserSupabaseClient();
 
         const { data } = await supabase
           .from("settings")

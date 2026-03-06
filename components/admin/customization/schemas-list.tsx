@@ -46,7 +46,6 @@ import {
   ToggleRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
 interface SchemaWithCounts extends CustomizationSchema {
@@ -75,12 +74,15 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
   // Toggle schema active status
   const handleToggleActive = async (schema: SchemaWithCounts) => {
     try {
-      const { error } = await supabase
-        .from("product_customization_schemas")
-        .update({ is_active: !schema.is_active })
-        .eq("id", schema.id);
-
-      if (error) throw error;
+      const response = await fetch("/api/admin/customization/schemas", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: schema.id, is_active: !schema.is_active }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result?.error || "Şema durumu güncellenemedi");
+      }
 
       setLocalSchemas((prev) =>
         prev.map((s) =>
@@ -100,87 +102,14 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
   // Duplicate schema
   const handleDuplicate = async (schema: SchemaWithCounts) => {
     try {
-      // 1. Get full schema with steps and options
-      const { data: fullSchema, error: schemaError } = await supabase
-        .from("product_customization_schemas")
-        .select(`
-          *,
-          steps:product_customization_steps(
-            *,
-            options:product_customization_options(*)
-          )
-        `)
-        .eq("id", schema.id)
-        .single();
-
-      if (schemaError) throw schemaError;
-
-      // 2. Create new schema
-      const { data: newSchema, error: createError } = await supabase
-        .from("product_customization_schemas")
-        .insert({
-          name: `${schema.name} (Kopya)`,
-          slug: `${schema.slug}-kopya-${Date.now()}`,
-          description: schema.description,
-          settings: schema.settings,
-          is_active: false,
-        })
-        .select()
-        .single();
-
-      if (createError) throw createError;
-
-      // 3. Create steps and options
-      for (const step of fullSchema.steps || []) {
-        const { data: newStep, error: stepError } = await supabase
-          .from("product_customization_steps")
-          .insert({
-            schema_id: newSchema.id,
-            type: step.type,
-            key: step.key,
-            label: step.label,
-            placeholder: step.placeholder,
-            help_text: step.help_text,
-            is_required: step.is_required,
-            validation_rules: step.validation_rules,
-            grid_width: step.grid_width,
-            style_config: step.style_config,
-            show_conditions: step.show_conditions,
-            price_config: step.price_config,
-            default_value: step.default_value,
-            sort_order: step.sort_order,
-          })
-          .select()
-          .single();
-
-        if (stepError) throw stepError;
-
-        // Create options for this step
-        if (step.options && step.options.length > 0) {
-          const { error: optionsError } = await supabase
-            .from("product_customization_options")
-            .insert(
-              step.options.map((option: any) => ({
-                step_id: newStep.id,
-                label: option.label,
-                value: option.value,
-                description: option.description,
-                image_url: option.image_url,
-                icon: option.icon,
-                color: option.color,
-                price_adjustment: option.price_adjustment,
-                price_adjustment_type: option.price_adjustment_type,
-                stock_quantity: option.stock_quantity,
-                track_stock: option.track_stock,
-                show_conditions: option.show_conditions,
-                sort_order: option.sort_order,
-                is_default: option.is_default,
-                is_disabled: option.is_disabled,
-              }))
-            );
-
-          if (optionsError) throw optionsError;
-        }
+      const response = await fetch("/api/admin/customization/schemas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "duplicate", schemaId: schema.id }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result?.error || "Kopyalama sırasında bir hata oluştu");
       }
 
       toast.success("Şema başarıyla kopyalandı");
@@ -197,12 +126,14 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
 
     setIsDeleting(true);
     try {
-      const { error } = await supabase
-        .from("product_customization_schemas")
-        .delete()
-        .eq("id", deleteSchema.id);
-
-      if (error) throw error;
+      const response = await fetch(
+        `/api/admin/customization/schemas?id=${deleteSchema.id}`,
+        { method: "DELETE" }
+      );
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result?.error || "Silme işlemi başarısız");
+      }
 
       setLocalSchemas((prev) => prev.filter((s) => s.id !== deleteSchema.id));
       toast.success("Şema başarıyla silindi");
