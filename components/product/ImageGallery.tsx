@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 
 interface ImageGalleryProps {
   images: string[];
@@ -13,6 +14,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [imageStatus, setImageStatus] = useState<Record<number, 'loading' | 'loaded' | 'error'>>({});
+  const [isClient, setIsClient] = useState(false);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
@@ -29,6 +31,10 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
     setSelectedIndex(0);
     setImageStatus({});
   }, [images.length]);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Update status for current image
   const setStatus = useCallback((index: number, status: 'loading' | 'loaded' | 'error') => {
@@ -55,6 +61,29 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
   const handleNext = useCallback(() => {
     setSelectedIndex((prev) => (prev === displayImages.length - 1 ? 0 : prev + 1));
   }, [displayImages.length]);
+
+  useEffect(() => {
+    if (!isLightboxOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsLightboxOpen(false);
+      } else if (event.key === "ArrowLeft" && displayImages.length > 1) {
+        handlePrevious();
+      } else if (event.key === "ArrowRight" && displayImages.length > 1) {
+        handleNext();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isLightboxOpen, displayImages.length, handleNext, handlePrevious]);
 
   // Touch events (mobile)
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -99,6 +128,64 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
 
   const currentStatus = imageStatus[selectedIndex] || 'loading';
   const currentImage = displayImages[selectedIndex];
+  const lightboxContent = (
+    <AnimatePresence>
+      {isLightboxOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          <button
+            type="button"
+            aria-label="Görsel büyütmeyi kapat"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsLightboxOpen(false);
+            }}
+            className="absolute top-4 right-4 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center z-10"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+
+          {displayImages.length > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="Önceki görsel"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrevious();
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center"
+              >
+                <ChevronLeft className="w-6 h-6 text-white" />
+              </button>
+              <button
+                type="button"
+                aria-label="Sonraki görsel"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNext();
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center"
+              >
+                <ChevronRight className="w-6 h-6 text-white" />
+              </button>
+            </>
+          )}
+
+          <img
+            src={currentImage}
+            alt={productName}
+            className="max-w-full max-h-full object-contain p-4"
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   // TEK GÖRSEL
   if (displayImages.length === 1) {
@@ -129,27 +216,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
             />
           )}
         </div>
-
-        <AnimatePresence>
-          {isLightboxOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
-              onClick={() => setIsLightboxOpen(false)}
-            >
-              <button className="absolute top-4 right-4 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center z-10">
-                <X className="w-6 h-6 text-white" />
-              </button>
-              <img
-                src={currentImage}
-                alt={productName}
-                className="max-w-full max-h-full object-contain p-4"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {isClient ? createPortal(lightboxContent, document.body) : null}
       </div>
     );
   }
@@ -312,40 +379,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
           )}
         </div>
       </div>
-
-      {/* Lightbox */}
-      <AnimatePresence>
-        {isLightboxOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
-            onClick={() => setIsLightboxOpen(false)}
-          >
-            <button className="absolute top-4 right-4 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center z-10">
-              <X className="w-6 h-6 text-white" />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center"
-            >
-              <ChevronLeft className="w-6 h-6 text-white" />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleNext(); }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center"
-            >
-              <ChevronRight className="w-6 h-6 text-white" />
-            </button>
-            <img
-              src={currentImage}
-              alt={productName}
-              className="max-w-full max-h-full object-contain p-4"
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isClient ? createPortal(lightboxContent, document.body) : null}
     </div>
   );
 }
