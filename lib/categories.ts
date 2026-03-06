@@ -13,7 +13,7 @@ function getSupabase() {
   return getBrowserSupabaseClient();
 }
 
-// Supabase'den kategorileri çek (Client-side)
+// Supabase'den kategorileri Ã§ek (Client-side)
 export async function fetchCategories(): Promise<CategoryInfo[]> {
   const supabase = getSupabase();
 
@@ -33,7 +33,7 @@ export async function fetchCategories(): Promise<CategoryInfo[]> {
       slug: cat.slug,
       description: cat.description || "",
       image: cat.image || "/placeholder.svg",
-      icon: cat.icon || "📦",
+      icon: cat.icon || "ğŸ“¦",
       productCount: 0,
       parent_id: cat.parent_id,
       sort_order: cat.sort_order || 0,
@@ -43,7 +43,7 @@ export async function fetchCategories(): Promise<CategoryInfo[]> {
     })) || [];
 }
 
-// Server-side için kategori çekme
+// Server-side iÃ§in kategori Ã§ekme
 export async function fetchCategoriesServer() {
   const { createServerClient } = await import("@/lib/supabase");
   const supabase = createServerClient();
@@ -62,7 +62,7 @@ export async function fetchCategoriesServer() {
   return data || [];
 }
 
-// Slug'a göre kategori getir (Client-side)
+// Slug'a gÃ¶re kategori getir (Client-side)
 export async function fetchCategoryBySlug(slug: string): Promise<CategoryInfo | null> {
   const supabase = getSupabase();
 
@@ -84,16 +84,16 @@ export async function fetchCategoryBySlug(slug: string): Promise<CategoryInfo | 
     slug: data.slug,
     description: data.description || "",
     image: data.image || "/placeholder.svg",
-    icon: data.icon || "📦",
+    icon: data.icon || "ğŸ“¦",
     productCount: 0,
   };
 }
 
 // =====================================================
-// ADMIN PANEL FONKSİYONLARI (Supabase ile)
+// ADMIN PANEL FONKSÄ°YONLARI (Supabase ile)
 // =====================================================
 
-// ID'ye göre kategori getir (Admin için)
+// ID'ye gÃ¶re kategori getir (Admin iÃ§in)
 export async function getCategoryById(id: string): Promise<CategoryInfo | undefined> {
   const supabase = getSupabase();
 
@@ -111,12 +111,12 @@ export async function getCategoryById(id: string): Promise<CategoryInfo | undefi
     slug: data.slug,
     description: data.description || "",
     image: data.image || "/placeholder.jpg",
-    icon: data.icon || "📦",
+    icon: data.icon || "ğŸ“¦",
     productCount: 0,
   };
 }
 
-// Kategori ekle (Admin için)
+// Kategori ekle (Admin iÃ§in)
 export async function addCategory(category: CategoryAdminInput): Promise<void> {
   const supabase = getSupabase();
 
@@ -136,7 +136,7 @@ export async function addCategory(category: CategoryAdminInput): Promise<void> {
   if (error) throw error;
 }
 
-// Kategori güncelle (Admin için)
+// Kategori gÃ¼ncelle (Admin iÃ§in)
 export async function updateCategory(id: string, updatedCategory: Partial<CategoryAdminInput>): Promise<void> {
   const supabase = getSupabase();
 
@@ -159,7 +159,7 @@ export async function updateCategory(id: string, updatedCategory: Partial<Catego
   if (error) throw error;
 }
 
-// Kategori sil (Admin için)
+// Kategori sil (Admin iÃ§in)
 export async function deleteCategory(id: string): Promise<void> {
   const supabase = getSupabase();
 
@@ -167,17 +167,17 @@ export async function deleteCategory(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// ESKİ getCategories - backwards compatibility
+// ESKÄ° getCategories - backwards compatibility
 export function getCategories(): CategoryInfo[] {
   console.warn("getCategories() is deprecated. Use fetchCategories() instead.");
   return [];
 }
 
-// ESKİ getCategoryBySlug - backwards compatibility  
+// ESKÄ° getCategoryBySlug - backwards compatibility  
 export function getCategoryBySlug(slug: string): CategoryInfo | undefined {
   console.warn("getCategoryBySlug() is deprecated. Use fetchCategoryBySlug() instead.");
   return undefined;
 }
 
-// BOŞ CATEGORIES ARRAY - Artık statik kategori yok!
+// BOÅ CATEGORIES ARRAY - ArtÄ±k statik kategori yok!
 export const CATEGORIES: CategoryInfo[] = [];

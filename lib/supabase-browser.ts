@@ -9,7 +9,7 @@ export function getBrowserSupabaseClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anonKey) {
-    throw new Error("Supabase browser env değişkenleri eksik");
+    throw new Error("Supabase browser env deÄŸiÅŸkenleri eksik");
   }
 
   browserClient = createBrowserClient(url, anonKey, {

@@ -49,52 +49,52 @@ const MENU_ITEMS: MenuItem[] = [
     href: "/admin",
   },
   {
-    title: "Siparişler",
+    title: "SipariÅŸler",
     icon: Package,
     href: "/admin/siparisler",
     submenu: [
-      { title: "Tüm Siparişler", href: "/admin/siparisler" },
+      { title: "TÃ¼m SipariÅŸler", href: "/admin/siparisler" },
       { title: "Terkedilen Sepetler", href: "/admin/siparisler/sepet-terk" },
     ],
   },
   {
-    title: "Ürünler",
+    title: "ÃœrÃ¼nler",
     icon: Tag,
     href: "/admin/urunler",
     submenu: [
-      { title: "Tüm Ürünler", href: "/admin/urunler" },
-      { title: "Yeni Ürün Ekle", href: "/admin/urunler/yeni" },
+      { title: "TÃ¼m ÃœrÃ¼nler", href: "/admin/urunler" },
+      { title: "Yeni ÃœrÃ¼n Ekle", href: "/admin/urunler/yeni" },
       { title: "Koleksiyonlar", href: "/admin/urunler/koleksiyonlar" },
       { title: "Nitelikler", href: "/admin/urunler/nitelikler" },
       { title: "Ekstralar", href: "/admin/urunler/ekstralar" },
-      { title: "Toplu Yükle (CSV)", href: "/admin/urunler/toplu-yukle" },
+      { title: "Toplu YÃ¼kle (CSV)", href: "/admin/urunler/toplu-yukle" },
     ],
   },
   {
-    title: "Müşteriler",
+    title: "MÃ¼ÅŸteriler",
     icon: Users,
     href: "/admin/musteriler",
     submenu: [
-      { title: "Tüm Müşteriler", href: "/admin/musteriler" },
+      { title: "TÃ¼m MÃ¼ÅŸteriler", href: "/admin/musteriler" },
       { title: "Segmentler", href: "/admin/musteriler/segmentler" },
-      { title: "Yeni Müşteri", href: "/admin/musteriler/yeni" },
+      { title: "Yeni MÃ¼ÅŸteri", href: "/admin/musteriler/yeni" },
     ],
   },
   {
-    title: "İndirimler",
+    title: "Ä°ndirimler",
     icon: Percent,
     href: "/admin/indirimler",
     submenu: [
-      { title: "Tüm İndirimler", href: "/admin/indirimler" },
-      { title: "Yeni İndirim", href: "/admin/indirimler/yeni" },
+      { title: "TÃ¼m Ä°ndirimler", href: "/admin/indirimler" },
+      { title: "Yeni Ä°ndirim", href: "/admin/indirimler/yeni" },
     ],
   },
   {
-    title: "İçerik",
+    title: "Ä°Ã§erik",
     icon: FileText,
     href: "/admin/cms",
     submenu: [
-      { title: "Blog Yazıları", href: "/admin/cms/blog" },
+      { title: "Blog YazÄ±larÄ±", href: "/admin/cms/blog" },
       { title: "Sayfalar", href: "/admin/cms/sayfalar" },
     ],
   },
@@ -115,14 +115,14 @@ const MENU_ITEMS: MenuItem[] = [
     href: "/admin/analizler",
   },
   {
-    title: "SEO Araçları",
+    title: "SEO AraÃ§larÄ±",
     icon: Search,
     href: "/admin/seo-killer",
     submenu: [
       { title: "SEO Kontrol", href: "/admin/seo-killer" },
       { title: "Sitemap", href: "/admin/seo-killer/sitemap" },
-      { title: "Sosyal Önizleme", href: "/admin/seo-killer/sosyal-onizleme" },
-      { title: "Hızlı İndex", href: "/admin/seo-killer/hizli-index" },
+      { title: "Sosyal Ã–nizleme", href: "/admin/seo-killer/sosyal-onizleme" },
+      { title: "HÄ±zlÄ± Ä°ndex", href: "/admin/seo-killer/hizli-index" },
     ],
   },
   {
@@ -131,7 +131,7 @@ const MENU_ITEMS: MenuItem[] = [
     href: "/admin/markets",
   },
   {
-    title: "Yöneticiler",
+    title: "YÃ¶neticiler",
     icon: AdminsIcon,
     href: "/admin/yoneticiler",
   },
@@ -142,7 +142,7 @@ const MENU_ITEMS: MenuItem[] = [
     submenu: [
       { title: "Genel Ayarlar", href: "/admin/ayarlar/genel" },
       { title: "Kargo", href: "/admin/ayarlar/kargo" },
-      { title: "Ödeme", href: "/admin/ayarlar/odeme" },
+      { title: "Ã–deme", href: "/admin/ayarlar/odeme" },
       { title: "Bildirimler", href: "/admin/ayarlar/bildirimler" },
       { title: "Hero Banner", href: "/admin/ayarlar/hero-banner" },
       { title: "Promosyon Banner", href: "/admin/ayarlar/promosyon-banner" },
@@ -209,15 +209,15 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
           console.log("AdminSidebar: Using email prefix:", emailName);
           setUserName(emailName);
         } else {
-          setUserName("Admin Kullanıcı");
+          setUserName("Admin KullanÄ±cÄ±");
         }
       } else {
         console.log("AdminSidebar: No user data in localStorage");
-        setUserName("Admin Kullanıcı");
+        setUserName("Admin KullanÄ±cÄ±");
       }
     } catch (error) {
       console.error("AdminSidebar: Error reading localStorage:", error);
-      setUserName("Admin Kullanıcı");
+      setUserName("Admin KullanÄ±cÄ±");
     } finally {
       setLoading(false);
     }
@@ -287,13 +287,13 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
             </span>
             <span className="text-xs text-gray-500 font-medium truncate block">
               {loading ? (
-                <span className="text-gray-400">Oturum açılıyor...</span>
+                <span className="text-gray-400">Oturum aÃ§Ä±lÄ±yor...</span>
               ) : userName ? (
                 <span className="text-gray-600">{userName}</span>
               ) : userEmail ? (
                 <span className="text-gray-600">{userEmail}</span>
               ) : (
-                <span className="text-gray-400">Admin Kullanıcı</span>
+                <span className="text-gray-400">Admin KullanÄ±cÄ±</span>
               )}
             </span>
           </div>
@@ -384,7 +384,7 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
             className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors min-h-[44px]"
           >
             <LogOut className="w-5 h-5 opacity-70" />
-            <span>Çıkış Yap</span>
+            <span>Ã‡Ä±kÄ±ÅŸ Yap</span>
           </button>
           <Link
             href="/"
@@ -392,7 +392,7 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
             className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 rounded-lg text-sm font-medium transition-colors min-h-[44px]"
           >
             <span className="w-5 h-5 opacity-70" />
-            <span>Siteye Dön</span>
+            <span>Siteye DÃ¶n</span>
           </Link>
         </div>
       </aside>

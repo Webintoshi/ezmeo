@@ -81,7 +81,7 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
       });
       const result = await response.json();
       if (!response.ok || !result.success) {
-        throw new Error(result?.error || "Şema durumu güncellenemedi");
+        throw new Error(result?.error || "Åema durumu gÃ¼ncellenemedi");
       }
 
       setLocalSchemas((prev) =>
@@ -91,11 +91,11 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
       );
 
       toast.success(
-        schema.is_active ? "Şema devre dışı bırakıldı" : "Şema aktifleştirildi"
+        schema.is_active ? "Åema devre dÄ±ÅŸÄ± bÄ±rakÄ±ldÄ±" : "Åema aktifleÅŸtirildi"
       );
     } catch (error) {
       console.error("Error toggling schema:", error);
-      toast.error("İşlem sırasında bir hata oluştu");
+      toast.error("Ä°ÅŸlem sÄ±rasÄ±nda bir hata oluÅŸtu");
     }
   };
 
@@ -109,14 +109,14 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
       });
       const result = await response.json();
       if (!response.ok || !result.success) {
-        throw new Error(result?.error || "Kopyalama sırasında bir hata oluştu");
+        throw new Error(result?.error || "Kopyalama sÄ±rasÄ±nda bir hata oluÅŸtu");
       }
 
-      toast.success("Şema başarıyla kopyalandı");
+      toast.success("Åema baÅŸarÄ±yla kopyalandÄ±");
       router.refresh();
     } catch (error) {
       console.error("Error duplicating schema:", error);
-      toast.error("Kopyalama sırasında bir hata oluştu");
+      toast.error("Kopyalama sÄ±rasÄ±nda bir hata oluÅŸtu");
     }
   };
 
@@ -132,14 +132,14 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
       );
       const result = await response.json();
       if (!response.ok || !result.success) {
-        throw new Error(result?.error || "Silme işlemi başarısız");
+        throw new Error(result?.error || "Silme iÅŸlemi baÅŸarÄ±sÄ±z");
       }
 
       setLocalSchemas((prev) => prev.filter((s) => s.id !== deleteSchema.id));
-      toast.success("Şema başarıyla silindi");
+      toast.success("Åema baÅŸarÄ±yla silindi");
     } catch (error) {
       console.error("Error deleting schema:", error);
-      toast.error("Silme sırasında bir hata oluştu");
+      toast.error("Silme sÄ±rasÄ±nda bir hata oluÅŸtu");
     } finally {
       setIsDeleting(false);
       setDeleteSchema(null);
@@ -152,16 +152,16 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
         <CardContent className="flex flex-col items-center justify-center py-16">
           <Layers className="w-16 h-16 text-gray-400 mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            Henüz şema oluşturulmadı
+            HenÃ¼z ÅŸema oluÅŸturulmadÄ±
           </h3>
           <p className="text-gray-600 text-center max-w-md mb-6">
-            Ürünlere kişiselleştirme seçenekleri eklemek için ilk şemanızı oluşturun.
-            Örneğin: Telefon modeli seçimi, lazer kazıma, paket seçimi gibi.
+            ÃœrÃ¼nlere kiÅŸiselleÅŸtirme seÃ§enekleri eklemek iÃ§in ilk ÅŸemanÄ±zÄ± oluÅŸturun.
+            Ã–rneÄŸin: Telefon modeli seÃ§imi, lazer kazÄ±ma, paket seÃ§imi gibi.
           </p>
           <Link href="/admin/urunler/ekstralar/yeni">
             <Button className="bg-amber-600 hover:bg-amber-700">
               <Plus className="w-4 h-4 mr-2" />
-              İlk Şemayı Oluştur
+              Ä°lk ÅemayÄ± OluÅŸtur
             </Button>
           </Link>
         </CardContent>
@@ -176,7 +176,7 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="Şema ara..."
+            placeholder="Åema ara..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -213,13 +213,13 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
                     <Link href={`/admin/urunler/ekstralar/${schema.id}`}>
                       <DropdownMenuItem>
                         <Edit className="w-4 h-4 mr-2" />
-                        Düzenle
+                        DÃ¼zenle
                       </DropdownMenuItem>
                     </Link>
                     <Link href={`/admin/urunler/ekstralar/${schema.id}/onizleme`}>
                       <DropdownMenuItem>
                         <Eye className="w-4 h-4 mr-2" />
-                        Önizleme
+                        Ã–nizleme
                       </DropdownMenuItem>
                     </Link>
                     <DropdownMenuItem onClick={() => handleDuplicate(schema)}>
@@ -250,11 +250,11 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
               <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
                 <div className="flex items-center gap-1">
                   <Layers className="w-4 h-4" />
-                  <span>{schema.step_count} Adım</span>
+                  <span>{schema.step_count} AdÄ±m</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Package className="w-4 h-4" />
-                  <span>{schema.product_count} Ürün</span>
+                  <span>{schema.product_count} ÃœrÃ¼n</span>
                 </div>
               </div>
 
@@ -271,7 +271,7 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
                 </div>
                 <Link href={`/admin/urunler/ekstralar/${schema.id}`}>
                   <Button variant="outline" size="sm">
-                    Düzenle
+                    DÃ¼zenle
                   </Button>
                 </Link>
               </div>
@@ -284,15 +284,15 @@ export function CustomizationSchemasList({ schemas }: CustomizationSchemasListPr
       <AlertDialog open={!!deleteSchema} onOpenChange={() => setDeleteSchema(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Şemayı silmek istediğinize emin misiniz?</AlertDialogTitle>
+            <AlertDialogTitle>ÅemayÄ± silmek istediÄŸinize emin misiniz?</AlertDialogTitle>
             <AlertDialogDescription>
-              <strong>{deleteSchema?.name}</strong> şeması kalıcı olarak silinecektir.
-              Bu işlem geri alınamaz. Bu şemaya bağlı ürünler varsa, onların
-              kişiselleştirme seçenekleri kaldırılacaktır.
+              <strong>{deleteSchema?.name}</strong> ÅŸemasÄ± kalÄ±cÄ± olarak silinecektir.
+              Bu iÅŸlem geri alÄ±namaz. Bu ÅŸemaya baÄŸlÄ± Ã¼rÃ¼nler varsa, onlarÄ±n
+              kiÅŸiselleÅŸtirme seÃ§enekleri kaldÄ±rÄ±lacaktÄ±r.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>İptal</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Ä°ptal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}

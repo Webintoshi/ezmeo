@@ -277,12 +277,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    return badRequest("Geçersiz action");
+    return badRequest("GeÃ§ersiz action");
   } catch (error: unknown) {
     const message =
       error && typeof error === "object" && "message" in error
         ? String((error as { message: unknown }).message)
-        : "Beklenmeyen bir hata oluştu";
+        : "Beklenmeyen bir hata oluÅŸtu";
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
@@ -306,7 +306,7 @@ export async function PATCH(request: NextRequest) {
     const message =
       error && typeof error === "object" && "message" in error
         ? String((error as { message: unknown }).message)
-        : "Beklenmeyen bir hata oluştu";
+        : "Beklenmeyen bir hata oluÅŸtu";
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
@@ -329,7 +329,7 @@ export async function DELETE(request: NextRequest) {
     const message =
       error && typeof error === "object" && "message" in error
         ? String((error as { message: unknown }).message)
-        : "Beklenmeyen bir hata oluştu";
+        : "Beklenmeyen bir hata oluÅŸtu";
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

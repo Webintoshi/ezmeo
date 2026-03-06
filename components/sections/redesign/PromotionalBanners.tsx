@@ -85,8 +85,8 @@ export default function PromotionalBanners({ initialBanners = [] }: PromotionalB
   }, [initialBanners]);
 
   const getDefaultBadge = (order: number): string => {
-    const badges = ["🔥 Çok Satan", "✨ Yeni", "🌿 Organik"];
-    return badges[order - 1] || "✨ Özel";
+    const badges = ["ğŸ”¥ Ã‡ok Satan", "âœ¨ Yeni", "ğŸŒ¿ Organik"];
+    return badges[order - 1] || "âœ¨ Ã–zel";
   };
 
   const getDefaultColor = (order: number): string => {
@@ -104,12 +104,12 @@ export default function PromotionalBanners({ initialBanners = [] }: PromotionalB
       id: 1,
       image: "/hero-banner-fistik-ezmeleri.jpg",
       mobileImage: "/hero-banner-fistik-ezmeleri-mobile.jpg",
-      title: "Doğal Fıstık Ezmesi",
-      subtitle: "Her Gün Taze",
-      buttonText: "İncele",
+      title: "DoÄŸal FÄ±stÄ±k Ezmesi",
+      subtitle: "Her GÃ¼n Taze",
+      buttonText: "Ä°ncele",
       buttonLink: "/koleksiyon/fistik-ezmesi",
       order: 1,
-      badge: "🔥 Çok Satan",
+      badge: "ğŸ”¥ Ã‡ok Satan",
       color: "#7B1113",
       discount: "20"
     },
@@ -117,12 +117,12 @@ export default function PromotionalBanners({ initialBanners = [] }: PromotionalB
       id: 2,
       image: "/Hero_banner_Bir.jpg",
       mobileImage: "/hero-banner-super-gidalar-mobile.jpg",
-      title: "Süper Gıdalar",
+      title: "SÃ¼per GÄ±dalar",
       subtitle: "Yeni Geldi!",
-      buttonText: "Keşfet",
+      buttonText: "KeÅŸfet",
       buttonLink: "/koleksiyon/yeni-urunler",
       order: 2,
-      badge: "✨ Yeni",
+      badge: "âœ¨ Yeni",
       color: "#8B4513",
       discount: "15"
     },
@@ -132,10 +132,10 @@ export default function PromotionalBanners({ initialBanners = [] }: PromotionalB
       mobileImage: "/Findik_Ezmeleri_Kategorisi.webp",
       title: "Saf Organik",
       subtitle: "Koleksiyon",
-      buttonText: "Göz At",
+      buttonText: "GÃ¶z At",
       buttonLink: "/koleksiyon/kuruyemis",
       order: 3,
-      badge: "🌿 Organik",
+      badge: "ğŸŒ¿ Organik",
       color: "#2D5016",
       discount: "10"
     }
@@ -242,22 +242,22 @@ export default function PromotionalBanners({ initialBanners = [] }: PromotionalB
     <section 
       className="py-16 md:py-24 bg-[#FFF5F5] overflow-hidden" 
       id="promotional-banners"
-      aria-label="Kampanya Bannerları"
+      aria-label="Kampanya BannerlarÄ±"
     >
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-10 md:mb-14 opacity-0 animate-[fadeIn_0.6s_ease-out_forwards]">
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#7B1113] text-white text-sm font-medium mb-4 shadow-lg">
             <Sparkles className="w-4 h-4" />
-            Özel Kampanyalar
+            Ã–zel Kampanyalar
           </span>
           
           <h2 className="text-3xl md:text-5xl font-bold text-[#7B1113] mb-4 tracking-tight">
-            Kaçırılmayacak Fırsatlar
+            KaÃ§Ä±rÄ±lmayacak FÄ±rsatlar
           </h2>
           
           <p className="text-[#6b4b4c] text-base md:text-lg max-w-lg mx-auto">
-            Sınırlı süreli indirimler ve özel kampanyaları keşfedin
+            SÄ±nÄ±rlÄ± sÃ¼reli indirimler ve Ã¶zel kampanyalarÄ± keÅŸfedin
           </p>
         </div>
 
@@ -285,7 +285,7 @@ export default function PromotionalBanners({ initialBanners = [] }: PromotionalB
                   <div className="absolute top-6 left-6">
                     <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#7B1113] text-white shadow-lg">
                       <Percent className="w-4 h-4" />
-                      <span className="font-bold">{sortedBanners[0]?.discount}% İndirim</span>
+                      <span className="font-bold">{sortedBanners[0]?.discount}% Ä°ndirim</span>
                     </div>
                   </div>
 
@@ -373,7 +373,7 @@ export default function PromotionalBanners({ initialBanners = [] }: PromotionalB
                   {/* Badge */}
                   <div className="absolute top-4 left-4">
                     <span className="px-3 py-1.5 rounded-full bg-[#7B1113] text-white text-sm font-bold shadow-lg">
-                      %{banner.discount} İndirim
+                      %{banner.discount} Ä°ndirim
                     </span>
                   </div>
 
