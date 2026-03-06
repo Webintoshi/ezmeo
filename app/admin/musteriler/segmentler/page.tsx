@@ -1,410 +1,347 @@
 "use client";
 
-import { useState } from "react";
-import { getCustomers } from "@/lib/customers";
-import { CustomerSegment, Customer } from "@/types/customer";
-import {
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  Users,
-  Target,
-  ChevronRight,
-  Filter,
-  BarChart3,
-  Calendar,
-  ArrowUpRight
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Edit, Eye, Plus, Search, Trash2, X } from "lucide-react";
 
-const SEGMENTS: CustomerSegment[] = [
-  {
-    id: "seg-001",
-    name: "VIP Müşteriler",
-    description: "5000 TL ve üzeri harcama yapan sadık müşteriler",
-    condition: [
-      {
-        field: "totalSpent",
-        operator: ">=",
-        value: 5000,
-      },
-    ],
-    customerCount: 0,
-    createdAt: new Date("2024-01-01"),
-  },
-  {
-    id: "seg-002",
-    name: "Yeni Müşteriler",
-    description: "Son 30 gün içinde kayıt olan potansiyeli yüksek müşteriler",
-    condition: [
-      {
-        field: "lastOrderDays",
-        operator: "<=",
-        value: 30,
-      },
-    ],
-    customerCount: 0,
-    createdAt: new Date("2024-01-15"),
-  },
-  {
-    id: "seg-003",
-    name: "Kaybedilmek Üzere",
-    description: "Son 90 gündür sipariş vermeyen eski müşteriler",
-    condition: [
-      {
-        field: "lastOrderDays",
-        operator: ">=",
-        value: 90,
-      },
-    ],
-    customerCount: 0,
-    createdAt: new Date("2024-02-01"),
-  },
-];
+type SegmentField = "totalSpent" | "totalOrders" | "averageOrderValue" | "lastOrderDays" | "registeredDays" | "status";
+type SegmentOperator = ">" | "<" | ">=" | "<=" | "=" | "contains" | "not_contains";
 
-const segmentsList: CustomerSegment[] = [...SEGMENTS];
+type SegmentCondition = {
+  field: SegmentField;
+  operator: SegmentOperator;
+  value: string | number;
+};
 
-function evaluateSegment(segment: CustomerSegment, customers: Customer[]): number {
-  let count = 0;
-  customers.forEach((customer) => {
-    let matches = true;
-    segment.condition.forEach((cond) => {
-      const fieldValue = getFieldValue(customer, cond.field);
-      const conditionValue = cond.value as number;
+type Segment = {
+  id: string;
+  name: string;
+  description: string;
+  logic: "all" | "any";
+  conditions: SegmentCondition[];
+  createdAt: string;
+  updatedAt: string;
+};
 
-      switch (cond.operator) {
-        case ">":
-          matches = matches && fieldValue > conditionValue;
-          break;
-        case "<":
-          matches = matches && fieldValue < conditionValue;
-          break;
-        case ">=":
-          matches = matches && fieldValue >= conditionValue;
-          break;
-        case "<=":
-          matches = matches && fieldValue <= conditionValue;
-          break;
-        case "=":
-          matches = matches && fieldValue === conditionValue;
-          break;
-      }
-    });
-    if (matches) count++;
-  });
-  return count;
+type Customer = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  status: "active" | "inactive" | "blocked";
+  totalOrders: number;
+  totalSpent: number;
+  averageOrderValue: number;
+  lastOrderAt: Date | null;
+  createdAt: Date;
+};
+
+type FormState = {
+  name: string;
+  description: string;
+  logic: "all" | "any";
+  conditions: Array<{ field: SegmentField; operator: SegmentOperator; value: string }>;
+};
+
+const FIELD_TYPES: Record<SegmentField, "number" | "text"> = {
+  totalSpent: "number",
+  totalOrders: "number",
+  averageOrderValue: "number",
+  lastOrderDays: "number",
+  registeredDays: "number",
+  status: "text",
+};
+
+function transformCustomer(row: Record<string, unknown>): Customer {
+  const totalOrders = Number(row.total_orders) || 0;
+  const totalSpent = Number(row.total_spent) || 0;
+  return {
+    id: String(row.id || ""),
+    firstName: String(row.first_name || ""),
+    lastName: String(row.last_name || ""),
+    email: String(row.email || ""),
+    status: (row.status as Customer["status"]) || "active",
+    totalOrders,
+    totalSpent,
+    averageOrderValue: totalOrders > 0 ? totalSpent / totalOrders : 0,
+    lastOrderAt: row.last_order_at ? new Date(String(row.last_order_at)) : null,
+    createdAt: new Date(String(row.created_at || new Date().toISOString())),
+  };
 }
 
-function getFieldValue(customer: Customer, field: string): number {
-  switch (field) {
-    case "totalSpent":
-      return customer.totalSpent;
-    case "totalOrders":
-      return customer.totalOrders;
-    case "averageOrderValue":
-      return customer.averageOrderValue;
-    default:
-      return 0; // Simplified for demo
+function daysSince(date: Date) {
+  return Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
+}
+
+function getValue(customer: Customer, field: SegmentField): string | number {
+  if (field === "totalSpent") return customer.totalSpent;
+  if (field === "totalOrders") return customer.totalOrders;
+  if (field === "averageOrderValue") return customer.averageOrderValue;
+  if (field === "registeredDays") return daysSince(customer.createdAt);
+  if (field === "lastOrderDays") return customer.lastOrderAt ? daysSince(customer.lastOrderAt) : Number.POSITIVE_INFINITY;
+  return customer.status;
+}
+
+function compare(left: string | number, operator: SegmentOperator, right: string | number) {
+  if (typeof left === "number" && typeof right === "number") {
+    if (operator === ">") return left > right;
+    if (operator === "<") return left < right;
+    if (operator === ">=") return left >= right;
+    if (operator === "<=") return left <= right;
+    if (operator === "=") return left === right;
+    return false;
   }
+  const a = String(left).toLowerCase();
+  const b = String(right).toLowerCase();
+  if (operator === "=") return a === b;
+  if (operator === "contains") return a.includes(b);
+  if (operator === "not_contains") return !a.includes(b);
+  return false;
 }
 
-function getSegments(): CustomerSegment[] {
-  const customers = getCustomers();
-  return segmentsList.map((seg) => ({
-    ...seg,
-    customerCount: evaluateSegment(seg, customers),
-  }));
+function matchSegment(segment: Segment, customer: Customer) {
+  const checks = segment.conditions.map((c) => {
+    const left = getValue(customer, c.field);
+    const right = FIELD_TYPES[c.field] === "number" ? Number(c.value) || 0 : String(c.value);
+    return compare(left, c.operator, right);
+  });
+  return segment.logic === "any" ? checks.some(Boolean) : checks.every(Boolean);
+}
+
+function defaultForm(): FormState {
+  return {
+    name: "",
+    description: "",
+    logic: "all",
+    conditions: [{ field: "totalSpent", operator: ">=", value: "5000" }],
+  };
 }
 
 export default function SegmentsPage() {
-  const [segments, setSegments] = useState<CustomerSegment[]>(getSegments());
-  const [searchQuery, setSearchQuery] = useState("");
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [segments, setSegments] = useState<Segment[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [openForm, setOpenForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<FormState>(defaultForm());
+  const [viewSegmentId, setViewSegmentId] = useState<string | null>(null);
 
-  const filteredSegments = segments.filter((segment) =>
-    segment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    segment.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  /* Segment Logic */
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newSegmentName, setNewSegmentName] = useState("");
-  const [newSegmentDesc, setNewSegmentDesc] = useState("");
-  const [newSegmentDays, setNewSegmentDays] = useState(30);
-
-  const handleCreateSegment = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newSegment: CustomerSegment = {
-      id: `seg-${Date.now()}`,
-      name: newSegmentName,
-      description: newSegmentDesc || "Özel segment",
-      condition: [
-        {
-          field: "lastOrderDays", // Simplified for demo
-          operator: "<=",
-          value: newSegmentDays,
-        },
-      ],
-      customerCount: 0, // Will be calculated on render
-      createdAt: new Date(),
-    };
-
-    // Update the module-level list (simulating persistence)
-    segmentsList.push(newSegment);
-    setSegments(getSegments());
-
-    // Reset and close
-    setNewSegmentName("");
-    setNewSegmentDesc("");
-    setShowCreateModal(false);
-  };
-
-  const handleDelete = (id: string, name: string) => {
-    if (confirm(`"${name}" segmentini silmek istediğinizden emin misiniz?`)) {
-      const index = segmentsList.findIndex((s) => s.id === id);
-      if (index !== -1) {
-        segmentsList.splice(index, 1);
-        setSegments(getSegments());
-      }
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [customerRes, segmentRes] = await Promise.all([
+        fetch("/api/customers", { cache: "no-store" }),
+        fetch("/api/admin/customers/segments", { cache: "no-store" }),
+      ]);
+      const customerJson = await customerRes.json();
+      const segmentJson = await segmentRes.json();
+      if (!customerRes.ok || !customerJson.success) throw new Error(customerJson?.error || "Müşteriler alınamadı.");
+      if (!segmentRes.ok || !segmentJson.success) throw new Error(segmentJson?.error || "Segmentler alınamadı.");
+      setCustomers((customerJson.customers || []).map(transformCustomer));
+      setSegments(segmentJson.segments || []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Hata oluştu.");
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    load();
+  }, []);
+
+  const enriched = useMemo(() => segments.map((s) => ({ ...s, members: customers.filter((c) => matchSegment(s, c)) })), [segments, customers]);
+  const filtered = useMemo(() => enriched.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()) || s.description.toLowerCase().includes(search.toLowerCase())), [enriched, search]);
+  const viewing = enriched.find((s) => s.id === viewSegmentId) || null;
+
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(defaultForm());
+    setOpenForm(true);
+  };
+
+  const openEdit = (segment: Segment) => {
+    setEditingId(segment.id);
+    setForm({
+      name: segment.name,
+      description: segment.description,
+      logic: segment.logic,
+      conditions: segment.conditions.map((c) => ({ field: c.field, operator: c.operator, value: String(c.value) })),
+    });
+    setOpenForm(true);
+  };
+
+  const saveSegment = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const payload = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      logic: form.logic,
+      conditions: form.conditions.map((c) => ({ ...c, value: FIELD_TYPES[c.field] === "number" ? Number(c.value) || 0 : c.value })),
+    };
+
+    const response = await fetch("/api/admin/customers/segments", {
+      method: editingId ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editingId ? { id: editingId, segment: payload } : { segment: payload }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      window.alert(result?.error || "Segment kaydedilemedi.");
+      return;
+    }
+    setSegments(result.segments || []);
+    setOpenForm(false);
+  };
+
+  const removeSegment = async (id: string, name: string) => {
+    if (!window.confirm(`"${name}" segmentini silmek istiyor musunuz?`)) return;
+    const response = await fetch(`/api/admin/customers/segments?id=${id}`, { method: "DELETE" });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      window.alert(result?.error || "Segment silinemedi.");
+      return;
+    }
+    setSegments(result.segments || []);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8 space-y-6">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Müşteri Segmentleri</h1>
-          <p className="text-sm text-gray-500 mt-1">Müşterilerinizi davranışlarına göre gruplayın ve hedefleyin.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Müşteri Segmentleri</h1>
+          <p className="text-sm text-gray-500">Çalışan segment yönetimi: oluştur, düzenle, sil, müşteri listesini görüntüle.</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Yeni Segment
+        <button onClick={openCreate} className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium">
+          <Plus className="w-4 h-4" /> Yeni Segment
         </button>
       </div>
 
-      {/* Overview Cards - A nice touch for "World Class" UI */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-gray-500 uppercase">Toplam Segment</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{segments.length}</p>
-          </div>
-          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-            <Target className="w-5 h-5" />
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-gray-500 uppercase">En Büyü Segment</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">
-              {segments.reduce((prev, current) => (prev.customerCount > current.customerCount) ? prev : current).name}
-            </p>
-          </div>
-          <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-            <Users className="w-5 h-5" />
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-gray-500 uppercase">Ortalama Büyüklük</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">
-              {Math.round(segments.reduce((acc, curr) => acc + curr.customerCount, 0) / (segments.length || 1))}
-              <span className="text-sm font-normal text-gray-400 ml-1">müşteri</span>
-            </p>
-          </div>
-          <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-            <BarChart3 className="w-5 h-5" />
-          </div>
-        </div>
+      {error && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Segment ara..." className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg bg-white text-sm" />
       </div>
 
-      {/* Main Content */}
-      <div className="space-y-4">
-        {/* Filter Bar */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Segment ara..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all shadow-sm"
-            />
-          </div>
-        </div>
-
-        {/* Segments Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredSegments.map((segment) => (
-            <div key={segment.id} className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col">
-              <div className="p-5 flex-1">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-100 group-hover:border-gray-200 transition-colors">
-                      <Target className="w-5 h-5 text-gray-600 group-hover:text-gray-900" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{segment.name}</h3>
-                      <p className="text-xs text-gray-500">{new Date(segment.createdAt).toLocaleDateString("tr-TR")}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors">
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(segment.id, segment.name)}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {segment.description}
-                </p>
-
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 text-gray-600 text-xs font-medium rounded-md border border-gray-100">
-                    <Filter className="w-3 h-3" />
-                    {segment.condition.length} Kriter
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 text-gray-600 text-xs font-medium rounded-md border border-gray-100">
-                    <Calendar className="w-3 h-3" />
-                    Otomatik Güncellenir
-                  </span>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.map((segment) => (
+          <div key={segment.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-semibold text-gray-900">{segment.name}</h3>
+                <p className="text-xs text-gray-500">{segment.description || "Açıklama yok"}</p>
               </div>
-
-              <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50 rounded-b-xl flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="flex -space-x-2">
-                    {[...Array(Math.min(3, segment.customerCount))].map((_, i) => (
-                      <div key={i} className="w-6 h-6 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-[8px] text-gray-500 font-bold">
-                        {String.fromCharCode(65 + i)}
-                      </div>
-                    ))}
-                    {segment.customerCount > 3 && (
-                      <div className="w-6 h-6 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-[8px] text-gray-500 font-bold">
-                        +{segment.customerCount - 3}
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    {segment.customerCount} Müşteri
-                  </span>
-                </div>
-
-                <Link
-                  href="#"
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 group-hover/link:underline"
-                >
-                  Görüntüle <ArrowUpRight className="w-3 h-3" />
-                </Link>
+              <div className="flex gap-1">
+                <button onClick={() => setViewSegmentId(segment.id)} className="p-1.5 rounded hover:bg-gray-100 text-gray-600"><Eye className="w-4 h-4" /></button>
+                <button onClick={() => openEdit(segment)} className="p-1.5 rounded hover:bg-gray-100 text-gray-600"><Edit className="w-4 h-4" /></button>
+                <button onClick={() => removeSegment(segment.id, segment.name)} className="p-1.5 rounded hover:bg-red-50 text-red-600"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
-          ))}
-
-          {/* New Segment Card (Call to Action styled as a card) */}
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="group border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:border-gray-300 hover:bg-gray-50 transition-all h-full min-h-[200px]"
-          >
-            <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-              <Plus className="w-6 h-6 text-gray-400 group-hover:text-gray-900" />
-            </div>
-            <h3 className="font-semibold text-gray-900">Yeni Segment Oluştur</h3>
-            <p className="text-sm text-gray-500 mt-1 max-w-[200px]">
-              Müşterilerinizi harcama, davranış veya demografik özelliklere göre filtreleyin.
-            </p>
-          </button>
-        </div>
-
-        {filteredSegments.length === 0 && (
-          <div className="p-12 text-center text-gray-500">
-            <p>Arama kriterlerinize uygun segment bulunamadı.</p>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="mt-2 text-primary hover:underline font-medium"
-            >
-              Yeni bir tane oluşturun
-            </button>
+            <div className="mt-3 text-sm text-gray-700">{segment.members.length} müşteri eşleşti</div>
           </div>
-        )}
+        ))}
       </div>
 
-      {/* Modal Overlay */}
-      {showCreateModal && (
+      {loading && <div className="text-sm text-gray-500">Yükleniyor...</div>}
+
+      {openForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-xl w-full max-w-2xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Yeni Segment</h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <Plus className="w-5 h-5 rotate-45" />
-              </button>
+              <h2 className="font-semibold text-lg">{editingId ? "Segment Düzenle" : "Yeni Segment"}</h2>
+              <button onClick={() => setOpenForm(false)}><X className="w-5 h-5 text-gray-500" /></button>
             </div>
+            <form onSubmit={saveSegment} className="space-y-3">
+              <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Segment adı" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+              <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Açıklama" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+              <select value={form.logic} onChange={(e) => setForm({ ...form, logic: e.target.value === "any" ? "any" : "all" })} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <option value="all">Tüm koşullar sağlansın (AND)</option>
+                <option value="any">Koşullardan biri sağlansın (OR)</option>
+              </select>
 
-            <form onSubmit={handleCreateSegment} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Segment Adı</label>
-                <input
-                  type="text"
-                  required
-                  value={newSegmentName}
-                  onChange={(e) => setNewSegmentName(e.target.value)}
-                  placeholder="Örn: Yüksek Cirolu Müşteriler"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
-                <input
-                  type="text"
-                  value={newSegmentDesc}
-                  onChange={(e) => setNewSegmentDesc(e.target.value)}
-                  placeholder="Bu segment kimleri kapsıyor?"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                />
-              </div>
-
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
-                <label className="block text-xs font-medium text-gray-500 uppercase mb-2">Otomatik Kriter</label>
-                <div className="flex items-center gap-2 text-sm">
-                  <span>Son</span>
-                  <input
-                    type="number"
-                    value={newSegmentDays}
-                    onChange={(e) => setNewSegmentDays(Number(e.target.value))}
-                    className="w-16 px-2 py-1 border border-gray-300 rounded text-center"
-                  />
-                  <span>gün içinde sipariş verenler.</span>
+              {form.conditions.map((c, i) => (
+                <div key={i} className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                  <select value={c.field} onChange={(e) => {
+                    const field = e.target.value as SegmentField;
+                    const next = [...form.conditions];
+                    next[i] = { field, operator: FIELD_TYPES[field] === "number" ? ">=" : "=", value: field === "status" ? "active" : "0" };
+                    setForm({ ...form, conditions: next });
+                  }} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <option value="totalSpent">Toplam Harcama</option>
+                    <option value="totalOrders">Toplam Sipariş</option>
+                    <option value="averageOrderValue">Ortalama Sepet</option>
+                    <option value="lastOrderDays">Son Sipariş Günü</option>
+                    <option value="registeredDays">Kayıt Yaşı (gün)</option>
+                    <option value="status">Durum</option>
+                  </select>
+                  <select value={c.operator} onChange={(e) => {
+                    const next = [...form.conditions];
+                    next[i] = { ...next[i], operator: e.target.value as SegmentOperator };
+                    setForm({ ...form, conditions: next });
+                  }} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    {FIELD_TYPES[c.field] === "number" ? (
+                      <>
+                        <option value=">=">{">="}</option>
+                        <option value=">">{">"}</option>
+                        <option value="<=">{"<="}</option>
+                        <option value="<">{"<"}</option>
+                        <option value="=">{"="}</option>
+                      </>
+                    ) : (
+                      <option value="=">{"="}</option>
+                    )}
+                  </select>
+                  {c.field === "status" ? (
+                    <select value={c.value} onChange={(e) => {
+                      const next = [...form.conditions];
+                      next[i] = { ...next[i], value: e.target.value };
+                      setForm({ ...form, conditions: next });
+                    }} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                      <option value="active">Aktif</option>
+                      <option value="inactive">Pasif</option>
+                      <option value="blocked">Engelli</option>
+                    </select>
+                  ) : (
+                    <input type="number" value={c.value} onChange={(e) => {
+                      const next = [...form.conditions];
+                      next[i] = { ...next[i], value: e.target.value };
+                      setForm({ ...form, conditions: next });
+                    }} className="px-3 py-2 border border-gray-300 rounded-lg text-sm" />
+                  )}
+                  <button type="button" onClick={() => setForm({ ...form, conditions: form.conditions.length > 1 ? form.conditions.filter((_, idx) => idx !== i) : form.conditions })} className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-red-600">Sil</button>
                 </div>
-              </div>
+              ))}
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium"
-                >
-                  Oluştur
-                </button>
-              </div>
+              <button type="button" onClick={() => setForm({ ...form, conditions: [...form.conditions, { field: "totalSpent", operator: ">=", value: "0" }] })} className="text-sm text-blue-600">+ Kriter Ekle</button>
+              <button type="submit" className="w-full py-2 bg-gray-900 text-white rounded-lg text-sm font-medium">{editingId ? "Güncelle" : "Oluştur"}</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {viewing && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-3xl p-5 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-lg">{viewing.name} - {viewing.members.length} müşteri</h2>
+              <button onClick={() => setViewSegmentId(null)}><X className="w-5 h-5 text-gray-500" /></button>
+            </div>
+            <div className="space-y-2">
+              {viewing.members.map((c) => (
+                <div key={c.id} className="border border-gray-200 rounded-lg px-3 py-2 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-sm text-gray-900">{c.firstName} {c.lastName}</div>
+                    <div className="text-xs text-gray-500">{c.email}</div>
+                  </div>
+                  <Link href={`/admin/musteriler/${c.id}`} className="text-blue-600 text-sm">Aç</Link>
+                </div>
+              ))}
+              {viewing.members.length === 0 && <div className="text-sm text-gray-500">Bu segmentte müşteri yok.</div>}
+            </div>
           </div>
         </div>
       )}
