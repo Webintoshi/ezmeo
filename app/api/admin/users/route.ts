@@ -1,22 +1,44 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
-// Create a Supabase client with the SERVICE ROLE KEY for admin operations
-// This client bypasses RLS and can manage users
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
+let cachedSupabaseAdmin: SupabaseClient | null = null;
+
+function getSupabaseAdmin(): SupabaseClient {
+    if (cachedSupabaseAdmin) {
+        return cachedSupabaseAdmin;
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+    if (!supabaseUrl) {
+        throw new Error("NEXT_PUBLIC_SUPABASE_URL is not configured.");
+    }
+
+    if (!serviceRoleKey) {
+        throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+    }
+
+    try {
+        new URL(supabaseUrl);
+    } catch {
+        throw new Error("NEXT_PUBLIC_SUPABASE_URL is malformed.");
+    }
+
+    cachedSupabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
         auth: {
             autoRefreshToken: false,
             persistSession: false,
         },
-    }
-);
+    });
+
+    return cachedSupabaseAdmin;
+}
 
 export async function GET() {
     try {
-        // Fetch all profiles
+        const supabaseAdmin = getSupabaseAdmin();
+
         const { data: profiles, error: profilesError } = await supabaseAdmin
             .from("profiles")
             .select("*")
@@ -24,19 +46,18 @@ export async function GET() {
 
         if (profilesError) throw profilesError;
 
-        // Fetch all users to map emails (since profiles table might not have email if we didn't duplicate it)
-        // Ideally we should store email in profiles for easier access or join, but auth.users is separate.
-        // For now, let's fetch users list. Note: listUsers is paginated.
-        const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
+        const {
+            data: { users },
+            error: usersError,
+        } = await supabaseAdmin.auth.admin.listUsers();
 
         if (usersError) throw usersError;
 
-        // Merge data
-        const admins = profiles.map(profile => {
-            const user = users.find(u => u.id === profile.id);
+        const admins = (profiles ?? []).map((profile) => {
+            const user = users.find((u) => u.id === profile.id);
             return {
                 ...profile,
-                email: user?.email || "Unknown"
+                email: user?.email || "Unknown",
             };
         });
 
@@ -49,44 +70,45 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
     try {
+        const supabaseAdmin = getSupabaseAdmin();
         const body = await req.json();
         const { email, password, fullName, role, taskDefinition } = body;
 
         if (!email || !password || !fullName || !role) {
-            return NextResponse.json(
-                { success: false, error: "Tüm alanlar zorunludur." },
-                { status: 400 }
-            );
+            return NextResponse.json({ success: false, error: "Tüm alanlar zorunludur." }, { status: 400 });
         }
 
-        // Security Check:
-        // 1. Check total user count
-        const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 2 });
+        const {
+            data: { users },
+            error: listError,
+        } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 2 });
+
         if (listError) throw listError;
 
         const isFirstUser = users.length === 0;
 
         if (!isFirstUser) {
-            // If not first user, require authentication
             const authHeader = req.headers.get("Authorization");
             if (!authHeader) {
                 return NextResponse.json(
-                    { success: false, error: "Yetkisiz erişim. Kayıtlı yönetici varsa oturum açmalısınız." },
+                    {
+                        success: false,
+                        error: "Yetkisiz erişim. Kayıtlı yönetici varsa oturum açmalısınız.",
+                    },
                     { status: 401 }
                 );
             }
 
             const token = authHeader.replace("Bearer ", "");
-            const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+            const {
+                data: { user },
+                error: authError,
+            } = await supabaseAdmin.auth.getUser(token);
 
             if (authError || !user) {
-                return NextResponse.json(
-                    { success: false, error: "Geçersiz oturum." },
-                    { status: 401 }
-                );
+                return NextResponse.json({ success: false, error: "Geçersiz oturum." }, { status: 401 });
             }
 
-            // Optional: Check if the requester is super_admin
             const { data: requesterProfile } = await supabaseAdmin
                 .from("profiles")
                 .select("role")
@@ -95,41 +117,41 @@ export async function POST(req: NextRequest) {
 
             if (requesterProfile?.role !== "super_admin") {
                 return NextResponse.json(
-                    { success: false, error: "Sadece Süper Yöneticiler yeni yönetici ekleyebilir." },
+                    {
+                        success: false,
+                        error: "Sadece Süper Yöneticiler yeni yönetici ekleyebilir.",
+                    },
                     { status: 403 }
                 );
             }
         }
 
-        // 1. Create user in Supabase Auth
         const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
             email,
             password,
             email_confirm: true,
-            user_metadata: { full_name: fullName }
+            user_metadata: { full_name: fullName },
         });
 
         if (createError) throw createError;
         if (!userData.user) throw new Error("Kullanıcı oluşturulamadı.");
 
-        // 2. Create profile entry
-        const { error: profileError } = await supabaseAdmin
-            .from("profiles")
-            .insert({
-                id: userData.user.id,
-                full_name: fullName,
-                role: isFirstUser ? "super_admin" : role, // Force super_admin for first user
-                task_definition: isFirstUser ? "Sistem Kurucusu" : taskDefinition
-            });
+        const { error: profileError } = await supabaseAdmin.from("profiles").insert({
+            id: userData.user.id,
+            full_name: fullName,
+            role: isFirstUser ? "super_admin" : role,
+            task_definition: isFirstUser ? "Sistem Kurucusu" : taskDefinition,
+        });
 
         if (profileError) {
-            // Rollback: delete user if profile creation fails
             await supabaseAdmin.auth.admin.deleteUser(userData.user.id);
             throw profileError;
         }
 
-        return NextResponse.json({ success: true, message: isFirstUser ? "İlk yönetici başarıyla oluşturuldu." : "Yönetici başarıyla oluşturuldu." });
-
+        return NextResponse.json({
+            success: true,
+            message: isFirstUser ? "İlk yönetici başarıyla oluşturuldu." : "Yönetici başarıyla oluşturuldu.",
+        });
     } catch (error: unknown) {
         console.log("Create Admin Error:", error);
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
@@ -139,6 +161,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
     try {
+        const supabaseAdmin = getSupabaseAdmin();
         const { searchParams } = new URL(req.url);
         const id = searchParams.get("id");
 
@@ -146,13 +169,11 @@ export async function DELETE(req: NextRequest) {
             return NextResponse.json({ success: false, error: "ID gerekli." }, { status: 400 });
         }
 
-        // Delete user from Auth (Cascade should handle profile, but we enabled cascade in SQL)
         const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
 
         if (error) throw error;
 
         return NextResponse.json({ success: true, message: "Yönetici silindi." });
-
     } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
         return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
