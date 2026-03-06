@@ -13,9 +13,9 @@ interface AnnouncementSettings {
 }
 
 const DEFAULT_SETTINGS: AnnouncementSettings = {
-  message: "Ä°lk sipariÅŸinizde %10 indirim!",
+  message: "İlk siparişinizde %10 indirim!",
   link: "/kampanyalar",
-  linkText: "Hemen KeÅŸfet",
+  linkText: "Hemen Keşfet",
   enabled: true,
 };
 
@@ -72,7 +72,7 @@ export function AnnouncementBar() {
                 className="inline-flex items-center gap-1 ml-2 px-3 py-1 bg-white/10 hover:bg-white/20 rounded-full text-white font-semibold transition-all duration-300 hover:scale-105 active:scale-95"
               >
                 {settings.linkText}
-                <span className="text-xs animate-[bounce_1s_ease-in-out_infinite]">â†’</span>
+                <span className="text-xs animate-[bounce_1s_ease-in-out_infinite]">→</span>
               </Link>
             )}
           </p>

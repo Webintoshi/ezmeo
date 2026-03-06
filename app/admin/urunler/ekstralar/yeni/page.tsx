@@ -42,7 +42,7 @@ export default function NewSchemaPage() {
         show_price_breakdown: true,
         allow_multiple: false,
         submit_button_text: "Sepete Ekle",
-        success_message: "ÃœrÃ¼n sepete eklendi",
+        success_message: "Ürün sepete eklendi",
       },
     },
   });
@@ -77,18 +77,18 @@ export default function NewSchemaPage() {
 
       if (!response.ok || !result.success) {
         if (String(result?.error || "").includes("23505")) {
-          toast.error("Bu slug zaten kullanÄ±lÄ±yor. LÃ¼tfen farklÄ± bir isim deneyin.");
+          toast.error("Bu slug zaten kullanılıyor. Lütfen farklı bir isim deneyin.");
         } else {
-          throw new Error(result?.error || "Åema oluÅŸturulamadÄ±");
+          throw new Error(result?.error || "Şema oluşturulamadı");
         }
         return;
       }
 
-      toast.success("Åema baÅŸarÄ±yla oluÅŸturuldu");
+      toast.success("Şema başarıyla oluşturuldu");
       router.push(`/admin/urunler/ekstralar/${result.schema.id}`);
     } catch (error) {
       console.error("Error creating schema:", error);
-      toast.error("Åema oluÅŸturulurken bir hata oluÅŸtu");
+      toast.error("Şema oluşturulurken bir hata oluştu");
     } finally {
       setIsSubmitting(false);
     }
@@ -105,10 +105,10 @@ export default function NewSchemaPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Yeni KiÅŸiselleÅŸtirme ÅemasÄ±
+            Yeni Kişiselleştirme Şeması
           </h1>
           <p className="text-gray-600">
-            ÃœrÃ¼n kiÅŸiselleÅŸtirme iÃ§in yeni bir ÅŸema oluÅŸturun
+            Ürün kişiselleştirme için yeni bir şema oluşturun
           </p>
         </div>
       </div>
@@ -122,11 +122,11 @@ export default function NewSchemaPage() {
             {/* Name */}
             <div className="space-y-2">
               <Label htmlFor="name">
-                Åema AdÄ± <span className="text-red-500">*</span>
+                Şema Adı <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="name"
-                placeholder="Ã–rn: Telefon KÄ±lÄ±fÄ± KiÅŸiselleÅŸtirme"
+                placeholder="Örn: Telefon Kılıfı Kişiselleştirme"
                 {...register("name", { onChange: handleNameChange })}
               />
               {errors.name && (
@@ -147,7 +147,7 @@ export default function NewSchemaPage() {
                     id="auto-slug"
                   />
                   <Label htmlFor="auto-slug" className="text-sm text-gray-600">
-                    Otomatik oluÅŸtur
+                    Otomatik oluştur
                   </Label>
                 </div>
               </div>
@@ -158,7 +158,7 @@ export default function NewSchemaPage() {
                 disabled={autoSlug}
               />
               <p className="text-sm text-gray-500">
-                URL-friendly benzersiz tanÄ±mlayÄ±cÄ±. Sadece kÃ¼Ã§Ã¼k harf, rakam ve tire.
+                URL-friendly benzersiz tanımlayıcı. Sadece küçük harf, rakam ve tire.
               </p>
               {errors.slug && (
                 <p className="text-sm text-red-500">{errors.slug.message}</p>
@@ -167,10 +167,10 @@ export default function NewSchemaPage() {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description">AÃ§Ä±klama</Label>
+              <Label htmlFor="description">Açıklama</Label>
               <Textarea
                 id="description"
-                placeholder="Bu ÅŸemanÄ±n amacÄ±nÄ± ve kullanÄ±m alanÄ±nÄ± aÃ§Ä±klayÄ±n..."
+                placeholder="Bu şemanın amacını ve kullanım alanını açıklayın..."
                 rows={3}
                 {...register("description")}
               />
@@ -190,32 +190,32 @@ export default function NewSchemaPage() {
                 {...register("settings.submit_button_text")}
               />
               <p className="text-sm text-gray-500">
-                Formdaki gÃ¶nder butonunda gÃ¶rÃ¼necek metin.
+                Formdaki gönder butonunda görünecek metin.
               </p>
             </div>
 
             {/* Success Message */}
             <div className="space-y-2">
-              <Label htmlFor="successMessage">BaÅŸarÄ± MesajÄ±</Label>
+              <Label htmlFor="successMessage">Başarı Mesajı</Label>
               <Input
                 id="successMessage"
-                placeholder="ÃœrÃ¼n sepete eklendi"
+                placeholder="Ürün sepete eklendi"
                 {...register("settings.success_message")}
               />
               <p className="text-sm text-gray-500">
-                ÃœrÃ¼n sepete eklendikten sonra gÃ¶sterilecek mesaj.
+                Ürün sepete eklendikten sonra gösterilecek mesaj.
               </p>
             </div>
 
             {/* Settings */}
             <div className="space-y-4 pt-4 border-t border-gray-100">
-              <h3 className="font-medium text-gray-900">GÃ¶rÃ¼nÃ¼m AyarlarÄ±</h3>
+              <h3 className="font-medium text-gray-900">Görünüm Ayarları</h3>
               
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-base">Ã–zet GÃ¶ster</Label>
+                  <Label className="text-base">Özet Göster</Label>
                   <p className="text-sm text-gray-500">
-                    SeÃ§imlerin Ã¶zetini formun altÄ±nda gÃ¶ster
+                    Seçimlerin özetini formun altında göster
                   </p>
                 </div>
                 <Switch
@@ -226,9 +226,9 @@ export default function NewSchemaPage() {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-base">Fiyat DetayÄ±nÄ± GÃ¶ster</Label>
+                  <Label className="text-base">Fiyat Detayını Göster</Label>
                   <p className="text-sm text-gray-500">
-                    Fiyat hesaplama detayÄ±nÄ± gÃ¶ster
+                    Fiyat hesaplama detayını göster
                   </p>
                 </div>
                 <Switch
@@ -242,7 +242,7 @@ export default function NewSchemaPage() {
             <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-100">
               <Link href="/admin/urunler/ekstralar">
                 <Button type="button" variant="outline">
-                  Ä°ptal
+                  İptal
                 </Button>
               </Link>
               <Button
@@ -253,7 +253,7 @@ export default function NewSchemaPage() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    OluÅŸturuluyor...
+                    Oluşturuluyor...
                   </>
                 ) : (
                   <>

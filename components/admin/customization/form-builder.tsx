@@ -102,7 +102,7 @@ export function FormBuilder({ initialSchema }: FormBuilderProps) {
             {
               id: generateId(),
               step_id: "",
-              label: "SeÃ§enek 1",
+              label: "Seçenek 1",
               value: "secenek_1",
               price_adjustment: 0,
               price_adjustment_type: "fixed",
@@ -209,7 +209,7 @@ export function FormBuilder({ initialSchema }: FormBuilderProps) {
       router.refresh();
     } catch (error) {
       console.error("Error saving schema:", error);
-      toast.error("Kaydetme sÄ±rasÄ±nda bir hata oluÅŸtu");
+      toast.error("Kaydetme sırasında bir hata oluştu");
     } finally {
       setIsSaving(false);
     }
@@ -233,12 +233,12 @@ export function FormBuilder({ initialSchema }: FormBuilderProps) {
                 {schema.name}
               </h1>
               <p className="text-sm text-gray-500">
-                /{schema.slug} â€¢ {steps.length} adÄ±m
+                /{schema.slug} • {steps.length} adım
               </p>
             </div>
             {isDirty && (
               <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
-                KaydedilmemiÅŸ deÄŸiÅŸiklikler
+                Kaydedilmemiş değişiklikler
               </span>
             )}
           </div>
@@ -256,7 +256,7 @@ export function FormBuilder({ initialSchema }: FormBuilderProps) {
               onClick={() => setActiveTab(activeTab === "builder" ? "preview" : "builder")}
             >
               <Eye className="w-4 h-4 mr-2" />
-              {activeTab === "builder" ? "Ã–nizleme" : "EditÃ¶r"}
+              {activeTab === "builder" ? "Önizleme" : "Editör"}
             </Button>
             <Button
               onClick={handleSave}
@@ -282,7 +282,7 @@ export function FormBuilder({ initialSchema }: FormBuilderProps) {
             <div className="p-4 border-b border-gray-200">
               <h2 className="font-semibold text-gray-900 flex items-center gap-2">
                 <Plus className="w-4 h-4" />
-                AdÄ±m Ekle
+                Adım Ekle
               </h2>
             </div>
             <StepPalette onSelect={handleAddStep} />
@@ -332,10 +332,10 @@ export function FormBuilder({ initialSchema }: FormBuilderProps) {
             </TabsContent>
             <TabsContent value="preview" className="m-0 h-full">
               <div className="p-4">
-                <h3 className="font-semibold text-gray-900 mb-4">Ã–nizleme Bilgisi</h3>
+                <h3 className="font-semibold text-gray-900 mb-4">Önizleme Bilgisi</h3>
                 <p className="text-sm text-gray-600">
-                  Bu, mÃ¼ÅŸterilerin Ã¼rÃ¼n sayfasÄ±nda gÃ¶receÄŸi formun canlÄ± Ã¶nizlemesidir.
-                  TÃ¼m deÄŸiÅŸiklikler anÄ±nda yansÄ±yacaktÄ±r.
+                  Bu, müşterilerin ürün sayfasında göreceği formun canlı önizlemesidir.
+                  Tüm değişiklikler anında yansıyacaktır.
                 </p>
               </div>
             </TabsContent>
@@ -357,17 +357,17 @@ export function FormBuilder({ initialSchema }: FormBuilderProps) {
 // Helper function
 function getDefaultLabel(type: CustomizationStep["type"]): string {
   const labels: Record<string, string> = {
-    select: "SeÃ§im AlanÄ±",
-    radio_group: "SeÃ§enek Grubu",
-    image_select: "GÃ¶rsel SeÃ§imi",
-    text: "YazÄ± AlanÄ±",
-    textarea: "Uzun YazÄ± AlanÄ±",
+    select: "Seçim Alanı",
+    radio_group: "Seçenek Grubu",
+    image_select: "Görsel Seçimi",
+    text: "Yazı Alanı",
+    textarea: "Uzun Yazı Alanı",
     checkbox: "Onay Kutusu",
-    multi_select: "Ã‡oklu SeÃ§im",
-    file_upload: "Dosya YÃ¼kleme",
-    number: "SayÄ± AlanÄ±",
-    date: "Tarih AlanÄ±",
-    color_picker: "Renk SeÃ§ici",
+    multi_select: "Çoklu Seçim",
+    file_upload: "Dosya Yükleme",
+    number: "Sayı Alanı",
+    date: "Tarih Alanı",
+    color_picker: "Renk Seçici",
   };
   return labels[type] || "Yeni Alan";
 }
