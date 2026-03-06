@@ -13,10 +13,11 @@ interface ImageGalleryProps {
 export function ImageGallery({ images, productName }: ImageGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [imageStatus, setImageStatus] = useState<Record<number, 'loading' | 'loaded' | 'error'>>({});
+  const [imageStatus, setImageStatus] = useState<Record<string, 'loading' | 'loaded' | 'error'>>({});
   const [isClient, setIsClient] = useState(false);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+  const mainImageRef = useRef<HTMLImageElement | null>(null);
 
   // Ensure images is an array
   const safeImages = Array.isArray(images) ? images : [];
@@ -30,15 +31,16 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
   useEffect(() => {
     setSelectedIndex(0);
     setImageStatus({});
-  }, [images.length]);
+  }, [images]);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   // Update status for current image
-  const setStatus = useCallback((index: number, status: 'loading' | 'loaded' | 'error') => {
-    setImageStatus(prev => ({ ...prev, [index]: status }));
+  const setStatus = useCallback((imageUrl: string, status: 'loading' | 'loaded' | 'error') => {
+    if (!imageUrl) return;
+    setImageStatus(prev => ({ ...prev, [imageUrl]: status }));
   }, []);
 
   if (displayImages.length === 0) {
@@ -126,8 +128,25 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
     }
   };
 
-  const currentStatus = imageStatus[selectedIndex] || 'loading';
   const currentImage = displayImages[selectedIndex];
+  const currentStatus = imageStatus[currentImage] || 'loading';
+
+  useEffect(() => {
+    if (!currentImage) return;
+    setImageStatus((prev) => {
+      if (prev[currentImage]) return prev;
+      return { ...prev, [currentImage]: "loading" };
+    });
+  }, [currentImage]);
+
+  useEffect(() => {
+    // cached image scenario: mark as loaded even if onLoad does not fire
+    const img = mainImageRef.current;
+    if (!img || !currentImage) return;
+    if (img.complete && img.naturalWidth > 0) {
+      setStatus(currentImage, "loaded");
+    }
+  }, [currentImage, setStatus]);
   const lightboxContent = (
     <AnimatePresence>
       {isLightboxOpen && (
@@ -207,12 +226,13 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
             </div>
           ) : (
             <img
+              ref={mainImageRef}
               src={currentImage}
               alt={productName}
               className="w-full h-full object-contain"
               loading="eager"
-              onLoad={() => setStatus(0, 'loaded')}
-              onError={() => setStatus(0, 'error')}
+              onLoad={() => setStatus(currentImage, 'loaded')}
+              onError={() => setStatus(currentImage, 'error')}
             />
           )}
         </div>
@@ -334,6 +354,7 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
 
           {/* Main image - always render, opacity based on status */}
           <img
+            ref={mainImageRef}
             key={selectedIndex}
             src={currentImage}
             alt={`${productName} - Ana Görsel`}
@@ -341,8 +362,8 @@ export function ImageGallery({ images, productName }: ImageGalleryProps) {
               currentStatus === 'loaded' ? 'opacity-100' : 'opacity-0'
             }`}
             loading="eager"
-            onLoad={() => setStatus(selectedIndex, 'loaded')}
-            onError={() => setStatus(selectedIndex, 'error')}
+            onLoad={() => setStatus(currentImage, 'loaded')}
+            onError={() => setStatus(currentImage, 'error')}
           />
 
           {/* Navigation arrows */}
