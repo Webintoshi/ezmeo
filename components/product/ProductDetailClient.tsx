@@ -24,7 +24,10 @@ import { NutritionLabel } from "@/components/product/NutritionLabel";
 import { ProductFeatures } from "@/components/product/ProductFeatures";
 import { ComplementaryProducts } from "@/components/product/ComplementaryProducts";
 import { MobileStickyBar } from "@/components/product/MobileStickyBar";
+import { DynamicCustomizationForm } from "@/components/product/dynamic-customization-form";
 import { Product } from "@/types/product";
+import { CartCustomizationPayload } from "@/types/product-customization";
+import { supabase } from "@/lib/supabase";
 
 // Lazy load ProductCard
 const ProductCard = React.lazy(() =>
@@ -35,6 +38,18 @@ const ProductCard = React.lazy(() =>
 import React from "react";
 
 type TabType = "features" | "nutrition" | "reviews";
+type SchemaAssignmentRow = {
+  schema_id: string;
+  is_default: boolean;
+  sort_order: number;
+};
+type SchemaRow = {
+  id: string;
+  is_active: boolean;
+};
+type VariantAttribute = {
+  image_url?: string | null;
+};
 
 interface ProductDetailClientProps {
   slug: string;
@@ -86,6 +101,8 @@ export function ProductDetailClient({
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<TabType>("features");
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [activeSchemaId, setActiveSchemaId] = useState<string | null>(null);
+  const [isSchemaLoading, setIsSchemaLoading] = useState(false);
 
   const { addToCart } = useCart();
 
@@ -110,22 +127,61 @@ export function ProductDetailClient({
             setComplementaryProducts(filtered.slice(4, 8));
           }
         })
-        .finally(() => setIsLoadingRelated(false));
+      .finally(() => setIsLoadingRelated(false));
     }
   }, [product?.category, slug]);
 
-  if (loading || !product) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FFF5F5]">
-        <div className="animate-pulse">
-          <div className="h-8 w-48 bg-[#F3E0E1] rounded mb-4" />
-          <div className="h-4 w-32 bg-[#F3E0E1] rounded" />
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!product?.id) return;
 
-  const variants = product.variants || [];
+    let mounted = true;
+    const loadActiveSchema = async () => {
+      setIsSchemaLoading(true);
+      try {
+        const { data: assignments, error: assignmentError } = await supabase
+          .from("product_schema_assignments")
+          .select("schema_id,is_default,sort_order")
+          .eq("product_id", product.id)
+          .order("is_default", { ascending: false })
+          .order("sort_order", { ascending: true });
+
+        if (assignmentError) throw assignmentError;
+        if (!assignments || assignments.length === 0) {
+          if (mounted) setActiveSchemaId(null);
+          return;
+        }
+
+        const schemaIds = (assignments as SchemaAssignmentRow[]).map((row) => row.schema_id);
+        const { data: schemas, error: schemaError } = await supabase
+          .from("product_customization_schemas")
+          .select("id,is_active")
+          .in("id", schemaIds);
+
+        if (schemaError) throw schemaError;
+        const activeSchemaId = (assignments as SchemaAssignmentRow[]).find((row) =>
+          (schemas as SchemaRow[] | null)?.some(
+            (schema) => schema.id === row.schema_id && schema.is_active
+          )
+        )?.schema_id;
+
+        if (mounted) {
+          setActiveSchemaId(activeSchemaId || null);
+        }
+      } catch (error) {
+        console.error("Schema assignment load error:", error);
+        if (mounted) setActiveSchemaId(null);
+      } finally {
+        if (mounted) setIsSchemaLoading(false);
+      }
+    };
+
+    loadActiveSchema();
+    return () => {
+      mounted = false;
+    };
+  }, [product?.id]);
+
+  const variants = product?.variants || [];
   const variant = variants[selectedVariant] || variants[0];
 
   // Get variant display images
@@ -146,7 +202,10 @@ export function ProductDetailClient({
     }
     
     // Priority 2: Attribute value images (from variant.attributes)
-    const attrImages = variant?.attributes?.map((attr: any) => attr.image_url).filter(Boolean) || [];
+    const attrImages =
+      (variant?.attributes as VariantAttribute[] | undefined)
+        ?.map((attr) => attr.image_url)
+        .filter((value): value is string => Boolean(value)) || [];
     if (attrImages.length > 0) {
       const combined = [...attrImages];
       baseImages.forEach((img: string) => {
@@ -156,7 +215,18 @@ export function ProductDetailClient({
     }
     
     return baseImages;
-  }, [product.images, variant?.images, variant?.attributes]);
+  }, [product?.images, variant?.images, variant?.attributes]);
+
+  if (loading || !product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FFF5F5]">
+        <div className="animate-pulse">
+          <div className="h-8 w-48 bg-[#F3E0E1] rounded mb-4" />
+          <div className="h-4 w-32 bg-[#F3E0E1] rounded" />
+        </div>
+      </div>
+    );
+  }
 
   if (!variant) {
     return (
@@ -177,6 +247,14 @@ export function ProductDetailClient({
   const handleAddToCart = () => {
     if (!isOutOfStock) {
       addToCart(product, variant, quantity);
+    }
+  };
+
+  const handleAddToCartWithCustomization = (
+    customization: CartCustomizationPayload
+  ) => {
+    if (!isOutOfStock) {
+      addToCart(product, variant, quantity, customization);
     }
   };
 
@@ -374,41 +452,77 @@ export function ProductDetailClient({
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={isOutOfStock}
-                    className={`
-                      flex-1 flex items-center justify-center gap-3 py-4 rounded-xl font-semibold text-lg
-                      transition-all duration-300
-                      ${isOutOfStock
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-[#7B1113] text-white hover:bg-[#5d0e0f] active:scale-[0.98] shadow-lg shadow-[#7B1113]/25"
-                      }
-                    `}
-                  >
-                    <ShoppingCart className="h-6 w-6" />
-                    {isOutOfStock ? "Tükendi" : "Sepete Ekle"}
-                  </button>
-                  <button
-                    onClick={toggleWishlist}
-                    className={`
-                      w-16 h-16 flex items-center justify-center rounded-xl border-2 transition-all
-                      ${isWishlisted
-                        ? "bg-red-50 border-red-300 text-red-500"
-                        : "border-[#7B1113]/20 text-[#7B1113] hover:border-[#7B1113]/40 bg-white"
-                      }
-                    `}
-                  >
-                    <Heart className={`h-6 w-6 ${isWishlisted ? "fill-current" : ""}`} />
-                  </button>
-                  <button
-                    onClick={handleShare}
-                    className="w-16 h-16 flex items-center justify-center rounded-xl border-2 border-[#7B1113]/20 text-[#7B1113] hover:border-[#7B1113]/40 bg-white transition-all"
-                  >
-                    <Share2 className="h-6 w-6" />
-                  </button>
-                </div>
+                {isSchemaLoading ? (
+                  <div className="w-full py-4 text-sm text-[#6b4b4c]">
+                    Ekstra seçenekler yükleniyor...
+                  </div>
+                ) : activeSchemaId ? (
+                  <div className="space-y-3">
+                    <DynamicCustomizationForm
+                      schemaId={activeSchemaId}
+                      productId={product.id}
+                      variantId={variant.id}
+                      basePrice={variant.price}
+                      onAddToCart={handleAddToCartWithCustomization}
+                    />
+                    <div className="flex gap-3">
+                      <button
+                        onClick={toggleWishlist}
+                        className={`
+                          w-16 h-16 flex items-center justify-center rounded-xl border-2 transition-all
+                          ${isWishlisted
+                            ? "bg-red-50 border-red-300 text-red-500"
+                            : "border-[#7B1113]/20 text-[#7B1113] hover:border-[#7B1113]/40 bg-white"
+                          }
+                        `}
+                      >
+                        <Heart className={`h-6 w-6 ${isWishlisted ? "fill-current" : ""}`} />
+                      </button>
+                      <button
+                        onClick={handleShare}
+                        className="w-16 h-16 flex items-center justify-center rounded-xl border-2 border-[#7B1113]/20 text-[#7B1113] hover:border-[#7B1113]/40 bg-white transition-all"
+                      >
+                        <Share2 className="h-6 w-6" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleAddToCart}
+                      disabled={isOutOfStock}
+                      className={`
+                        flex-1 flex items-center justify-center gap-3 py-4 rounded-xl font-semibold text-lg
+                        transition-all duration-300
+                        ${isOutOfStock
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-[#7B1113] text-white hover:bg-[#5d0e0f] active:scale-[0.98] shadow-lg shadow-[#7B1113]/25"
+                        }
+                      `}
+                    >
+                      <ShoppingCart className="h-6 w-6" />
+                      {isOutOfStock ? "Tükendi" : "Sepete Ekle"}
+                    </button>
+                    <button
+                      onClick={toggleWishlist}
+                      className={`
+                        w-16 h-16 flex items-center justify-center rounded-xl border-2 transition-all
+                        ${isWishlisted
+                          ? "bg-red-50 border-red-300 text-red-500"
+                          : "border-[#7B1113]/20 text-[#7B1113] hover:border-[#7B1113]/40 bg-white"
+                        }
+                      `}
+                    >
+                      <Heart className={`h-6 w-6 ${isWishlisted ? "fill-current" : ""}`} />
+                    </button>
+                    <button
+                      onClick={handleShare}
+                      className="w-16 h-16 flex items-center justify-center rounded-xl border-2 border-[#7B1113]/20 text-[#7B1113] hover:border-[#7B1113]/40 bg-white transition-all"
+                    >
+                      <Share2 className="h-6 w-6" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Trust Badges - Modern Grid */}
@@ -566,12 +680,14 @@ export function ProductDetailClient({
       </section>
 
       {/* Mobile Sticky Bar */}
-      <MobileStickyBar
-        price={variant.price}
-        originalPrice={variant.originalPrice}
-        onAddToCart={handleAddToCart}
-        isOutOfStock={isOutOfStock}
-      />
+      {!activeSchemaId && !isSchemaLoading && (
+        <MobileStickyBar
+          price={variant.price}
+          originalPrice={variant.originalPrice}
+          onAddToCart={handleAddToCart}
+          isOutOfStock={isOutOfStock}
+        />
+      )}
     </div>
   );
 }

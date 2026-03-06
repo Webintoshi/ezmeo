@@ -1,5 +1,25 @@
 import { createServerClient } from "@/lib/supabase";
 import { getOrCreateCustomer } from "./customers";
+import { CartCustomizationPayload, OrderItemCustomization } from "@/types/product-customization";
+import { normalizeStoredCustomization } from "@/lib/customization/normalize";
+
+type ShippingAddressInput = {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    district?: string;
+    postalCode?: string;
+};
+
+type OrderItemWithCustomizations = {
+    customizations?: unknown[];
+} & Record<string, unknown>;
+
+type OrderWithItems = {
+    items?: OrderItemWithCustomizations[];
+} & Record<string, unknown>;
 
 // =====================================================
 // ORDER MUTATIONS (Server-side only - all order operations require admin)
@@ -12,6 +32,52 @@ function generateOrderNumber(): string {
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).substring(2, 6).toUpperCase();
     return `EZM-${timestamp}-${random}`;
+}
+
+function buildLegacyStepValues(customization: CartCustomizationPayload) {
+    return customization.selections.reduce<Record<string, unknown>>((acc, selection) => {
+        acc[selection.step_key] = selection.value;
+        return acc;
+    }, {});
+}
+
+async function insertOrderItemCustomization(
+    serverClient: ReturnType<typeof createServerClient>,
+    orderItemId: string,
+    customization: CartCustomizationPayload
+) {
+    const modernPayload = {
+        order_item_id: orderItemId,
+        schema_id: customization.schema_id,
+        schema_version: 1,
+        schema_snapshot: customization.schema_snapshot,
+        selections: customization.selections,
+        price_breakdown: customization.price_breakdown,
+        custom_text_content: customization.custom_text_content || null,
+        uploaded_files: customization.uploaded_files || [],
+        production_status: "pending",
+    };
+
+    const { error: modernError } = await serverClient
+        .from("order_item_customizations")
+        .insert(modernPayload);
+
+    if (!modernError) return;
+
+    const legacyPayload = {
+        order_item_id: orderItemId,
+        schema_snapshot_id: customization.schema_id,
+        step_values: buildLegacyStepValues(customization),
+        calculated_price: customization.price_breakdown?.total_adjustment || 0,
+    };
+
+    const { error: legacyError } = await serverClient
+        .from("order_item_customizations")
+        .insert(legacyPayload);
+
+    if (legacyError) {
+        throw legacyError;
+    }
 }
 
 /**
@@ -27,6 +93,7 @@ export async function createOrder(orderData: {
         price: number;
         quantity: number;
         category?: string;
+        customization?: CartCustomizationPayload | null;
     }[];
     shippingAddress: Record<string, unknown>;
     billingAddress?: Record<string, unknown>;
@@ -48,7 +115,7 @@ export async function createOrder(orderData: {
     // Get or create customer if email provided
     let customerId = orderData.customerId;
     if (!customerId && orderData.contactEmail) {
-        const shipping = orderData.shippingAddress as any;
+        const shipping = orderData.shippingAddress as ShippingAddressInput;
         const customer = await getOrCreateCustomer({
             email: orderData.contactEmail,
             phone: shipping?.phone,
@@ -80,27 +147,49 @@ export async function createOrder(orderData: {
 
     if (orderError) throw orderError;
 
-    // Create order items
-    const orderItems = orderData.items.map(item => ({
-        order_id: order.id,
-        product_id: item.productId,
-        variant_id: item.variantId,
-        product_name: item.productName,
-        variant_name: item.variantName,
-        price: item.price,
-        quantity: item.quantity,
-        total: item.price * item.quantity,
-    }));
+    // Create order items with optional customization snapshots
+    const orderItems: {
+        id: string;
+        order_id: string;
+        product_id: string;
+        variant_id: string;
+        product_name: string;
+        variant_name: string;
+        price: number;
+        quantity: number;
+        total: number;
+    }[] = [];
 
-    const { error: itemsError } = await serverClient
-        .from("order_items")
-        .insert(orderItems);
+    for (const item of orderData.items) {
+        const orderItemPayload = {
+            order_id: order.id,
+            product_id: item.productId,
+            variant_id: item.variantId,
+            product_name: item.productName,
+            variant_name: item.variantName,
+            price: item.price,
+            quantity: item.quantity,
+            total: item.price * item.quantity,
+        };
 
-    if (itemsError) throw itemsError;
+        const { data: insertedItem, error: itemError } = await serverClient
+            .from("order_items")
+            .insert(orderItemPayload)
+            .select()
+            .single();
+
+        if (itemError || !insertedItem) throw itemError;
+
+        orderItems.push(insertedItem);
+
+        if (item.customization) {
+            await insertOrderItemCustomization(serverClient, insertedItem.id, item.customization);
+        }
+    }
 
     // Save address to customer_addresses
     if (customerId && orderData.saveAddress !== false) {
-        const shipping = orderData.shippingAddress as any;
+        const shipping = orderData.shippingAddress as ShippingAddressInput;
         
         // Check if address already exists
         const { data: existingAddresses } = await serverClient
@@ -220,7 +309,10 @@ export async function getOrders(options?: {
         .from("orders")
         .select(`
       *,
-      items:order_items(*)
+      items:order_items(
+        *,
+        customizations:order_item_customizations(*)
+      )
     `)
         .order("created_at", { ascending: false });
 
@@ -239,7 +331,23 @@ export async function getOrders(options?: {
     const { data, error } = await query;
 
     if (error) throw error;
-    return data;
+    return (data || []).map((order) => {
+        const typedOrder = order as OrderWithItems;
+        return {
+            ...order,
+            items: (typedOrder.items || []).map((item) => {
+                const typedItem = item as OrderItemWithCustomizations;
+                return {
+                    ...item,
+                    customizations: (typedItem.customizations || [])
+                        .map((customization) =>
+                            normalizeStoredCustomization(customization as Partial<OrderItemCustomization>)
+                        )
+                        .filter(Boolean),
+                };
+            }),
+        };
+    });
 }
 
 /**
@@ -252,13 +360,30 @@ export async function getOrderById(id: string) {
         .from("orders")
         .select(`
       *,
-      items:order_items(*)
+      items:order_items(
+        *,
+        customizations:order_item_customizations(*)
+      )
     `)
         .eq("id", id)
         .single();
 
     if (error) throw error;
-    return data;
+    const typedOrder = data as OrderWithItems;
+    return {
+        ...data,
+        items: (typedOrder.items || []).map((item) => {
+            const typedItem = item as OrderItemWithCustomizations;
+            return {
+                ...item,
+                customizations: (typedItem.customizations || [])
+                    .map((customization) =>
+                        normalizeStoredCustomization(customization as Partial<OrderItemCustomization>)
+                    )
+                    .filter(Boolean),
+            };
+        }),
+    };
 }
 
 /**
@@ -271,13 +396,30 @@ export async function getOrderByNumber(orderNumber: string) {
         .from("orders")
         .select(`
       *,
-      items:order_items(*)
+      items:order_items(
+        *,
+        customizations:order_item_customizations(*)
+      )
     `)
         .eq("order_number", orderNumber)
         .single();
 
     if (error) throw error;
-    return data;
+    const typedOrder = data as OrderWithItems;
+    return {
+        ...data,
+        items: (typedOrder.items || []).map((item) => {
+            const typedItem = item as OrderItemWithCustomizations;
+            return {
+                ...item,
+                customizations: (typedItem.customizations || [])
+                    .map((customization) =>
+                        normalizeStoredCustomization(customization as Partial<OrderItemCustomization>)
+                    )
+                    .filter(Boolean),
+            };
+        }),
+    };
 }
 
 /**
@@ -287,7 +429,7 @@ export async function updateOrderStatus(id: string, status: string) {
     const serverClient = createServerClient();
 
     // Get current order status and items before updating
-    const { data: order } = await serverClient
+    await serverClient
         .from("orders")
         .select("status")
         .eq("id", id)

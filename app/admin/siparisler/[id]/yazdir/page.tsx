@@ -2,11 +2,28 @@ import { createServerClient } from "@/lib/supabase";
 import { ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { OrderStatus } from "@/types/order";
+import { OrderItemCustomization } from "@/types/product-customization";
+import { normalizeStoredCustomization } from "@/lib/customization/normalize";
 import "./print.css";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
+
+type PaymentGateway = {
+  id: string;
+  name: string;
+};
+
+type PrintOrderItem = {
+  id: string;
+  product_name: string;
+  variant_name?: string;
+  quantity: number;
+  price: number;
+  total: number;
+  customizations?: OrderItemCustomization[];
+};
 
 function getStatusLabel(status: OrderStatus) {
   const labels: Record<OrderStatus, string> = {
@@ -21,11 +38,11 @@ function getStatusLabel(status: OrderStatus) {
   return labels[status] || status;
 }
 
-function getPaymentMethodName(paymentMethod: string, paymentGateways: any[]) {
+function getPaymentMethodName(paymentMethod: string, paymentGateways: PaymentGateway[]) {
   if (paymentMethod === "cod") return "Kapıda Ödeme";
   if (paymentMethod === "bank_transfer") return "Havale / EFT";
 
-  const gateway = paymentGateways.find((g: any) => g.id === paymentMethod);
+  const gateway = paymentGateways.find((g) => g.id === paymentMethod);
   return gateway?.name || "Kredi Kartı";
 }
 
@@ -44,7 +61,10 @@ export default async function PrintOrderPage({ params }: PageProps) {
   // Fetch order data
   const [orderResponse, itemsResponse, settingsResponse] = await Promise.all([
     supabase.from("orders").select("*").eq("id", id).single(),
-    supabase.from("order_items").select("*, product:products(id, images, category, slug)").eq("order_id", id),
+    supabase
+      .from("order_items")
+      .select("*, product:products(id, images, category, slug), customizations:order_item_customizations(*)")
+      .eq("order_id", id),
     supabase.from("settings").select("value").eq("key", "payment_gateways").single(),
   ]);
 
@@ -53,8 +73,15 @@ export default async function PrintOrderPage({ params }: PageProps) {
   }
 
   const order = orderResponse.data;
-  const items = itemsResponse.data || [];
-  const paymentGateways = settingsResponse.data?.value || [];
+  const items: PrintOrderItem[] = (itemsResponse.data || []).map((item) => ({
+    ...item,
+    customizations: (item.customizations || [])
+      .map((customization: Partial<OrderItemCustomization>) =>
+        normalizeStoredCustomization(customization)
+      )
+      .filter(Boolean),
+  }));
+  const paymentGateways = (settingsResponse.data?.value || []) as PaymentGateway[];
 
   const paymentMethodName = getPaymentMethodName(order.payment_method, paymentGateways);
 
@@ -157,12 +184,22 @@ export default async function PrintOrderPage({ params }: PageProps) {
               </tr>
             </thead>
             <tbody>
-              {items.map((item: any) => (
-                <tr key={item.id} className="border-b border-gray-100">
+              {items.map((item) => (
+                <tr key={item.id} className="border-b border-gray-100 align-top">
                   <td className="py-3">
                     <p className="font-medium text-gray-900">{item.product_name}</p>
                     {item.variant_name && (
                       <p className="text-sm text-gray-500">{item.variant_name}</p>
+                    )}
+                    {item.customizations?.[0]?.selections?.length > 0 && (
+                      <div className="mt-2 text-xs text-gray-600 space-y-1">
+                        {item.customizations[0].selections.map((selection, idx: number) => (
+                          <p key={idx}>
+                            <span className="font-semibold">{selection.step_label}:</span>{" "}
+                            {selection.display_value}
+                          </p>
+                        ))}
+                      </div>
                     )}
                   </td>
                   <td className="py-3 text-center">x{item.quantity}</td>

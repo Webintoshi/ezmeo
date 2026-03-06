@@ -10,6 +10,7 @@ import {
   CustomizationSchema,
   CustomizationStep,
   PriceBreakdown,
+  CartCustomizationPayload,
 } from "@/types/product-customization";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ interface DynamicCustomizationFormProps {
   productId: string;
   variantId: string;
   basePrice: number;
-  onAddToCart: (selections: Record<string, unknown>, priceBreakdown: PriceBreakdown) => void;
+  onAddToCart: (customization: CartCustomizationPayload) => void;
   className?: string;
 }
 
@@ -157,7 +158,59 @@ export function DynamicCustomizationForm({
 
     setAddingToCart(true);
     try {
-      await onAddToCart(values, priceBreakdown);
+      const selections = visibleSteps
+        .filter((step) => {
+          const value = values[step.key];
+          if (value === undefined || value === null || value === "") return false;
+          if (Array.isArray(value) && value.length === 0) return false;
+          return true;
+        })
+        .map((step) => {
+          const value = values[step.key] as string | number | boolean | string[];
+          let displayValue = String(value);
+
+          if (Array.isArray(value)) {
+            const labels = value.map((entry) => {
+              const option = step.options?.find((opt) => opt.value === entry);
+              return option?.label || String(entry);
+            });
+            displayValue = labels.join(", ");
+          } else if (step.options) {
+            const option = step.options.find((opt) => opt.value === value);
+            if (option) displayValue = option.label;
+          }
+
+          const adjustment =
+            priceBreakdown.adjustments.find((adj) => adj.step_key === step.key)
+              ?.adjustment_amount ?? 0;
+
+          return {
+            step_id: step.id,
+            step_key: step.key,
+            step_label: step.label,
+            type: step.type,
+            value,
+            display_value: displayValue,
+            price_adjustment: adjustment,
+          };
+        });
+
+      const payload: CartCustomizationPayload = {
+        schema_id: schema.id,
+        schema_snapshot: {
+          id: schema.id,
+          name: schema.name,
+          slug: schema.slug,
+          description: schema.description,
+          is_active: schema.is_active,
+          sort_order: schema.sort_order,
+          settings: schema.settings || {},
+        },
+        selections,
+        price_breakdown: priceBreakdown,
+      };
+
+      await onAddToCart(payload);
       toast.success(schema?.settings?.success_message || "Ürün sepete eklendi");
     } catch (error) {
       console.error("Error adding to cart:", error);

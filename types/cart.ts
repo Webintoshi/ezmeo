@@ -1,12 +1,17 @@
 import { Product, ProductVariant } from "./product";
+import { CartCustomizationPayload } from "./product-customization";
 
 // Sepet Öğesi
 export interface CartItem {
+  id: string;
   productId: string;
   variantId: string;
   quantity: number;
+  unitPrice: number;
   product: Product;
   variant: ProductVariant;
+  customization?: CartCustomizationPayload;
+  customizationFingerprint?: string;
 }
 
 // Sepet Durumu
@@ -31,7 +36,12 @@ export interface Coupon {
 // Sepet Context Tipi
 export interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, variant: ProductVariant, quantity?: number) => void;
+  addToCart: (
+    product: Product,
+    variant: ProductVariant,
+    quantity?: number,
+    customization?: CartCustomizationPayload
+  ) => void;
   removeFromCart: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;

@@ -17,6 +17,7 @@ import {
     InternalNotes,
     OrderItemsList,
 } from "@/components/admin/order-detail";
+import { OrderItemCustomization } from "@/types/product-customization";
 import "./print.css";
 
 interface Order {
@@ -43,7 +44,7 @@ interface Order {
         phone?: string;
         email?: string;
     };
-    billing_address?: any;
+    billing_address?: unknown;
     created_at: string;
     updated_at: string;
 }
@@ -55,6 +56,7 @@ interface OrderItem {
     price: number;
     quantity: number;
     total: number;
+    customizations?: OrderItemCustomization[];
     product?: {
         id?: string;
         images?: string[];

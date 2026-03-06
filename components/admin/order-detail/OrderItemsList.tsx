@@ -22,6 +22,15 @@ interface OrderItem {
     category?: string;
     slug?: string;
   };
+  customizations?: Array<{
+    selections?: Array<{
+      step_label: string;
+      display_value: string;
+    }>;
+    price_breakdown?: {
+      total_adjustment?: number;
+    };
+  }>;
 }
 
 interface OrderItemsListProps {
@@ -119,6 +128,21 @@ export function OrderItemsList({
                 {item.variant_name && (
                   <p className="text-sm text-gray-500 mt-0.5">{item.variant_name}</p>
                 )}
+                {item.customizations?.[0]?.selections?.length ? (
+                  <div className="mt-2 space-y-1 text-xs text-gray-600">
+                    {item.customizations[0].selections.map((selection, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="font-medium">{selection.step_label}:</span>
+                        <span>{selection.display_value}</span>
+                      </div>
+                    ))}
+                    {(item.customizations[0].price_breakdown?.total_adjustment || 0) > 0 && (
+                      <div className="text-emerald-600 font-semibold">
+                        Ekstra: +{formatPrice(item.customizations[0].price_breakdown?.total_adjustment || 0)}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
               </div>
 
               {/* Quantity */}

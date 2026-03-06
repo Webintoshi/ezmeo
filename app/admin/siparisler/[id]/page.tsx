@@ -1,6 +1,8 @@
 import { createServerClient } from "@/lib/supabase";
 import { notFound } from "next/navigation";
-import { OrderStatus } from "@/types/order";
+import { OrderActivityLog as OrderActivityLogType, OrderStatus } from "@/types/order";
+import { OrderItemCustomization } from "@/types/product-customization";
+import { normalizeStoredCustomization } from "@/lib/customization/normalize";
 
 // Client Components
 import { OrderDetailClient } from "./OrderDetailClient";
@@ -8,6 +10,30 @@ import { OrderDetailClient } from "./OrderDetailClient";
 interface PageProps {
     params: Promise<{ id: string }>;
 }
+
+type PaymentGateway = {
+    id: string;
+    name: string;
+    gateway: string;
+};
+type DbActivityLogRow = {
+    id: string;
+    order_id?: string;
+    action: OrderActivityLogType["action"];
+    old_value?: unknown;
+    new_value?: unknown;
+    admin_id?: string;
+    admin_name?: string;
+    created_at?: string;
+};
+
+type RecentCustomerOrder = {
+    id: string;
+    order_number: string;
+    status: string;
+    total: number;
+    created_at: string;
+};
 
 // Helper function to get status badge config
 function getStatusConfig(status: OrderStatus) {
@@ -45,7 +71,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
     ] = await Promise.all([
         supabase
             .from("order_items")
-            .select("*, product:products(id, images, category, slug)")
+            .select("*, product:products(id, images, category, slug), customizations:order_item_customizations(*)")
             .eq("order_id", id),
         supabase.from("settings").select("value").eq("key", "payment_gateways").single(),
         // Fetch activity log with error handling - table might not exist yet
@@ -65,11 +91,11 @@ export default async function OrderDetailPage({ params }: PageProps) {
 
     const items = itemsResponse.data || [];
     const paymentGateways = settingsResponse.data?.value ?? [];
-    const activityLogs = (activityLogResponse?.data ?? []) as any[];
+    const activityLogRows = (activityLogResponse?.data ?? []) as DbActivityLogRow[];
 
     // Get customer data
     let customer = null;
-    let customerOrders: any[] = [];
+    let customerOrders: RecentCustomerOrder[] = [];
     if (order.customer_id) {
         const [customerResponse, ordersResponse] = await Promise.all([
             supabase.from("customers").select("*").eq("id", order.customer_id).single(),
@@ -86,7 +112,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
     }
 
     // Determine Payment Method Name
-    const gatewayConfig = paymentGateways.find((g: any) => g.id === order.payment_method);
+    const gatewayConfig = (paymentGateways as PaymentGateway[]).find(
+        (g) => g.id === order.payment_method
+    );
     const paymentMethodName = gatewayConfig
         ? gatewayConfig.name
         : order.payment_method === "cod"
@@ -105,29 +133,40 @@ export default async function OrderDetailPage({ params }: PageProps) {
         estimated_delivery: order.estimated_delivery ? new Date(order.estimated_delivery).toISOString() : null,
     };
 
-    const serializedItems = items.map((item: any) => ({
+    const serializedItems = items.map((item) => ({
         ...item,
         product: item.product || null, // Ensure product is null if deleted
+        customizations: (item.customizations || [])
+            .map((customization: Partial<OrderItemCustomization>) =>
+                normalizeStoredCustomization(customization)
+            )
+            .filter(Boolean),
         created_at: item.created_at?.toString(),
     }));
 
-    const serializedActivityLogs = activityLogs.map((log: any) => ({
-        ...log,
-        created_at: log.created_at?.toString(),
+    const serializedActivityLogs: OrderActivityLogType[] = activityLogRows.map((log) => ({
+        id: log.id,
+        orderId: log.order_id || id,
+        action: log.action,
+        oldValue: log.old_value,
+        newValue: log.new_value,
+        adminId: log.admin_id,
+        adminName: log.admin_name || "Admin",
+        createdAt: log.created_at ? new Date(log.created_at) : new Date(),
     }));
 
-    const serializedCustomerOrders = customerOrders.map((o: any) => ({
+    const serializedCustomerOrders = customerOrders.map((o) => ({
         ...o,
         created_at: o.created_at?.toString(),
     }));
 
     return (
         <OrderDetailClient
-            order={serializedOrder as any}
-            items={serializedItems as any}
-            activityLogs={serializedActivityLogs as any}
-            customer={customer as any}
-            customerOrders={serializedCustomerOrders as any}
+            order={serializedOrder}
+            items={serializedItems}
+            activityLogs={serializedActivityLogs}
+            customer={customer}
+            customerOrders={serializedCustomerOrders}
             paymentMethodName={paymentMethodName}
             statusConfig={statusConfig}
         />

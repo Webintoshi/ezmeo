@@ -301,6 +301,15 @@ export interface CartItemCustomization {
   updated_at?: string;
 }
 
+export interface CartCustomizationPayload {
+  schema_id: string;
+  schema_snapshot: CustomizationSchema;
+  selections: SelectionValue[];
+  price_breakdown: PriceBreakdown;
+  custom_text_content?: string;
+  uploaded_files?: UploadedFile[];
+}
+
 export interface OrderItemCustomization {
   id: string;
   order_item_id: string;

@@ -7,6 +7,7 @@ import { useCart } from "@/lib/cart-context";
 import { formatPrice, cn } from "@/lib/utils";
 import { SHIPPING_THRESHOLD } from "@/lib/constants";
 import { motion, AnimatePresence } from "framer-motion";
+import { CartItemCustomizationDisplay } from "@/components/cart/cart-item-customization";
 
 interface SideCartProps {
   isOpen: boolean;
@@ -109,7 +110,7 @@ export function SideCart({ isOpen, onClose }: SideCartProps) {
                   <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-0.5">Son Eklenen Ürün</p>
                   <p className="text-sm font-bold text-gray-900 truncate">{lastAddedItem.product.name}</p>
                   <p className="text-xs text-emerald-600 font-medium">
-                    {formatPrice(lastAddedItem.variant.price * lastAddedItem.quantity)}
+                    {formatPrice(lastAddedItem.unitPrice * lastAddedItem.quantity)}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-white rounded-xl border border-emerald-100 flex items-center justify-center text-2xl shrink-0 shadow-sm overflow-hidden">
@@ -166,7 +167,7 @@ export function SideCart({ isOpen, onClose }: SideCartProps) {
                 </div>
               ) : (
                 items.map((item) => (
-                  <div key={item.variantId} className="flex gap-4 bg-gray-50 rounded-2xl p-4 border border-gray-100/50 hover:border-gray-200 transition-colors">
+                  <div key={item.id} className="flex gap-4 bg-gray-50 rounded-2xl p-4 border border-gray-100/50 hover:border-gray-200 transition-colors">
                     <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-2xl shrink-0 border border-gray-100 shadow-sm overflow-hidden">
                       {item.product.images && item.product.images.length > 0 ? (
                         <img 
@@ -188,27 +189,30 @@ export function SideCart({ isOpen, onClose }: SideCartProps) {
                           <h3 className="font-bold text-gray-900 text-sm truncate">{item.product.name}</h3>
                           <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">{item.variant.name}</p>
                         </div>
-                        <span className="font-bold text-primary text-sm">{formatPrice(item.variant.price * item.quantity)}</span>
+                        <span className="font-bold text-primary text-sm">{formatPrice(item.unitPrice * item.quantity)}</span>
                       </div>
+                      {item.customization && (
+                        <CartItemCustomizationDisplay customization={item.customization} />
+                      )}
 
                       <div className="flex items-center justify-between mt-3">
                         <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-0.5 shadow-sm">
                           <button
-                            onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             className="w-7 h-7 flex items-center justify-center rounded-md text-gray-600 hover:bg-gray-50 active:scale-95 transition-all"
                           >
                             <Minus className="h-3 w-3" />
                           </button>
                           <span className="w-6 text-center text-sm font-bold">{item.quantity}</span>
                           <button
-                            onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             className="w-7 h-7 flex items-center justify-center rounded-md text-gray-600 hover:bg-gray-50 active:scale-95 transition-all"
                           >
                             <Plus className="h-3 w-3" />
                           </button>
                         </div>
                         <button
-                          onClick={() => removeFromCart(item.variantId)}
+                          onClick={() => removeFromCart(item.id)}
                           className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -265,3 +269,4 @@ export function SideCart({ isOpen, onClose }: SideCartProps) {
     </AnimatePresence>
   );
 }
+

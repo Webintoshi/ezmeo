@@ -4,6 +4,24 @@ import { formatPrice } from "@/lib/utils";
 import { Check, ChevronRight, ShoppingBag, MapPin, Calendar, CreditCard } from "lucide-react";
 import Link from "next/link";
 import OrderSuccessToast from "@/components/order-success-toast";
+import { normalizeStoredCustomization } from "@/lib/customization/normalize";
+import { OrderItemCustomization } from "@/types/product-customization";
+
+type ShippingAddress = {
+    firstName?: string;
+    lastName?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+    phone?: string;
+    email?: string;
+};
+
+type PaymentGateway = {
+    id: string;
+    name: string;
+    gateway: string;
+};
 
 interface OrderItem {
     id: string;
@@ -16,6 +34,7 @@ interface OrderItem {
         images: string[];
         category: string;
     };
+    customizations?: OrderItemCustomization[];
 }
 
 interface Order {
@@ -27,13 +46,12 @@ interface Order {
     shipping_cost: number;
     discount: number;
     total: number;
-    shipping_address: any;
+    shipping_address: ShippingAddress;
     payment_method: string;
 }
 
 export default async function OrderSuccessPage({
     params,
-    searchParams,
 }: {
     params: Promise<{ id: string }>;
     searchParams: Promise<{ new?: string }>;
@@ -73,7 +91,9 @@ export default async function OrderSuccessPage({
     let MethodIconDisplay = <span className="text-xl">💳</span>;
 
     // Find matching gateway config
-    const gatewayConfig = paymentGateways.find((g: any) => g.id === order.payment_method);
+    const gatewayConfig = (paymentGateways as PaymentGateway[]).find(
+        (g) => g.id === order.payment_method
+    );
 
     if (gatewayConfig) {
         paymentMethodName = gatewayConfig.name;
@@ -103,7 +123,8 @@ export default async function OrderSuccessPage({
         .from("order_items")
         .select(`
       *,
-      product:products(images, category)
+      product:products(images, category),
+      customizations:order_item_customizations(*)
     `)
         .eq("order_id", id);
 
@@ -111,7 +132,14 @@ export default async function OrderSuccessPage({
         console.error("Error fetching items:", itemsError);
     }
 
-    const items: OrderItem[] = orderItems || [];
+    const items: OrderItem[] = (orderItems || []).map((item) => ({
+        ...item,
+        customizations: (item.customizations || [])
+            .map((customization: Partial<OrderItemCustomization>) =>
+                normalizeStoredCustomization(customization)
+            )
+            .filter(Boolean),
+    }));
 
     return (
         <div className="min-h-screen bg-[#FAFAFA] pb-20 pt-8">
@@ -171,6 +199,21 @@ export default async function OrderSuccessPage({
                                     <div className="flex-1 min-w-0">
                                         <h4 className="font-bold text-gray-900 truncate">{item.product_name}</h4>
                                         <p className="text-sm text-gray-500">{item.variant_name}</p>
+                                        {item.customizations?.[0] && (
+                                            <div className="mt-2 text-xs text-gray-600 space-y-1">
+                                                {item.customizations[0].selections?.map((selection, idx: number) => (
+                                                    <p key={idx}>
+                                                        <span className="font-semibold">{selection.step_label}:</span>{" "}
+                                                        {selection.display_value}
+                                                    </p>
+                                                ))}
+                                                {(item.customizations[0].price_breakdown?.total_adjustment || 0) > 0 && (
+                                                    <p className="text-emerald-600 font-semibold">
+                                                        Ekstra: +{formatPrice(item.customizations[0].price_breakdown.total_adjustment)}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="text-right">
                                         <p className="font-bold text-gray-900">{formatPrice(item.total)}</p>

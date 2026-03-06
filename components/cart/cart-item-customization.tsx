@@ -5,13 +5,12 @@
 // Shows customization details in cart
 // =====================================================
 
-import { CartItemCustomization } from "@/types/product-customization";
-import { Badge } from "@/components/ui/badge";
+import { CartCustomizationPayload } from "@/types/product-customization";
 import { Edit, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface CartItemCustomizationDisplayProps {
-  customization: CartItemCustomization;
+  customization: CartCustomizationPayload;
   onEdit?: () => void;
   editable?: boolean;
 }

@@ -260,10 +260,11 @@ export default function CheckoutPage() {
           variantId: item.variantId,
           productName: item.product.name,
           variantName: item.variant.name,
-          price: item.variant.price,
+          price: item.unitPrice,
           quantity: item.quantity,
-          total: item.variant.price * item.quantity,
-          category: item.product.category
+          total: item.unitPrice * item.quantity,
+          category: item.product.category,
+          customization: item.customization || null,
         })),
         shippingAddress: shippingInfo,
         billingAddress: shippingInfo,
@@ -732,7 +733,7 @@ export default function CheckoutPage() {
                   {/* Items */}
                   <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                     {items.map(item => (
-                      <div key={item.variantId} className="flex gap-4 group">
+                      <div key={item.id} className="flex gap-4 group">
                         <div className="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center text-2xl border border-gray-100 shrink-0 overflow-hidden">
                           {item.product.images && item.product.images.length > 0 ? (
                             <img src={item.product.images[0]} alt={item.product.name} className="w-full h-full object-cover" />
@@ -747,9 +748,19 @@ export default function CheckoutPage() {
                         <div className="flex-1 min-w-0 py-1">
                           <h4 className="font-bold text-gray-900 text-sm truncate">{item.product.name}</h4>
                           <p className="text-xs text-gray-500">{item.variant.name}</p>
+                          {item.customization?.selections?.length ? (
+                            <div className="mt-1 text-[11px] text-gray-600 space-y-0.5">
+                              {item.customization.selections.map((selection, idx) => (
+                                <p key={idx}>
+                                  <span className="font-semibold">{selection.step_label}:</span>{" "}
+                                  {selection.display_value}
+                                </p>
+                              ))}
+                            </div>
+                          ) : null}
                           <div className="flex justify-between items-center mt-2">
                             <span className="text-xs bg-gray-100 px-2 py-0.5 rounded font-bold text-gray-600">Adet: {item.quantity}</span>
-                            <span className="font-bold text-gray-900 text-sm">{formatPrice(item.variant.price * item.quantity)}</span>
+                            <span className="font-bold text-gray-900 text-sm">{formatPrice(item.unitPrice * item.quantity)}</span>
                           </div>
                         </div>
                       </div>
