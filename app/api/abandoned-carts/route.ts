@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase";
+
+function getDb() {
+  return createServerClient();
+}
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = getDb();
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const search = searchParams.get("search");
@@ -66,6 +71,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getDb();
     const body = await request.json();
     const {
       session_id,
@@ -154,6 +160,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const supabase = getDb();
     const body = await request.json();
     const { id, status, recovered } = body;
 
@@ -192,6 +199,7 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const supabase = getDb();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 

@@ -29,11 +29,24 @@ export async function GET() {
             const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
             const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-            const { data: activeSessions } = await supabase
+            const { data: activeSessions, error: sessionsError } = await supabase
                 .from("sessions")
                 .select("session_id,user_agent,device_type")
                 .gte("last_activity_at", fiveMinutesAgo)
                 .eq("is_active", true);
+
+            if (sessionsError) {
+                return {
+                    success: true,
+                    data: {
+                        liveVisitors: 0,
+                        devices: { mobile: 0, desktop: 0, tablet: 0 },
+                        topPages: [],
+                        abandonedCarts: { count: 0, total: 0 },
+                        today: { addToCart: 0, purchases: 0 },
+                    },
+                };
+            }
 
             let recentPageViews: { page_url: string; session_id: string }[] = [];
             try {
@@ -73,13 +86,30 @@ export async function GET() {
                 .slice(0, 5)
                 .map(([url, count]) => ({ url, count }));
 
-            const { data: abandonedCarts, count: abandonedCount } = await supabase
+            let abandonedCarts: { total: number | string | null; recovered?: boolean | null }[] = [];
+            let abandonedCount = 0;
+
+            const abandonedWithStatus = await supabase
                 .from("abandoned_carts")
                 .select("total", { count: "exact" })
                 .eq("status", "active")
                 .gte("created_at", oneDayAgo);
 
-            const abandonedTotal = (abandonedCarts || []).reduce((sum, c) => sum + Number(c.total || 0), 0);
+            if (!abandonedWithStatus.error) {
+                abandonedCarts = abandonedWithStatus.data || [];
+                abandonedCount = Number(abandonedWithStatus.count || 0);
+            } else {
+                const abandonedFallback = await supabase
+                    .from("abandoned_carts")
+                    .select("total,recovered", { count: "exact" })
+                    .eq("recovered", false)
+                    .gte("created_at", oneDayAgo);
+
+                abandonedCarts = abandonedFallback.data || [];
+                abandonedCount = Number(abandonedFallback.count || 0);
+            }
+
+            const abandonedTotal = abandonedCarts.reduce((sum, c) => sum + Number(c.total || 0), 0);
 
             let addToCartCount = 0;
             let purchaseCount = 0;
