@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { OrderStatus } from "@/types/order";
 import { OrderItemCustomization } from "@/types/product-customization";
 import { normalizeStoredCustomization } from "@/lib/customization/normalize";
+import { getOrderAccountingSnapshot } from "@/lib/db/accounting";
 import "./print.css";
 
 interface PageProps {
@@ -84,6 +85,12 @@ export default async function PrintOrderPage({ params }: PageProps) {
   const paymentGateways = (settingsResponse.data?.value || []) as PaymentGateway[];
 
   const paymentMethodName = getPaymentMethodName(order.payment_method, paymentGateways);
+  let accountingSnapshot = null;
+  try {
+    accountingSnapshot = await getOrderAccountingSnapshot(id);
+  } catch (accountingError) {
+    console.error("Print accounting snapshot error:", accountingError);
+  }
 
   // Get customer if exists
   let customer = null;
@@ -248,6 +255,33 @@ export default async function PrintOrderPage({ params }: PageProps) {
                  order.payment_status === "pending" ? "Beklemede" :
                  order.payment_status === "processing" ? "İşleniyor" : order.payment_status}
               </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Accounting Info */}
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-3">Muhasebe Bilgileri</h2>
+          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Senkron Durumu</span>
+              <span className="font-medium text-gray-900">{accountingSnapshot?.syncStatus || "idle"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Sağlayıcı</span>
+              <span className="font-medium text-gray-900">{accountingSnapshot?.provider || "-"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Fatura Numarası</span>
+              <span className="font-medium text-gray-900">{accountingSnapshot?.invoiceNo || "-"}</span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-gray-600">Fatura URL</span>
+              {accountingSnapshot?.invoiceUrl ? (
+                <span className="font-medium text-gray-900 break-all">{accountingSnapshot.invoiceUrl}</span>
+              ) : (
+                <span className="font-medium text-gray-900">-</span>
+              )}
             </div>
           </div>
         </div>

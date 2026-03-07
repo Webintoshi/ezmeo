@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
+import { enqueueAndProcessInvoiceForOrder } from "@/lib/db/accounting";
 
 export async function PATCH(
   request: NextRequest,
@@ -67,6 +68,14 @@ export async function PATCH(
     } catch (logError) {
       console.error("Error creating activity log:", logError);
       // Don't fail the request if log fails
+    }
+
+    if (paymentStatus === "completed") {
+      try {
+        await enqueueAndProcessInvoiceForOrder(id);
+      } catch (accountingError) {
+        console.error("Accounting queue error (admin payment status):", accountingError);
+      }
     }
 
     return NextResponse.json({ success: true });

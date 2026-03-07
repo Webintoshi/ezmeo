@@ -5,8 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
     ArrowLeft,
+    CheckCircle2,
+    CircleAlert,
     Printer,
     Download,
+    Loader2,
+    RefreshCw,
 } from "lucide-react";
 import { OrderStatus, OrderActivityLog as OrderActivityLogType } from "@/types/order";
 import {
@@ -18,6 +22,7 @@ import {
     OrderItemsList,
 } from "@/components/admin/order-detail";
 import { OrderItemCustomization } from "@/types/product-customization";
+import { AccountingOrderSnapshot } from "@/types/accounting";
 import "./print.css";
 
 interface Order {
@@ -91,6 +96,7 @@ interface OrderDetailClientProps {
     customerOrders: CustomerOrder[];
     paymentMethodName: string;
     statusConfig: { label: string; color: string };
+    accountingSnapshot: AccountingOrderSnapshot | null;
 }
 
 
@@ -102,9 +108,11 @@ export function OrderDetailClient({
     customerOrders,
     paymentMethodName,
     statusConfig,
+    accountingSnapshot,
 }: OrderDetailClientProps) {
     const router = useRouter();
-    const [isPending, startTransition] = useTransition();
+    const [, startTransition] = useTransition();
+    const [isAccountingActionLoading, setIsAccountingActionLoading] = useState(false);
 
     const [notes, setNotes] = useState(
         activityLogs.filter(
@@ -239,6 +247,38 @@ export function OrderDetailClient({
         }
     })();
 
+    const accountingStatusLabel: Record<string, string> = {
+        idle: "Henüz Kuyruğa Alınmadı",
+        queued: "Kuyrukta",
+        syncing: "Senkron Ediliyor",
+        synced: "Senkronlandı",
+        failed: "Hata",
+        manual_action_required: "Manuel Müdahale Gerekli",
+    };
+
+    const triggerInvoiceCreation = async () => {
+        setIsAccountingActionLoading(true);
+        try {
+            const response = await fetch("/api/admin/accounting/invoices/create-from-order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ orderId: order.id }),
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result?.error || "Fatura islemi basarisiz.");
+            }
+            window.alert("Fatura adayi olusturuldu ve senkron tetiklendi.");
+            startTransition(() => {
+                router.refresh();
+            });
+        } catch (error) {
+            window.alert(error instanceof Error ? error.message : "Fatura olusturulamadi.");
+        } finally {
+            setIsAccountingActionLoading(false);
+        }
+    };
+
     return (
         <div className="space-y-5 animate-in fade-in duration-500">
             {/* Print Header - Only visible when printing */}
@@ -302,6 +342,71 @@ export function OrderDetailClient({
                 customerPhone={order.shipping_address?.phone}
                 onStatusChange={handleStatusChange}
             />
+
+            {/* Accounting Snapshot */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                        <h3 className="text-sm font-semibold text-gray-900">Muhasebe Durumu</h3>
+                        <p className="text-xs text-gray-500">Fatura entegrasyonu ve senkron bilgisi</p>
+                    </div>
+                    <button
+                        onClick={triggerInvoiceCreation}
+                        disabled={isAccountingActionLoading}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-60"
+                    >
+                        {isAccountingActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                        Fatura Kes
+                    </button>
+                </div>
+
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
+                        <p className="text-xs text-gray-500">Ödeme Yöntemi</p>
+                        <p className="font-semibold text-gray-900">{paymentMethodName}</p>
+                    </div>
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
+                        <p className="text-xs text-gray-500">Senkron Durumu</p>
+                        <p className="font-semibold text-gray-900 flex items-center gap-2">
+                            {accountingSnapshot?.syncStatus === "synced" ? (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            ) : (
+                                <CircleAlert className="w-4 h-4 text-amber-500" />
+                            )}
+                            {accountingStatusLabel[accountingSnapshot?.syncStatus || "idle"]}
+                        </p>
+                    </div>
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
+                        <p className="text-xs text-gray-500">Sağlayıcı</p>
+                        <p className="font-semibold text-gray-900">{accountingSnapshot?.provider || "-"}</p>
+                    </div>
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
+                        <p className="text-xs text-gray-500">Fatura Numarası</p>
+                        <p className="font-semibold text-gray-900">{accountingSnapshot?.invoiceNo || "-"}</p>
+                    </div>
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
+                        <p className="text-xs text-gray-500">Fatura Linki</p>
+                        {accountingSnapshot?.invoiceUrl ? (
+                            <a
+                                href={accountingSnapshot.invoiceUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-semibold text-blue-600 hover:underline break-all"
+                            >
+                                Görüntüle
+                            </a>
+                        ) : (
+                            <p className="font-semibold text-gray-900">-</p>
+                        )}
+                    </div>
+                </div>
+
+                {accountingSnapshot?.lastError && (
+                    <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                        {accountingSnapshot.lastError}
+                    </div>
+                )}
+            </div>
 
             {/* Order Items - Full Width */}
             <OrderItemsList

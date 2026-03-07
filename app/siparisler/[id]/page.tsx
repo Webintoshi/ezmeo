@@ -6,6 +6,7 @@ import Link from "next/link";
 import OrderSuccessToast from "@/components/order-success-toast";
 import { normalizeStoredCustomization } from "@/lib/customization/normalize";
 import { OrderItemCustomization } from "@/types/product-customization";
+import { getOrderAccountingSnapshot } from "@/lib/db/accounting";
 
 type ShippingAddress = {
     firstName?: string;
@@ -52,11 +53,13 @@ interface Order {
 
 export default async function OrderSuccessPage({
     params,
+    searchParams,
 }: {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ new?: string }>;
+    searchParams: Promise<{ new?: string; payment?: string }>;
 }) {
     const { id } = await params;
+    const resolvedSearchParams = await searchParams;
     const supabase = createServerClient();
 
     // Parallel fetch: order and payment settings
@@ -141,10 +144,44 @@ export default async function OrderSuccessPage({
             .filter(Boolean),
     }));
 
+    let accountingSnapshot = null;
+    try {
+        accountingSnapshot = await getOrderAccountingSnapshot(id);
+    } catch (accountingError) {
+        console.error("Public order accounting snapshot error:", accountingError);
+    }
+
+    const paymentState = resolvedSearchParams.payment;
+    const paymentBanner = paymentState === "failed"
+        ? {
+            className: "border-red-200 bg-red-50 text-red-700",
+            title: "Odeme basarisiz",
+            description: "Kart odemesi tamamlanamadi. Siparisiniz kaydedildi; odemeyi yeniden deneyebilir veya bizimle iletisime gecebilirsiniz.",
+        }
+        : paymentState === "pending"
+            ? {
+                className: "border-amber-200 bg-amber-50 text-amber-700",
+                title: "Odeme sonucu kontrol ediliyor",
+                description: "Saglayicidan donus alindi. Odeme sonucu kisa sure icinde siparisinize yansir.",
+            }
+            : paymentState === "success"
+                ? {
+                    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+                    title: "Odeme tamamlandi",
+                    description: "Odemeniz basariyla alindi ve siparisiniz onaya girdi.",
+                }
+                : null;
+
     return (
         <div className="min-h-screen bg-[#FAFAFA] pb-20 pt-8">
             <OrderSuccessToast />
             <div className="container mx-auto max-w-[800px] px-4">
+                {paymentBanner && (
+                    <div className={`mb-6 rounded-2xl border p-4 ${paymentBanner.className}`}>
+                        <p className="font-semibold">{paymentBanner.title}</p>
+                        <p className="mt-1 text-sm">{paymentBanner.description}</p>
+                    </div>
+                )}
 
                 {/* Success Header */}
                 <div className="text-center mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -290,6 +327,31 @@ export default async function OrderSuccessPage({
                                             'Ödeme alındı'}
                                 </p>
                             </div>
+                        </div>
+
+                        <div className="mt-4 border-t border-gray-100 pt-3 text-xs text-gray-600 space-y-1">
+                            <p>
+                                <span className="font-semibold">Muhasebe Durumu:</span>{" "}
+                                {accountingSnapshot?.syncStatus || "idle"}
+                            </p>
+                            <p>
+                                <span className="font-semibold">Fatura No:</span>{" "}
+                                {accountingSnapshot?.invoiceNo || "-"}
+                            </p>
+                            <p>
+                                <span className="font-semibold">Sağlayıcı:</span>{" "}
+                                {accountingSnapshot?.provider || "-"}
+                            </p>
+                            {accountingSnapshot?.invoiceUrl && (
+                                <a
+                                    href={accountingSnapshot.invoiceUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-block text-blue-600 hover:underline"
+                                >
+                                    Faturayı Görüntüle
+                                </a>
+                            )}
                         </div>
                     </div>
 

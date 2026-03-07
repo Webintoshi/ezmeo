@@ -2,52 +2,44 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { getBrowserSupabaseClient } from "@/lib/supabase-browser";
+import { useEffect, useMemo, useState } from "react";
+import type { ElementType } from "react";
 import {
   Home,
   Package,
   Tag,
   Users,
-  Megaphone,
   Percent,
-  Globe,
-  BarChart3,
+  FileText,
+  TrendingUp,
   ChevronDown,
   ChevronRight,
   LogOut,
-  Shield,
-  Rocket,
   Settings,
-  FileText,
-  Menu,
-  X,
-  TrendingUp,
   Store,
   Megaphone as MarketingIcon,
   Search,
   Users as AdminsIcon,
+  Calculator,
 } from "lucide-react";
+import { getBrowserSupabaseClient } from "@/lib/supabase-browser";
 import { cn } from "@/lib/utils";
-import { UserRole, hasPermission } from "@/lib/permissions";
+import { hasActionPermission, hasPermission, type AdminPermission, type UserRole } from "@/lib/permissions";
 
 interface MenuItem {
   title: string;
-  icon: React.ElementType;
+  icon: ElementType;
   href: string;
   badge?: number;
-  submenu?: {
+  permission?: AdminPermission;
+  submenu?: Array<{
     title: string;
     href: string;
-  }[];
+  }>;
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  {
-    title: "Ana Sayfa",
-    icon: Home,
-    href: "/admin",
-  },
+  { title: "Ana Sayfa", icon: Home, href: "/admin" },
   {
     title: "Siparişler",
     icon: Package,
@@ -109,10 +101,16 @@ const MENU_ITEMS: MenuItem[] = [
       { title: "WhatsApp", href: "/admin/pazarlama/whatsapp" },
     ],
   },
+  { title: "Analizler", icon: TrendingUp, href: "/admin/analizler" },
   {
-    title: "Analizler",
-    icon: TrendingUp,
-    href: "/admin/analizler",
+    title: "Muhasebe",
+    icon: Calculator,
+    href: "/admin/muhasebe",
+    permission: "accounting.view",
+    submenu: [
+      { title: "Genel Bakış", href: "/admin/muhasebe" },
+      { title: "Fatura Entegrasyonu", href: "/admin/muhasebe/fatura-entegrasyonu" },
+    ],
   },
   {
     title: "SEO Araçları",
@@ -125,16 +123,8 @@ const MENU_ITEMS: MenuItem[] = [
       { title: "Hızlı İndex", href: "/admin/seo-killer/hizli-index" },
     ],
   },
-  {
-    title: "Marketplace",
-    icon: Store,
-    href: "/admin/markets",
-  },
-  {
-    title: "Yöneticiler",
-    icon: AdminsIcon,
-    href: "/admin/yoneticiler",
-  },
+  { title: "Marketplace", icon: Store, href: "/admin/markets" },
+  { title: "Yöneticiler", icon: AdminsIcon, href: "/admin/yoneticiler" },
   {
     title: "Ayarlar",
     icon: Settings,
@@ -161,78 +151,76 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | undefined>();
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole] = useState<UserRole>("super_admin");
   const [userName, setUserName] = useState<string | null>(null);
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
   const supabase = getBrowserSupabaseClient();
 
   useEffect(() => {
     const checkMobile = () => {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         setIsMobile(window.innerWidth < 768);
       }
     };
-    
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   useEffect(() => {
-    if (isOpen !== undefined) {
-      setIsMobileMenuOpen(isOpen);
-    }
+    setIsMobileMenuOpen(isOpen);
   }, [isOpen]);
 
-  // Fetch user data from localStorage (set during login)
-  const fetchUserData = () => {
+  useEffect(() => {
+    const autoExpand = MENU_ITEMS.filter((item) => item.submenu?.some((sub) => sub.href === pathname)).map(
+      (item) => item.title,
+    );
+    if (autoExpand.length === 0) return;
+
+    setExpandedMenus((prev) => Array.from(new Set([...prev, ...autoExpand])));
+  }, [pathname]);
+
+  useEffect(() => {
     try {
-      console.log("AdminSidebar: Fetching user data from localStorage...");
-      
-      // Get stored user info from localStorage (set during login)
-      const userEmail = localStorage.getItem("admin_user_email");
-      const userName = localStorage.getItem("admin_user_name");
-      
-      console.log("AdminSidebar: localStorage:", { userEmail, userName });
-      
-      if (userEmail) {
-        setUserEmail(userEmail);
-        
-        if (userName) {
-          console.log("AdminSidebar: Using stored name:", userName);
-          setUserName(userName);
-        } else if (userEmail.includes('@')) {
-          const emailName = userEmail.split('@')[0];
-          console.log("AdminSidebar: Using email prefix:", emailName);
-          setUserName(emailName);
-        } else {
-          setUserName("Admin Kullanıcı");
-        }
+      const storedEmail = localStorage.getItem("admin_user_email") || undefined;
+      const storedName = localStorage.getItem("admin_user_name");
+      const storedRole = localStorage.getItem("admin_user_role");
+
+      setUserEmail(storedEmail);
+      setUserName(storedName || (storedEmail?.split("@")[0] ?? "Admin Kullanıcı"));
+      if (
+        storedRole === "super_admin" ||
+        storedRole === "product_manager" ||
+        storedRole === "content_creator" ||
+        storedRole === "order_manager"
+      ) {
+        setRole(storedRole);
       } else {
-        console.log("AdminSidebar: No user data in localStorage");
-        setUserName("Admin Kullanıcı");
+        setRole("super_admin");
       }
     } catch (error) {
-      console.error("AdminSidebar: Error reading localStorage:", error);
+      console.error("AdminSidebar localStorage read error:", error);
       setUserName("Admin Kullanıcı");
+      setRole("super_admin");
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchUserData();
   }, []);
 
+  const filteredItems = useMemo(() => {
+    return MENU_ITEMS.filter((item) => {
+      if (loading) return true;
+      if (!hasPermission(role, item.href)) return false;
+      if (item.permission && !hasActionPermission(role, item.permission)) return false;
+      return true;
+    });
+  }, [loading, role]);
+
   const toggleMenu = (title: string) => {
-    setExpandedMenus((prev) =>
-      prev.includes(title)
-        ? prev.filter((t) => t !== title)
-        : [...prev, title]
-    );
+    setExpandedMenus((prev) => (prev.includes(title) ? prev.filter((item) => item !== title) : [...prev, title]));
   };
 
   const handleLogout = async () => {
@@ -240,39 +228,22 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
     router.push("/");
   };
 
-  const filteredItems = MENU_ITEMS.filter(item => {
-    if (loading || !role) return true;
-    if (role === 'super_admin') return true;
-    if (item.title === "Ana Sayfa") return true;
-    return hasPermission(role as UserRole, item.href);
-  });
-
   const handleLinkClick = () => {
     if (isMobile && onClose) {
       onClose();
     }
   };
 
-  // Show skeleton while loading but keep layout stable
-
   return (
     <>
-      {/* Mobile Overlay */}
-      {isMobile && isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => onClose && onClose()}
-        />
-      )}
+      {isMobile && isMobileMenuOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={onClose} />}
 
-      {/* Sidebar */}
-      <aside className={cn(
-        "bg-[#ebebeb] border-l border-gray-200 flex flex-col fixed md:sticky top-0 h-screen z-50 transition-transform duration-300",
-        isMobile 
-          ? `${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'} w-80 right-0 left-auto` 
-          : 'w-64'
-      )}>
-        {/* Admin Header */}
+      <aside
+        className={cn(
+          "bg-[#ebebeb] border-l border-gray-200 flex flex-col fixed md:sticky top-0 h-screen z-50 transition-transform duration-300",
+          isMobile ? `${isMobileMenuOpen ? "translate-x-0" : "translate-x-full"} w-80 right-0 left-auto` : "w-64",
+        )}
+      >
         <div className="p-4 flex items-center gap-3 border-b border-gray-200/50">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm">
             {loading ? (
@@ -282,32 +253,19 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <span className="font-semibold text-gray-900 block leading-tight text-sm">
-              Webintosh Panel
-            </span>
+            <span className="font-semibold text-gray-900 block leading-tight text-sm">Webintosh Panel</span>
             <span className="text-xs text-gray-500 font-medium truncate block">
-              {loading ? (
-                <span className="text-gray-400">Oturum açılıyor...</span>
-              ) : userName ? (
-                <span className="text-gray-600">{userName}</span>
-              ) : userEmail ? (
-                <span className="text-gray-600">{userEmail}</span>
-              ) : (
-                <span className="text-gray-400">Admin Kullanıcı</span>
-              )}
+              {loading ? "Oturum açılıyor..." : userName || userEmail || "Admin Kullanıcı"}
             </span>
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
           {filteredItems.map((item) => {
             const isActive = pathname === item.href;
             const isExpanded = expandedMenus.includes(item.title);
-            const hasSubmenu = item.submenu && item.submenu.length > 0;
-            const isSubmenuActive = item.submenu?.some(
-              (sub) => pathname === sub.href
-            );
+            const hasSubmenu = Boolean(item.submenu?.length);
+            const isSubmenuActive = item.submenu?.some((sub) => pathname === sub.href);
 
             return (
               <div key={item.title}>
@@ -316,40 +274,33 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
                     "group flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-colors text-sm font-medium select-none",
                     isActive || isSubmenuActive
                       ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-600 hover:bg-gray-200/50 hover:text-gray-900"
+                      : "text-gray-600 hover:bg-gray-200/50 hover:text-gray-900",
                   )}
-                  onClick={() =>
-                    hasSubmenu ? toggleMenu(item.title) : undefined
-                  }
+                  onClick={() => {
+                    if (hasSubmenu) {
+                      toggleMenu(item.title);
+                    }
+                  }}
                 >
-                  <Link
-                    href={item.href}
-                    onClick={handleLinkClick}
-                    className="flex items-center gap-3 flex-1"
-                  >
+                  <Link href={item.href} onClick={handleLinkClick} className="flex items-center gap-3 flex-1">
                     <item.icon className="w-5 h-5 opacity-70" />
                     <span>{item.title}</span>
                   </Link>
 
                   <div className="flex items-center gap-2">
-                    {item.badge && (
+                    {item.badge ? (
                       <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full font-medium">
                         {item.badge}
                       </span>
-                    )}
-                    {hasSubmenu && (
+                    ) : null}
+                    {hasSubmenu ? (
                       <div className="text-gray-400">
-                        {isExpanded ? (
-                          <ChevronDown className="w-4 h-4" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4" />
-                        )}
+                        {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 
-                {/* Submenu */}
                 {hasSubmenu && isExpanded && (
                   <div className="mt-1 ml-9 space-y-0.5">
                     {item.submenu?.map((sub) => {
@@ -363,7 +314,7 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
                             "block px-3 py-2 rounded-md text-sm transition-colors",
                             isSubActive
                               ? "text-gray-900 font-medium bg-gray-200/50"
-                              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/30"
+                              : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/30",
                           )}
                         >
                           {sub.title}
@@ -377,7 +328,6 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
           })}
         </nav>
 
-        {/* Footer */}
         <div className="p-4 border-t border-gray-200/50 space-y-2">
           <button
             onClick={handleLogout}

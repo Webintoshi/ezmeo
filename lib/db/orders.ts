@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase";
 import { getOrCreateCustomer } from "./customers";
 import { incrementCouponUsage } from "./coupons";
+import { enqueueAndProcessInvoiceForOrder } from "./accounting";
 import { CartCustomizationPayload, OrderItemCustomization } from "@/types/product-customization";
 import { normalizeStoredCustomization } from "@/lib/customization/normalize";
 
@@ -527,6 +528,15 @@ export async function updatePaymentStatus(id: string, paymentStatus: string) {
         .single();
 
     if (error) throw error;
+
+    if (paymentStatus === "completed") {
+        try {
+            await enqueueAndProcessInvoiceForOrder(id);
+        } catch (accountingError) {
+            console.error("Accounting queue error (updatePaymentStatus):", accountingError);
+        }
+    }
+
     return data;
 }
 

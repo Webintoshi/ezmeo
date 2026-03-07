@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { OrderActivityLog as OrderActivityLogType, OrderStatus } from "@/types/order";
 import { OrderItemCustomization } from "@/types/product-customization";
 import { normalizeStoredCustomization } from "@/lib/customization/normalize";
+import { getOrderAccountingSnapshot } from "@/lib/db/accounting";
+import type { AccountingOrderSnapshot } from "@/types/accounting";
 
 // Client Components
 import { OrderDetailClient } from "./OrderDetailClient";
@@ -64,11 +66,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
     const order = orderResponse.data;
 
     // Fetch other data after order is confirmed
-    const [
-        itemsResponse,
-        settingsResponse,
-        activityLogResponse,
-    ] = await Promise.all([
+    const [itemsResponse, settingsResponse, activityLogResponse] = await Promise.all([
         supabase
             .from("order_items")
             .select("*, product:products(id, images, category, slug), customizations:order_item_customizations(*)")
@@ -88,6 +86,13 @@ export default async function OrderDetailPage({ params }: PageProps) {
             }
         })(),
     ]);
+
+    let accountingSnapshot: AccountingOrderSnapshot | null = null;
+    try {
+        accountingSnapshot = await getOrderAccountingSnapshot(id);
+    } catch (accountingError) {
+        console.error("Order accounting snapshot error:", accountingError);
+    }
 
     const items = itemsResponse.data || [];
     const paymentGateways = settingsResponse.data?.value ?? [];
@@ -169,6 +174,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
             customerOrders={serializedCustomerOrders}
             paymentMethodName={paymentMethodName}
             statusConfig={statusConfig}
+            accountingSnapshot={accountingSnapshot}
         />
     );
 }
