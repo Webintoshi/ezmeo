@@ -1,39 +1,101 @@
-export type DiscountType = "fixed" | "percentage" | "shipping" | "bogo";
-
+export type DiscountType = "fixed" | "percentage";
 export type DiscountStatus = "active" | "scheduled" | "expired" | "draft";
-
 export type DiscountScope = "all" | "products" | "collections" | "customers";
-
 export type DiscountVisibility = "public" | "private" | "password";
-
 export type DiscountLimitType = "once" | "once_per_customer" | "unlimited";
 
-export interface DiscountProduct {
-  productId: string;
-  productName: string;
-  discount: number;
+export interface AdminDiscount {
+  id: string;
+  name: string;
+  description?: string;
+  code: string;
+  type: DiscountType;
+  status: DiscountStatus;
+  value: number;
+  minOrder: number;
+  maxUses: number | null;
+  usedCount: number;
+  startsAt: string | null;
+  expiresAt: string | null;
+  isActive: boolean;
+  scope: DiscountScope;
+  visibility: DiscountVisibility;
+  password?: string;
+  limitType: DiscountLimitType;
+  tags: string[];
+  notes?: string;
+  createdAt: string | null;
 }
 
-export interface DiscountCustomer {
-  customerId: string;
-  customerName: string;
+export interface AdminDiscountPayload {
+  code: string;
+  type: DiscountType;
+  value: number;
+  minOrder?: number;
+  maxUses?: number | null;
+  startsAt?: string | null;
+  expiresAt?: string | null;
+  isActive?: boolean;
+  metadata: {
+    name: string;
+    description?: string;
+    scope?: DiscountScope;
+    visibility?: DiscountVisibility;
+    password?: string;
+    limitType?: DiscountLimitType;
+    tags?: string[];
+    notes?: string;
+  };
 }
 
-export interface DiscountRule {
-  minimumOrderAmount?: number;
-  maximumDiscountAmount?: number;
-  minimumQuantity?: number;
-  requireCoupon?: boolean;
-  excludeSaleItems?: boolean;
-}
+export const DISCOUNT_TYPE_OPTIONS: Array<{
+  value: DiscountType;
+  label: string;
+  description: string;
+}> = [
+  { value: "percentage", label: "Yüzde İndirim", description: "Sipariş tutarı üzerinden yüzde indirim" },
+  { value: "fixed", label: "Sabit Tutar", description: "Siparişten sabit tutar düşer" },
+];
 
-export interface DiscountUsage {
-  totalUsed: number;
-  usedThisMonth: number;
-  usedToday: number;
-  lastUsedAt?: Date;
-}
+export const DISCOUNT_STATUS_OPTIONS: Array<{
+  value: DiscountStatus;
+  label: string;
+}> = [
+  { value: "active", label: "Aktif" },
+  { value: "scheduled", label: "Planlandı" },
+  { value: "expired", label: "Süresi Doldu" },
+  { value: "draft", label: "Taslak" },
+];
 
+export const DISCOUNT_SCOPE_OPTIONS: Array<{
+  value: DiscountScope;
+  label: string;
+}> = [
+  { value: "all", label: "Tüm Siparişler" },
+  { value: "products", label: "Seçili Ürünler" },
+  { value: "collections", label: "Koleksiyonlar" },
+  { value: "customers", label: "Seçili Müşteriler" },
+];
+
+export const DISCOUNT_VISIBILITY_OPTIONS: Array<{
+  value: DiscountVisibility;
+  label: string;
+}> = [
+  { value: "public", label: "Herkese Açık" },
+  { value: "private", label: "Özel" },
+  { value: "password", label: "Parola Korumalı" },
+];
+
+export const DISCOUNT_LIMIT_TYPE_OPTIONS: Array<{
+  value: DiscountLimitType;
+  label: string;
+}> = [
+  { value: "unlimited", label: "Sınırsız" },
+  { value: "once", label: "Toplam Limitli" },
+  { value: "once_per_customer", label: "Müşteri Başı (Takip Dışı)" },
+];
+
+// Compatibility types for legacy modules.
 export interface Discount {
   id: string;
   name: string;
@@ -50,17 +112,21 @@ export interface Discount {
   password?: string;
   startDate: Date;
   endDate: Date;
-  products?: DiscountProduct[];
+  products?: Array<{ productId: string; productName: string; discount: number }>;
   collections?: string[];
-  customers?: DiscountCustomer[];
-  rules: DiscountRule;
+  customers?: Array<{ customerId: string; customerName: string }>;
+  rules: {
+    minimumOrderAmount?: number;
+    maximumDiscountAmount?: number;
+    minimumQuantity?: number;
+    requireCoupon?: boolean;
+    excludeSaleItems?: boolean;
+  };
   limitType: DiscountLimitType;
   usageLimit?: number;
   usedCount: number;
   createdAt: Date;
   updatedAt: Date;
-  createdBy?: string;
-  updatedBy?: string;
   tags?: string[];
   notes?: string;
 }
@@ -81,45 +147,18 @@ export interface DiscountFormData {
   password?: string;
   startDate: Date;
   endDate: Date;
-  products?: DiscountProduct[];
+  products?: Array<{ productId: string; productName: string; discount: number }>;
   collections?: string[];
-  customers?: DiscountCustomer[];
-  rules: DiscountRule;
+  customers?: Array<{ customerId: string; customerName: string }>;
+  rules: {
+    minimumOrderAmount?: number;
+    maximumDiscountAmount?: number;
+    minimumQuantity?: number;
+    requireCoupon?: boolean;
+    excludeSaleItems?: boolean;
+  };
   limitType: DiscountLimitType;
   usageLimit?: number;
   tags?: string[];
   notes?: string;
 }
-
-export const DISCOUNT_TYPES = [
-  { value: "percentage", label: "Yüzde İndirim", description: "Siparişin yüzdesi kadar indirim" },
-  { value: "fixed", label: "Sabit İndirim", description: "Sabit miktar indirim" },
-  { value: "shipping", label: "Kargo Ücreti İndirimi", description: "Kargo ücretini kaldır" },
-  { value: "bogo", label: "Biri Al Birini Bedava", description: "Belirli ürünlerde özel" },
-] as const;
-
-export const DISCOUNT_STATUSES = [
-  { value: "active", label: "Aktif", color: "bg-green-100 text-green-700" },
-  { value: "scheduled", label: "Planlandı", color: "bg-blue-100 text-blue-700" },
-  { value: "expired", label: "Süresi Doldu", color: "bg-red-100 text-red-700" },
-  { value: "draft", label: "Taslak", color: "bg-gray-100 text-gray-700" },
-] as const;
-
-export const DISCOUNT_SCOPES = [
-  { value: "all", label: "Tüm Siparişler", description: "Tüm siparişlerde geçerli" },
-  { value: "products", label: "Seçili Ürünler", description: "Belirli ürünlerde geçerli" },
-  { value: "collections", label: "Koleksiyonlar", description: "Belirli kategorilerde geçerli" },
-  { value: "customers", label: "Seçili Müşteriler", description: "Belirli müşterilere özel" },
-] as const;
-
-export const DISCOUNT_VISIBILITYS = [
-  { value: "public", label: "Herkese Açık", description: "Herkes kullanabilir" },
-  { value: "private", label: "Özel", description: "Sadece seçili müşteriler" },
-  { value: "password", label: "Parola Korumalı", description: "Parola ile kullanılabilir" },
-] as const;
-
-export const DISCOUNT_LIMIT_TYPES = [
-  { value: "once", label: "Tek Kullanım", description: "Sadece bir kez kullanılabilir" },
-  { value: "once_per_customer", label: "Müşteri Başı Bir Kez", description: "Her müşteri bir kez" },
-  { value: "unlimited", label: "Sınırsız", description: "Sınırsız kullanım" },
-] as const;

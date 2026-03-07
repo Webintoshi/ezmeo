@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase";
 import { getOrCreateCustomer } from "./customers";
+import { incrementCouponUsage } from "./coupons";
 import { CartCustomizationPayload, OrderItemCustomization } from "@/types/product-customization";
 import { normalizeStoredCustomization } from "@/lib/customization/normalize";
 
@@ -100,6 +101,7 @@ export async function createOrder(orderData: {
     paymentMethod: string;
     shippingCost?: number;
     discount?: number;
+    couponCode?: string | null;
     notes?: string;
     contactEmail?: string;
     saveAddress?: boolean;
@@ -111,6 +113,10 @@ export async function createOrder(orderData: {
     const shippingCost = orderData.shippingCost || 0;
     const discount = orderData.discount || 0;
     const total = subtotal + shippingCost - discount;
+    const couponCode = orderData.couponCode?.trim().toUpperCase() || null;
+    const notesWithCoupon = [orderData.notes?.trim(), couponCode ? `Kupon: ${couponCode}` : null]
+        .filter(Boolean)
+        .join(" | ") || null;
 
     // Get or create customer if email provided
     let customerId = orderData.customerId;
@@ -140,7 +146,7 @@ export async function createOrder(orderData: {
             billing_address: orderData.billingAddress || orderData.shippingAddress,
             payment_method: orderData.paymentMethod,
             payment_status: "pending",
-            notes: orderData.notes || null,
+            notes: notesWithCoupon,
         })
         .select()
         .single();
@@ -289,6 +295,14 @@ export async function createOrder(orderData: {
                 .from("products")
                 .update({ sales_count: (product.sales_count || 0) + item.quantity })
                 .eq("id", item.productId);
+        }
+    }
+
+    if (couponCode) {
+        try {
+            await incrementCouponUsage(couponCode);
+        } catch (couponError) {
+            console.error("Failed to increment coupon usage:", couponError);
         }
     }
 

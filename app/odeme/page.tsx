@@ -35,9 +35,16 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+type AppliedCoupon = {
+  code: string;
+  type: "percentage" | "fixed";
+  value: number;
+  discountAmount: number;
+};
+
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, shipping, total, clearCart } = useCart();
+  const { items, subtotal, shipping, clearCart } = useCart();
   const { user } = useAuth();
 
   const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayConfig[]>([]);
@@ -62,6 +69,10 @@ export default function CheckoutPage() {
   const [accountPassword, setAccountPassword] = useState("");
   const [accountPasswordConfirm, setAccountPasswordConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   // Update abandoned cart with customer info when they enter details
   const updateAbandonedCartWithCustomerInfo = async (email: string, firstName: string, lastName: string, phone: string) => {
@@ -94,6 +105,13 @@ export default function CheckoutPage() {
 
   // Step State (1: Delivery, 2: Payment)
   const [currentStep, setCurrentStep] = useState(1);
+  const discountAmount = appliedCoupon?.discountAmount || 0;
+  const finalTotal = Math.max(0, subtotal + shipping - discountAmount);
+
+  useEffect(() => {
+    setAppliedCoupon(null);
+    setCouponError("");
+  }, [subtotal]);
 
   // Load user data if logged in
   useEffect(() => {
@@ -165,6 +183,51 @@ export default function CheckoutPage() {
 
     setCurrentStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) {
+      setCouponError("Lütfen bir kupon kodu girin.");
+      return;
+    }
+
+    setIsApplyingCoupon(true);
+    setCouponError("");
+
+    try {
+      const response = await fetch("/api/discounts/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, subtotal }),
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result?.error || "Kupon doğrulanamadı.");
+      }
+
+      setAppliedCoupon({
+        code: result.coupon.code,
+        type: result.coupon.type,
+        value: result.coupon.value,
+        discountAmount: Number(result.discountAmount) || 0,
+      });
+      setCouponInput(result.coupon.code);
+      toast.success("Kupon başarıyla uygulandı.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Kupon uygulanamadı.";
+      setAppliedCoupon(null);
+      setCouponError(message);
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError("");
+    setCouponInput("");
   };
 
   const handleCompleteOrder = async () => {
@@ -270,7 +333,8 @@ export default function CheckoutPage() {
         billingAddress: shippingInfo,
         paymentMethod: selectedPaymentMethod,
         shippingCost: shipping,
-        discount: 0,
+        discount: discountAmount,
+        couponCode: appliedCoupon?.code || null,
         notes: createAccount ? "Hesap oluşturuldu" : "",
         contactEmail,
         receiveUpdates: true,
@@ -309,6 +373,10 @@ export default function CheckoutPage() {
 
   const getGatewayType = (id: string) => {
     return paymentGateways.find(g => g.id === id)?.gateway;
+  };
+
+  const isCardLikeGateway = (gatewayType?: string) => {
+    return Boolean(gatewayType && !["bank_transfer", "cod"].includes(gatewayType));
   };
 
   if (items.length === 0) {
@@ -607,7 +675,7 @@ export default function CheckoutPage() {
 
                   {/* VISUAL CREDIT CARD WRAPPER */}
                   <div className="mb-8">
-                    {['paytr', 'iyzico', 'stripe', 'credit_card'].includes(getGatewayType(selectedPaymentMethod) || '') && (
+                    {isCardLikeGateway(getGatewayType(selectedPaymentMethod)) && (
                       <div className="w-full max-w-md mx-auto aspect-[1.586] rounded-2xl p-6 md:p-8 text-white relative overflow-hidden shadow-2xl shadow-indigo-500/20 mb-8 transform transition-transform hover:scale-[1.02] duration-500">
                         {/* Gradient Background */}
                         <div className="absolute inset-0 bg-gradient-to-br from-[#6366f1] via-[#8b5cf6] to-[#ec4899]" />
@@ -662,7 +730,7 @@ export default function CheckoutPage() {
                         {/* Icon */}
                         {gateway.gateway === 'bank_transfer' && <Building2 className="h-5 w-5 text-gray-400" />}
                         {gateway.gateway === 'cod' && <Truck className="h-5 w-5 text-gray-400" />}
-                        {['paytr', 'iyzico', 'stripe'].includes(gateway.gateway) && <CreditCard className="h-5 w-5 text-gray-400" />}
+                        {isCardLikeGateway(gateway.gateway) && <CreditCard className="h-5 w-5 text-gray-400" />}
                       </label>
                     ))}
                   </div>
@@ -692,7 +760,7 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
-                  {['paytr', 'iyzico', 'stripe'].includes(getGatewayType(selectedPaymentMethod) || '') && selectedPaymentMethod && (
+                  {isCardLikeGateway(getGatewayType(selectedPaymentMethod)) && selectedPaymentMethod && (
                     <div className="bg-blue-50 text-blue-700 p-4 rounded-xl text-sm font-medium text-center animate-in fade-in">
                       Ödeme butonuna tıkladıktan sonra güvenli 3D Secure ekranına yönlendirileceksiniz.
                     </div>
@@ -711,7 +779,7 @@ export default function CheckoutPage() {
                       className="flex-[2] h-14 bg-primary text-white font-bold rounded-xl hover:bg-red-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 shadow-lg shadow-primary/20"
                     >
                       {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-4 w-4" />}
-                      {formatPrice(total)} Öde
+                      {formatPrice(finalTotal)} Öde
                     </button>
                   </div>
                 </motion.div>
@@ -783,7 +851,9 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex justify-between text-gray-600 font-medium">
                       <span>İndirim</span>
-                      <span className="text-emerald-600 font-bold">-0 ₺</span>
+                      <span className="text-emerald-600 font-bold">
+                        -{discountAmount > 0 ? formatPrice(discountAmount) : "0 ₺"}
+                      </span>
                     </div>
                   </div>
 
@@ -791,7 +861,7 @@ export default function CheckoutPage() {
                   {/* Total Box - Nude Theme */}
                   <div className="bg-[#F5E6E0] rounded-xl p-5 flex justify-between items-center text-[#7B1113] shadow-sm">
                     <span className="font-bold text-lg">Toplam</span>
-                    <span className="font-black text-2xl tracking-tight">{formatPrice(total)}</span>
+                    <span className="font-black text-2xl tracking-tight">{formatPrice(finalTotal)}</span>
                   </div>
 
                   {/* Discount Code */}
@@ -800,13 +870,37 @@ export default function CheckoutPage() {
                     <div className="flex gap-2">
                       <input
                         type="text"
+                        value={couponInput}
+                        onChange={(event) => setCouponInput(event.target.value.toUpperCase())}
                         placeholder="Kodu girin"
+                        disabled={isApplyingCoupon}
                         className="flex-1 h-10 px-3 rounded-lg border border-gray-200 text-sm focus:border-primary focus:ring-primary focus:ring-1 bg-gray-50"
                       />
-                      <button className="px-4 h-10 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">
-                        Uygula
-                      </button>
+                      {appliedCoupon ? (
+                        <button
+                          type="button"
+                          onClick={removeCoupon}
+                          className="px-4 h-10 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50"
+                        >
+                          Kaldır
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleApplyCoupon}
+                          disabled={isApplyingCoupon}
+                          className="px-4 h-10 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                        >
+                          {isApplyingCoupon ? "Kontrol..." : "Uygula"}
+                        </button>
+                      )}
                     </div>
+                    {appliedCoupon && (
+                      <p className="mt-2 text-xs text-emerald-600 font-medium">
+                        {appliedCoupon.code} uygulandı: -{formatPrice(discountAmount)}
+                      </p>
+                    )}
+                    {!!couponError && <p className="mt-2 text-xs text-rose-600 font-medium">{couponError}</p>}
                   </div>
 
                   <div className="flex items-center gap-2 justify-center text-[10px] text-gray-400 mt-2">

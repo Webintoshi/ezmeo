@@ -11,11 +11,16 @@ export async function getCouponByCode(code: string) {
     const { data, error } = await supabase
         .from("coupons")
         .select("*")
-        .eq("code", code.toUpperCase())
+        .eq("code", code.trim().toUpperCase())
         .eq("is_active", true)
         .single();
 
     if (error) return null;
+
+    // Validate start date
+    if (data.starts_at && new Date(data.starts_at) > new Date()) {
+        return null;
+    }
 
     // Validate expiry
     if (data.expires_at && new Date(data.expires_at) < new Date()) {

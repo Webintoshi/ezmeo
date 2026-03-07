@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
             paymentMethod: body.paymentMethod,
             shippingCost: body.shippingCost,
             discount: body.discount,
+            couponCode: body.couponCode,
             notes: body.notes,
             contactEmail: body.contactEmail,
         });
