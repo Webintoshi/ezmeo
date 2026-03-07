@@ -1,7 +1,6 @@
 export type PaymentGateway =
     | "paytr"
     | "iyzico"
-    | "param"
     | "paynet"
     | "craftgate"
     | "stripe"

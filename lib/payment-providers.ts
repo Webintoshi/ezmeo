@@ -81,27 +81,6 @@ export const PAYMENT_PROVIDER_REGISTRY: PaymentProviderDefinition[] = [
         ],
     },
     {
-        id: "param",
-        name: "ParamPOS",
-        shortName: "Param",
-        description: "Sanal POS ve banka bazli taksit senaryolari icin kullanilan yerel altyapi.",
-        category: "card_gateway",
-        homepageUrl: "https://www.param.com.tr",
-        docsUrl: "https://www.param.com.tr",
-        accentClassName: "from-fuchsia-600 to-pink-500",
-        supportedMethods: ["credit_card", "debit_card", "installments"],
-        supportedCardTypes: ["Visa", "MasterCard", "Troy"],
-        defaultCurrency: "TRY",
-        credentialFields: [
-            { key: "clientCode", label: "Client Code", description: "Param is yeri client code.", placeholder: "10738", required: true },
-            { key: "clientUsername", label: "Client Username", description: "Param kullanici adi.", placeholder: "user", required: true },
-            { key: "clientPassword", label: "Client Password", description: "Param sifresi.", placeholder: "password", required: true, secret: true, type: "password" },
-        ],
-        configurationFields: [
-            { key: "guid", label: "GUID", description: "POS islem yetki GUID degeri.", placeholder: "guid", secret: true, type: "password" },
-        ],
-    },
-    {
         id: "paynet",
         name: "Paynet",
         shortName: "Paynet",
@@ -209,7 +188,6 @@ function getProviderIcon(gateway: PaymentGateway): string {
     const icons: Record<PaymentGateway, string> = {
         paytr: "credit-card",
         iyzico: "building",
-        param: "credit-card",
         paynet: "credit-card",
         craftgate: "layers",
         stripe: "globe",
