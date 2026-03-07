@@ -1,40 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
-// import { useRouter } from "next/navigation"; // Unused import
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
-    getPaymentGateways,
-    togglePaymentGatewayStatus,
-    deletePaymentGateway,
-    duplicatePaymentGateway,
-    testPaymentGatewayConnection,
-    getPaymentGatewayStats,
-} from "@/lib/payments";
-import { PaymentGatewayConfig, PaymentMethodStatus, PaymentEnvironment, PaymentGateway } from "@/types/payment";
-import {
+    AlertTriangle,
+    Building2,
+    CheckCircle,
     CreditCard,
-    Plus,
-    Search,
-    Filter,
+    DollarSign,
     Edit,
-    Trash2,
-    TrendingUp,
+    Filter,
+    Package,
+    Plus,
+    RefreshCw,
+    Search,
     Shield,
     TestTube,
-    CheckCircle,
-    AlertTriangle,
-    RefreshCw,
-    Building2,
-    Package,
-    DollarSign,
+    Trash2,
+    TrendingUp,
     Zap,
 } from "lucide-react";
-import Link from "next/link";
+import { getPaymentGatewayRuntimeStatus } from "@/lib/payment-providers";
+import {
+    deletePaymentGateway,
+    duplicatePaymentGateway,
+    getPaymentGateways,
+    getPaymentGatewayStats,
+    testPaymentGatewayConnection,
+    togglePaymentGatewayStatus,
+} from "@/lib/payments";
+import { PaymentEnvironment, PaymentGateway, PaymentGatewayConfig, PaymentMethodStatus } from "@/types/payment";
 
 export default function PaymentSettingsPage() {
-    // const router = useRouter(); // Removed unused router
     const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayConfig[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<PaymentMethodStatus | "all">("all");
     const [testingConnection, setTestingConnection] = useState<string | null>(null);
@@ -48,7 +47,13 @@ export default function PaymentSettingsPage() {
     };
 
     useEffect(() => {
-        loadPaymentGateways();
+        async function initialize() {
+            const gateways = await getPaymentGateways();
+            setPaymentGateways(gateways);
+            setLoading(false);
+        }
+
+        void initialize();
     }, []);
 
     const handleToggleStatus = async (id: string, currentStatus: PaymentMethodStatus) => {
@@ -58,7 +63,7 @@ export default function PaymentSettingsPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm("Bu ödeme yöntemini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+        if (confirm("Bu odeme yontemini silmek istediginizden emin misiniz? Bu islem geri alinamaz.")) {
             await deletePaymentGateway(id);
             loadPaymentGateways();
         }
@@ -72,14 +77,14 @@ export default function PaymentSettingsPage() {
     const handleTestConnection = async (id: string) => {
         setTestingConnection(id);
         const success = await testPaymentGatewayConnection(id);
-        setTestResults(prev => ({ ...prev, [id]: success }));
+        setTestResults((prev) => ({ ...prev, [id]: success }));
         setTestingConnection(null);
     };
 
     const filteredGateways = paymentGateways.filter((gateway) => {
         const matchesSearch =
-            gateway.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            gateway.description?.toLowerCase().includes(searchQuery.toLowerCase());
+            gateway.name.toLowerCase().includes(searchQuery.toLowerCase())
+            || gateway.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
         const matchesStatus = statusFilter === "all" || gateway.status === statusFilter;
 
@@ -87,6 +92,7 @@ export default function PaymentSettingsPage() {
     });
 
     const stats = getPaymentGatewayStats();
+    const runtimeReadyCount = paymentGateways.filter((gateway) => getPaymentGatewayRuntimeStatus(gateway).isReady).length;
 
     const getStatusColor = (status: PaymentMethodStatus) => {
         switch (status) {
@@ -122,14 +128,11 @@ export default function PaymentSettingsPage() {
 
     const getGatewayIcon = (gateway: PaymentGateway) => {
         switch (gateway) {
-            case "paytr":
-                return CreditCard;
             case "iyzico":
+            case "bank_transfer":
                 return Building2;
             case "stripe":
                 return DollarSign;
-            case "bank_transfer":
-                return Building2;
             case "cod":
                 return Package;
             default:
@@ -138,101 +141,116 @@ export default function PaymentSettingsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50/50 p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
-            {/* Header */}
+        <div className="min-h-screen max-w-7xl mx-auto space-y-8 bg-gray-50/50 p-6 md:p-8">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Ödeme Yöntemleri</h1>
-                    <p className="text-sm text-gray-500 mt-1">Ödeme gateway&apos;larını yapılandırın ve yönetin.</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Odeme Yontemleri</h1>
+                    <p className="mt-1 text-sm text-gray-500">Odeme saglayicilarini yapilandirin, test edin ve checkout hazirligini takip edin.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
                         onClick={loadPaymentGateways}
-                        className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all shadow-sm text-sm font-medium text-gray-700"
+                        className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50"
                         title="Yenile"
                     >
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                     </button>
                     <Link
                         href="/admin/ayarlar/odeme/yeni"
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-all shadow-sm text-sm"
+                        className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-gray-800"
                     >
-                        <Plus className="w-4 h-4" />
-                        Yeni Yöntem Ekle
+                        <Plus className="h-4 w-4" />
+                        Yeni Yontem Ekle
                     </Link>
                 </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
-                            <CreditCard className="w-4 h-4" />
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                    <div className="mb-2 flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                            <CreditCard className="h-4 w-4" />
                         </div>
                         <div className="text-xl font-bold text-gray-900">{stats.total}</div>
                     </div>
-                    <div className="text-xs text-gray-500 font-medium">Toplam Yöntem</div>
+                    <div className="text-xs font-medium text-gray-500">Toplam Yontem</div>
                 </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
-                            <CheckCircle className="w-4 h-4" />
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                    <div className="mb-2 flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-50 text-green-600">
+                            <CheckCircle className="h-4 w-4" />
                         </div>
                         <div className="text-xl font-bold text-gray-900">{stats.active}</div>
                     </div>
-                    <div className="text-xs text-gray-500 font-medium">Aktif</div>
+                    <div className="text-xs font-medium text-gray-500">Aktif</div>
                 </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-yellow-50 rounded-lg flex items-center justify-center text-yellow-600">
-                            <TestTube className="w-4 h-4" />
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                    <div className="mb-2 flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-50 text-yellow-600">
+                            <TestTube className="h-4 w-4" />
                         </div>
                         <div className="text-xl font-bold text-gray-900">{stats.testMode}</div>
                     </div>
-                    <div className="text-xs text-gray-500 font-medium">Test Modu</div>
+                    <div className="text-xs font-medium text-gray-500">Test Modu</div>
                 </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center text-red-600">
-                            <Shield className="w-4 h-4" />
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                    <div className="mb-2 flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600">
+                            <Shield className="h-4 w-4" />
                         </div>
                         <div className="text-xl font-bold text-gray-900">{stats.production}</div>
                     </div>
-                    <div className="text-xs text-gray-500 font-medium">Canlı Ortam</div>
+                    <div className="text-xs font-medium text-gray-500">Canli Ortam</div>
                 </div>
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
-                            <TrendingUp className="w-4 h-4" />
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                    <div className="mb-2 flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                            <TrendingUp className="h-4 w-4" />
                         </div>
                         <div className="text-xl font-bold text-gray-900">{stats.sandbox}</div>
                     </div>
-                    <div className="text-xs text-gray-500 font-medium">Test Ortamı</div>
+                    <div className="text-xs font-medium text-gray-500">Test Ortami</div>
+                </div>
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                    <div className="mb-2 flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                            <Shield className="h-4 w-4" />
+                        </div>
+                        <div className="text-xl font-bold text-gray-900">{runtimeReadyCount}</div>
+                    </div>
+                    <div className="text-xs font-medium text-gray-500">Checkout&apos;ta Kullanilabilir</div>
                 </div>
             </div>
 
-            {/* Toolbar */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                <div className="flex flex-col md:flex-row items-center gap-4">
-                    <div className="relative flex-1 w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <div className="flex items-start gap-3">
+                    <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-700" />
+                    <div className="text-sm text-amber-800">
+                        Kartli saglayicilar icin API kaydi tek basina yeterli degildir. Canli checkout&apos;ta gorunmeleri icin payment runtime tablolari, provider init akisi ve callback/webhook dogrulamasi tamamlanmis olmalidir.
+                    </div>
+                </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-col items-center gap-4 md:flex-row">
+                    <div className="relative w-full flex-1">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Ödeme yöntemi ara..."
+                            placeholder="Odeme yontemi ara..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
+                            onChange={(event) => setSearchQuery(event.target.value)}
+                            className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-900"
                         />
                     </div>
                     <div className="relative w-full md:w-48">
-                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                         <select
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value as PaymentMethodStatus | "all")}
-                            className="w-full pl-9 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent appearance-none text-sm cursor-pointer"
+                            onChange={(event) => setStatusFilter(event.target.value as PaymentMethodStatus | "all")}
+                            className="w-full cursor-pointer appearance-none rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-8 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-900"
                         >
-                            <option value="all">Tüm Durumlar</option>
+                            <option value="all">Tum Durumlar</option>
                             <option value="active">Aktif</option>
                             <option value="inactive">Pasif</option>
                             <option value="test">Test Modu</option>
@@ -241,57 +259,63 @@ export default function PaymentSettingsPage() {
                 </div>
             </div>
 
-            {/* Payment Gateways Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {filteredGateways.map((gateway) => {
                     const GatewayIcon = getGatewayIcon(gateway.gateway);
+                    const runtimeStatus = getPaymentGatewayRuntimeStatus(gateway);
 
                     return (
                         <div
                             key={gateway.id}
-                            className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all flex flex-col"
+                            className="flex flex-col rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md"
                         >
-                            <div className="p-6 flex-1">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center">
-                                        <GatewayIcon className="w-6 h-6 text-gray-700" />
+                            <div className="flex-1 p-6">
+                                <div className="mb-4 flex items-start justify-between">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-50">
+                                        <GatewayIcon className="h-6 w-6 text-gray-700" />
                                     </div>
                                     <button
                                         onClick={() => handleToggleStatus(gateway.id, gateway.status)}
-                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 ${gateway.status === "active" ? "bg-green-600" : "bg-gray-200"
-                                            }`}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 ${gateway.status === "active" ? "bg-green-600" : "bg-gray-200"}`}
                                     >
                                         <span
-                                            className={`${gateway.status === "active" ? "translate-x-6" : "translate-x-1"
-                                                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                                            className={`${gateway.status === "active" ? "translate-x-6" : "translate-x-1"} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                                         />
                                     </button>
                                 </div>
 
                                 <div className="mb-4">
-                                    <h3 className="font-bold text-gray-900 text-lg mb-1">{gateway.name}</h3>
+                                    <h3 className="mb-1 text-lg font-bold text-gray-900">{gateway.name}</h3>
                                     {gateway.description && (
-                                        <p className="text-sm text-gray-500 line-clamp-2">{gateway.description}</p>
+                                        <p className="line-clamp-2 text-sm text-gray-500">{gateway.description}</p>
                                     )}
                                 </div>
 
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${getStatusColor(gateway.status)}`}>
+                                <div className="mb-4 flex flex-wrap gap-2">
+                                    <span className={`inline-flex items-center rounded px-2 py-1 text-xs font-medium ${getStatusColor(gateway.status)}`}>
                                         {getStatusLabel(gateway.status)}
                                     </span>
-                                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${getEnvironmentColor(gateway.environment)}`}>
-                                        {gateway.environment === "production" ? "Canlı" : "Test"}
+                                    <span className={`inline-flex items-center rounded px-2 py-1 text-xs font-medium ${getEnvironmentColor(gateway.environment)}`}>
+                                        {gateway.environment === "production" ? "Canli" : "Test"}
+                                    </span>
+                                    <span className={`inline-flex items-center rounded px-2 py-1 text-xs font-medium ${runtimeStatus.isReady ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                                        {runtimeStatus.label}
                                     </span>
                                 </div>
 
-                                {/* Supported Methods */}
+                                {!runtimeStatus.isReady && (
+                                    <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                                        {runtimeStatus.message}
+                                    </div>
+                                )}
+
                                 <div className="mb-4">
-                                    <div className="text-xs text-gray-400 font-medium mb-2 uppercase tracking-wide">Desteklenen Yöntemler</div>
+                                    <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">Desteklenen Yontemler</div>
                                     <div className="flex flex-wrap gap-1.5">
                                         {gateway.supportedMethods?.map((method) => (
                                             <span
                                                 key={method}
-                                                className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] rounded border border-gray-200"
+                                                className="rounded border border-gray-200 bg-gray-100 px-2 py-0.5 text-[10px] text-gray-600"
                                             >
                                                 {method}
                                             </span>
@@ -299,53 +323,48 @@ export default function PaymentSettingsPage() {
                                     </div>
                                 </div>
 
-                                {/* Test Result */}
                                 {testResults[gateway.id] !== undefined && (
-                                    <div className={`p-2 rounded-lg mb-4 text-xs font-medium flex items-center gap-2 ${testResults[gateway.id]
-                                        ? "bg-green-50 text-green-700"
-                                        : "bg-red-50 text-red-700"
-                                        }`}>
+                                    <div className={`mb-4 flex items-center gap-2 rounded-lg p-2 text-xs font-medium ${testResults[gateway.id] ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
                                         {testResults[gateway.id] ? (
                                             <>
-                                                <CheckCircle className="w-3.5 h-3.5" />
-                                                Bağlantı Başarılı
+                                                <CheckCircle className="h-3.5 w-3.5" />
+                                                Baglanti testi basarili
                                             </>
                                         ) : (
                                             <>
-                                                <AlertTriangle className="w-3.5 h-3.5" />
-                                                Bağlantı Başarısız
+                                                <AlertTriangle className="h-3.5 w-3.5" />
+                                                Baglanti testi basarisiz
                                             </>
                                         )}
                                     </div>
                                 )}
-
                             </div>
 
-                            <div className="p-4 border-t border-gray-100 grid grid-cols-2 gap-2 bg-gray-50/30 rounded-b-xl">
+                            <div className="grid grid-cols-2 gap-2 rounded-b-xl border-t border-gray-100 bg-gray-50/30 p-4">
                                 <button
                                     onClick={() => handleTestConnection(gateway.id)}
                                     disabled={testingConnection === gateway.id}
-                                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-xs font-medium disabled:opacity-50"
+                                    className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition-all hover:bg-gray-50 disabled:opacity-50"
                                 >
                                     {testingConnection === gateway.id ? (
-                                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                                     ) : (
-                                        <Zap className="w-3.5 h-3.5" />
+                                        <Zap className="h-3.5 w-3.5" />
                                     )}
                                     Test Et
                                 </button>
 
                                 <Link
                                     href={`/admin/ayarlar/odeme/${gateway.id}/duzenle`}
-                                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-900 text-white border border-gray-900 rounded-lg hover:bg-gray-800 transition-all text-xs font-medium"
+                                    className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-900 bg-gray-900 px-3 py-2 text-xs font-medium text-white transition-all hover:bg-gray-800"
                                 >
-                                    <Edit className="w-3.5 h-3.5" />
-                                    Düzenle
+                                    <Edit className="h-3.5 w-3.5" />
+                                    Duzenle
                                 </Link>
 
                                 <button
                                     onClick={() => handleDuplicate(gateway.id)}
-                                    className="col-span-1 flex items-center justify-center gap-1.5 px-3 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all text-xs"
+                                    className="col-span-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-900"
                                     title="Kopyala"
                                 >
                                     Kopyala
@@ -353,10 +372,10 @@ export default function PaymentSettingsPage() {
 
                                 <button
                                     onClick={() => handleDelete(gateway.id)}
-                                    className="col-span-1 flex items-center justify-center gap-1.5 px-3 py-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all text-xs"
+                                    className="col-span-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs text-red-500 transition-all hover:bg-red-50 hover:text-red-700"
                                     title="Sil"
                                 >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <Trash2 className="h-3.5 w-3.5" />
                                     Sil
                                 </button>
                             </div>
@@ -365,22 +384,21 @@ export default function PaymentSettingsPage() {
                 })}
             </div>
 
-            {/* Empty State */}
             {filteredGateways.length === 0 && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <CreditCard className="w-8 h-8 text-gray-400" />
+                <div className="rounded-xl border border-gray-200 bg-white p-12 text-center shadow-sm">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+                        <CreditCard className="h-8 w-8 text-gray-400" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">Ödeme Yöntemi Bulunamadı</h3>
-                    <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
-                        Henüz ödeme yöntemi yapılandırmadınız. İlk ödeme yönteminizi ekleyerek ödeme alımını başlatın.
+                    <h3 className="mb-2 text-lg font-bold text-gray-900">Odeme Yontemi Bulunamadi</h3>
+                    <p className="mx-auto mb-6 max-w-sm text-sm text-gray-500">
+                        Henuz odeme yontemi yapilandirmadiniz. Ilk odeme yonteminizi ekleyerek ayar kaydini olusturun.
                     </p>
                     <Link
                         href="/admin/ayarlar/odeme/yeni"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-all text-sm"
+                        className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-gray-800"
                     >
-                        <Plus className="w-4 h-4" />
-                        İlk Ödeme Yöntemini Ekle
+                        <Plus className="h-4 w-4" />
+                        Ilk Odeme Yontemini Ekle
                     </Link>
                 </div>
             )}

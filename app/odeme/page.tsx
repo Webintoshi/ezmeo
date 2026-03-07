@@ -341,7 +341,7 @@ export default function CheckoutPage() {
         createAccount: !user && createAccount
       };
 
-      const response = await fetch("/api/orders", {
+      const response = await fetch("/api/payments/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData)
@@ -349,16 +349,23 @@ export default function CheckoutPage() {
 
       const result = await response.json();
 
-      if (result.success) {
-        toast.success(createAccount 
-          ? "Siparişiniz alındı! Hesabınız başarıyla oluşturuldu." 
-          : "Siparişiniz başarıyla alındı!"
-        );
-        clearCart();
-        router.push(`/siparisler/${result.order.id}?new=true`);
-      } else {
+      if (!result.success) {
         toast.error(result.error);
+        return;
       }
+
+      if (result.payment?.action === "redirect" && result.payment?.redirectUrl) {
+        clearCart();
+        window.location.href = result.payment.redirectUrl;
+        return;
+      }
+
+      toast.success(createAccount 
+        ? "Siparişiniz alındı! Hesabınız başarıyla oluşturuldu." 
+        : "Siparişiniz başarıyla alındı!"
+      );
+      clearCart();
+      router.push(`/siparisler/${result.order.id}?new=true`);
     } catch (error) {
       toast.error("Bir bağlantı hatası oluştu.");
     } finally {
