@@ -1,4 +1,4 @@
-import { supabase, createServerClient, Coupon } from "@/lib/supabase";
+import { createServerClient, Coupon } from "@/lib/supabase";
 
 // =====================================================
 // COUPON QUERIES
@@ -8,7 +8,8 @@ import { supabase, createServerClient, Coupon } from "@/lib/supabase";
  * Get active coupon by code
  */
 export async function getCouponByCode(code: string) {
-    const { data, error } = await supabase
+    const serverClient = createServerClient();
+    const { data, error } = await serverClient
         .from("coupons")
         .select("*")
         .eq("code", code.trim().toUpperCase())
@@ -40,13 +41,26 @@ export async function getCouponByCode(code: string) {
  */
 export async function getAllCoupons() {
     const serverClient = createServerClient();
-    const { data, error } = await serverClient
+    const orderedResult = await serverClient
         .from("coupons")
         .select("*")
         .order("created_at", { ascending: false });
 
-    if (error) throw error;
-    return data;
+    if (!orderedResult.error) {
+        return orderedResult.data;
+    }
+
+    // Legacy DB compatibility: some deployments do not have `created_at` on coupons.
+    if (orderedResult.error.code === "42703") {
+        const fallbackResult = await serverClient
+            .from("coupons")
+            .select("*");
+
+        if (fallbackResult.error) throw fallbackResult.error;
+        return fallbackResult.data;
+    }
+
+    throw orderedResult.error;
 }
 
 /**
