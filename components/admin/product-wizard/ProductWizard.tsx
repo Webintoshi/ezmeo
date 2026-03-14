@@ -4,9 +4,11 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft, Save, ChevronRight, ChevronLeft, RefreshCw } from "lucide-react";
-import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { ProductWizardState, WIZARD_STEPS, WizardStep, ProductStatus, ProductImage } from "@/types/product";
+import {
+  ADMIN_PRODUCT_WIZARD_STEPS,
+  type AdminProductWizardState,
+} from "@/types/admin-product-wizard";
 
 // Adım Component'leri
 import { StepBasicInfo } from "./steps/StepBasicInfo";
@@ -14,7 +16,6 @@ import { StepImages } from "./steps/StepImages";
 import { StepPricing } from "./steps/StepPricing";
 import { StepStock } from "./steps/StepStock";
 import { StepSEO } from "./steps/StepSEO";
-import { StepNutrition } from "./steps/StepNutrition";
 import { StepPreview } from "./steps/StepPreview";
 
 // Progress Stepper Component
@@ -24,7 +25,7 @@ interface ProductWizardProps {
   productId?: string;
 }
 
-const INITIAL_STATE: ProductWizardState = {
+const INITIAL_STATE: AdminProductWizardState = {
   name: "",
   slug: "",
   description: "",
@@ -32,17 +33,17 @@ const INITIAL_STATE: ProductWizardState = {
   category: "",
   subcategory: "",
   tags: [],
-  brand: "Ezmeo",
-  countryOfOrigin: "Türkiye",
+  brand: "",
+  countryOfOrigin: "",
   images: [],
   variants: [
     {
       id: `variant-${Date.now()}`,
-      name: "Standart Paket - 450g",
-      weight: 450,
+      name: "Varsayilan Varyant",
+      weight: 0,
       price: 0,
       stock: 50,
-      sku: `EZM-${Date.now()}`,
+      sku: `SKU-${Date.now()}`,
       unit: "adet",
     },
   ],
@@ -56,25 +57,6 @@ const INITIAL_STATE: ProductWizardState = {
     keywords: [],
     robots: "index,follow",
   },
-  nutritionalInfo: {
-    calories: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0,
-    fiber: 0,
-    sugar: 0,
-  },
-  nutritionSettings: {
-    basis: "per_100g",
-    servingSize: 100,
-    servingPerContainer: 1,
-    allergens: [],
-    vitamins: {},
-  },
-  vegan: true,
-  glutenFree: true,
-  sugarFree: false,
-  highProtein: true,
   status: "draft",
 };
 
@@ -85,7 +67,7 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
-  const [formData, setFormData] = useState<ProductWizardState>(INITIAL_STATE);
+  const [formData, setFormData] = useState<AdminProductWizardState>(INITIAL_STATE);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Ürün verisini yükle (düzenleme modu)
@@ -110,29 +92,32 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
           category: p.category || "",
           subcategory: p.subcategory || "",
           tags: p.tags || [],
-          brand: p.brand || "Ezmeo",
-          countryOfOrigin: p.country_of_origin || "Türkiye",
-          images: (p.images_v2 || []).map((img: any) => ({
-            url: img.url || img,
-            alt: img.alt || "",
-            isPrimary: img.is_primary || false,
-            sortOrder: img.sort_order || 0,
-          })),
-          variants: (p.variants || []).map((v: any) => ({
-            id: v.id,
-            name: v.name,
-            weight: parseInt(v.weight) || 0,
-            price: Number(v.price),
-            originalPrice: v.original_price ? Number(v.original_price) : undefined,
-            cost: v.cost ? Number(v.cost) : undefined,
-            stock: v.stock,
-            sku: v.sku || "",
-            barcode: v.barcode,
-            groupName: v.group_name,
-            unit: v.unit || "adet",
-            images: v.images || [],
-            maxPurchaseQuantity: v.max_purchase_quantity,
-            warehouseLocation: v.warehouse_location,
+          brand: p.brand || "",
+          countryOfOrigin: p.country_of_origin || "",
+          images: (Array.isArray(p.images_v2) ? p.images_v2 : []).map((img) => {
+            const image = typeof img === "string" ? { url: img } : (img as Record<string, unknown>);
+            return {
+              url: (image.url as string) || "",
+              alt: (image.alt as string) || "",
+              isPrimary: Boolean(image.is_primary),
+              sortOrder: Number(image.sort_order) || 0,
+            };
+          }),
+          variants: (Array.isArray(p.variants) ? p.variants : []).map((variant: Record<string, unknown>) => ({
+            id: variant.id as string,
+            name: variant.name as string,
+            weight: parseInt(String(variant.weight || 0), 10) || 0,
+            price: Number(variant.price),
+            originalPrice: variant.original_price ? Number(variant.original_price) : undefined,
+            cost: variant.cost ? Number(variant.cost) : undefined,
+            stock: Number(variant.stock) || 0,
+            sku: (variant.sku as string) || "",
+            barcode: variant.barcode as string | undefined,
+            groupName: variant.group_name as string | undefined,
+            unit: (variant.unit as string) || "adet",
+            images: Array.isArray(variant.images) ? (variant.images as string[]) : [],
+            maxPurchaseQuantity: variant.max_purchase_quantity as number | undefined,
+            warehouseLocation: variant.warehouse_location as string | undefined,
           })),
           taxRate: p.tax_rate ?? 10,
           discountRules: p.discount_rules || [],
@@ -147,28 +132,6 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
             canonicalUrl: p.canonical_url,
             robots: p.seo_robots || "index,follow",
           },
-          nutritionalInfo: {
-            calories: 0,
-            protein: 0,
-            carbs: 0,
-            fat: 0,
-            fiber: 0,
-            sugar: 0,
-          },
-          nutritionSettings: {
-            basis: p.nutrition_basis || "per_100g",
-            servingSize: p.serving_size || 100,
-            servingPerContainer: p.serving_per_container || 1,
-            allergens: p.allergens || [],
-            vitamins: p.vitamins || {},
-            ingredients: p.ingredients,
-            storageConditions: p.storage_conditions,
-            shelfLifeDays: p.shelf_life_days,
-          },
-          vegan: p.vegan || false,
-          glutenFree: p.gluten_free || false,
-          sugarFree: p.sugar_free || false,
-          highProtein: p.high_protein || false,
           status: p.status || "draft",
           publishedAt: p.published_at,
         });
@@ -184,9 +147,11 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
     setHasUnsavedChanges(true);
   }, [formData]);
 
-  const updateFormData = useCallback((updates: Partial<ProductWizardState>) => {
+  const updateFormData = useCallback((updates: Partial<AdminProductWizardState>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
   }, []);
+
+  const totalSteps = ADMIN_PRODUCT_WIZARD_STEPS.length;
 
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
@@ -225,7 +190,7 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      if (currentStep < 7) {
+      if (currentStep < totalSteps) {
         setCurrentStep((prev) => prev + 1);
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
@@ -331,25 +296,7 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
         og_image: formData.seo.ogImage,
         canonical_url: formData.seo.canonicalUrl,
         seo_robots: formData.seo.robots,
-        vegan: formData.vegan,
-        gluten_free: formData.glutenFree,
-        sugar_free: formData.sugarFree,
-        high_protein: formData.highProtein,
-        nutrition_basis: formData.nutritionSettings.basis,
-        serving_size: formData.nutritionSettings.servingSize,
-        serving_per_container: formData.nutritionSettings.servingPerContainer,
-        allergens: formData.nutritionSettings.allergens,
-        vitamins: formData.nutritionSettings.vitamins,
-        ingredients: formData.nutritionSettings.ingredients,
-        storage_conditions: formData.nutritionSettings.storageConditions,
-        shelf_life_days: formData.nutritionSettings.shelfLifeDays,
         // Makro besin değerleri
-        calories: formData.nutritionalInfo.calories,
-        protein: formData.nutritionalInfo.protein,
-        carbs: formData.nutritionalInfo.carbs,
-        fat: formData.nutritionalInfo.fat,
-        fiber: formData.nutritionalInfo.fiber,
-        sugar: formData.nutritionalInfo.sugar,
         status: publish ? "published" : formData.status,
         is_draft: !publish,
         published_at: publish ? new Date().toISOString() : formData.publishedAt,
@@ -393,9 +340,9 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
       if (publish || !productId) {
         router.push("/admin/urunler");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Save error:", error);
-      const errorMessage = error?.response?.data?.error || error?.message || "Bir hata oluştu";
+      const errorMessage = error instanceof Error ? error.message : "Bir hata oluştu";
       toast.error(`Hata: ${errorMessage}`);
     } finally {
       setSaving(false);
@@ -472,20 +419,6 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
         );
       case 6:
         return (
-          <StepNutrition
-            nutritionalInfo={formData.nutritionalInfo}
-            nutritionSettings={formData.nutritionSettings}
-            vegan={formData.vegan}
-            glutenFree={formData.glutenFree}
-            sugarFree={formData.sugarFree}
-            highProtein={formData.highProtein}
-            onNutritionalInfoChange={(nutritionalInfo) => updateFormData({ nutritionalInfo })}
-            onNutritionSettingsChange={(nutritionSettings) => updateFormData({ nutritionSettings })}
-            onFeaturesChange={(features) => updateFormData(features)}
-          />
-        );
-      case 7:
-        return (
           <StepPreview
             data={formData}
             onPublish={() => handleSave(true)}
@@ -524,7 +457,7 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
             </div>
 
             <div className="flex items-center gap-3">
-              {currentStep < 7 && (
+              {currentStep < totalSteps && (
                 <button
                   onClick={() => handleSave(false)}
                   disabled={saving}
@@ -546,7 +479,7 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
       <div className="bg-white border-b border-gray-200">
         <div className="container mx-auto px-4 py-4">
           <WizardStepper
-            steps={WIZARD_STEPS}
+            steps={ADMIN_PRODUCT_WIZARD_STEPS}
             currentStep={currentStep}
             onStepClick={handleStepClick}
           />
@@ -564,14 +497,14 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
               </span>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {WIZARD_STEPS[currentStep - 1].title}
+                  {ADMIN_PRODUCT_WIZARD_STEPS[currentStep - 1].title}
                 </h2>
                 <p className="text-gray-500">
-                  {WIZARD_STEPS[currentStep - 1].description}
+                  {ADMIN_PRODUCT_WIZARD_STEPS[currentStep - 1].description}
                 </p>
               </div>
             </div>
-            {WIZARD_STEPS[currentStep - 1].isRequired && (
+            {ADMIN_PRODUCT_WIZARD_STEPS[currentStep - 1].isRequired && (
               <p className="text-xs text-rose-500 font-medium ml-13">
                 * Bu adımdaki tüm alanlar zorunludur
               </p>
@@ -594,7 +527,7 @@ export default function ProductWizard({ productId }: ProductWizardProps) {
               Geri
             </button>
 
-            {currentStep < 7 ? (
+            {currentStep < totalSteps ? (
               <button
                 onClick={handleNext}
                 className="flex items-center gap-2 px-8 py-3 bg-gray-900 text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"

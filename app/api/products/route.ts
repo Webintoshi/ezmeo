@@ -1,15 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
+import { deleteProduct } from "@/lib/db/products";
 import {
-    getProducts,
-    getFeaturedProducts,
-    getBestsellerProducts,
-    getProductBySlug,
-    getProductsByCategory,
-    searchProducts,
-    createProduct,
-    updateProduct,
-    deleteProduct
-} from "@/lib/db/products";
+    diffProductTags,
+    syncProductTagSuggestions,
+    validateAndNormalizeProductTags,
+} from "@/lib/product-tags";
+
+function toNullableString(value: unknown): string | null {
+    if (typeof value !== "string") {
+        return null;
+    }
+
+    const normalized = value.trim();
+    return normalized ? normalized : null;
+}
+
+function getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : "Bilinmeyen hata";
+}
+
+function logTagSuggestionSyncError(error: unknown, context: string) {
+    console.error(`Product tag suggestion sync failed (${context}):`, error);
+}
 
 // GET /api/products - Get all products or filter by query params
 export async function GET(request: NextRequest) {
@@ -192,6 +204,20 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        let normalizedTags: string[] = [];
+        try {
+            normalizedTags = validateAndNormalizeProductTags(productData.tags);
+        } catch (error) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: getErrorMessage(error),
+                    code: "TAG_VALIDATION_ERROR",
+                },
+                { status: 400 }
+            );
+        }
+
         // 1. Slug benzersizlik kontrolü
         if (productData.slug) {
             const { data: existingProduct } = await supabase
@@ -210,7 +236,7 @@ export async function POST(request: NextRequest) {
         // 2. Görselleri normalize et - images_v2 formatını düzelt (camelCase -> snake_case)
         let normalizedImagesV2 = productData.images_v2 || [];
         if (normalizedImagesV2.length > 0) {
-            normalizedImagesV2 = normalizedImagesV2.map((img: any, idx: number) => ({
+            normalizedImagesV2 = normalizedImagesV2.map((img: Record<string, unknown>, idx: number) => ({
                 url: img.url,
                 alt: img.alt || "",
                 is_primary: img.isPrimary !== undefined ? img.isPrimary : (idx === 0),
@@ -219,7 +245,7 @@ export async function POST(request: NextRequest) {
         }
 
         // images array'ini de güncelle (geriye uyumluluk için)
-        const normalizedImages = productData.images || normalizedImagesV2.map((img: any) => img.url);
+        const normalizedImages = productData.images || normalizedImagesV2.map((img: Record<string, unknown>) => img.url);
 
         // 3. Ana ürünü oluştur
         const { data: product, error: productError } = await supabase
@@ -232,8 +258,8 @@ export async function POST(request: NextRequest) {
                 images: normalizedImages,
                 images_v2: normalizedImagesV2,
                 category: productData.category || null,
-                subcategory: productData.subcategory || null,
-                tags: productData.tags || [],
+                subcategory: toNullableString(productData.subcategory),
+                tags: normalizedTags,
                 is_active: productData.is_active !== false,
                 is_featured: productData.is_featured || false,
                 is_bestseller: productData.is_bestseller || false,
@@ -296,7 +322,7 @@ export async function POST(request: NextRequest) {
             console.log("Processing variants, count:", variants.length);
             console.log("Variants data:", JSON.stringify(variants, null, 2));
             
-            const variantsToInsert = variants.map((v: any, idx: number) => ({
+            const variantsToInsert = variants.map((v: Record<string, unknown>, idx: number) => ({
                 product_id: product.id,
                 name: v.name,
                 weight: String(v.weight || 0),
@@ -332,7 +358,7 @@ export async function POST(request: NextRequest) {
         if (discount_rules && Array.isArray(discount_rules) && discount_rules.length > 0) {
             console.log("Processing discount rules, count:", discount_rules.length);
             
-            const discountRulesToInsert = discount_rules.map((rule: any) => ({
+            const discountRulesToInsert = discount_rules.map((rule: Record<string, unknown>) => ({
                 product_id: product.id,
                 name: rule.name,
                 type: rule.type,
@@ -359,8 +385,16 @@ export async function POST(request: NextRequest) {
             .eq("id", product.id)
             .single();
 
+        if (normalizedTags.length > 0) {
+            try {
+                await syncProductTagSuggestions(supabase, { added: normalizedTags });
+            } catch (error) {
+                logTagSuggestionSyncError(error, "create");
+            }
+        }
+
         return NextResponse.json({ success: true, product: fullProduct });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error creating product:", error);
         console.error("Error details:", error?.details, error?.message, error?.code);
         return NextResponse.json(
@@ -375,6 +409,7 @@ export async function PUT(request: NextRequest) {
     try {
         const body = await request.json();
         const { id, variants, discount_rules, deleted_images, ...updates } = body;
+        let normalizedUpdatedTags: string[] | undefined;
 
         console.log("PUT /api/products - ID:", id);
         console.log("PUT /api/products - Updates:", updates);
@@ -391,6 +426,20 @@ export async function PUT(request: NextRequest) {
 
         const { createServerClient } = await import("@/lib/supabase");
         const supabase = createServerClient();
+        if (updates.tags !== undefined) {
+            try {
+                normalizedUpdatedTags = validateAndNormalizeProductTags(updates.tags);
+            } catch (error) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        error: getErrorMessage(error),
+                        code: "TAG_VALIDATION_ERROR",
+                    },
+                    { status: 400 }
+                );
+            }
+        }
 
         // 1. Slug benzersizlik kontrolü (güncelleme sırasında)
         if (updates.slug) {
@@ -410,7 +459,7 @@ export async function PUT(request: NextRequest) {
         // 2. Mevcut ürünü al (görselleri filtrelemek için)
         const { data: existingProduct } = await supabase
             .from("products")
-            .select("images")
+            .select("images,tags")
             .eq("id", id)
             .single();
 
@@ -423,13 +472,15 @@ export async function PUT(request: NextRequest) {
         }
 
         // 4. Görselleri normalize et - SADECE explicitly gönderildiyse
-        let normalizedImagesV2 = updates.images_v2;
-        let finalImages = updates.images;
+        let normalizedImagesV2 = Array.isArray(updates.images_v2)
+            ? updates.images_v2
+            : undefined;
+        let finalImages = Array.isArray(updates.images) ? updates.images : undefined;
         
         // Eğer görseller gönderilmemişse, mevcut değerleri koru (undefined bırak)
-        if (updates.images_v2 !== undefined) {
+        if (normalizedImagesV2 !== undefined) {
             if (normalizedImagesV2.length > 0) {
-                normalizedImagesV2 = normalizedImagesV2.map((img: any, idx: number) => ({
+                normalizedImagesV2 = normalizedImagesV2.map((img: Record<string, unknown>, idx: number) => ({
                     url: img.url,
                     alt: img.alt || "",
                     is_primary: img.isPrimary !== undefined ? img.isPrimary : (idx === 0),
@@ -438,18 +489,17 @@ export async function PUT(request: NextRequest) {
             }
         }
 
-        if (updates.images !== undefined) {
-            finalImages = updates.images;
+        if (finalImages !== undefined) {
             if (deleted_images && Array.isArray(deleted_images) && existingProduct?.images) {
                 finalImages = finalImages.filter((img: string) => !deleted_images.includes(img));
             }
         } else if (normalizedImagesV2 !== undefined) {
             // images gönderilmemiş ama images_v2 gönderilmişse
-            finalImages = normalizedImagesV2.map((img: any) => img.url);
+            finalImages = normalizedImagesV2.map((img: Record<string, unknown>) => img.url);
         }
 
         // 5. Build update object - SADECE gönderilen alanları içerecek
-        const updateData: any = {};
+        const updateData: Record<string, unknown> = {};
         
         // Sadece undefined olmayan alanları ekle
         if (updates.name !== undefined) updateData.name = updates.name;
@@ -462,8 +512,8 @@ export async function PUT(request: NextRequest) {
         if (normalizedImagesV2 !== undefined) updateData.images_v2 = normalizedImagesV2;
         
         if (updates.category !== undefined) updateData.category = updates.category;
-        if (updates.subcategory !== undefined) updateData.subcategory = updates.subcategory;
-        if (updates.tags !== undefined) updateData.tags = updates.tags;
+        if (updates.subcategory !== undefined) updateData.subcategory = toNullableString(updates.subcategory);
+        if (normalizedUpdatedTags !== undefined) updateData.tags = normalizedUpdatedTags;
         if (updates.is_active !== undefined) updateData.is_active = updates.is_active;
         if (updates.is_featured !== undefined) updateData.is_featured = updates.is_featured;
         if (updates.is_bestseller !== undefined) updateData.is_bestseller = updates.is_bestseller;
@@ -520,16 +570,16 @@ export async function PUT(request: NextRequest) {
         console.log("Update data:", updateData);
 
         // Ana ürünü güncelle
-        const { data: product, error: productError } = await supabase
-            .from("products")
-            .update(updateData)
-            .eq("id", id)
-            .select()
-            .single();
+        if (Object.keys(updateData).length > 0) {
+            const { error: productError } = await supabase
+                .from("products")
+                .update(updateData)
+                .eq("id", id);
 
-        if (productError) {
-            console.error("Product update error:", productError);
-            throw new Error(`Product update failed: ${productError.message}`);
+            if (productError) {
+                console.error("Product update error:", productError);
+                throw new Error(`Product update failed: ${productError.message}`);
+            }
         }
 
         // 6. Varyantları güncelle
@@ -584,8 +634,8 @@ export async function PUT(request: NextRequest) {
             // Frontend'den gelen 'variant-' ile başlayan ID'ler yeni varyantlardır
             const incomingVariantIds = new Set(
                 variants
-                    .filter((v: any) => v.id && !v.id.startsWith('variant-')) // Sadece gerçek UUID'ler (yeni varyantlar hariç)
-                    .map((v: any) => v.id)
+                    .filter((v: Record<string, unknown>) => v.id && !String(v.id).startsWith("variant-")) // Sadece gerçek UUID'ler (yeni varyantlar hariç)
+                    .map((v: Record<string, unknown>) => String(v.id))
             );
 
             const variantsToDelete = existingVariants
@@ -610,8 +660,8 @@ export async function PUT(request: NextRequest) {
                 console.log("Deleted variants:", variantsToDelete.length);
             }
 
-            const newVariants = variants.filter((v: any) => !v.id || v.id.startsWith('variant-'));
-            const existingVariantsToUpdate = variants.filter((v: any) => v.id && !v.id.startsWith('variant-') && !orderedVariantIds.has(v.id));
+            const newVariants = variants.filter((v: Record<string, unknown>) => !v.id || String(v.id).startsWith("variant-"));
+            const existingVariantsToUpdate = variants.filter((v: Record<string, unknown>) => v.id && !String(v.id).startsWith("variant-") && !orderedVariantIds.has(String(v.id)));
 
             for (const v of existingVariantsToUpdate) {
                 const { error: updateError } = await supabase
@@ -639,7 +689,7 @@ export async function PUT(request: NextRequest) {
             }
 
             if (newVariants.length > 0) {
-                const variantsToInsert = newVariants.map((v: any, idx: number) => ({
+                const variantsToInsert = newVariants.map((v: Record<string, unknown>, idx: number) => ({
                     product_id: id,
                     name: v.name,
                     weight: String(v.weight || 0),
@@ -685,7 +735,7 @@ export async function PUT(request: NextRequest) {
 
             // Yeni indirim kurallarını ekle
             if (discount_rules.length > 0) {
-                const discountRulesToInsert = discount_rules.map((rule: any) => ({
+                const discountRulesToInsert = discount_rules.map((rule: Record<string, unknown>) => ({
                     product_id: id,
                     name: rule.name,
                     type: rule.type,
@@ -717,6 +767,16 @@ export async function PUT(request: NextRequest) {
             console.error("Fetch updated product error:", fetchError);
         }
 
+        if (normalizedUpdatedTags !== undefined) {
+            try {
+                const previousTags = validateAndNormalizeProductTags(existingProduct?.tags || []);
+                const tagDiff = diffProductTags(previousTags, normalizedUpdatedTags);
+                await syncProductTagSuggestions(supabase, tagDiff);
+            } catch (error) {
+                logTagSuggestionSyncError(error, "update");
+            }
+        }
+
         return NextResponse.json({ success: true, product: fullProduct });
     } catch (error) {
         console.error("Error updating product:", error);
@@ -740,7 +800,25 @@ export async function DELETE(request: NextRequest) {
             );
         }
 
+        const { createServerClient } = await import("@/lib/supabase");
+        const supabase = createServerClient();
+        const { data: existingProduct } = await supabase
+            .from("products")
+            .select("tags")
+            .eq("id", id)
+            .single();
+
         await deleteProduct(id);
+
+        try {
+            const removedTags = validateAndNormalizeProductTags(existingProduct?.tags || []);
+            if (removedTags.length > 0) {
+                await syncProductTagSuggestions(supabase, { removed: removedTags });
+            }
+        } catch (error) {
+            logTagSuggestionSyncError(error, "delete");
+        }
+
         return NextResponse.json({ success: true, message: "Product deleted" });
     } catch (error) {
         console.error("Error deleting product:", error);

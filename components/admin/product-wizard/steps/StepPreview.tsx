@@ -1,29 +1,48 @@
 "use client";
 
-import { CheckCircle, Eye, Save, Globe, Calendar, Star, ArrowRight } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ProductWizardState } from "@/types/product";
+import { CheckCircle, Eye, Globe, Save } from "lucide-react";
 import { toast } from "sonner";
 
+import { cn } from "@/lib/utils";
+import type { AdminProductWizardState } from "@/types/admin-product-wizard";
+
 interface StepPreviewProps {
-  data: ProductWizardState;
+  data: AdminProductWizardState;
   onPublish: () => void;
   onSaveDraft: () => void;
   saving: boolean;
 }
 
-export function StepPreview({ data, onPublish, onSaveDraft, saving }: StepPreviewProps) {
+function formatLabel(value: string) {
+  return value
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export function StepPreview({
+  data,
+  onPublish,
+  onSaveDraft,
+  saving,
+}: StepPreviewProps) {
   const checklistItems = [
     { id: "name", label: "Ürün adı girilmiş", check: () => data.name.length > 0 },
     { id: "images", label: "En az 1 görsel yüklenmiş", check: () => data.images.length > 0 },
-    { id: "price", label: "Fiyat belirlenmiş", check: () => data.variants.some((v) => v.price > 0) },
-    { id: "category", label: "Kategori seçilmiş", check: () => !!data.category },
+    { id: "price", label: "Fiyat belirlenmiş", check: () => data.variants.some((variant) => variant.price > 0) },
+    { id: "category", label: "Kategori seçilmiş", check: () => Boolean(data.category) },
     { id: "variants", label: "Varyantlar oluşturulmuş", check: () => data.variants.length > 0 },
-    { id: "seo", label: "SEO skoru yeterli", check: () => data.seo.title.length > 0 && data.seo.description.length > 0 },
+    {
+      id: "seo",
+      label: "SEO alanları doldurulmuş",
+      check: () => data.seo.title.length > 0 && data.seo.description.length > 0,
+    },
   ];
 
   const completedCount = checklistItems.filter((item) => item.check()).length;
   const progress = (completedCount / checklistItems.length) * 100;
+  const primaryVariant = data.variants[0];
 
   return (
     <div className="p-8 space-y-8">
@@ -38,9 +57,7 @@ export function StepPreview({ data, onPublish, onSaveDraft, saving }: StepPrevie
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Column - Checklist */}
         <div className="space-y-6">
-          {/* Progress */}
           <div className="bg-gray-50 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-bold text-gray-700">Yayınlanma Durumu</span>
@@ -60,7 +77,6 @@ export function StepPreview({ data, onPublish, onSaveDraft, saving }: StepPrevie
             </p>
           </div>
 
-          {/* Checklist */}
           <div className="space-y-3">
             <h4 className="text-sm font-bold text-gray-700">Kontrol Listesi</h4>
             {checklistItems.map((item) => {
@@ -70,9 +86,7 @@ export function StepPreview({ data, onPublish, onSaveDraft, saving }: StepPrevie
                   key={item.id}
                   className={cn(
                     "flex items-center gap-3 p-4 rounded-xl border transition-all",
-                    isChecked
-                      ? "bg-emerald-50 border-emerald-200"
-                      : "bg-white border-gray-200"
+                    isChecked ? "bg-emerald-50 border-emerald-200" : "bg-white border-gray-200"
                   )}
                 >
                   <div
@@ -91,7 +105,6 @@ export function StepPreview({ data, onPublish, onSaveDraft, saving }: StepPrevie
             })}
           </div>
 
-          {/* Quick Actions */}
           <div className="grid grid-cols-2 gap-4">
             <button
               type="button"
@@ -109,6 +122,7 @@ export function StepPreview({ data, onPublish, onSaveDraft, saving }: StepPrevie
                   toast.error("Lütfen önce tüm zorunlu alanları doldurun");
                   return;
                 }
+
                 onPublish();
               }}
               disabled={saving}
@@ -125,12 +139,10 @@ export function StepPreview({ data, onPublish, onSaveDraft, saving }: StepPrevie
           </div>
         </div>
 
-        {/* Right Column - Product Preview */}
         <div className="space-y-6">
           <h4 className="text-sm font-bold text-gray-700">Ürün Önizlemesi</h4>
 
           <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-sm">
-            {/* Preview Image */}
             <div className="aspect-[4/3] bg-gray-100 relative">
               {data.images[0] ? (
                 <img
@@ -143,29 +155,21 @@ export function StepPreview({ data, onPublish, onSaveDraft, saving }: StepPrevie
                   <Eye className="w-16 h-16" />
                 </div>
               )}
-              {data.images.length > 1 && (
-                <div className="absolute bottom-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-xs font-medium">
-                  +{data.images.length - 1} görsel
-                </div>
-              )}
             </div>
 
-            {/* Preview Content */}
             <div className="p-6 space-y-4">
-              {/* Title */}
-              <h3 className="text-xl font-bold text-gray-900 line-clamp-2">
-                {data.name || "Ürün Adı"}
-              </h3>
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-gray-900 line-clamp-2">
+                  {data.name || "Ürün Adı"}
+                </h3>
+                <p className="text-sm text-gray-500 line-clamp-3">
+                  {data.shortDescription || "Kısa açıklama burada görünecek."}
+                </p>
+              </div>
 
-              {/* Short Description */}
-              <p className="text-sm text-gray-500 line-clamp-2">
-                {data.shortDescription || "Ürün açıklaması burada görünecek..."}
-              </p>
-
-              {/* Tags */}
               {data.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {data.tags.slice(0, 3).map((tag) => (
+                  {data.tags.slice(0, 5).map((tag) => (
                     <span
                       key={tag}
                       className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium"
@@ -173,79 +177,72 @@ export function StepPreview({ data, onPublish, onSaveDraft, saving }: StepPrevie
                       {tag}
                     </span>
                   ))}
-                  {data.tags.length > 3 && (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-400 rounded-lg text-xs">
-                      +{data.tags.length - 3}
-                    </span>
-                  )}
                 </div>
               )}
 
-              {/* Price */}
-              <div className="flex items-baseline gap-3 pt-2">
+              <div className="flex items-baseline gap-3">
                 <span className="text-3xl font-black text-primary">
-                  ₺{data.variants[0]?.price || 0}
+                  ₺{primaryVariant?.price || 0}
                 </span>
-                {data.variants[0]?.originalPrice && (
+                {primaryVariant?.originalPrice ? (
                   <span className="text-lg text-gray-400 line-through">
-                    ₺{data.variants[0].originalPrice}
+                    ₺{primaryVariant.originalPrice}
                   </span>
-                )}
+                ) : null}
               </div>
 
-              {/* Features */}
-              <div className="flex flex-wrap gap-2 pt-2">
-                {data.vegan && (
-                  <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold">
-                    VEGAN
-                  </span>
-                )}
-                {data.glutenFree && (
-                  <span className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold">
-                    GLUTENSİZ
-                  </span>
-                )}
-                {data.sugarFree && (
-                  <span className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold">
-                    ŞEKERSİZ
-                  </span>
-                )}
-                {data.highProtein && (
-                  <span className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-xs font-bold">
-                    PROTEİN
-                  </span>
-                )}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-2xl bg-gray-50 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">Kategori</p>
+                  <p className="mt-1 font-semibold text-gray-900">
+                    {data.category ? formatLabel(data.category) : "Belirtilmedi"}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-gray-50 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">Alt Kategori</p>
+                  <p className="mt-1 font-semibold text-gray-900">
+                    {data.subcategory ? formatLabel(data.subcategory) : "Yok"}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-gray-50 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">Varyant Sayısı</p>
+                  <p className="mt-1 font-semibold text-gray-900">{data.variants.length}</p>
+                </div>
+                <div className="rounded-2xl bg-gray-50 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-400">Stok Takibi</p>
+                  <p className="mt-1 font-semibold text-gray-900">
+                    {data.trackStock ? "Aktif" : "Pasif"}
+                  </p>
+                </div>
               </div>
 
-              {/* CTA Button */}
-              <button className="w-full py-4 bg-primary text-white rounded-2xl font-bold flex items-center justify-center gap-2 mt-4">
-                Sepete Ekle
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Product Details */}
-          <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Kategori</span>
-              <span className="font-medium text-gray-900">
-                {data.category ? data.category.replace("-", " ") : "-"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Varyant Sayısı</span>
-              <span className="font-medium text-gray-900">{data.variants.length}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">KDV Oranı</span>
-              <span className="font-medium text-gray-900">%{data.taxRate}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Stok Takibi</span>
-              <span className={cn("font-medium", data.trackStock ? "text-emerald-600" : "text-gray-400")}>
-                {data.trackStock ? "Aktif" : "Pasif"}
-              </span>
+              {data.variants.length > 0 && (
+                <div className="space-y-2 pt-2">
+                  <h5 className="text-sm font-bold text-gray-700">Varyantlar</h5>
+                  <div className="space-y-2">
+                    {data.variants.slice(0, 3).map((variant) => (
+                      <div
+                        key={variant.id}
+                        className="flex items-center justify-between rounded-2xl border border-gray-100 px-4 py-3"
+                      >
+                        <div>
+                          <p className="font-medium text-gray-900">{variant.name}</p>
+                          <p className="text-xs text-gray-500">{variant.sku || "SKU yok"}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-900">₺{variant.price}</p>
+                          <p className="text-xs text-gray-500">Stok: {variant.stock}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {data.variants.length > 3 && (
+                      <p className="text-xs text-gray-500">
+                        +{data.variants.length - 3} varyant daha
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

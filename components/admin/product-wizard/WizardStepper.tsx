@@ -2,10 +2,10 @@
 
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { WizardStep } from "@/types/product";
+import type { AdminWizardStep } from "@/types/admin-product-wizard";
 
 interface WizardStepperProps {
-  steps: WizardStep[];
+  steps: AdminWizardStep[];
   currentStep: number;
   onStepClick: (stepId: number) => void;
 }

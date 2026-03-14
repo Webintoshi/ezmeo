@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import { Product } from "@/types/product";
+import { buildCategoryLabelMap, buildProductCategoryTree } from "@/lib/admin-product-categories";
+import { fetchCategories } from "@/lib/categories";
+import type { CategoryInfo } from "@/types/product";
 import {
   Plus,
   Search,
@@ -23,15 +25,43 @@ import {
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-const CATEGORIES = [
+interface AdminProductVariant {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  stock: number;
+  sku: string;
+}
+
+interface AdminProductListItem {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  shortDescription: string;
+  images: string[];
+  category: string;
+  subcategory: string;
+  tags: string[];
+  variants: AdminProductVariant[];
+  featured: boolean;
+  isNew: boolean;
+}
+
+const CATEGORY_BADGE_STYLES = [
   { value: "all", label: "Tümü", color: "bg-gray-100 text-gray-700" },
   { value: "fistik-ezmesi", label: "Fıstık Ezmesi", color: "bg-amber-100 text-amber-700" },
   { value: "findik-ezmesi", label: "Fındık Ezmesi", color: "bg-orange-100 text-orange-700" },
   { value: "kuruyemis", label: "Kuruyemiş", color: "bg-green-100 text-green-700" },
 ];
 
+function getCategoryBadgeStyle(index: number) {
+  return CATEGORY_BADGE_STYLES[index % CATEGORY_BADGE_STYLES.length]?.color || "bg-gray-100 text-gray-700";
+}
+
 // Transform database product to frontend format
-function transformProduct(dbProduct: Record<string, unknown>): Product {
+function transformProduct(dbProduct: Record<string, unknown>): AdminProductListItem {
   const variants = (dbProduct.variants as Record<string, unknown>[]) || [];
   return {
     id: dbProduct.id as string,
@@ -40,32 +70,25 @@ function transformProduct(dbProduct: Record<string, unknown>): Product {
     description: (dbProduct.description as string) || "",
     shortDescription: (dbProduct.short_description as string) || "",
     images: (dbProduct.images as string[]) || [],
-    category: ((dbProduct.category as string) || "fistik-ezmesi") as Product["category"],
-    subcategory: "normal" as Product["subcategory"],
+    category: (dbProduct.category as string) || "",
+    subcategory: (dbProduct.subcategory as string) || "",
     tags: (dbProduct.tags as string[]) || [],
     variants: variants.map((v: Record<string, unknown>) => ({
       id: v.id as string,
       name: v.name as string,
-      weight: parseInt((v.weight as string) || "0"),
       price: Number(v.price) || 0,
-      originalPrice: Number(v.original_price) || 0,
+      originalPrice: v.original_price ? Number(v.original_price) : undefined,
       stock: Number(v.stock) || 0,
       sku: (v.sku as string) || "",
     })),
-    nutritionalInfo: { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 },
-    vegan: false,
-    glutenFree: false,
-    sugarFree: false,
-    highProtein: false,
-    rating: 5,
-    reviewCount: 0,
-    featured: dbProduct.is_featured as boolean,
-    new: false,
+    featured: Boolean(dbProduct.is_featured),
+    isNew: Boolean(dbProduct.is_new),
   };
 }
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<AdminProductListItem[]>([]);
+  const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
@@ -79,8 +102,34 @@ export default function ProductsPage() {
     total: 0,
     totalPages: 0
   });
+  const categoryTree = buildProductCategoryTree(categories);
+  const categoryLabelMap = buildCategoryLabelMap(categories);
+  const categoryFilters = [
+    { value: "all", label: "Tümü", color: "bg-gray-100 text-gray-700" },
+    ...categoryTree.map((category, index) => ({
+      value: category.slug,
+      label: category.name,
+      color: getCategoryBadgeStyle(index),
+    })),
+  ];
 
-  const loadProducts = async (page: number = pagination.page) => {
+  const getPrimaryVariant = (product: AdminProductListItem) =>
+    product.variants[0] || {
+      id: "",
+      name: "Varyant yok",
+      price: 0,
+      originalPrice: undefined,
+      stock: 0,
+      sku: "",
+    };
+
+  const getCategoryLabel = (slug: string) =>
+    categoryLabelMap.get(slug) || slug || "Kategorisiz";
+
+  const getCategoryColor = (slug: string) =>
+    categoryFilters.find((category) => category.value === slug)?.color || "bg-gray-100 text-gray-700";
+
+  const loadProducts = useCallback(async (page: number = pagination.page) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -100,11 +149,21 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
+  }, [pagination.limit, pagination.page]);
+
+  const loadCategories = async () => {
+    try {
+      const data = await fetchCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error("Failed to load categories:", error);
+    }
   };
 
   useEffect(() => {
-    loadProducts();
-  }, []);
+    void loadProducts();
+    void loadCategories();
+  }, [loadProducts]);
 
   const handleDelete = async (id: string) => {
     if (confirm("Bu ürünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
@@ -159,11 +218,13 @@ export default function ProductsPage() {
   const getSortedProducts = () => {
     return [...filteredProducts].sort((a, b) => {
       let comparison = 0;
+      const aPrimaryVariant = getPrimaryVariant(a);
+      const bPrimaryVariant = getPrimaryVariant(b);
 
       if (sortBy === "price") {
-        comparison = a.variants[0].price - b.variants[0].price;
+        comparison = aPrimaryVariant.price - bPrimaryVariant.price;
       } else if (sortBy === "stock") {
-        comparison = a.variants[0].stock - b.variants[0].stock;
+        comparison = aPrimaryVariant.stock - bPrimaryVariant.stock;
       } else {
         comparison = a.name.localeCompare(b.name);
       }
@@ -175,7 +236,9 @@ export default function ProductsPage() {
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.variants.some((v) => v.sku.toLowerCase().includes(searchQuery.toLowerCase()));
+      product.variants.some((variant) =>
+        variant.sku.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     const matchesCategory =
       categoryFilter === "all" || product.category === categoryFilter;
     return matchesSearch && matchesCategory;
@@ -185,10 +248,10 @@ export default function ProductsPage() {
 
   const stats = {
     total: products.length,
-    featured: products.filter(p => p.featured).length,
-    new: products.filter(p => p.new).length,
-    lowStock: products.filter(p => p.variants[0]?.stock < 10).length,
-    totalVariants: products.reduce((sum, p) => sum + p.variants.length, 0),
+    featured: products.filter((product) => product.featured).length,
+    new: products.filter((product) => product.isNew).length,
+    lowStock: products.filter((product) => getPrimaryVariant(product).stock < 10).length,
+    totalVariants: products.reduce((sum, product) => sum + product.variants.length, 0),
   };
 
   return (
@@ -268,7 +331,7 @@ export default function ProductsPage() {
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   className="w-full appearance-none pl-11 pr-10 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-blue-200 outline-none transition-all text-sm font-bold cursor-pointer"
                 >
-                  {CATEGORIES.map((cat) => (
+                  {categoryFilters.map((cat) => (
                     <option key={cat.value} value={cat.value}>{cat.label}</option>
                   ))}
                 </select>
@@ -283,7 +346,10 @@ export default function ProductsPage() {
                 <select
                   value={`${sortBy}-${sortOrder}`}
                   onChange={(e) => {
-                    const [newSort, newOrder] = e.target.value.split('-') as [any, any];
+                    const [newSort, newOrder] = e.target.value.split("-") as [
+                      "name" | "price" | "stock" | "newest",
+                      "asc" | "desc",
+                    ];
                     setSortBy(newSort);
                     setSortOrder(newOrder);
                   }}
@@ -397,7 +463,7 @@ export default function ProductsPage() {
                       Öne Çıkan
                     </div>
                   )}
-                  {product.new && (
+                  {product.isNew && (
                     <div className="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white text-xs font-bold rounded-full shadow-lg">
                       <CheckCircle className="w-3 h-3" />
                       Yeni
@@ -410,9 +476,8 @@ export default function ProductsPage() {
               <div className="p-6">
                 {/* Category */}
                 <div className="mb-3">
-                  <span className={`px-3 py-1 text-xs font-semibold rounded-full ${CATEGORIES.find(c => c.value === product.category)?.color || 'bg-gray-100 text-gray-700'
-                    }`}>
-                    {CATEGORIES.find(c => c.value === product.category)?.label || product.category}
+                  <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getCategoryColor(product.category)}`}>
+                    {getCategoryLabel(product.category)}
                   </span>
                 </div>
 
@@ -423,7 +488,7 @@ export default function ProductsPage() {
 
                 {/* Variant Info */}
                 <div className="text-sm text-gray-500 mb-3">
-                  <span className="font-medium text-gray-700">{product.variants[0]?.name}</span>
+                  <span className="font-medium text-gray-700">{getPrimaryVariant(product).name}</span>
                   {product.variants.length > 1 && (
                     <span className="text-gray-500"> (+{product.variants.length - 1})</span>
                   )}
@@ -432,35 +497,35 @@ export default function ProductsPage() {
                 {/* Price & Stock */}
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    {product.variants[0]?.originalPrice && product.variants[0].originalPrice > product.variants[0].price ? (
+                    {getPrimaryVariant(product).originalPrice && getPrimaryVariant(product).originalPrice! > getPrimaryVariant(product).price ? (
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-bold text-red-600 line-through">
-                          ₺{product.variants[0].originalPrice}
+                          ₺{getPrimaryVariant(product).originalPrice}
                         </span>
                         <span className="text-2xl font-bold text-green-600">
-                          ₺{product.variants[0].price}
+                          ₺{getPrimaryVariant(product).price}
                         </span>
                       </div>
                     ) : (
                       <span className="text-2xl font-bold text-primary">
-                        ₺{product.variants[0]?.price}
+                        ₺{getPrimaryVariant(product).price}
                       </span>
                     )}
                   </div>
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${product.variants[0]?.stock > 20
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${getPrimaryVariant(product).stock > 20
                     ? "bg-green-50 text-green-700"
-                    : product.variants[0]?.stock > 10
+                    : getPrimaryVariant(product).stock > 10
                       ? "bg-yellow-50 text-yellow-700"
                       : "bg-red-50 text-red-700"
                     }`}>
-                    {product.variants[0]?.stock > 20 ? (
+                    {getPrimaryVariant(product).stock > 20 ? (
                       <CheckCircle className="w-4 h-4" />
-                    ) : product.variants[0]?.stock > 10 ? (
+                    ) : getPrimaryVariant(product).stock > 10 ? (
                       <AlertTriangle className="w-4 h-4" />
                     ) : (
                       <AlertTriangle className="w-4 h-4" />
                     )}
-                    {product.variants[0]?.stock}
+                    {getPrimaryVariant(product).stock}
                   </div>
                 </div>
 
@@ -561,50 +626,49 @@ export default function ProductsPage() {
                         )}
                         <div>
                           <div className="font-bold text-gray-900 mb-1">{product.name}</div>
-                          <div className="text-xs text-gray-500">{product.variants[0]?.name}</div>
+                          <div className="text-xs text-gray-500">{getPrimaryVariant(product).name}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-4">
-                      <span className={`px-3 py-1.5 text-xs font-semibold rounded-full ${CATEGORIES.find(c => c.value === product.category)?.color || 'bg-gray-100 text-gray-700'
-                        }`}>
-                        {CATEGORIES.find(c => c.value === product.category)?.label || product.category}
+                      <span className={`px-3 py-1.5 text-xs font-semibold rounded-full ${getCategoryColor(product.category)}`}>
+                        {getCategoryLabel(product.category)}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-600 font-mono">
-                      {product.variants[0]?.sku}
+                      {getPrimaryVariant(product).sku}
                     </td>
                     <td className="px-4 py-4">
-                      {product.variants[0]?.originalPrice && product.variants[0].originalPrice > product.variants[0].price ? (
+                      {getPrimaryVariant(product).originalPrice && getPrimaryVariant(product).originalPrice! > getPrimaryVariant(product).price ? (
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-red-600 line-through">
-                            ₺{product.variants[0].originalPrice}
+                            ₺{getPrimaryVariant(product).originalPrice}
                           </span>
                           <span className="text-lg font-bold text-green-600">
-                            ₺{product.variants[0].price}
+                            ₺{getPrimaryVariant(product).price}
                           </span>
                         </div>
                       ) : (
                         <span className="text-lg font-bold text-primary">
-                          ₺{product.variants[0]?.price}
+                          ₺{getPrimaryVariant(product).price}
                         </span>
                       )}
                     </td>
                     <td className="px-4 py-4">
-                      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${product.variants[0]?.stock > 20
+                      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${getPrimaryVariant(product).stock > 20
                         ? "bg-green-50 text-green-700"
-                        : product.variants[0]?.stock > 10
+                        : getPrimaryVariant(product).stock > 10
                           ? "bg-yellow-50 text-yellow-700"
                           : "bg-red-50 text-red-700"
                         }`}>
-                        {product.variants[0]?.stock > 20 ? (
+                        {getPrimaryVariant(product).stock > 20 ? (
                           <CheckCircle className="w-4 h-4" />
-                        ) : product.variants[0]?.stock > 10 ? (
+                        ) : getPrimaryVariant(product).stock > 10 ? (
                           <AlertTriangle className="w-4 h-4" />
                         ) : (
                           <AlertTriangle className="w-4 h-4" />
                         )}
-                        {product.variants[0]?.stock}
+                        {getPrimaryVariant(product).stock}
                       </div>
                     </td>
                     <td className="px-4 py-4">
@@ -615,7 +679,7 @@ export default function ProductsPage() {
                             Öne Çıkan
                           </div>
                         )}
-                        {product.new && (
+                        {product.isNew && (
                           <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
                             <CheckCircle className="w-3 h-3" />
                             Yeni
