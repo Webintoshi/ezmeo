@@ -57,5 +57,11 @@
             "destination": "/odeme",
             "permanent": true
         }
+    ],
+    "crons": [
+        {
+            "path": "/api/admin/marketplace-integrations/sync/run",
+            "schedule": "* * * * *"
+        }
     ]
 }

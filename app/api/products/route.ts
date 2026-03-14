@@ -5,6 +5,7 @@ import {
     syncProductTagSuggestions,
     validateAndNormalizeProductTags,
 } from "@/lib/product-tags";
+import { enqueueProductListingSync } from "@/lib/db/marketplace-sync";
 
 function toNullableString(value: unknown): string | null {
     if (typeof value !== "string") {
@@ -21,6 +22,10 @@ function getErrorMessage(error: unknown): string {
 
 function logTagSuggestionSyncError(error: unknown, context: string) {
     console.error(`Product tag suggestion sync failed (${context}):`, error);
+}
+
+function logMarketplaceQueueError(error: unknown, context: string) {
+    console.error(`Marketplace queue sync failed (${context}):`, error);
 }
 
 // GET /api/products - Get all products or filter by query params
@@ -391,6 +396,12 @@ export async function POST(request: NextRequest) {
             } catch (error) {
                 logTagSuggestionSyncError(error, "create");
             }
+        }
+
+        try {
+            await enqueueProductListingSync(product.id);
+        } catch (error) {
+            logMarketplaceQueueError(error, "create");
         }
 
         return NextResponse.json({ success: true, product: fullProduct });
@@ -775,6 +786,12 @@ export async function PUT(request: NextRequest) {
             } catch (error) {
                 logTagSuggestionSyncError(error, "update");
             }
+        }
+
+        try {
+            await enqueueProductListingSync(id);
+        } catch (error) {
+            logMarketplaceQueueError(error, "update");
         }
 
         return NextResponse.json({ success: true, product: fullProduct });

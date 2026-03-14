@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
+import { enqueueOrderStatusSync } from "@/lib/db/marketplace-sync";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -26,7 +27,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     // Update order shipping info
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (carrier !== undefined) updateData.shipping_carrier = carrier;
     if (trackingNumber !== undefined) updateData.tracking_number = trackingNumber;
 
@@ -75,6 +76,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     // TODO: Send customer notification if requested
     if (notifyCustomer) {
       // Send SMS with tracking info
+    }
+
+    try {
+      await enqueueOrderStatusSync(id);
+    } catch (marketplaceError) {
+      console.error("Marketplace queue error (shipping update):", marketplaceError);
     }
 
     return NextResponse.json({ order });

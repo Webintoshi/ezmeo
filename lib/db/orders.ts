@@ -2,6 +2,7 @@ import { createServerClient } from "@/lib/supabase";
 import { getOrCreateCustomer } from "./customers";
 import { incrementCouponUsage } from "./coupons";
 import { enqueueAndProcessInvoiceForOrder } from "./accounting";
+import { enqueueInventorySyncByVariantIds, enqueueOrderStatusSync } from "./marketplace-sync";
 import { CartCustomizationPayload, OrderItemCustomization } from "@/types/product-customization";
 import { normalizeStoredCustomization } from "@/lib/customization/normalize";
 
@@ -108,6 +109,7 @@ export async function createOrder(orderData: {
     saveAddress?: boolean;
 }) {
     const serverClient = createServerClient();
+    const touchedVariantIds: string[] = [];
 
     // Calculate totals
     const subtotal = orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -284,6 +286,8 @@ export async function createOrder(orderData: {
                 .eq("id", item.variantId);
         }
 
+        touchedVariantIds.push(item.variantId);
+
         // Update product sales count
         const { data: product } = await serverClient
             .from("products")
@@ -305,6 +309,12 @@ export async function createOrder(orderData: {
         } catch (couponError) {
             console.error("Failed to increment coupon usage:", couponError);
         }
+    }
+
+    try {
+        await enqueueInventorySyncByVariantIds(touchedVariantIds);
+    } catch (marketplaceError) {
+        console.error("Marketplace inventory queue error (createOrder):", marketplaceError);
     }
 
     return { ...order, items: orderItems };
@@ -442,6 +452,7 @@ export async function getOrderByNumber(orderNumber: string) {
  */
 export async function updateOrderStatus(id: string, status: string) {
     const serverClient = createServerClient();
+    const touchedVariantIds: string[] = [];
 
     // Get current order status and items before updating
     await serverClient
@@ -482,6 +493,8 @@ export async function updateOrderStatus(id: string, status: string) {
                         .update({ stock: newStock })
                         .eq("id", item.variant_id);
                 }
+
+                touchedVariantIds.push(item.variant_id);
             }
 
             // Reduce sales count
@@ -511,6 +524,15 @@ export async function updateOrderStatus(id: string, status: string) {
         }
     }
 
+    try {
+        if (touchedVariantIds.length > 0) {
+            await enqueueInventorySyncByVariantIds(touchedVariantIds);
+        }
+        await enqueueOrderStatusSync(id);
+    } catch (marketplaceError) {
+        console.error("Marketplace queue error (updateOrderStatus):", marketplaceError);
+    }
+
     return data;
 }
 
@@ -535,6 +557,12 @@ export async function updatePaymentStatus(id: string, paymentStatus: string) {
         } catch (accountingError) {
             console.error("Accounting queue error (updatePaymentStatus):", accountingError);
         }
+    }
+
+    try {
+        await enqueueOrderStatusSync(id);
+    } catch (marketplaceError) {
+        console.error("Marketplace queue error (updatePaymentStatus):", marketplaceError);
     }
 
     return data;

@@ -1,199 +1,240 @@
-export type MarketplaceType =
-  | "hepsiburada"
-  | "trendyol"
-  | "n11"
-  | "amazon"
-  | "etsy"
-  | "amazon-usa"
-  | "ebay";
+export type MarketplaceProvider = "trendyol" | "hepsiburada" | "n11" | "amazon_tr";
 
-export type MarketplaceStatus = "connected" | "disconnected" | "error" | "syncing";
+export type MarketplaceConnectionStatus = "disconnected" | "active" | "error";
 
-export type SyncStatus = "idle" | "syncing" | "completed" | "failed";
+export type MarketplaceSyncStatus =
+  | "idle"
+  | "queued"
+  | "syncing"
+  | "synced"
+  | "failed"
+  | "manual_action_required";
 
-export type SyncType = "products" | "orders" | "inventory" | "all";
+export type MarketplaceListingStatus = "pending" | "active" | "inactive" | "error";
 
-export interface MarketplaceCredentials {
-  apiKey?: string;
-  apiSecret?: string;
-  sellerId?: string;
-  marketplaceId?: string;
-  storeUrl?: string;
-  username?: string;
-  password?: string;
-}
+export type MarketplaceQueueDirection = "outbound" | "inbound" | "system";
 
-export interface MarketplaceConfig {
-  id: string;
-  type: MarketplaceType;
-  name: string;
-  logo: string;
-  color: string;
-  status: MarketplaceStatus;
-  credentials: MarketplaceCredentials;
-  connectedAt?: Date;
-  lastSyncAt?: Date;
-  syncSettings: {
-    autoSyncProducts: boolean;
-    autoSyncOrders: boolean;
-    autoSyncInventory: boolean;
-    syncInterval: number; // minutes
-  };
-  stats: {
-    totalProducts: number;
-    syncedProducts: number;
-    totalOrders: number;
-    syncedOrders: number;
-    lastError?: string;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type MarketplaceQueueEntityType = "product" | "variant" | "order" | "provider" | "webhook";
 
-export interface MarketplaceProduct {
-  id: string;
-  marketplaceId: string;
-  marketplaceProductId: string;
-  productId: string;
-  status: "active" | "inactive" | "error";
-  syncStatus: "synced" | "pending" | "failed";
-  lastSyncAt?: Date;
-  price?: number;
-  stock?: number;
-}
+export type MarketplaceQueueOperation =
+  | "upsert_listing"
+  | "update_inventory"
+  | "pull_orders"
+  | "update_order_status"
+  | "acknowledge_order"
+  | "reconcile";
 
-export interface MarketplaceOrder {
-  id: string;
-  marketplaceId: string;
-  marketplaceOrderId: string;
-  internalOrderId?: string;
-  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
-  syncStatus: "synced" | "pending" | "failed";
-  total: number;
-  items: number;
-  customer: {
-    name: string;
-    email?: string;
-    phone?: string;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface SyncResult {
-  marketplaceId: string;
-  type: SyncType;
-  success: boolean;
-  total: number;
-  synced: number;
-  failed: number;
-  errors: string[];
-  startedAt: Date;
-  completedAt?: Date;
-}
-
-export const MARKETPLACES: {
-  type: MarketplaceType;
-  name: string;
-  logo: string;
-  color: string;
-  description: string;
-  website: string;
-  requires: string[];
-}[] = [
-  {
-    type: "hepsiburada",
-    name: "Hepsiburada",
-    logo: "🛒",
-    color: "from-orange-500 to-red-600",
-    description: "Türkiye'nin en büyük e-ticaret platformu",
-    website: "https://hepsiburada.com",
-    requires: ["apiKey", "merchantId"],
-  },
-  {
-    type: "trendyol",
-    name: "Trendyol",
-    logo: "🛍️",
-    color: "from-blue-500 to-indigo-600",
-    description: "Moda ve yaşam tarzı kategorisi",
-    website: "https://trendyol.com",
-    requires: ["apiKey", "sellerId"],
-  },
-  {
-    type: "n11",
-    name: "N11",
-    logo: "🛋️",
-    color: "from-purple-500 to-pink-600",
-    description: "Türkiye'nin önde gelen pazaryeri",
-    website: "https://n11.com",
-    requires: ["apiKey", "appKey", "appSecret"],
-  },
-  {
-    type: "amazon",
-    name: "Amazon Türkiye",
-    logo: "📦",
-    color: "from-yellow-500 to-orange-600",
-    description: "Global e-ticaret devi - Türkiye",
-    website: "https://amazon.com.tr",
-    requires: ["accessKey", "secretKey", "sellerId"],
-  },
-  {
-    type: "amazon-usa",
-    name: "Amazon USA",
-    logo: "🌎",
-    color: "from-gray-700 to-black",
-    description: "Global e-ticaret devi - ABD",
-    website: "https://amazon.com",
-    requires: ["accessKey", "secretKey", "sellerId"],
-  },
-  {
-    type: "etsy",
-    name: "Etsy",
-    logo: "🎨",
-    color: "from-orange-600 to-amber-600",
-    description: "El yapımı ürünleri için pazaryeri",
-    website: "https://etsy.com",
-    requires: ["apiKey", "shopId"],
-  },
-  {
-    type: "ebay",
-    name: "eBay",
-    logo: "💎",
-    color: "from-blue-600 to-cyan-600",
-    description: "Global açık artırma ve alışveriş platformu",
-    website: "https://ebay.com",
-    requires: ["appId", "certId", "devId", "token"],
-  },
-];
-
-export const SYNC_TYPES: {
-  value: SyncType;
+export interface MarketplaceFieldDefinition {
+  key: string;
   label: string;
+  required?: boolean;
+  type?: "text" | "password" | "url" | "number";
+  placeholder?: string;
+  description?: string;
+}
+
+export interface MarketplaceProviderDefinition {
+  id: MarketplaceProvider;
+  name: string;
   description: string;
-  icon: string;
-}[] = [
-  {
-    value: "products",
-    label: "Ürün Senkronizasyonu",
-    description: "Ürünleri pazaryerine gönder",
-    icon: "Package",
-  },
-  {
-    value: "orders",
-    label: "Sipariş Senkronizasyonu",
-    description: "Siparişleri sisteme çek",
-    icon: "ShoppingBag",
-  },
-  {
-    value: "inventory",
-    label: "Stok Senkronizasyonu",
-    description: "Stok durumlarını güncelle",
-    icon: "Warehouse",
-  },
-  {
-    value: "all",
-    label: "Tam Senkronizasyon",
-    description: "Tüm verileri senkronize et",
-    icon: "RefreshCw",
-  },
-];
+  websiteUrl: string;
+  docsUrl?: string;
+  logo: string;
+  color: string;
+  supportsWebhook: boolean;
+  credentialFields: MarketplaceFieldDefinition[];
+  mappingFields: MarketplaceFieldDefinition[];
+  capabilities: string[];
+}
+
+export interface MarketplaceConnectionInput {
+  credentials: Record<string, string>;
+  settings?: Record<string, unknown>;
+  fieldMappings?: Record<string, string>;
+}
+
+export interface MarketplaceProviderConnection {
+  id: string;
+  provider: MarketplaceProvider;
+  status: MarketplaceConnectionStatus;
+  settings: Record<string, unknown>;
+  fieldMappings: Record<string, string>;
+  supportsWebhook: boolean;
+  lastHealthcheckAt: string | null;
+  lastHealthcheckStatus: "ok" | "failed" | null;
+  lastHealthcheckMessage: string | null;
+  lastSyncAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketplaceQueueStats {
+  queued: number;
+  failed: number;
+  manualActionRequired: number;
+}
+
+export interface MarketplaceListingStats {
+  total: number;
+  active: number;
+  error: number;
+}
+
+export interface MarketplaceIntegrationView {
+  provider: MarketplaceProviderDefinition;
+  connection: MarketplaceProviderConnection | null;
+  queueStats: MarketplaceQueueStats;
+  listingStats: MarketplaceListingStats;
+}
+
+export interface MarketplaceListingView {
+  provider: MarketplaceProvider;
+  productId: string;
+  productName: string;
+  productSlug: string;
+  productStatus: string | null;
+  variantId: string;
+  variantName: string;
+  sku: string | null;
+  barcode: string | null;
+  price: number;
+  stock: number;
+  externalListingId: string | null;
+  externalSku: string | null;
+  status: MarketplaceListingStatus;
+  lastSyncedPrice: number | null;
+  lastSyncedStock: number | null;
+  lastError: string | null;
+  issue: string | null;
+  updatedAt: string | null;
+}
+
+export interface MarketplaceSyncLogView {
+  id: string;
+  provider: MarketplaceProvider;
+  direction: MarketplaceQueueDirection;
+  entityType: string;
+  entityId: string | null;
+  status: string;
+  errorCode: string | null;
+  errorMessage: string | null;
+  payload: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface MarketplaceListingSyncItem {
+  productId: string;
+  productName: string;
+  productSlug: string;
+  productDescription: string | null;
+  variantId: string;
+  variantName: string;
+  sku: string | null;
+  barcode: string | null;
+  price: number;
+  stock: number;
+  images: string[];
+  brand: string | null;
+  isActive: boolean;
+}
+
+export interface MarketplaceListingUpsertResultItem {
+  variantId: string;
+  externalListingId: string;
+  externalSku: string | null;
+  status: MarketplaceListingStatus;
+  raw?: Record<string, unknown>;
+}
+
+export interface MarketplaceInventorySyncItem {
+  variantId: string;
+  sku: string | null;
+  externalListingId: string | null;
+  stock: number;
+  price: number;
+}
+
+export interface MarketplaceInventorySyncResultItem {
+  variantId: string;
+  externalListingId: string | null;
+  raw?: Record<string, unknown>;
+}
+
+export interface MarketplacePulledOrderItem {
+  externalListingId?: string | null;
+  sku?: string | null;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice?: number;
+}
+
+export interface MarketplacePulledOrder {
+  externalOrderId: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  createdAt: string;
+  notes?: string | null;
+  customer: {
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  };
+  shippingAddress: Record<string, unknown>;
+  items: MarketplacePulledOrderItem[];
+  raw: Record<string, unknown>;
+}
+
+export interface MarketplaceProviderAdapterResult {
+  success: boolean;
+  message: string;
+  externalId?: string | null;
+  raw?: Record<string, unknown>;
+}
+
+export interface MarketplaceOrderStatusUpdateInput {
+  externalOrderId: string;
+  status: string;
+  paymentStatus: string;
+  shippingCarrier?: string | null;
+  trackingNumber?: string | null;
+}
+
+export interface MarketplaceProviderAdapter {
+  connect(input: {
+    credentials: Record<string, string>;
+    settings?: Record<string, unknown>;
+  }): Promise<MarketplaceProviderAdapterResult>;
+  testConnection(input: {
+    credentials: Record<string, string>;
+    settings?: Record<string, unknown>;
+  }): Promise<MarketplaceProviderAdapterResult>;
+  upsertListings(input: {
+    credentials: Record<string, string>;
+    listings: MarketplaceListingSyncItem[];
+    existingMappings: Array<{
+      variantId: string;
+      externalListingId: string | null;
+      externalSku: string | null;
+    }>;
+  }): Promise<MarketplaceListingUpsertResultItem[]>;
+  updateInventory(input: {
+    credentials: Record<string, string>;
+    inventory: MarketplaceInventorySyncItem[];
+  }): Promise<MarketplaceInventorySyncResultItem[]>;
+  pullOrders(input: {
+    credentials: Record<string, string>;
+    since?: string;
+  }): Promise<MarketplacePulledOrder[]>;
+  acknowledgeOrder(input: {
+    credentials: Record<string, string>;
+    externalOrderId: string;
+  }): Promise<MarketplaceProviderAdapterResult>;
+  updateOrderStatus(input: {
+    credentials: Record<string, string>;
+    update: MarketplaceOrderStatusUpdateInput;
+  }): Promise<MarketplaceProviderAdapterResult>;
+  normalizeError(error: unknown): string;
+}
