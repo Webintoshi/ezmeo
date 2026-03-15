@@ -9,7 +9,7 @@ import {
   simulateLuckyWheel,
 } from "@/lib/lucky-wheel";
 
-const DEPRECATION_MESSAGE = "Bu endpoint deprecate edildi. /api/admin/discounts/lucky-wheel/* endpointlerini kullanin.";
+const DEPRECATION_MESSAGE = "Bu endpoint deprecate edildi. /api/admin/discounts/lucky-wheel/* endpointlerini kullanın.";
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Islem basarisiz.",
+        error: error instanceof Error ? error.message : "İşlem başarısız.",
         deprecated: true,
         deprecationMessage: DEPRECATION_MESSAGE,
       },
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     if (action === "toggle" && body?.config) {
       const current = await getLuckyWheelAdminConfig(configId);
-      if (!current) throw new Error("Lucky Wheel konfigurasyonu bulunamadi.");
+      if (!current) throw new Error("Lucky Wheel konfigürasyonu bulunamadı.");
       const config = await saveLuckyWheelConfig({
         ...current,
         is_active: Boolean(body.config.is_active),
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: "Gecersiz action.",
+        error: "Geçersiz action.",
         deprecated: true,
         deprecationMessage: DEPRECATION_MESSAGE,
       },
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Islem basarisiz.",
+        error: error instanceof Error ? error.message : "İşlem başarısız.",
         deprecated: true,
         deprecationMessage: DEPRECATION_MESSAGE,
       },
@@ -126,7 +126,7 @@ export async function DELETE() {
       success: false,
       deprecated: true,
       deprecationMessage: DEPRECATION_MESSAGE,
-      error: "Silme islemi deprecate endpointte desteklenmiyor.",
+      error: "Silme işlemi deprecate endpointte desteklenmiyor.",
     },
     { status: 410 },
   );

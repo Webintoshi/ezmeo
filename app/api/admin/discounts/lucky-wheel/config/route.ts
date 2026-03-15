@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Sans carki konfigurasyonu alinamadi.",
+        error: error instanceof Error ? error.message : "Şans çarkı konfigürasyonu alınamadı.",
       },
       { status: 500 },
     );
@@ -33,7 +33,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Gecersiz sans carki konfigurasyon verisi.",
+          error: "Geçersiz şans çarkı konfigürasyon verisi.",
           details: parsed.error.flatten(),
         },
         { status: 422 },
@@ -47,7 +47,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Sans carki konfigurasyonu kaydedilemedi.",
+        error: error instanceof Error ? error.message : "Şans çarkı konfigürasyonu kaydedilemedi.",
       },
       { status: 500 },
     );

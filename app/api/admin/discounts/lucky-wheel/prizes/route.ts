@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Sans carki odulleri alinamadi.",
+        error: error instanceof Error ? error.message : "Şans çarkı ödülleri alınamadı.",
       },
       { status: 500 },
     );
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Gecersiz sans carki odul verisi.",
+          error: "Geçersiz şans çarkı ödül verisi.",
           details: createParsed.error.flatten(),
         },
         { status: 422 },
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Sans carki odul kaydi basarisiz.",
+        error: error instanceof Error ? error.message : "Şans çarkı ödül kaydı başarısız.",
       },
       { status: 500 },
     );
@@ -85,7 +85,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Gecersiz sans carki odul guncelleme verisi.",
+          error: "Geçersiz şans çarkı ödül güncelleme verisi.",
           details: parsed.error.flatten(),
         },
         { status: 422 },
@@ -100,7 +100,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Sans carki odulu guncellenemedi.",
+        error: error instanceof Error ? error.message : "Şans çarkı ödülü güncellenemedi.",
       },
       { status: 500 },
     );
@@ -115,7 +115,7 @@ export async function DELETE(request: NextRequest) {
     const configId = request.nextUrl.searchParams.get("configId") || DEFAULT_LUCKY_WHEEL_CONFIG_ID;
     const prizeId = request.nextUrl.searchParams.get("id");
     if (!prizeId) {
-      return NextResponse.json({ success: false, error: "Silinecek odul id'si gerekli." }, { status: 422 });
+      return NextResponse.json({ success: false, error: "Silinecek ödül id'si gerekli." }, { status: 422 });
     }
 
     await deleteLuckyWheelPrize(configId, prizeId);
@@ -125,7 +125,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Sans carki odulu silinemedi.",
+        error: error instanceof Error ? error.message : "Şans çarkı ödülü silinemedi.",
       },
       { status: 500 },
     );

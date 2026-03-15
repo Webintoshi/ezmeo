@@ -246,7 +246,7 @@ export default function DiscountsPage() {
             href="/admin/indirimler/sans-carki"
             className="inline-flex items-center gap-2 px-3 py-2 border border-gray-200 bg-white rounded-lg text-sm text-gray-700 hover:bg-gray-50"
           >
-            Sans Carki
+            Şans Çarkı
           </Link>
           <Link
             href="/admin/indirimler/yeni"

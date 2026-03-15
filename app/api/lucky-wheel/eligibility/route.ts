@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       windowMs: 60_000,
     });
     if (!ipRateLimit.allowed) {
-      return NextResponse.json({ success: false, error: "Rate limit asildi." }, { status: 429 });
+      return NextResponse.json({ success: false, error: "Rate limit aşıldı." }, { status: 429 });
     }
 
     const body = await request.json();
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Gecersiz uygunluk kontrol verisi.",
+          error: "Geçersiz uygunluk kontrol verisi.",
           details: parsed.error.flatten(),
         },
         { status: 422 },
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Uygunluk kontrolu basarisiz.",
+        error: error instanceof Error ? error.message : "Uygunluk kontrolü başarısız.",
       },
       { status: 500 },
     );

@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       windowMs: 60_000,
     });
     if (!ipRateLimit.allowed) {
-      return NextResponse.json({ success: false, error: "Rate limit asildi." }, { status: 429 });
+      return NextResponse.json({ success: false, error: "Rate limit aşıldı." }, { status: 429 });
     }
 
     const body = await request.json();
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Gecersiz spin verisi.",
+          error: "Geçersiz spin verisi.",
           details: parsed.error.flatten(),
         },
         { status: 422 },
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Email veya telefon alani zorunludur.",
+          error: "Email veya telefon alanı zorunludur.",
         },
         { status: 422 },
       );
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Cihaz icin hiz limiti asildi. Lutfen biraz sonra tekrar deneyin.",
+          error: "Cihaz için hız limiti aşıldı. Lütfen biraz sonra tekrar deneyin.",
         },
         { status: 429 },
       );
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Spin islemi basarisiz.",
+        error: error instanceof Error ? error.message : "Spin işlemi başarısız.",
       },
       { status: 500 },
     );

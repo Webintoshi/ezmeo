@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Aktif sans carki bulunamadi.",
+          error: "Aktif şans çarkı bulunamadı.",
         },
         { status: 404 },
       );
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Sans carki verisi alinamadi.",
+        error: error instanceof Error ? error.message : "Şans çarkı verisi alınamadı.",
       },
       { status: 500 },
     );
@@ -59,7 +59,7 @@ export async function POST() {
   return NextResponse.json(
     {
       success: false,
-      error: "Bu endpoint artik action tabanli POST desteklemiyor. /api/lucky-wheel/spins veya /api/lucky-wheel/eligibility kullanin.",
+      error: "Bu endpoint artık action tabanlı POST desteklemiyor. /api/lucky-wheel/spins veya /api/lucky-wheel/eligibility kullanın.",
     },
     { status: 410 },
   );

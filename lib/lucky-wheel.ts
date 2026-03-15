@@ -200,12 +200,12 @@ async function ensurePublishProbability(configId: string, probabilityMode: "perc
   const prizes = await listLuckyWheelPrizes(configId);
   const activePrizes = prizes.filter((item) => item.is_active);
   if (activePrizes.length === 0) {
-    throw new Error("Aktif kampanya icin en az bir aktif odul gerekli.");
+    throw new Error("Aktif kampanya için en az bir aktif ödül gerekli.");
   }
 
   const probabilityTotal = activePrizes.reduce((sum, item) => sum + toNumber(item.probability_value), 0);
   if (Math.abs(probabilityTotal - 100) > 0.001) {
-    throw new Error("Yuzde modunda aktif odullerin olasilik toplami 100 olmalidir.");
+    throw new Error("Yüzde modunda aktif ödüllerin olasılık toplamı 100 olmalıdır.");
   }
 }
 
@@ -216,7 +216,7 @@ export async function saveLuckyWheelConfig(input: LuckyWheelConfigInput): Promis
   const startAt = parseDateOnlyToIso(input.start_date);
   const endAt = parseDateOnlyToIso(input.end_date, true);
   if (startAt && endAt && new Date(startAt) >= new Date(endAt)) {
-    throw new Error("Bitis tarihi baslangic tarihinden sonra olmali.");
+    throw new Error("Bitiş tarihi başlangıç tarihinden sonra olmalı.");
   }
 
   await ensurePublishProbability(configId, input.probability_mode, input.is_active);
@@ -253,7 +253,7 @@ export async function replaceLuckyWheelPrizes(configId: string, prizes: LuckyWhe
   const normalized = prizes.map((item, index) => normalizePrizeInput(item, index, configId));
   for (const prize of normalized) {
     if (!prize.name || prize.name.length < 2) {
-      throw new Error("Odul adi en az 2 karakter olmali.");
+      throw new Error("Ödül adı en az 2 karakter olmalı.");
     }
   }
 
@@ -276,7 +276,7 @@ export async function createLuckyWheelPrize(configId: string, input: LuckyWheelP
 }
 
 export async function updateLuckyWheelPrize(configId: string, input: LuckyWheelPrizeInput): Promise<LuckyWheelPrize> {
-  if (!input.id) throw new Error("Guncellenecek odul id'si gerekli.");
+  if (!input.id) throw new Error("Güncellenecek ödül id'si gerekli.");
   const supabase = createServerClient();
   const normalized = normalizePrizeInput(input, input.display_order || 0, configId);
   const { data, error } = await supabase
@@ -376,14 +376,14 @@ export async function listLuckyWheelSpins(configId: string, limit = 100): Promis
 export async function simulateLuckyWheel(configId: string, spinCount = 1000): Promise<LuckyWheelSimulationResult> {
   const config = await getConfigById(configId);
   if (!config) {
-    throw new Error("Lucky Wheel konfigrasyonu bulunamadi.");
+    throw new Error("Lucky Wheel konfigürasyonu bulunamadı.");
   }
 
   const prizes = (await listLuckyWheelPrizes(configId)).filter(
     (item) => item.is_active && (item.is_unlimited_stock || item.stock_remaining > 0),
   );
   if (prizes.length === 0) {
-    throw new Error("Simulasyon icin aktif odul bulunamadi.");
+    throw new Error("Simülasyon için aktif ödül bulunamadı.");
   }
 
   const counters = new Map<string, number>();
@@ -457,19 +457,19 @@ async function getLatestSpinDate(configId: string, column: "user_email" | "user_
 export async function checkLuckyWheelEligibility(input: LuckyWheelEligibilityRequest): Promise<LuckyWheelEligibilityResult> {
   const config = input.configId ? await getConfigById(input.configId) : await getActiveLuckyWheelConfig();
   if (!config) {
-    return { canSpin: false, reason: "Aktif sans carki bulunamadi.", spinsRemaining: 0 };
+    return { canSpin: false, reason: "Aktif şans çarkı bulunamadı.", spinsRemaining: 0 };
   }
 
   if (!config.is_active) {
-    return { canSpin: false, reason: "Sans carki aktif degil.", spinsRemaining: 0 };
+    return { canSpin: false, reason: "Şans çarkı aktif değil.", spinsRemaining: 0 };
   }
 
   const now = new Date();
   if (config.start_date && new Date(config.start_date) > now) {
-    return { canSpin: false, reason: "Sans carki henuz baslamadi.", spinsRemaining: 0 };
+    return { canSpin: false, reason: "Şans çarkı henüz başlamadı.", spinsRemaining: 0 };
   }
   if (config.end_date && new Date(config.end_date) < now) {
-    return { canSpin: false, reason: "Sans carki sona erdi.", spinsRemaining: 0 };
+    return { canSpin: false, reason: "Şans çarkı sona erdi.", spinsRemaining: 0 };
   }
 
   const supabase = createServerClient();
@@ -494,7 +494,7 @@ export async function checkLuckyWheelEligibility(input: LuckyWheelEligibilityReq
 
   const maxUsed = Math.max(...counts);
   if (maxUsed >= config.max_spins_per_user) {
-    return { canSpin: false, reason: "Spin hakkiniz tukenmis.", spinsRemaining: 0 };
+    return { canSpin: false, reason: "Spin hakkınız tükenmiş.", spinsRemaining: 0 };
   }
 
   if (config.cooldown_hours > 0) {
@@ -534,7 +534,7 @@ export async function spinLuckyWheel(request: LuckyWheelSpinRequest): Promise<Lu
     return {
       success: false,
       canSpin: false,
-      message: "Aktif sans carki bulunamadi.",
+      message: "Aktif şans çarkı bulunamadı.",
       remainingSpins: 0,
       spin: null,
       prize: null,
@@ -566,7 +566,7 @@ export async function spinLuckyWheel(request: LuckyWheelSpinRequest): Promise<Lu
     return {
       success: false,
       canSpin: false,
-      message: "Spin sonucu alinamadi.",
+      message: "Spin sonucu alınamadı.",
       remainingSpins: 0,
       spin: null,
       prize: null,
@@ -597,7 +597,7 @@ export async function spinLuckyWheel(request: LuckyWheelSpinRequest): Promise<Lu
   return {
     success: Boolean(row.success),
     canSpin: Boolean(row.can_spin),
-    message: row.message || "Islem tamamlandi.",
+    message: row.message || "İşlem tamamlandı.",
     remainingSpins: Math.max(0, toNumber(row.remaining_spins, 0)),
     spin,
     prize,

@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Gecersiz simulasyon parametresi.",
+          error: "Geçersiz simülasyon parametresi.",
           details: parsed.error.flatten(),
         },
         { status: 422 },
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Simulasyon calistirilamadi.",
+        error: error instanceof Error ? error.message : "Simülasyon çalıştırılamadı.",
       },
       { status: 500 },
     );

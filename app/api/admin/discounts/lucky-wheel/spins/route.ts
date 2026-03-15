@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Sans carki spin verileri alinamadi.",
+        error: error instanceof Error ? error.message : "Şans çarkı spin verileri alınamadı.",
       },
       { status: 500 },
     );

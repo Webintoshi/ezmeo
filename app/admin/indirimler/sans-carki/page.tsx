@@ -16,7 +16,7 @@ function defaultConfig(): LuckyWheelConfig {
   end.setMonth(end.getMonth() + 12);
   return {
     id: "00000000-0000-0000-0000-000000000001",
-    name: "Sans Carki",
+    name: "Şans Çarkı",
     is_active: false,
     start_date: now.toISOString(),
     end_date: end.toISOString(),
@@ -44,7 +44,7 @@ function toDateInput(value: string | null) {
 function createDefaultPrize(order: number): PrizeDraft {
   return {
     config_id: "00000000-0000-0000-0000-000000000001",
-    name: `Odul ${order}`,
+    name: `Ödül ${order}`,
     description: null,
     prize_type: "coupon",
     probability_value: 0,
@@ -96,13 +96,13 @@ export default function LuckyWheelAdminPage() {
       ]);
 
       if (!configResponse.ok || !configResult.success) {
-        throw new Error(configResult?.error || "Sans carki konfigrasyonu alinamadi.");
+        throw new Error(configResult?.error || "Şans çarkı konfigürasyonu alınamadı.");
       }
       if (!prizesResponse.ok || !prizesResult.success) {
-        throw new Error(prizesResult?.error || "Sans carki odulleri alinamadi.");
+        throw new Error(prizesResult?.error || "Şans çarkı ödülleri alınamadı.");
       }
       if (!spinsResponse.ok || !spinsResult.success) {
-        throw new Error(spinsResult?.error || "Sans carki spin verileri alinamadi.");
+        throw new Error(spinsResult?.error || "Şans çarkı spin verileri alınamadı.");
       }
 
       if (configResult.config) {
@@ -112,7 +112,7 @@ export default function LuckyWheelAdminPage() {
       setSpins((spinsResult.spins || []) as LuckyWheelSpin[]);
       setStats((spinsResult.stats || null) as LuckyWheelStats | null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Veriler yuklenemedi.");
+      toast.error(error instanceof Error ? error.message : "Veriler yüklenemedi.");
     } finally {
       setLoading(false);
     }
@@ -136,7 +136,7 @@ export default function LuckyWheelAdminPage() {
     });
     const result = await response.json();
     if (!response.ok || !result.success) {
-      throw new Error(result?.error || "Konfigurasyon kaydedilemedi.");
+      throw new Error(result?.error || "Konfigürasyon kaydedilemedi.");
     }
     setConfig(result.config as LuckyWheelConfig);
   };
@@ -163,7 +163,7 @@ export default function LuckyWheelAdminPage() {
     });
     const result = await response.json();
     if (!response.ok || !result.success) {
-      throw new Error(result?.error || "Oduller kaydedilemedi.");
+      throw new Error(result?.error || "Ödüller kaydedilemedi.");
     }
     setPrizes((result.prizes || []) as PrizeDraft[]);
   };
@@ -174,9 +174,9 @@ export default function LuckyWheelAdminPage() {
       await handleSavePrizes();
       await handleSaveConfig();
       await loadData();
-      toast.success("Sans carki ayarlari kaydedildi.");
+      toast.success("Şans çarkı ayarları kaydedildi.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Kayit islemi basarisiz.");
+      toast.error(error instanceof Error ? error.message : "Kayıt işlemi başarısız.");
     } finally {
       setSaving(false);
     }
@@ -193,18 +193,18 @@ export default function LuckyWheelAdminPage() {
       });
       const result = await response.json();
       if (!response.ok || !result.success) {
-        throw new Error(result?.error || "Simulasyon calistirilamadi.");
+        throw new Error(result?.error || "Simülasyon çalıştırılamadı.");
       }
 
       const simulation = result.simulation;
       const winners = (simulation.prizeResults || [])
-        .filter((item: { prizeName: string }) => !item.prizeName.toLowerCase().includes("sansini"))
+        .filter((item: { prizeName: string }) => !item.prizeName.toLowerCase().includes("şansını"))
         .reduce((sum: number, item: { won: number }) => sum + Number(item.won || 0), 0);
-      const summary = `1000 spin simulasyonu tamamlandi. Kazanan spin: ${winners}, kazanma orani: ${Number(simulation.winnerRate || 0).toFixed(2)}%`;
+      const summary = `1000 spin simülasyonu tamamlandı. Kazanan spin: ${winners}, kazanma oranı: ${Number(simulation.winnerRate || 0).toFixed(2)}%`;
       setSimulationSummary(summary);
-      toast.success("Simulasyon tamamlandi.");
+      toast.success("Simülasyon tamamlandı.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Simulasyon hatasi.");
+      toast.error(error instanceof Error ? error.message : "Simülasyon hatası.");
     } finally {
       setSimulating(false);
     }
@@ -238,8 +238,8 @@ export default function LuckyWheelAdminPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Sans Carki Yonetimi</h1>
-          <p className="mt-1 text-sm text-gray-500">Indirimler kapsaminda tekil kupon ureten sans carki paneli.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Şans Çarkı Yönetimi</h1>
+          <p className="mt-1 text-sm text-gray-500">İndirimler kapsamında tekil kupon üreten şans çarkı paneli.</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -248,7 +248,7 @@ export default function LuckyWheelAdminPage() {
             className="inline-flex items-center gap-2 rounded-xl border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50"
           >
             <Play className="h-4 w-4" />
-            {simulating ? "Simule ediliyor..." : "1000 Spin Simule Et"}
+            {simulating ? "Simüle ediliyor..." : "1000 Spin Simüle Et"}
           </button>
           <button
             onClick={handleSaveAll}
@@ -263,8 +263,8 @@ export default function LuckyWheelAdminPage() {
 
       <div className="flex gap-2 border-b border-gray-200">
         {[
-          { id: "config", title: "Yapilandirma", icon: Settings },
-          { id: "prizes", title: "Oduller", icon: Gift },
+          { id: "config", title: "Yapılandırma", icon: Settings },
+          { id: "prizes", title: "Ödüller", icon: Gift },
           { id: "spins", title: "Spinler", icon: Activity },
         ].map((tab) => (
           <button
@@ -292,30 +292,30 @@ export default function LuckyWheelAdminPage() {
               <input type="checkbox" checked={config.is_active} onChange={(event) => setConfig((prev) => ({ ...prev, is_active: event.target.checked }))} />
             </label>
             <label className="block text-sm">
-              <span className="mb-1 block text-gray-600">Kampanya Adi</span>
+              <span className="mb-1 block text-gray-600">Kampanya Adı</span>
               <input className="w-full rounded-xl border border-gray-200 px-3 py-2" value={config.name} onChange={(event) => setConfig((prev) => ({ ...prev, name: event.target.value }))} />
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="block text-sm">
-                <span className="mb-1 block text-gray-600">Baslangic</span>
+                <span className="mb-1 block text-gray-600">Başlangıç</span>
                 <input type="date" className="w-full rounded-xl border border-gray-200 px-3 py-2" value={toDateInput(config.start_date)} onChange={(event) => setConfig((prev) => ({ ...prev, start_date: event.target.value }))} />
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block text-gray-600">Bitis</span>
+                <span className="mb-1 block text-gray-600">Bitiş</span>
                 <input type="date" className="w-full rounded-xl border border-gray-200 px-3 py-2" value={toDateInput(config.end_date)} onChange={(event) => setConfig((prev) => ({ ...prev, end_date: event.target.value }))} />
               </label>
             </div>
           </section>
 
           <section className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5">
-            <h2 className="text-sm font-semibold text-gray-900">Kurallar ve Gorunum</h2>
+            <h2 className="text-sm font-semibold text-gray-900">Kurallar ve Görünüm</h2>
             <div className="grid grid-cols-3 gap-3">
               <label className="block text-sm">
                 <span className="mb-1 block text-gray-600">Toplam Spin</span>
                 <input type="number" className="w-full rounded-xl border border-gray-200 px-3 py-2" value={config.max_total_spins} onChange={(event) => setConfig((prev) => ({ ...prev, max_total_spins: Number(event.target.value || 0) }))} />
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block text-gray-600">Kisi Basi</span>
+                <span className="mb-1 block text-gray-600">Kişi Başı</span>
                 <input type="number" className="w-full rounded-xl border border-gray-200 px-3 py-2" value={config.max_spins_per_user} onChange={(event) => setConfig((prev) => ({ ...prev, max_spins_per_user: Number(event.target.value || 0) }))} />
               </label>
               <label className="block text-sm">
@@ -325,14 +325,14 @@ export default function LuckyWheelAdminPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <label className="block text-sm">
-                <span className="mb-1 block text-gray-600">Olasilik Modu</span>
+                <span className="mb-1 block text-gray-600">Olasılık Modu</span>
                 <select className="w-full rounded-xl border border-gray-200 px-3 py-2" value={config.probability_mode} onChange={(event) => setConfig((prev) => ({ ...prev, probability_mode: event.target.value as LuckyWheelConfig["probability_mode"] }))}>
-                  <option value="percentage">Yuzde</option>
-                  <option value="weight">Agirlik</option>
+                  <option value="percentage">Yüzde</option>
+                  <option value="weight">Ağırlık</option>
                 </select>
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block text-gray-600">Segment Sayisi</span>
+                <span className="mb-1 block text-gray-600">Segment Sayısı</span>
                 <input type="number" min={2} max={24} className="w-full rounded-xl border border-gray-200 px-3 py-2" value={config.wheel_segments} onChange={(event) => setConfig((prev) => ({ ...prev, wheel_segments: Number(event.target.value || 2) }))} />
               </label>
             </div>
@@ -342,7 +342,7 @@ export default function LuckyWheelAdminPage() {
                 <input className="w-full rounded-xl border border-gray-200 px-3 py-2" value={config.primary_color} onChange={(event) => setConfig((prev) => ({ ...prev, primary_color: event.target.value }))} />
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block text-gray-600">Ikinci Renk</span>
+                <span className="mb-1 block text-gray-600">İkinci Renk</span>
                 <input className="w-full rounded-xl border border-gray-200 px-3 py-2" value={config.secondary_color} onChange={(event) => setConfig((prev) => ({ ...prev, secondary_color: event.target.value }))} />
               </label>
             </div>
@@ -354,23 +354,23 @@ export default function LuckyWheelAdminPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600">
-              Aktif odul olasilik toplami: <strong>{probabilityTotal.toFixed(2)}%</strong>
-              {config.probability_mode === "percentage" && Math.abs(probabilityTotal - 100) > 0.001 && <span className="ml-2 text-red-600">Yuzde modunda 100 olmalidir.</span>}
+              Aktif ödül olasılık toplamı: <strong>{probabilityTotal.toFixed(2)}%</strong>
+              {config.probability_mode === "percentage" && Math.abs(probabilityTotal - 100) > 0.001 && <span className="ml-2 text-red-600">Yüzde modunda 100 olmalıdır.</span>}
             </p>
             <button onClick={addPrize} className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100">
-              Odul Ekle
+              Ödül Ekle
             </button>
           </div>
           <div className="space-y-4">
             {prizes.map((prize, index) => (
               <article key={prize.id || `draft-${index}`} className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
                 <div className="grid gap-3 md:grid-cols-6">
-                  <input className="rounded-xl border border-gray-200 px-3 py-2 md:col-span-2" value={prize.name} onChange={(event) => updatePrize(index, "name", event.target.value)} placeholder="Odul adi" />
+                  <input className="rounded-xl border border-gray-200 px-3 py-2 md:col-span-2" value={prize.name} onChange={(event) => updatePrize(index, "name", event.target.value)} placeholder="Ödül adı" />
                   <select className="rounded-xl border border-gray-200 px-3 py-2" value={prize.prize_type} onChange={(event) => updatePrize(index, "prize_type", event.target.value as PrizeDraft["prize_type"])}>
                     <option value="coupon">Kupon</option>
-                    <option value="none">Odul Yok</option>
+                    <option value="none">Ödül Yok</option>
                   </select>
-                  <input type="number" step="0.01" className="rounded-xl border border-gray-200 px-3 py-2" value={prize.probability_value} onChange={(event) => updatePrize(index, "probability_value", Number(event.target.value || 0))} placeholder="Olasilik" />
+                  <input type="number" step="0.01" className="rounded-xl border border-gray-200 px-3 py-2" value={prize.probability_value} onChange={(event) => updatePrize(index, "probability_value", Number(event.target.value || 0))} placeholder="Olasılık" />
                   <input type="number" className="rounded-xl border border-gray-200 px-3 py-2" value={prize.stock_total} onChange={(event) => updatePrize(index, "stock_total", Number(event.target.value || 0))} placeholder="Toplam stok" />
                   <label className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-sm">
                     <span>Aktif</span>
@@ -382,12 +382,12 @@ export default function LuckyWheelAdminPage() {
                   <div className="grid gap-3 md:grid-cols-5">
                     <input className="rounded-xl border border-gray-200 px-3 py-2" value={prize.coupon_prefix || ""} onChange={(event) => updatePrize(index, "coupon_prefix", event.target.value)} placeholder="Kupon prefix" />
                     <select className="rounded-xl border border-gray-200 px-3 py-2" value={prize.coupon_type || "percentage"} onChange={(event) => updatePrize(index, "coupon_type", event.target.value as PrizeDraft["coupon_type"])}>
-                      <option value="percentage">Yuzde</option>
+                      <option value="percentage">Yüzde</option>
                       <option value="fixed">Sabit</option>
                     </select>
-                    <input type="number" step="0.01" className="rounded-xl border border-gray-200 px-3 py-2" value={prize.coupon_value || 0} onChange={(event) => updatePrize(index, "coupon_value", Number(event.target.value || 0))} placeholder="Kupon degeri" />
-                    <input type="number" step="0.01" className="rounded-xl border border-gray-200 px-3 py-2" value={prize.coupon_min_order || 0} onChange={(event) => updatePrize(index, "coupon_min_order", Number(event.target.value || 0))} placeholder="Min siparis" />
-                    <input type="number" className="rounded-xl border border-gray-200 px-3 py-2" value={prize.coupon_validity_hours || 168} onChange={(event) => updatePrize(index, "coupon_validity_hours", Number(event.target.value || 168))} placeholder="Gecerlilik saati" />
+                    <input type="number" step="0.01" className="rounded-xl border border-gray-200 px-3 py-2" value={prize.coupon_value || 0} onChange={(event) => updatePrize(index, "coupon_value", Number(event.target.value || 0))} placeholder="Kupon değeri" />
+                    <input type="number" step="0.01" className="rounded-xl border border-gray-200 px-3 py-2" value={prize.coupon_min_order || 0} onChange={(event) => updatePrize(index, "coupon_min_order", Number(event.target.value || 0))} placeholder="Min sipariş" />
+                    <input type="number" className="rounded-xl border border-gray-200 px-3 py-2" value={prize.coupon_validity_hours || 168} onChange={(event) => updatePrize(index, "coupon_validity_hours", Number(event.target.value || 168))} placeholder="Geçerlilik saati" />
                   </div>
                 )}
 
@@ -395,7 +395,7 @@ export default function LuckyWheelAdminPage() {
                   <input className="rounded-xl border border-gray-200 px-3 py-2" value={prize.color_hex} onChange={(event) => updatePrize(index, "color_hex", event.target.value)} placeholder="#FFFFFF" />
                   <input className="rounded-xl border border-gray-200 px-3 py-2" value={prize.icon_emoji || ""} onChange={(event) => updatePrize(index, "icon_emoji", event.target.value)} placeholder="Emoji" />
                   <label className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-sm">
-                    <span>Sinirsiz stok</span>
+                    <span>Sınırsız stok</span>
                     <input type="checkbox" checked={prize.is_unlimited_stock} onChange={(event) => updatePrize(index, "is_unlimited_stock", event.target.checked)} />
                   </label>
                   <button onClick={() => removePrize(index)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-100">
@@ -417,7 +417,7 @@ export default function LuckyWheelAdminPage() {
               <p className="mt-1 text-2xl font-bold text-gray-900">{stats?.totalSpins || 0}</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-white p-4">
-              <p className="text-xs uppercase text-gray-500">Tekil Kullanici</p>
+              <p className="text-xs uppercase text-gray-500">Tekil Kullanıcı</p>
               <p className="mt-1 text-2xl font-bold text-gray-900">{stats?.uniqueUsers || 0}</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-white p-4">
@@ -425,7 +425,7 @@ export default function LuckyWheelAdminPage() {
               <p className="mt-1 text-2xl font-bold text-gray-900">{stats?.winners || 0}</p>
             </div>
             <div className="rounded-2xl border border-gray-200 bg-white p-4">
-              <p className="text-xs uppercase text-gray-500">Kazanma Orani</p>
+              <p className="text-xs uppercase text-gray-500">Kazanma Oranı</p>
               <p className="mt-1 text-2xl font-bold text-gray-900">{(stats?.winRate || 0).toFixed(2)}%</p>
             </div>
           </div>
@@ -435,8 +435,8 @@ export default function LuckyWheelAdminPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left font-medium text-gray-600">Tarih</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Kullanici</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-600">Odul</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Kullanıcı</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Ödül</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-600">Kupon</th>
                 </tr>
               </thead>
@@ -447,7 +447,7 @@ export default function LuckyWheelAdminPage() {
                     <td className="px-4 py-3 text-gray-700">{spin.user_name || spin.user_email || spin.user_phone || "Anonim"}</td>
                     <td className="px-4 py-3">
                       <span className={cn("rounded-full px-2 py-1 text-xs font-medium", spin.is_winner ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600")}>
-                        {spin.prize_name || "Odul yok"}
+                        {spin.prize_name || "Ödül yok"}
                       </span>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-gray-700">{spin.coupon_code || "-"}</td>
@@ -456,7 +456,7 @@ export default function LuckyWheelAdminPage() {
                 {spins.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500">
-                      Henuz spin kaydi bulunmuyor.
+                      Henüz spin kaydı bulunmuyor.
                     </td>
                   </tr>
                 )}
