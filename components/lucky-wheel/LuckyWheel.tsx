@@ -1,18 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface Prize {
   id: string;
   name: string;
-  description?: string;
-  prize_type: string;
+  description?: string | null;
+  prize_type: "coupon" | "none";
   color_hex: string;
-  icon_emoji?: string;
-  image_url?: string;
+  icon_emoji?: string | null;
+  image_url?: string | null;
   display_order: number;
+}
+
+interface LuckyWheelSpinAnimation {
+  spinId: string;
+  prizeId: string;
 }
 
 interface LuckyWheelProps {
@@ -25,31 +29,28 @@ interface LuckyWheelProps {
     secondary_color: string;
   };
   prizes: Prize[];
-  onSpinComplete?: (prize: Prize, couponCode?: string) => void;
+  spinAnimation?: LuckyWheelSpinAnimation | null;
+  onSpinAnimationComplete?: (prize: Prize) => void;
   className?: string;
 }
 
-export default function LuckyWheel({ 
-  config, 
-  prizes, 
-  onSpinComplete,
-  className 
-}: LuckyWheelProps) {
+export default function LuckyWheel({ config, prizes, spinAnimation, onSpinAnimationComplete, className }: LuckyWheelProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isSpinning, setIsSpinning] = useState(false);
+  const rotationRef = useRef(0);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [rotation, setRotation] = useState(0);
-  const [selectedPrize, setSelectedPrize] = useState<Prize | null>(null);
-  const [showResult, setShowResult] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
 
-  const primaryColor = config?.primary_color || '#FF6B35';
-  const secondaryColor = config?.secondary_color || '#FFE66D';
-  const segments = config?.wheel_segments || prizes.length || 8;
+  const sortedPrizes = useMemo(() => [...prizes].sort((a, b) => a.display_order - b.display_order), [prizes]);
+  const segmentCount = Math.max(1, sortedPrizes.length);
+  const primaryColor = config?.primary_color || "#FF6B35";
+  const secondaryColor = config?.secondary_color || "#FFE66D";
 
-  const drawWheel = useCallback(() => {
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const width = canvas.width;
@@ -57,13 +58,12 @@ export default function LuckyWheel({
     const centerX = width / 2;
     const centerY = height / 2;
     const radius = Math.min(width, height) / 2 - 10;
+    const segmentAngle = (2 * Math.PI) / segmentCount;
 
     ctx.clearRect(0, 0, width, height);
 
-    const segmentAngle = (2 * Math.PI) / segments;
-    const sortedPrizes = [...prizes].sort((a, b) => a.display_order - b.display_order);
-
-    sortedPrizes.forEach((prize, index) => {
+    for (let index = 0; index < segmentCount; index += 1) {
+      const prize = sortedPrizes[index] || sortedPrizes[0];
       const startAngle = index * segmentAngle - Math.PI / 2;
       const endAngle = startAngle + segmentAngle;
 
@@ -71,73 +71,63 @@ export default function LuckyWheel({
       ctx.moveTo(centerX, centerY);
       ctx.arc(centerX, centerY, radius, startAngle, endAngle);
       ctx.closePath();
-
       ctx.fillStyle = index % 2 === 0 ? primaryColor : secondaryColor;
       ctx.fill();
-      ctx.strokeStyle = '#fff';
+      ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 2;
       ctx.stroke();
+
+      if (!prize) continue;
 
       ctx.save();
       ctx.translate(centerX, centerY);
       ctx.rotate(startAngle + segmentAngle / 2);
-      ctx.textAlign = 'right';
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 14px system-ui';
-      
-      const text = prize.icon_emoji 
-        ? `${prize.icon_emoji} ${prize.name}`
-        : prize.name;
-      
-      const maxTextLength = 15;
-      const displayText = text.length > maxTextLength 
-        ? text.substring(0, maxTextLength) + '...' 
-        : text;
-      
-      ctx.fillText(displayText, radius - 20, 5);
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 14px system-ui";
+      const text = prize.icon_emoji ? `${prize.icon_emoji} ${prize.name}` : prize.name;
+      const displayText = text.length > 16 ? `${text.slice(0, 16)}...` : text;
+      ctx.fillText(displayText, radius - 18, 4);
       ctx.restore();
-    });
+    }
 
     ctx.beginPath();
     ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = "#ffffff";
     ctx.fill();
     ctx.strokeStyle = primaryColor;
     ctx.lineWidth = 3;
     ctx.stroke();
-
-  }, [prizes, segments, primaryColor, secondaryColor]);
+  }, [primaryColor, secondaryColor, segmentCount, sortedPrizes]);
 
   useEffect(() => {
-    drawWheel();
-  }, [drawWheel]);
+    if (!spinAnimation || sortedPrizes.length === 0) return;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
-  const spin = async (targetPrize?: Prize) => {
-    if (isSpinning) return;
+    const prizeIndex = sortedPrizes.findIndex((item) => item.id === spinAnimation.prizeId);
+    if (prizeIndex < 0) return;
 
-    setIsSpinning(true);
-    setShowResult(false);
-    setSelectedPrize(null);
+    const segmentAngle = 360 / segmentCount;
+    const targetAngle = 360 - prizeIndex * segmentAngle - segmentAngle / 2;
+    const extraSpins = 6 + Math.floor(Math.random() * 3);
+    const finalRotation = rotationRef.current + extraSpins * 360 + targetAngle;
+    rotationRef.current = finalRotation;
 
-    const randomIndex = Math.floor(Math.random() * prizes.length);
-    const prize = targetPrize || prizes[randomIndex];
-    const prizeIndex = prizes.findIndex(p => p.id === prize.id);
-    
-    const segmentAngle = 360 / segments;
-    const targetAngle = 360 - (prizeIndex * segmentAngle) - (segmentAngle / 2);
-    
-    const extraSpins = 5 + Math.floor(Math.random() * 3);
-    const totalRotation = (extraSpins * 360) + targetAngle + rotation;
-    
-    setRotation(totalRotation);
+    const animationFrame = requestAnimationFrame(() => {
+      setIsSpinning(true);
+      setRotation(finalRotation);
+    });
 
-    setTimeout(() => {
-      setSelectedPrize(prize);
-      setShowResult(true);
+    timeoutRef.current = setTimeout(() => {
       setIsSpinning(false);
-      onSpinComplete?.(prize);
-    }, 4000);
-  };
+      onSpinAnimationComplete?.(sortedPrizes[prizeIndex]);
+    }, 4200);
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [onSpinAnimationComplete, segmentCount, sortedPrizes, spinAnimation]);
 
   return (
     <div className={cn("relative flex flex-col items-center", className)}>
@@ -149,85 +139,21 @@ export default function LuckyWheel({
           className="max-w-full"
           style={{
             transform: `rotate(${rotation}deg)`,
-            transition: isSpinning ? 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none'
+            transition: isSpinning ? "transform 4.2s cubic-bezier(0.17, 0.67, 0.12, 0.99)" : "none",
           }}
         />
-        
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2">
-          <div 
-            className="w-8 h-12"
-            style={{ 
+
+        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-2">
+          <div
+            className="h-12 w-8"
+            style={{
               backgroundColor: primaryColor,
-              clipPath: 'polygon(50% 100%, 0 0, 100% 0)'
-            }} 
+              clipPath: "polygon(50% 100%, 0 0, 100% 0)",
+            }}
           />
         </div>
       </div>
-
-      <button
-        onClick={() => spin()}
-        disabled={isSpinning || !config?.is_active}
-        className={cn(
-          "mt-8 px-12 py-4 text-xl font-bold text-white rounded-full",
-          "transition-all transform hover:scale-105 active:scale-95",
-          isSpinning || !config?.is_active
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-gradient-to-r from-orange-500 to-red-500 shadow-lg shadow-orange-500/30"
-        )}
-        style={{ 
-          background: isSpinning || !config?.is_active 
-            ? '#ccc' 
-            : `linear-gradient(135deg, ${primaryColor}, ${primaryColor}dd)`
-        }}
-      >
-        {isSpinning ? "Dönüyor..." : "ÇEVİR"}
-      </button>
-
-      <AnimatePresence>
-        {showResult && selectedPrize && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowResult(false)}
-          >
-            <motion.div
-              initial={{ y: 50 }}
-              animate={{ y: 0 }}
-              className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="text-6xl mb-4">
-                {selectedPrize.icon_emoji || '🎉'}
-              </div>
-              
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {selectedPrize.prize_type !== 'none' ? 'Tebrikler!' : 'Şansını Dene!'}
-              </h2>
-              
-              <p className="text-lg text-gray-600 mb-4">
-                {selectedPrize.prize_type !== 'none' 
-                  ? `${selectedPrize.name} kazandınız!`
-                  : 'Bir sonraki sefere şans dileriz!'}
-              </p>
-              
-              {selectedPrize.description && (
-                <p className="text-sm text-gray-500 mb-6">
-                  {selectedPrize.description}
-                </p>
-              )}
-              
-              <button
-                onClick={() => setShowResult(false)}
-                className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors"
-              >
-                Kapat
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <p className="mt-5 text-sm text-gray-500">{isSpinning ? "Sonuc hesaplaniyor..." : "Formu doldurup sansini dene."}</p>
     </div>
   );
 }

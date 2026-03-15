@@ -28,7 +28,7 @@ export default function SpinForm({
   const [agreed, setAgreed] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const validate = (): boolean => {
+  const validate = (): Record<string, string> => {
     const newErrors: Record<string, string> = {};
 
     if (!userName.trim() || userName.trim().length < 2) {
@@ -52,14 +52,15 @@ export default function SpinForm({
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validate()) {
-      const firstError = Object.values(errors)[0];
+    const formErrors = validate();
+    if (Object.keys(formErrors).length > 0) {
+      const firstError = Object.values(formErrors)[0];
       if (firstError) toast.error(firstError);
       return;
     }

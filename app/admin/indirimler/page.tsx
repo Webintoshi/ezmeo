@@ -243,6 +243,12 @@ export default function DiscountsPage() {
             Yenile
           </button>
           <Link
+            href="/admin/indirimler/sans-carki"
+            className="inline-flex items-center gap-2 px-3 py-2 border border-gray-200 bg-white rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+          >
+            Sans Carki
+          </Link>
+          <Link
             href="/admin/indirimler/yeni"
             className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
           >
@@ -420,4 +426,3 @@ function StatCard({ title, value }: { title: string; value: number }) {
     </div>
   );
 }
-

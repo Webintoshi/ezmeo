@@ -1,24 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import SpinForm from "@/components/lucky-wheel/SpinForm";
 
 const LuckyWheel = dynamic(() => import("@/components/lucky-wheel/LuckyWheel"), { ssr: false });
 
-interface Prize {
+interface PublicPrize {
   id: string;
   name: string;
-  description?: string;
-  prize_type: string;
+  description?: string | null;
+  prize_type: "coupon" | "none";
   color_hex: string;
-  icon_emoji?: string;
-  image_url?: string;
+  icon_emoji?: string | null;
+  image_url?: string | null;
   display_order: number;
 }
 
-interface WheelConfig {
+interface PublicConfig {
   id: string;
   name: string;
   is_active: boolean;
@@ -27,140 +28,152 @@ interface WheelConfig {
   secondary_color: string;
   require_membership: boolean;
   require_email_verified: boolean;
-  start_date?: string;
-  end_date?: string;
+  start_date?: string | null;
+  end_date?: string | null;
+}
+
+interface SpinOutcome {
+  spinId: string;
+  prizeId: string;
+  prizeName: string;
+  isWinner: boolean;
+  couponCode: string | null;
+  message: string;
 }
 
 export default function LuckyWheelPage() {
-  const [config, setConfig] = useState<WheelConfig | null>(null);
-  const [prizes, setPrizes] = useState<Prize[]>([]);
+  const [config, setConfig] = useState<PublicConfig | null>(null);
+  const [prizes, setPrizes] = useState<PublicPrize[]>([]);
   const [loading, setLoading] = useState(true);
   const [spinLoading, setSpinLoading] = useState(false);
+  const [fingerprint, setFingerprint] = useState("");
   const [canSpin, setCanSpin] = useState(true);
   const [remainingSpins, setRemainingSpins] = useState(0);
-  const [spun, setSpun] = useState(false);
-  const [fingerprint, setFingerprint] = useState("");
+  const [spinAnimation, setSpinAnimation] = useState<{ spinId: string; prizeId: string } | null>(null);
+  const [latestOutcome, setLatestOutcome] = useState<SpinOutcome | null>(null);
+  const [showOutcome, setShowOutcome] = useState(false);
 
   useEffect(() => {
-    const fp = localStorage.getItem("wheel_fingerprint") || 
-      `fp-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-    localStorage.setItem("wheel_fingerprint", fp);
-    setFingerprint(fp);
-
-    fetchWheelData();
+    const stored = localStorage.getItem("wheel_fingerprint");
+    const value = stored || `fp-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+    localStorage.setItem("wheel_fingerprint", value);
+    setFingerprint(value);
+    void fetchWheelData();
   }, []);
 
   const fetchWheelData = async () => {
     try {
-      const res = await fetch("/api/lucky-wheel");
-      const data = await res.json();
-      
-      if (data.success) {
-        setConfig(data.config);
-        setPrizes(data.prizes || []);
-        
-        if (!data.config?.is_active) {
-          setCanSpin(false);
-        }
-      } else {
-        toast.error(data.error || "Şans çarkı yüklenirken hata oluştu");
+      const response = await fetch("/api/lucky-wheel", { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result?.error || "Sans carki yuklenemedi.");
       }
+
+      setConfig(result.config as PublicConfig);
+      setPrizes((result.prizes || []) as PublicPrize[]);
+      setCanSpin(Boolean(result.config?.is_active));
     } catch (error) {
-      console.error("Fetch wheel data error:", error);
-      toast.error("Şans çarkı yüklenirken hata oluştu");
+      toast.error(error instanceof Error ? error.message : "Sans carki yuklenemedi.");
     } finally {
       setLoading(false);
     }
   };
 
-  const validateSpin = async (userEmail?: string, userPhone?: string) => {
-    try {
-      const res = await fetch("/api/lucky-wheel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "validate",
-          userEmail,
-          userPhone,
-          fingerprint
-        })
-      });
-      
-      const data = await res.json();
-      
-      if (data.success) {
-        setCanSpin(data.canSpin);
-        setRemainingSpins(data.spinsRemaining);
-        
-        if (!data.canSpin) {
-          toast.error(data.reason || "Şans çarkını çeviremezsiniz");
-          return false;
-        }
-      }
-      
-      return data.canSpin;
-    } catch (error) {
-      console.error("Validate spin error:", error);
-      return true;
+  const checkEligibility = async (userEmail?: string, userPhone?: string) => {
+    const response = await fetch("/api/lucky-wheel/eligibility", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        configId: config?.id,
+        userEmail,
+        userPhone,
+        fingerprint,
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result?.error || "Uygunluk kontrolu basarisiz.");
+    }
+
+    setCanSpin(Boolean(result.canSpin));
+    setRemainingSpins(Number(result.spinsRemaining || 0));
+    if (!result.canSpin) {
+      throw new Error(result.reason || "Su an spin hakkiniz bulunmuyor.");
     }
   };
 
   const handleSpin = async (userData: { userName: string; userEmail?: string; userPhone?: string }) => {
-    const isValid = await validateSpin(userData.userEmail, userData.userPhone);
-    if (!isValid) return;
+    if (!config) return;
 
     setSpinLoading(true);
-    
     try {
-      const res = await fetch("/api/lucky-wheel", {
+      await checkEligibility(userData.userEmail, userData.userPhone);
+
+      const idempotencyKey = crypto.randomUUID();
+      const response = await fetch("/api/lucky-wheel/spins", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "spin",
-          configId: config?.id,
+          configId: config.id,
           userName: userData.userName,
           userEmail: userData.userEmail,
           userPhone: userData.userPhone,
-          fingerprint
-        })
+          fingerprint,
+          idempotencyKey,
+        }),
       });
-      
-      const data = await res.json();
-      
-      if (data.success) {
-        setSpun(true);
-        setRemainingSpins(data.remainingSpins);
-        
-        if (data.prize) {
-          toast.success(data.message);
-        } else {
-          toast.info(data.message);
-        }
-      } else {
-        toast.error(data.error || "Spin sırasında hata oluştu");
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result?.message || result?.error || "Spin islemi basarisiz.");
       }
+
+      const spinId = result?.spin?.id as string | undefined;
+      const prizeId = result?.prize?.id as string | undefined;
+      if (!spinId || !prizeId) {
+        throw new Error("Spin sonucu okunamadi.");
+      }
+
+      setRemainingSpins(Number(result.remainingSpins || 0));
+      setLatestOutcome({
+        spinId,
+        prizeId,
+        prizeName: result?.prize?.name || "Odul",
+        isWinner: Boolean(result?.spin?.is_winner),
+        couponCode: result?.couponCode || null,
+        message: result?.message || "Spin tamamlandi.",
+      });
+      setShowOutcome(false);
+      setSpinAnimation({ spinId, prizeId });
     } catch (error) {
-      console.error("Spin error:", error);
-      toast.error("Spin sırasında hata oluştu");
+      toast.error(error instanceof Error ? error.message : "Spin hatasi.");
     } finally {
       setSpinLoading(false);
     }
   };
 
-  const handleSpinComplete = (prize: Prize, couponCode?: string) => {
-    if (prize.prize_type !== 'none' && couponCode) {
-      toast.success(`Kupon kodunuz: ${couponCode}`, {
-        duration: 10000
-      });
+  const handleAnimationComplete = () => {
+    if (!latestOutcome) return;
+    setShowOutcome(true);
+    if (latestOutcome.isWinner) {
+      toast.success(latestOutcome.message);
+    } else {
+      toast(latestOutcome.message);
     }
+  };
+
+  const copyCoupon = async () => {
+    if (!latestOutcome?.couponCode) return;
+    await navigator.clipboard.writeText(latestOutcome.couponCode);
+    toast.success("Kupon kodu kopyalandi.");
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-500 border-t-transparent mx-auto mb-4" />
-          <p className="text-gray-600">Şans çarkı yükleniyor...</p>
+          <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+          <p className="text-gray-600">Sans carki yukleniyor...</p>
         </div>
       </div>
     );
@@ -169,78 +182,61 @@ export default function LuckyWheelPage() {
   if (!config) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl p-8 text-center max-w-md shadow-xl">
-          <div className="text-6xl mb-4">🎡</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Şans Çarkı</h1>
-          <p className="text-gray-600">
-            Şu anda aktif bir şans çarkı bulunmuyor. Lütfen daha sonra tekrar deneyin!
-          </p>
+        <div className="max-w-md rounded-3xl bg-white p-8 text-center shadow-xl">
+          <div className="mb-4 text-6xl">🎡</div>
+          <h1 className="mb-2 text-2xl font-bold text-gray-900">Sans Carki</h1>
+          <p className="text-gray-600">Su anda aktif bir sans carki bulunmuyor.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            {config.name}
-          </h1>
-          <p className="text-gray-600">
-            Şansınızı deneyin, harika ödüller kazanın!
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 px-4 py-8">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 text-4xl font-bold text-gray-900">{config.name}</h1>
+          <p className="text-gray-600">Formu doldur, spin at ve aninda kuponunu kazan.</p>
+          <p className="mt-2 text-sm text-gray-500">Kalan spin hakki: {remainingSpins}</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 items-start">
+        <div className="grid items-start gap-8 md:grid-cols-2">
           <div className="flex justify-center">
-            <LuckyWheel
-              config={config}
-              prizes={prizes}
-              onSpinComplete={handleSpinComplete}
-            />
+            <LuckyWheel config={config} prizes={prizes} spinAnimation={spinAnimation} onSpinAnimationComplete={handleAnimationComplete} />
           </div>
 
-          <div className="bg-white rounded-3xl p-6 shadow-xl">
-            {!spun ? (
-              <>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  Katılmak için formu doldurun
-                </h2>
-                <SpinForm
-                  onSubmit={handleSpin}
-                  requireEmail={config.require_membership}
-                  requirePhone={config.require_membership}
-                  isLoading={spinLoading}
-                />
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <div className="text-6xl mb-4">🎊</div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Katıldınız!
-                </h2>
-                <p className="text-gray-600 mb-4">
-                  Sonuçları bekleyin...
-                </p>
-                <button
-                  onClick={() => {
-                    setSpun(false);
-                    setCanSpin(true);
-                  }}
-                  className="text-orange-500 hover:underline"
-                >
-                  Yeniden dene (test için)
-                </button>
+          <div className="rounded-3xl bg-white p-6 shadow-xl">
+            <h2 className="mb-4 text-xl font-bold text-gray-900">Katilim Formu</h2>
+            <SpinForm
+              onSubmit={handleSpin}
+              requireEmail={config.require_membership}
+              requirePhone={config.require_membership}
+              isLoading={spinLoading || !canSpin}
+            />
+
+            {!canSpin && <p className="mt-3 text-sm text-red-600">Su an spin hakkiniz bulunmuyor.</p>}
+
+            {showOutcome && latestOutcome && (
+              <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                <h3 className="text-lg font-semibold text-gray-900">{latestOutcome.prizeName}</h3>
+                <p className="mt-1 text-sm text-gray-600">{latestOutcome.message}</p>
+                {latestOutcome.couponCode && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <code className="rounded-lg bg-white px-3 py-2 font-mono text-sm text-gray-800">{latestOutcome.couponCode}</code>
+                    <button onClick={copyCoupon} className="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      <Copy className="h-4 w-4" />
+                      Kopyala
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
 
         {config.start_date && config.end_date && (
-          <p className="text-center text-sm text-gray-500 mt-8">
-            Kampanya {new Date(config.start_date).toLocaleDateString("tr-TR")} - {" "}
-            {new Date(config.end_date).toLocaleDateString("tr-TR")} tarihleri arasında geçerlidir.
+          <p className="mt-8 text-center text-sm text-gray-500">
+            Kampanya {new Date(config.start_date).toLocaleDateString("tr-TR")} - {new Date(config.end_date).toLocaleDateString("tr-TR")} tarihleri arasinda gecerlidir.
           </p>
         )}
       </div>

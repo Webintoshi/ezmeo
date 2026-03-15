@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -41,52 +41,53 @@ interface MenuItem {
 const MENU_ITEMS: MenuItem[] = [
   { title: "Ana Sayfa", icon: Home, href: "/admin" },
   {
-    title: "Siparişler",
+    title: "SipariÅŸler",
     icon: Package,
     href: "/admin/siparisler",
     submenu: [
-      { title: "Tüm Siparişler", href: "/admin/siparisler" },
+      { title: "TÃ¼m SipariÅŸler", href: "/admin/siparisler" },
       { title: "Terkedilen Sepetler", href: "/admin/siparisler/sepet-terk" },
     ],
   },
   {
-    title: "Ürünler",
+    title: "ÃœrÃ¼nler",
     icon: Tag,
     href: "/admin/urunler",
     submenu: [
-      { title: "Tüm Ürünler", href: "/admin/urunler" },
-      { title: "Yeni Ürün Ekle", href: "/admin/urunler/yeni" },
+      { title: "TÃ¼m ÃœrÃ¼nler", href: "/admin/urunler" },
+      { title: "Yeni ÃœrÃ¼n Ekle", href: "/admin/urunler/yeni" },
       { title: "Koleksiyonlar", href: "/admin/urunler/koleksiyonlar" },
       { title: "Nitelikler", href: "/admin/urunler/nitelikler" },
       { title: "Ekstralar", href: "/admin/urunler/ekstralar" },
-      { title: "Toplu Yükle (CSV)", href: "/admin/urunler/toplu-yukle" },
+      { title: "Toplu YÃ¼kle (CSV)", href: "/admin/urunler/toplu-yukle" },
     ],
   },
   {
-    title: "Müşteriler",
+    title: "MÃ¼ÅŸteriler",
     icon: Users,
     href: "/admin/musteriler",
     submenu: [
-      { title: "Tüm Müşteriler", href: "/admin/musteriler" },
+      { title: "TÃ¼m MÃ¼ÅŸteriler", href: "/admin/musteriler" },
       { title: "Segmentler", href: "/admin/musteriler/segmentler" },
-      { title: "Yeni Müşteri", href: "/admin/musteriler/yeni" },
+      { title: "Yeni MÃ¼ÅŸteri", href: "/admin/musteriler/yeni" },
     ],
   },
   {
-    title: "İndirimler",
+    title: "Ä°ndirimler",
     icon: Percent,
     href: "/admin/indirimler",
     submenu: [
-      { title: "Tüm İndirimler", href: "/admin/indirimler" },
-      { title: "Yeni İndirim", href: "/admin/indirimler/yeni" },
+      { title: "TÃ¼m Ä°ndirimler", href: "/admin/indirimler" },
+      { title: "Yeni Ä°ndirim", href: "/admin/indirimler/yeni" },
+      { title: "Sans Carki", href: "/admin/indirimler/sans-carki" },
     ],
   },
   {
-    title: "İçerik",
+    title: "Ä°Ã§erik",
     icon: FileText,
     href: "/admin/cms",
     submenu: [
-      { title: "Blog Yazıları", href: "/admin/cms/blog" },
+      { title: "Blog YazÄ±larÄ±", href: "/admin/cms/blog" },
       { title: "Sayfalar", href: "/admin/cms/sayfalar" },
     ],
   },
@@ -108,23 +109,23 @@ const MENU_ITEMS: MenuItem[] = [
     href: "/admin/muhasebe",
     permission: "accounting.view",
     submenu: [
-      { title: "Genel Bakış", href: "/admin/muhasebe" },
+      { title: "Genel BakÄ±ÅŸ", href: "/admin/muhasebe" },
       { title: "Fatura Entegrasyonu", href: "/admin/muhasebe/fatura-entegrasyonu" },
     ],
   },
   {
-    title: "SEO Araçları",
+    title: "SEO AraÃ§larÄ±",
     icon: Search,
     href: "/admin/seo-killer",
     submenu: [
       { title: "SEO Kontrol", href: "/admin/seo-killer" },
       { title: "Sitemap", href: "/admin/seo-killer/sitemap" },
-      { title: "Sosyal Önizleme", href: "/admin/seo-killer/sosyal-onizleme" },
-      { title: "Hızlı İndex", href: "/admin/seo-killer/hizli-index" },
+      { title: "Sosyal Ã–nizleme", href: "/admin/seo-killer/sosyal-onizleme" },
+      { title: "HÄ±zlÄ± Ä°ndex", href: "/admin/seo-killer/hizli-index" },
     ],
   },
   { title: "Marketplace", icon: Store, href: "/admin/markets" },
-  { title: "Yöneticiler", icon: AdminsIcon, href: "/admin/yoneticiler" },
+  { title: "YÃ¶neticiler", icon: AdminsIcon, href: "/admin/yoneticiler" },
   {
     title: "Ayarlar",
     icon: Settings,
@@ -132,7 +133,7 @@ const MENU_ITEMS: MenuItem[] = [
     submenu: [
       { title: "Genel Ayarlar", href: "/admin/ayarlar/genel" },
       { title: "Kargo", href: "/admin/ayarlar/kargo" },
-      { title: "Ödeme", href: "/admin/ayarlar/odeme" },
+      { title: "Ã–deme", href: "/admin/ayarlar/odeme" },
       { title: "Bildirimler", href: "/admin/ayarlar/bildirimler" },
       { title: "Hero Banner", href: "/admin/ayarlar/hero-banner" },
       { title: "Promosyon Banner", href: "/admin/ayarlar/promosyon-banner" },
@@ -190,7 +191,7 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
       const storedRole = localStorage.getItem("admin_user_role");
 
       setUserEmail(storedEmail);
-      setUserName(storedName || (storedEmail?.split("@")[0] ?? "Admin Kullanıcı"));
+      setUserName(storedName || (storedEmail?.split("@")[0] ?? "Admin KullanÄ±cÄ±"));
       if (
         storedRole === "super_admin" ||
         storedRole === "product_manager" ||
@@ -203,7 +204,7 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
       }
     } catch (error) {
       console.error("AdminSidebar localStorage read error:", error);
-      setUserName("Admin Kullanıcı");
+      setUserName("Admin KullanÄ±cÄ±");
       setRole("super_admin");
     } finally {
       setLoading(false);
@@ -255,7 +256,7 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
           <div className="min-w-0 flex-1">
             <span className="font-semibold text-gray-900 block leading-tight text-sm">Webintosh Panel</span>
             <span className="text-xs text-gray-500 font-medium truncate block">
-              {loading ? "Oturum açılıyor..." : userName || userEmail || "Admin Kullanıcı"}
+              {loading ? "Oturum aÃ§Ä±lÄ±yor..." : userName || userEmail || "Admin KullanÄ±cÄ±"}
             </span>
           </div>
         </div>
@@ -334,7 +335,7 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
             className="w-full flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors min-h-[44px]"
           >
             <LogOut className="w-5 h-5 opacity-70" />
-            <span>Çıkış Yap</span>
+            <span>Ã‡Ä±kÄ±ÅŸ Yap</span>
           </button>
           <Link
             href="/"
@@ -342,10 +343,11 @@ export function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
             className="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 rounded-lg text-sm font-medium transition-colors min-h-[44px]"
           >
             <span className="w-5 h-5 opacity-70" />
-            <span>Siteye Dön</span>
+            <span>Siteye DÃ¶n</span>
           </Link>
         </div>
       </aside>
     </>
   );
 }
+
