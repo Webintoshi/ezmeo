@@ -6,7 +6,6 @@ import type { ElementType } from "react";
 import {
   BadgeCheck,
   BanknoteArrowDown,
-  Calendar,
   Clock,
   FilePlus2,
   Loader2,
@@ -19,8 +18,17 @@ import {
   ArrowRight,
   AlertCircle,
   CheckCircle2,
+  X,
 } from "lucide-react";
 import type { AccountingOverviewData } from "@/types/accounting";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("tr-TR", {
@@ -68,6 +76,8 @@ export default function MuhasebePage() {
   const [overview, setOverview] = useState<AccountingOverviewData>(EMPTY_OVERVIEW);
   const [error, setError] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
+  const [invoiceOrderId, setInvoiceOrderId] = useState("");
 
   const fetchOverview = async () => {
     setLoading(true);
@@ -90,25 +100,34 @@ export default function MuhasebePage() {
     fetchOverview();
   }, []);
 
+  const openInvoiceDialog = () => {
+    setInvoiceOrderId("");
+    setShowInvoiceDialog(true);
+  };
+
+  const closeInvoiceDialog = () => {
+    setShowInvoiceDialog(false);
+    setInvoiceOrderId("");
+  };
+
   const createInvoiceQuickly = async () => {
-    const orderId = window.prompt("Fatura kesmek istediğiniz sipariş ID değerini girin:");
-    if (!orderId?.trim()) return;
+    if (!invoiceOrderId.trim()) return;
 
     setBusyAction("create_invoice");
     try {
       const response = await fetch("/api/admin/accounting/invoices/create-from-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: orderId.trim() }),
+        body: JSON.stringify({ orderId: invoiceOrderId.trim() }),
       });
       const result = await response.json();
       if (!response.ok || !result.success) {
         throw new Error(result?.error || "Fatura oluşturma başarısız.");
       }
-      window.alert("Fatura adayı oluşturuldu ve senkron tetiklendi.");
+      closeInvoiceDialog();
       await fetchOverview();
     } catch (actionError) {
-      window.alert(actionError instanceof Error ? actionError.message : "İşlem başarısız.");
+      alert(actionError instanceof Error ? actionError.message : "İşlem başarısız.");
     } finally {
       setBusyAction(null);
     }
@@ -254,8 +273,7 @@ export default function MuhasebePage() {
               title="Fatura Kes"
               description="Sipariş ID girerek faturayı hemen kuyrukla"
               icon={ReceiptText}
-              loading={busyAction === "create_invoice"}
-              onClick={createInvoiceQuickly}
+              onClick={openInvoiceDialog}
               color="blue"
             />
             <QuickActionButton
@@ -320,6 +338,65 @@ export default function MuhasebePage() {
           </button>
         </div>
       </div>
+
+      {/* Invoice Dialog */}
+      <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                <ReceiptText className="w-5 h-5 text-blue-600" />
+              </div>
+              <DialogTitle className="text-xl font-bold text-gray-900">Fatura Kes</DialogTitle>
+            </div>
+            <DialogDescription className="text-gray-500">
+              Fatura kesmek istediğiniz siparişin ID numarasını girin.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Sipariş ID
+            </label>
+            <input
+              type="text"
+              value={invoiceOrderId}
+              onChange={(e) => setInvoiceOrderId(e.target.value)}
+              placeholder="örn: 12345"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && invoiceOrderId.trim()) {
+                  createInvoiceQuickly();
+                }
+              }}
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <button
+              onClick={closeInvoiceDialog}
+              className="px-5 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+            >
+              İptal
+            </button>
+            <button
+              onClick={createInvoiceQuickly}
+              disabled={busyAction === "create_invoice" || !invoiceOrderId.trim()}
+              className="px-5 py-2.5 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {busyAction === "create_invoice" ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  İşleniyor...
+                </>
+              ) : (
+                <>
+                  <ReceiptText className="w-4 h-4" />
+                  Fatura Oluştur
+                </>
+              )}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Open Receivables Table */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
