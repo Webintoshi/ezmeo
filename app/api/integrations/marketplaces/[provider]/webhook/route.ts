@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { recordMarketplaceWebhook } from "@/lib/db/marketplaces";
+import { recordMarketplaceWebhook, verifyMarketplaceWebhook } from "@/lib/db/marketplaces";
 import { enforceMarketplaceRateLimit, getMarketplaceProviderOrResponse } from "@/app/api/admin/marketplace-integrations/_shared";
 
 interface Params {
@@ -27,8 +27,35 @@ export async function POST(request: NextRequest, { params }: Params) {
       return parsedProvider;
     }
 
-    const payload = (await request.json()) as Record<string, unknown>;
-    const result = await recordMarketplaceWebhook(parsedProvider, payload, extractHeaders(request));
+    const rawBody = await request.text();
+    let payload: Record<string, unknown>;
+    try {
+      payload = JSON.parse(rawBody || "{}") as Record<string, unknown>;
+    } catch {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Webhook payload json formatinda degil.",
+        },
+        { status: 422 },
+      );
+    }
+    const headers = extractHeaders(request);
+    const verification = await verifyMarketplaceWebhook(parsedProvider, rawBody, headers);
+    if (!verification.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: verification.message || "Webhook imza dogrulamasi basarisiz.",
+        },
+        { status: verification.statusCode || 401 },
+      );
+    }
+
+    const result = await recordMarketplaceWebhook(parsedProvider, payload, headers, {
+      signatureValid: true,
+      signatureMessage: verification.message || null,
+    });
     return NextResponse.json(result);
   } catch (error) {
     console.error("Marketplace webhook error:", error);

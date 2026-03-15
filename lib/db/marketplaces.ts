@@ -15,6 +15,7 @@ import type {
   MarketplaceListingSyncItem,
   MarketplaceListingView,
   MarketplaceProvider,
+  MarketplaceProviderAdapterResult,
   MarketplaceProviderConnection,
   MarketplacePulledOrder,
   MarketplaceQueueDirection,
@@ -139,6 +140,39 @@ function buildMissingTableError() {
 function parseNumber(value: unknown, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function toRecord(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
+
+function mergeAdapterSettings(input: {
+  settings?: Record<string, unknown> | null;
+  fieldMappings?: Record<string, string> | null;
+}) {
+  return {
+    ...(input.settings || {}),
+    ...(input.fieldMappings || {}),
+  };
+}
+
+function extractProviderErrorCode(payload: Record<string, unknown>) {
+  const direct = payload.providerErrorCode;
+  if (typeof direct === "string" && direct.trim()) return direct.trim();
+  const nested = toRecord(payload.raw || {}).providerErrorCode;
+  if (typeof nested === "string" && nested.trim()) return nested.trim();
+  return null;
+}
+
+function extractProviderErrorContext(error: unknown) {
+  const raw = toRecord((error as { responseBody?: unknown })?.responseBody);
+  return {
+    message: error instanceof Error ? error.message : "Provider islemi basarisiz.",
+    providerStatusCode: parseNumber((error as { status?: unknown })?.status, 0) || null,
+    providerErrorCode: extractProviderErrorCode(raw),
+    raw,
+  };
 }
 
 function buildPayloadHash(payload: Record<string, unknown>) {
@@ -293,6 +327,23 @@ async function getListingsByVariantIds(provider: MarketplaceProvider, variantIds
   }
 
   return (data || []) as ListingRow[];
+}
+
+async function claimQueueRowForSync(supabase: ReturnType<typeof createServerClient>, row: QueueRow) {
+  const { data, error } = await supabase
+    .from("marketplace_sync_queue")
+    .update({ status: "syncing" })
+    .eq("id", row.id)
+    .eq("status", row.status)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    if (isMissingRelationError(error)) throw buildMissingTableError();
+    throw error;
+  }
+
+  return Boolean(data?.id);
 }
 
 async function loadVariantWithProductById(variantId: string) {
@@ -683,6 +734,7 @@ async function handleProductListingSync(
   provider: MarketplaceProvider,
   queueRow: QueueRow,
   credentials: Record<string, string>,
+  settings: Record<string, unknown>,
 ) {
   const listings = await buildCanonicalListingsForProduct(queueRow.entity_id);
   if (listings.length === 0) {
@@ -697,6 +749,7 @@ async function handleProductListingSync(
 
   const synced = await adapter.upsertListings({
     credentials,
+    settings,
     listings,
     existingMappings: existingMappings.map((mapping) => ({
       variantId: mapping.variant_id,
@@ -707,11 +760,15 @@ async function handleProductListingSync(
 
   await upsertListingRows({ provider, listings, synced });
 
+  const firstRaw = toRecord(synced[0]?.raw || {});
+
   return {
     entityCount: listings.length,
     payload: {
       productId: queueRow.entity_id,
       syncedVariants: synced.length,
+      providerStatusCode: parseNumber(firstRaw.providerStatusCode, 0) || null,
+      providerErrorCode: extractProviderErrorCode(firstRaw),
     },
   };
 }
@@ -720,6 +777,7 @@ async function handleInventorySync(
   provider: MarketplaceProvider,
   queueRow: QueueRow,
   credentials: Record<string, string>,
+  settings: Record<string, unknown>,
 ) {
   const adapter = getMarketplaceProviderAdapter(provider);
   const variant = await loadVariantWithProductById(queueRow.entity_id);
@@ -736,6 +794,7 @@ async function handleInventorySync(
         operation: "upsert_listing",
       },
       credentials,
+      settings,
     );
 
     const refreshedMappings = await getListingsByVariantIds(provider, [variant.id]);
@@ -746,8 +805,9 @@ async function handleInventorySync(
     throw new Error("Marketplace listing eslesmesi olusturulamadi.");
   }
 
-  await adapter.updateInventory({
+  const syncResults = await adapter.updateInventory({
     credentials,
+    settings,
     inventory: [
       {
         variantId: variant.id,
@@ -775,12 +835,15 @@ async function handleInventorySync(
     throw error;
   }
 
+  const firstRaw = toRecord(syncResults[0]?.raw || {});
   return {
     entityCount: 1,
     payload: {
       variantId: variant.id,
       stock: variant.stock,
       price: variant.price,
+      providerStatusCode: parseNumber(firstRaw.providerStatusCode, 0) || null,
+      providerErrorCode: extractProviderErrorCode(firstRaw),
     },
   };
 }
@@ -789,6 +852,7 @@ async function handleOrderStatusSync(
   provider: MarketplaceProvider,
   queueRow: QueueRow,
   credentials: Record<string, string>,
+  settings: Record<string, unknown>,
 ) {
   const supabase = createServerClient();
   const [{ data: orderRow, error: orderError }, { data: marketplaceOrder, error: marketplaceOrderError }] =
@@ -820,8 +884,9 @@ async function handleOrderStatusSync(
   }
 
   const adapter = getMarketplaceProviderAdapter(provider);
-  await adapter.updateOrderStatus({
+  const providerResult = await adapter.updateOrderStatus({
     credentials,
+    settings,
     update: {
       externalOrderId: marketplaceOrder.external_order_id,
       status: orderRow.status,
@@ -845,6 +910,9 @@ async function handleOrderStatusSync(
     payload: {
       externalOrderId: marketplaceOrder.external_order_id,
       status: orderRow.status,
+      providerStatusCode: providerResult.providerStatusCode || null,
+      providerErrorCode: providerResult.providerErrorCode || null,
+      providerMessage: providerResult.message,
     },
   };
 }
@@ -908,19 +976,36 @@ export async function saveMarketplaceConnection(provider: MarketplaceProvider, i
     throw new Error("Gecersiz pazaryeri secimi.");
   }
 
+  const credentials = (input.credentials || {}) as Record<string, string>;
   const missingField = definition.credentialFields.find(
-    (field) => field.required && !input.credentials?.[field.key]?.trim(),
+    (field) => field.required && !credentials[field.key]?.trim(),
   );
   if (missingField) {
     throw new Error(`Zorunlu alan eksik: ${missingField.label}`);
   }
 
-  const encryptedCredentials = encryptMarketplaceCredentials(input.credentials || {});
-  const adapter = getMarketplaceProviderAdapter(provider);
-  const connectionResult = await adapter.connect({
-    credentials: input.credentials || {},
+  const encryptedCredentials = encryptMarketplaceCredentials(credentials);
+  const adapterSettings = mergeAdapterSettings({
     settings: input.settings || {},
+    fieldMappings: input.fieldMappings || {},
   });
+  const adapter = getMarketplaceProviderAdapter(provider);
+  const connectionResult: MarketplaceProviderAdapterResult = await adapter
+    .connect({
+      credentials,
+      settings: adapterSettings,
+    })
+    .catch((error) => {
+      const context = extractProviderErrorContext(error);
+      return {
+        success: false,
+        message: adapter.normalizeError(error) || context.message,
+        latencyMs: null,
+        providerStatusCode: context.providerStatusCode,
+        providerErrorCode: context.providerErrorCode,
+        raw: context.raw,
+      };
+    });
 
   const supabase = createServerClient();
   const now = new Date().toISOString();
@@ -931,7 +1016,7 @@ export async function saveMarketplaceConnection(provider: MarketplaceProvider, i
         provider,
         status: connectionResult.success ? "active" : "error",
         encrypted_credentials: encryptedCredentials,
-        settings: input.settings || {},
+        settings: adapterSettings,
         field_mappings: input.fieldMappings || {},
         supports_webhook: definition.supportsWebhook,
         last_healthcheck_at: now,
@@ -954,8 +1039,14 @@ export async function saveMarketplaceConnection(provider: MarketplaceProvider, i
     entityType: "connection",
     entityId: provider,
     status: connectionResult.success ? "connected" : "failed",
+    errorCode: connectionResult.providerErrorCode || null,
     errorMessage: connectionResult.success ? null : connectionResult.message,
-    payload: { settings: input.settings || {} },
+    payload: {
+      settings: adapterSettings,
+      providerStatusCode: connectionResult.providerStatusCode || null,
+      latencyMs: connectionResult.latencyMs || null,
+      raw: connectionResult.raw || {},
+    },
   });
 
   return {
@@ -975,10 +1066,26 @@ export async function testMarketplaceConnection(provider: MarketplaceProvider) {
 
   const credentials = decryptMarketplaceCredentials(connection.encrypted_credentials);
   const adapter = getMarketplaceProviderAdapter(provider);
-  const result = await adapter.testConnection({
-    credentials,
+  const adapterSettings = mergeAdapterSettings({
     settings: connection.settings || {},
+    fieldMappings: connection.field_mappings || {},
   });
+  const result: MarketplaceProviderAdapterResult = await adapter
+    .testConnection({
+      credentials,
+      settings: adapterSettings,
+    })
+    .catch((error) => {
+      const context = extractProviderErrorContext(error);
+      return {
+        success: false,
+        message: adapter.normalizeError(error) || context.message,
+        latencyMs: null,
+        providerStatusCode: context.providerStatusCode,
+        providerErrorCode: context.providerErrorCode,
+        raw: context.raw,
+      };
+    });
   const supabase = createServerClient();
   const now = new Date().toISOString();
 
@@ -1003,7 +1110,13 @@ export async function testMarketplaceConnection(provider: MarketplaceProvider) {
     entityType: "healthcheck",
     entityId: provider,
     status: result.success ? "ok" : "failed",
+    errorCode: result.providerErrorCode || null,
     errorMessage: result.success ? null : result.message,
+    payload: {
+      providerStatusCode: result.providerStatusCode || null,
+      latencyMs: result.latencyMs || null,
+      raw: result.raw || {},
+    },
   });
 
   return result;
@@ -1132,6 +1245,11 @@ export async function processMarketplaceSyncQueue(options?: {
   for (const row of queueRows) {
     if (!isMarketplaceProvider(row.provider)) continue;
 
+    const claimed = await claimQueueRowForSync(supabase, row);
+    if (!claimed) {
+      continue;
+    }
+
     const connection = await getProviderConnectionRow(row.provider);
     if (!connection || connection.status !== "active") {
       await supabase
@@ -1142,7 +1260,8 @@ export async function processMarketplaceSyncQueue(options?: {
           attempt_count: MAX_RETRY_COUNT,
           next_retry_at: null,
         })
-        .eq("id", row.id);
+        .eq("id", row.id)
+        .eq("status", "syncing");
 
       manualCount += 1;
       await insertSyncLog({
@@ -1168,24 +1287,24 @@ export async function processMarketplaceSyncQueue(options?: {
           attempt_count: MAX_RETRY_COUNT,
           next_retry_at: null,
         })
-        .eq("id", row.id);
+        .eq("id", row.id)
+        .eq("status", "syncing");
       manualCount += 1;
       continue;
     }
-
-    await supabase
-      .from("marketplace_sync_queue")
-      .update({ status: "syncing" })
-      .eq("id", row.id);
+    const adapterSettings = mergeAdapterSettings({
+      settings: connection.settings || {},
+      fieldMappings: connection.field_mappings || {},
+    });
 
     try {
       let result: { entityCount: number; payload: Record<string, unknown> };
       if (row.operation === "upsert_listing") {
-        result = await handleProductListingSync(row.provider, row, credentials);
+        result = await handleProductListingSync(row.provider, row, credentials, adapterSettings);
       } else if (row.operation === "update_inventory") {
-        result = await handleInventorySync(row.provider, row, credentials);
+        result = await handleInventorySync(row.provider, row, credentials, adapterSettings);
       } else if (row.operation === "update_order_status") {
-        result = await handleOrderStatusSync(row.provider, row, credentials);
+        result = await handleOrderStatusSync(row.provider, row, credentials, adapterSettings);
       } else {
         result = {
           entityCount: 0,
@@ -1201,7 +1320,8 @@ export async function processMarketplaceSyncQueue(options?: {
           processed_at: finishedAt,
           last_error: null,
         })
-        .eq("id", row.id);
+        .eq("id", row.id)
+        .eq("status", "syncing");
 
       await supabase
         .from("marketplace_provider_connections")
@@ -1235,22 +1355,30 @@ export async function processMarketplaceSyncQueue(options?: {
           last_error: errorMessage,
           next_retry_at: finalStatus === "failed" ? computeNextRetryDate(nextAttempt) : null,
         })
-        .eq("id", row.id);
+        .eq("id", row.id)
+        .eq("status", "syncing");
 
       if (row.entity_type === "variant") {
         await markListingError(row.provider, row.entity_id, errorMessage);
       }
 
+      const errorPayload = toRecord((syncError as { responseBody?: unknown })?.responseBody);
+      const providerErrorCode = extractProviderErrorCode(errorPayload);
+      const providerStatusCode = parseNumber((syncError as { status?: unknown })?.status, 0) || null;
       await insertSyncLog({
         provider: row.provider,
         direction: row.direction,
         entityType: row.entity_type,
         entityId: row.entity_id,
         status: finalStatus,
+        errorCode: providerErrorCode,
         errorMessage,
         payload: {
           operation: row.operation,
           idempotencyKey: row.idempotency_key,
+          providerStatusCode,
+          providerErrorCode,
+          providerErrorPayload: errorPayload,
         },
       });
 
@@ -1281,8 +1409,13 @@ export async function pullOrdersForProvider(
 
   const credentials = decryptMarketplaceCredentials(connection.encrypted_credentials);
   const adapter = getMarketplaceProviderAdapter(provider);
+  const adapterSettings = mergeAdapterSettings({
+    settings: connection.settings || {},
+    fieldMappings: connection.field_mappings || {},
+  });
   const orders = await adapter.pullOrders({
     credentials,
+    settings: adapterSettings,
     since: options?.since || connection.last_sync_at || undefined,
   });
 
@@ -1296,10 +1429,26 @@ export async function pullOrdersForProvider(
       manualCount += 1;
     } else if (result.imported) {
       try {
-        await adapter.acknowledgeOrder({
+        const ackResult = await adapter.acknowledgeOrder({
           credentials,
+          settings: adapterSettings,
           externalOrderId: pulledOrder.externalOrderId,
         });
+        if (!ackResult.success) {
+          await insertSyncLog({
+            provider,
+            direction: "system",
+            entityType: "order_ack",
+            entityId: pulledOrder.externalOrderId,
+            status: "failed",
+            errorCode: ackResult.providerErrorCode || null,
+            errorMessage: ackResult.message,
+            payload: {
+              providerStatusCode: ackResult.providerStatusCode || null,
+              raw: ackResult.raw || {},
+            },
+          });
+        }
       } catch (ackError) {
         await insertSyncLog({
           provider,
@@ -1427,43 +1576,135 @@ export async function runMarketplaceSync(options?: {
       .select("id")
       .maybeSingle();
 
-    const queueSummary = await processMarketplaceSyncQueue({ provider, limit: 50 });
-    const orderSummary = shouldPullOrders
-      ? await pullOrdersForProvider(provider)
-      : { receivedCount: 0, importedCount: 0, duplicateCount: 0, manualCount: 0 };
-    const reconciliation = shouldReconcile ? await runMarketplaceReconciliation(provider) : null;
+    try {
+      const queueSummary = await processMarketplaceSyncQueue({ provider, limit: 50 });
+      const orderSummary = shouldPullOrders
+        ? await pullOrdersForProvider(provider)
+        : { receivedCount: 0, importedCount: 0, duplicateCount: 0, manualCount: 0 };
+      const reconciliation = shouldReconcile ? await runMarketplaceReconciliation(provider) : null;
 
-    const finishedAt = new Date().toISOString();
-    if (jobRow?.id) {
-      await supabase
-        .from("marketplace_sync_jobs")
-        .update({
-          status: "completed",
-          finished_at: finishedAt,
-          metadata: {
-            queueSummary,
-            orderSummary,
-            reconciliation,
-          },
-        })
-        .eq("id", jobRow.id);
+      const finishedAt = new Date().toISOString();
+      if (jobRow?.id) {
+        await supabase
+          .from("marketplace_sync_jobs")
+          .update({
+            status: "completed",
+            finished_at: finishedAt,
+            metadata: {
+              queueSummary,
+              orderSummary,
+              reconciliation,
+            },
+          })
+          .eq("id", jobRow.id);
+      }
+
+      summaries.push({
+        provider,
+        queueSummary,
+        orderSummary,
+        reconciliation,
+      });
+    } catch (providerSyncError) {
+      const finishedAt = new Date().toISOString();
+      if (jobRow?.id) {
+        await supabase
+          .from("marketplace_sync_jobs")
+          .update({
+            status: "failed",
+            finished_at: finishedAt,
+            metadata: {
+              error:
+                providerSyncError instanceof Error
+                  ? providerSyncError.message
+                  : "Provider sync failed.",
+            },
+          })
+          .eq("id", jobRow.id);
+      }
+
+      await insertSyncLog({
+        provider,
+        direction: "system",
+        entityType: "sync_job",
+        entityId: provider,
+        status: "failed",
+        errorMessage:
+          providerSyncError instanceof Error
+            ? providerSyncError.message
+            : "Provider sync failed.",
+      });
     }
-
-    summaries.push({
-      provider,
-      queueSummary,
-      orderSummary,
-      reconciliation,
-    });
   }
 
   return summaries;
+}
+
+export async function verifyMarketplaceWebhook(
+  provider: MarketplaceProvider,
+  rawBody: string,
+  headers: Record<string, string>,
+) {
+  const definition = getMarketplaceProviderDefinition(provider);
+  if (!definition) {
+    throw new Error("Gecersiz pazaryeri secimi.");
+  }
+
+  if (!definition.supportsWebhook) {
+    return {
+      success: false,
+      statusCode: 403 as const,
+      message: "Bu provider webhook desteklemiyor.",
+    };
+  }
+
+  const connection = await getProviderConnectionRow(provider);
+  if (!connection || connection.status !== "active") {
+    return {
+      success: false,
+      statusCode: 403 as const,
+      message: "Aktif provider baglantisi bulunamadi.",
+    };
+  }
+
+  const adapter = getMarketplaceProviderAdapter(provider);
+  if (!adapter.verifyWebhookSignature) {
+    return {
+      success: false,
+      statusCode: 403 as const,
+      message: "Provider webhook dogrulama uygulanmamis.",
+    };
+  }
+
+  try {
+    const credentials = decryptMarketplaceCredentials(connection.encrypted_credentials);
+    const settings = mergeAdapterSettings({
+      settings: connection.settings || {},
+      fieldMappings: connection.field_mappings || {},
+    });
+    return adapter.verifyWebhookSignature({
+      credentials,
+      rawBody,
+      headers,
+      settings,
+    });
+  } catch (error) {
+    return {
+      success: false,
+      statusCode: 403,
+      message: error instanceof Error ? error.message : "Webhook dogrulamasi basarisiz.",
+    };
+  }
 }
 
 export async function recordMarketplaceWebhook(
   provider: MarketplaceProvider,
   payload: Record<string, unknown>,
   headers: Record<string, string>,
+  options?: {
+    signatureValid?: boolean;
+    signatureMessage?: string | null;
+  },
 ) {
   const definition = getMarketplaceProviderDefinition(provider);
   if (!definition) {
@@ -1489,7 +1730,7 @@ export async function recordMarketplaceWebhook(
         provider,
         external_event_id: externalEventId,
         payload_hash: payloadHash,
-        signature_valid: true,
+        signature_valid: options?.signatureValid ?? false,
         payload,
         headers,
         processing_status: "received",
@@ -1510,7 +1751,10 @@ export async function recordMarketplaceWebhook(
     entityType: "webhook",
     entityId: externalEventId,
     status: "received",
+    errorCode: options?.signatureValid ? null : "webhook_signature_invalid",
     payload: {
+      signatureValid: options?.signatureValid ?? false,
+      signatureMessage: options?.signatureMessage || null,
       headers,
       payload,
     },

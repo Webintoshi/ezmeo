@@ -572,17 +572,38 @@ export default function MarketsPage() {
             </div>
             <div className="max-h-[540px] overflow-auto">
               {(logsByProvider[selectedProvider] || []).map((log) => (
-                <div key={log.id} className="px-4 py-3 border-t border-gray-100 text-sm">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-gray-900">{log.status}</span>
-                    <span className="text-xs text-gray-500">{new Date(log.createdAt).toLocaleString("tr-TR")}</span>
-                  </div>
-                  <div className="mt-1 text-xs text-gray-500">
-                    {log.direction} / {log.entityType}
-                    {log.entityId ? ` / ${log.entityId}` : ""}
-                  </div>
-                  {log.errorMessage && <p className="mt-2 text-xs text-red-600">{log.errorMessage}</p>}
-                </div>
+                (() => {
+                  const providerStatusCode =
+                    log.payload && log.payload.providerStatusCode !== undefined && log.payload.providerStatusCode !== null
+                      ? String(log.payload.providerStatusCode)
+                      : "";
+                  const providerErrorCode =
+                    log.payload && log.payload.providerErrorCode !== undefined && log.payload.providerErrorCode !== null
+                      ? String(log.payload.providerErrorCode)
+                      : "";
+                  const hasMeta = Boolean(log.errorCode || providerStatusCode || providerErrorCode);
+
+                  return (
+                    <div key={log.id} className="px-4 py-3 border-t border-gray-100 text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-gray-900">{log.status}</span>
+                        <span className="text-xs text-gray-500">{new Date(log.createdAt).toLocaleString("tr-TR")}</span>
+                      </div>
+                      <div className="mt-1 text-xs text-gray-500">
+                        {log.direction} / {log.entityType}
+                        {log.entityId ? ` / ${log.entityId}` : ""}
+                      </div>
+                      {hasMeta && (
+                        <div className="mt-1 text-xs text-gray-500">
+                          {log.errorCode ? `Kod: ${log.errorCode}` : ""}
+                          {providerStatusCode ? ` HTTP: ${providerStatusCode}` : ""}
+                          {providerErrorCode ? ` Provider: ${providerErrorCode}` : ""}
+                        </div>
+                      )}
+                      {log.errorMessage && <p className="mt-2 text-xs text-red-600">{log.errorMessage}</p>}
+                    </div>
+                  );
+                })()
               ))}
               {(logsByProvider[selectedProvider] || []).length === 0 && (
                 <div className="px-4 py-8 text-center text-sm text-gray-500">Log verisi bulunamadi.</div>

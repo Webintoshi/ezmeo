@@ -24,6 +24,47 @@ export type MarketplaceQueueOperation =
   | "acknowledge_order"
   | "reconcile";
 
+export interface TrendyolCredentials {
+  sellerId: string;
+  apiKey: string;
+  apiSecret: string;
+  webhookApiKey?: string;
+  webhookSecret?: string;
+  webhookUsername?: string;
+  webhookPassword?: string;
+}
+
+export interface HepsiburadaCredentials {
+  merchantId: string;
+  integrationUsername: string;
+  serviceKey: string;
+  webhookUsername?: string;
+  webhookPassword?: string;
+}
+
+export interface N11Credentials {
+  appKey: string;
+  appSecret: string;
+}
+
+export interface AmazonTrCredentials {
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+  sellerId: string;
+  marketplaceId?: string;
+}
+
+export type MarketplaceProviderCredentialsMap = {
+  trendyol: TrendyolCredentials;
+  hepsiburada: HepsiburadaCredentials;
+  n11: N11Credentials;
+  amazon_tr: AmazonTrCredentials;
+};
+
+export type MarketplaceProviderCredentials<P extends MarketplaceProvider = MarketplaceProvider> =
+  MarketplaceProviderCredentialsMap[P];
+
 export interface MarketplaceFieldDefinition {
   key: string;
   label: string;
@@ -48,7 +89,7 @@ export interface MarketplaceProviderDefinition {
 }
 
 export interface MarketplaceConnectionInput {
-  credentials: Record<string, string>;
+  credentials: Record<string, string> | MarketplaceProviderCredentials;
   settings?: Record<string, unknown>;
   fieldMappings?: Record<string, string>;
 }
@@ -191,7 +232,16 @@ export interface MarketplaceProviderAdapterResult {
   success: boolean;
   message: string;
   externalId?: string | null;
+  latencyMs?: number | null;
+  providerStatusCode?: number | null;
+  providerErrorCode?: string | null;
   raw?: Record<string, unknown>;
+}
+
+export interface MarketplaceWebhookVerificationResult {
+  success: boolean;
+  statusCode?: 401 | 403;
+  message?: string;
 }
 
 export interface MarketplaceOrderStatusUpdateInput {
@@ -213,6 +263,7 @@ export interface MarketplaceProviderAdapter {
   }): Promise<MarketplaceProviderAdapterResult>;
   upsertListings(input: {
     credentials: Record<string, string>;
+    settings?: Record<string, unknown>;
     listings: MarketplaceListingSyncItem[];
     existingMappings: Array<{
       variantId: string;
@@ -222,19 +273,29 @@ export interface MarketplaceProviderAdapter {
   }): Promise<MarketplaceListingUpsertResultItem[]>;
   updateInventory(input: {
     credentials: Record<string, string>;
+    settings?: Record<string, unknown>;
     inventory: MarketplaceInventorySyncItem[];
   }): Promise<MarketplaceInventorySyncResultItem[]>;
   pullOrders(input: {
     credentials: Record<string, string>;
+    settings?: Record<string, unknown>;
     since?: string;
   }): Promise<MarketplacePulledOrder[]>;
   acknowledgeOrder(input: {
     credentials: Record<string, string>;
+    settings?: Record<string, unknown>;
     externalOrderId: string;
   }): Promise<MarketplaceProviderAdapterResult>;
   updateOrderStatus(input: {
     credentials: Record<string, string>;
+    settings?: Record<string, unknown>;
     update: MarketplaceOrderStatusUpdateInput;
   }): Promise<MarketplaceProviderAdapterResult>;
+  verifyWebhookSignature?(input: {
+    credentials: Record<string, string>;
+    rawBody: string;
+    headers: Record<string, string>;
+    settings?: Record<string, unknown>;
+  }): Promise<MarketplaceWebhookVerificationResult>;
   normalizeError(error: unknown): string;
 }

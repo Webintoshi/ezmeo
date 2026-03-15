@@ -1,10 +1,14 @@
+import { z } from "zod";
 import type {
-  MarketplaceInventorySyncResultItem,
   MarketplaceProvider,
   MarketplaceProviderAdapter,
-  MarketplaceProviderAdapterResult,
   MarketplaceProviderDefinition,
+  MarketplaceProviderCredentials,
 } from "@/types/marketplace";
+import { createTrendyolAdapter } from "@/lib/marketplace/adapters/trendyol";
+import { createHepsiburadaAdapter } from "@/lib/marketplace/adapters/hepsiburada";
+import { createN11Adapter } from "@/lib/marketplace/adapters/n11";
+import { createAmazonTrAdapter } from "@/lib/marketplace/adapters/amazon-tr";
 
 export const MARKETPLACE_PROVIDER_DEFINITIONS: MarketplaceProviderDefinition[] = [
   {
@@ -20,10 +24,13 @@ export const MARKETPLACE_PROVIDER_DEFINITIONS: MarketplaceProviderDefinition[] =
       { key: "sellerId", label: "Seller ID", required: true },
       { key: "apiKey", label: "API Key", required: true, type: "password" },
       { key: "apiSecret", label: "API Secret", required: true, type: "password" },
+      { key: "webhookApiKey", label: "Webhook API Key", required: false, type: "password" },
+      { key: "webhookSecret", label: "Webhook Secret", required: false, type: "password" },
     ],
     mappingFields: [
       { key: "defaultCargoCompany", label: "Varsayilan kargo firmasi" },
       { key: "warehouseCode", label: "Depo kodu" },
+      { key: "baseUrl", label: "API Base URL", placeholder: "https://api.trendyol.com/sapigw" },
     ],
     capabilities: ["listing", "inventory", "orders", "status", "webhook"],
   },
@@ -38,12 +45,16 @@ export const MARKETPLACE_PROVIDER_DEFINITIONS: MarketplaceProviderDefinition[] =
     supportsWebhook: true,
     credentialFields: [
       { key: "merchantId", label: "Merchant ID", required: true },
-      { key: "username", label: "Kullanici adi", required: true },
-      { key: "password", label: "Sifre", required: true, type: "password" },
+      { key: "integrationUsername", label: "Entegrator kullanici adi", required: true },
+      { key: "serviceKey", label: "Service Key", required: true, type: "password" },
+      { key: "webhookUsername", label: "Webhook kullanici adi", required: false },
+      { key: "webhookPassword", label: "Webhook sifresi", required: false, type: "password" },
     ],
     mappingFields: [
       { key: "shipmentTemplate", label: "Shipment template" },
       { key: "warehouseCode", label: "Depo kodu" },
+      { key: "listingBaseUrl", label: "Listing API URL", placeholder: "https://listing-external.hepsiburada.com" },
+      { key: "orderBaseUrl", label: "Order API URL", placeholder: "https://oms-external.hepsiburada.com" },
     ],
     capabilities: ["listing", "inventory", "orders", "status", "webhook"],
   },
@@ -63,6 +74,7 @@ export const MARKETPLACE_PROVIDER_DEFINITIONS: MarketplaceProviderDefinition[] =
     mappingFields: [
       { key: "sellerCode", label: "Satici kodu" },
       { key: "shipmentCompany", label: "Kargo firmasi" },
+      { key: "baseUrl", label: "API Base URL", placeholder: "https://api.n11.com" },
     ],
     capabilities: ["listing", "inventory", "orders", "status", "polling"],
   },
@@ -80,11 +92,12 @@ export const MARKETPLACE_PROVIDER_DEFINITIONS: MarketplaceProviderDefinition[] =
       { key: "clientSecret", label: "LWA Client Secret", required: true, type: "password" },
       { key: "refreshToken", label: "Refresh Token", required: true, type: "password" },
       { key: "sellerId", label: "Seller ID", required: true },
-      { key: "marketplaceId", label: "Marketplace ID" },
+      { key: "marketplaceId", label: "Marketplace ID", placeholder: "A33AVAJ2PDY3EV" },
     ],
     mappingFields: [
       { key: "fulfillmentLatency", label: "Hazirlama suresi" },
       { key: "merchantShippingGroup", label: "Shipping group" },
+      { key: "baseUrl", label: "API Base URL", placeholder: "https://sellingpartnerapi-eu.amazon.com" },
     ],
     capabilities: ["listing", "inventory", "orders", "status", "polling"],
   },
@@ -92,114 +105,76 @@ export const MARKETPLACE_PROVIDER_DEFINITIONS: MarketplaceProviderDefinition[] =
 
 const providerIdSet = new Set<string>(MARKETPLACE_PROVIDER_DEFINITIONS.map((provider) => provider.id));
 
-function getMissingRequiredCredentialKeys(provider: MarketplaceProvider, credentials: Record<string, string>) {
-  const definition = getMarketplaceProviderDefinition(provider);
-  if (!definition) {
-    return ["provider"];
+const trendyolCredentialsSchema = z.object({
+  sellerId: z.string().trim().min(1, "sellerId zorunludur."),
+  apiKey: z.string().trim().min(1, "apiKey zorunludur."),
+  apiSecret: z.string().trim().min(1, "apiSecret zorunludur."),
+  webhookApiKey: z.string().trim().optional().or(z.literal("")),
+  webhookSecret: z.string().trim().optional().or(z.literal("")),
+  webhookUsername: z.string().trim().optional().or(z.literal("")),
+  webhookPassword: z.string().trim().optional().or(z.literal("")),
+});
+
+const hepsiburadaCredentialsSchema = z.object({
+  merchantId: z.string().trim().min(1, "merchantId zorunludur."),
+  integrationUsername: z.string().trim().min(1, "integrationUsername zorunludur."),
+  serviceKey: z.string().trim().min(1, "serviceKey zorunludur."),
+  webhookUsername: z.string().trim().optional().or(z.literal("")),
+  webhookPassword: z.string().trim().optional().or(z.literal("")),
+});
+
+const n11CredentialsSchema = z.object({
+  appKey: z.string().trim().min(1, "appKey zorunludur."),
+  appSecret: z.string().trim().min(1, "appSecret zorunludur."),
+});
+
+const amazonCredentialsSchema = z.object({
+  clientId: z.string().trim().min(1, "clientId zorunludur."),
+  clientSecret: z.string().trim().min(1, "clientSecret zorunludur."),
+  refreshToken: z.string().trim().min(1, "refreshToken zorunludur."),
+  sellerId: z.string().trim().min(1, "sellerId zorunludur."),
+  marketplaceId: z.string().trim().optional().or(z.literal("")),
+});
+
+export const MARKETPLACE_CREDENTIAL_SCHEMAS = {
+  trendyol: trendyolCredentialsSchema,
+  hepsiburada: hepsiburadaCredentialsSchema,
+  n11: n11CredentialsSchema,
+  amazon_tr: amazonCredentialsSchema,
+} as const;
+
+type CredentialSchemaMap = typeof MARKETPLACE_CREDENTIAL_SCHEMAS;
+
+export function parseMarketplaceCredentials<P extends MarketplaceProvider>(
+  provider: P,
+  credentials: unknown,
+): {
+  success: true;
+  credentials: MarketplaceProviderCredentials<P>;
+} | {
+  success: false;
+  error: z.ZodError;
+} {
+  const schema = MARKETPLACE_CREDENTIAL_SCHEMAS[provider] as CredentialSchemaMap[P];
+  const parsed = schema.safeParse(credentials || {});
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error,
+    };
   }
 
-  return definition.credentialFields
-    .filter((field) => field.required)
-    .filter((field) => !credentials[field.key]?.trim())
-    .map((field) => field.key);
-}
-
-function buildSuccess(message: string, raw?: Record<string, unknown>): MarketplaceProviderAdapterResult {
   return {
     success: true,
-    message,
-    raw,
-  };
-}
-
-function buildFailure(message: string, raw?: Record<string, unknown>): MarketplaceProviderAdapterResult {
-  return {
-    success: false,
-    message,
-    raw,
-  };
-}
-
-function buildMockAdapter(provider: MarketplaceProvider): MarketplaceProviderAdapter {
-  return {
-    async connect({ credentials }) {
-      const missingFields = getMissingRequiredCredentialKeys(provider, credentials);
-      if (missingFields.length > 0) {
-        return buildFailure(`Zorunlu alanlar eksik: ${missingFields.join(", ")}`);
-      }
-
-      return buildSuccess(`${provider} baglanti bilgileri kaydedildi.`, { simulated: true });
-    },
-    async testConnection({ credentials }) {
-      const missingFields = getMissingRequiredCredentialKeys(provider, credentials);
-      if (missingFields.length > 0) {
-        return buildFailure(`Test icin zorunlu alanlar eksik: ${missingFields.join(", ")}`);
-      }
-
-      return buildSuccess(`${provider} baglanti testi basarili.`, { simulated: true });
-    },
-    async upsertListings({ listings, existingMappings }) {
-      const existingByVariantId = new Map(
-        existingMappings.map((mapping) => [mapping.variantId, mapping] as const),
-      );
-
-      return listings.map((listing) => {
-        const existing = existingByVariantId.get(listing.variantId);
-        return {
-          variantId: listing.variantId,
-          externalListingId:
-            existing?.externalListingId ||
-            `${provider}-listing-${(listing.sku || listing.variantId).replace(/[^a-zA-Z0-9_-]/g, "-")}`,
-          externalSku: existing?.externalSku || listing.sku || null,
-          status: listing.isActive ? "active" : "inactive",
-          raw: {
-            simulated: true,
-            provider,
-            productId: listing.productId,
-            variantId: listing.variantId,
-          },
-        };
-      });
-    },
-    async updateInventory({ inventory }) {
-      return inventory.map<MarketplaceInventorySyncResultItem>((item) => ({
-        variantId: item.variantId,
-        externalListingId: item.externalListingId,
-        raw: {
-          simulated: true,
-          provider,
-          stock: item.stock,
-          price: item.price,
-        },
-      }));
-    },
-    async pullOrders() {
-      return [];
-    },
-    async acknowledgeOrder({ externalOrderId }) {
-      return buildSuccess(`${provider} siparis ack basarili.`, {
-        simulated: true,
-        externalOrderId,
-      });
-    },
-    async updateOrderStatus({ update }) {
-      return buildSuccess(`${provider} siparis durumu guncellendi.`, {
-        simulated: true,
-        externalOrderId: update.externalOrderId,
-        status: update.status,
-      });
-    },
-    normalizeError(error) {
-      return error instanceof Error ? error.message : "Bilinmeyen pazaryeri saglayici hatasi.";
-    },
+    credentials: parsed.data as MarketplaceProviderCredentials<P>,
   };
 }
 
 const ADAPTERS: Record<MarketplaceProvider, MarketplaceProviderAdapter> = {
-  trendyol: buildMockAdapter("trendyol"),
-  hepsiburada: buildMockAdapter("hepsiburada"),
-  n11: buildMockAdapter("n11"),
-  amazon_tr: buildMockAdapter("amazon_tr"),
+  trendyol: createTrendyolAdapter(),
+  hepsiburada: createHepsiburadaAdapter(),
+  n11: createN11Adapter(),
+  amazon_tr: createAmazonTrAdapter(),
 };
 
 export function isMarketplaceProvider(value: string): value is MarketplaceProvider {

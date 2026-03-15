@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { checkRateLimit, getRequestIp } from "@/lib/api-rate-limit";
-import { isMarketplaceProvider } from "@/lib/marketplace-providers";
-import type { MarketplaceProvider } from "@/types/marketplace";
+import {
+  isMarketplaceProvider,
+  parseMarketplaceCredentials,
+} from "@/lib/marketplace-providers";
+import type { MarketplaceProvider, MarketplaceProviderCredentials } from "@/types/marketplace";
 
 export const marketplaceConnectionSchema = z.object({
   credentials: z.record(z.string(), z.string()).default({}),
@@ -53,4 +56,55 @@ export function enforceMarketplaceRateLimit(
       },
     },
   );
+}
+
+export function parseMarketplaceConnectionForProvider(
+  provider: MarketplaceProvider,
+  body: unknown,
+): {
+  success: true;
+  data: {
+    credentials: MarketplaceProviderCredentials;
+    settings: Record<string, unknown>;
+    fieldMappings: Record<string, string>;
+  };
+} | {
+  success: false;
+  status: 422;
+  payload: Record<string, unknown>;
+} {
+  const parsedBody = marketplaceConnectionSchema.safeParse(body);
+  if (!parsedBody.success) {
+    return {
+      success: false,
+      status: 422,
+      payload: {
+        success: false,
+        error: "Baglanti verisi gecersiz.",
+        details: parsedBody.error.flatten(),
+      },
+    };
+  }
+
+  const parsedCredentials = parseMarketplaceCredentials(provider, parsedBody.data.credentials);
+  if (!parsedCredentials.success) {
+    return {
+      success: false,
+      status: 422,
+      payload: {
+        success: false,
+        error: "Credential verisi gecersiz.",
+        details: parsedCredentials.error.flatten(),
+      },
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      credentials: parsedCredentials.credentials,
+      settings: parsedBody.data.settings,
+      fieldMappings: parsedBody.data.fieldMappings,
+    },
+  };
 }

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { saveMarketplaceConnection } from "@/lib/db/marketplaces";
-import { enforceMarketplaceRateLimit, getMarketplaceProviderOrResponse, marketplaceConnectionSchema } from "@/app/api/admin/marketplace-integrations/_shared";
+import {
+  enforceMarketplaceRateLimit,
+  getMarketplaceProviderOrResponse,
+  parseMarketplaceConnectionForProvider,
+} from "@/app/api/admin/marketplace-integrations/_shared";
 
 interface Params {
   params: Promise<{ provider: string }>;
@@ -20,16 +24,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     const body = await request.json();
-    const parsedBody = marketplaceConnectionSchema.safeParse(body);
+    const parsedBody = parseMarketplaceConnectionForProvider(parsedProvider, body);
     if (!parsedBody.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Baglanti verisi gecersiz.",
-          details: parsedBody.error.flatten(),
-        },
-        { status: 422 },
-      );
+      return NextResponse.json(parsedBody.payload, { status: parsedBody.status });
     }
 
     const result = await saveMarketplaceConnection(parsedProvider, parsedBody.data);
