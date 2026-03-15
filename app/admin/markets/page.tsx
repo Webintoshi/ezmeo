@@ -4,16 +4,23 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ElementType } from "react";
 import {
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   ExternalLink,
   Loader2,
   Package,
   RefreshCw,
   Save,
+  Settings,
   ShieldCheck,
   ShoppingBag,
+  Store,
   Terminal,
   Unplug,
+  AlertCircle,
+  ChevronDown,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type {
   MarketplaceIntegrationView,
   MarketplaceListingView,
@@ -45,6 +52,15 @@ function createFormState(item: MarketplaceIntegrationView): ProviderFormState {
   };
 }
 
+// Sağlayıcı renkleri
+const PROVIDER_COLORS: Record<string, { bg: string; text: string }> = {
+  trendyol: { bg: "bg-orange-100", text: "text-orange-700" },
+  hepsiburada: { bg: "bg-red-100", text: "text-red-700" },
+  n11: { bg: "bg-blue-100", text: "text-blue-700" },
+  amazon: { bg: "bg-slate-100", text: "text-slate-700" },
+  ciceksepeti: { bg: "bg-pink-100", text: "text-pink-700" },
+};
+
 export default function MarketsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +70,7 @@ export default function MarketsPage() {
   const [selectedProvider, setSelectedProvider] = useState<MarketplaceProvider | null>(null);
   const [logsByProvider, setLogsByProvider] = useState<Record<string, MarketplaceSyncLogView[]>>({});
   const [listingsByProvider, setListingsByProvider] = useState<Record<string, MarketplaceListingView[]>>({});
+  const [view, setView] = useState<"list" | "detail">("list");
 
   const fetchIntegrations = useCallback(async () => {
     setLoading(true);
@@ -62,7 +79,7 @@ export default function MarketsPage() {
       const response = await fetch("/api/admin/marketplace-integrations", { cache: "no-store" });
       const result = await response.json();
       if (!response.ok || !result.success) {
-        throw new Error(result?.error || "Pazaryeri entegrasyonlari alinamadi.");
+        throw new Error(result?.error || "Pazaryeri entegrasyonları alınamadı.");
       }
 
       const list = (result.integrations || []) as MarketplaceIntegrationView[];
@@ -74,12 +91,8 @@ export default function MarketsPage() {
         }
         return next;
       });
-
-      if (list.length > 0) {
-        setSelectedProvider((current) => current || list[0].provider.id);
-      }
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : "Entegrasyonlar yuklenemedi.");
+      setError(fetchError instanceof Error ? fetchError.message : "Entegrasyonlar yüklenemedi.");
     } finally {
       setLoading(false);
     }
@@ -96,7 +109,7 @@ export default function MarketsPage() {
         const bActive = b.connection?.status === "active" ? 0 : b.connection?.status === "error" ? 1 : 2;
         return aActive - bActive;
       }),
-    [integrations],
+    [integrations]
   );
 
   const totals = useMemo(
@@ -109,14 +122,9 @@ export default function MarketsPage() {
           acc.totalListings += integration.listingStats.total;
           return acc;
         },
-        {
-          totalConnections: 0,
-          activeConnections: 0,
-          totalQueue: 0,
-          totalListings: 0,
-        },
+        { totalConnections: 0, activeConnections: 0, totalQueue: 0, totalListings: 0 }
       ),
-    [integrations],
+    [integrations]
   );
 
   const updateCredential = (providerId: string, key: string, value: string) => {
@@ -124,10 +132,7 @@ export default function MarketsPage() {
       ...current,
       [providerId]: {
         ...(current[providerId] || { credentials: {}, fieldMappings: {}, settings: {} }),
-        credentials: {
-          ...(current[providerId]?.credentials || {}),
-          [key]: value,
-        },
+        credentials: { ...(current[providerId]?.credentials || {}), [key]: value },
       },
     }));
   };
@@ -137,10 +142,7 @@ export default function MarketsPage() {
       ...current,
       [providerId]: {
         ...(current[providerId] || { credentials: {}, fieldMappings: {}, settings: {} }),
-        fieldMappings: {
-          ...(current[providerId]?.fieldMappings || {}),
-          [key]: value,
-        },
+        fieldMappings: { ...(current[providerId]?.fieldMappings || {}), [key]: value },
       },
     }));
   };
@@ -150,15 +152,10 @@ export default function MarketsPage() {
     try {
       const response = await fetch(`/api/admin/marketplace-integrations/${providerId}/logs?limit=20`, { cache: "no-store" });
       const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result?.error || "Loglar alinamadi.");
-      }
-      setLogsByProvider((current) => ({
-        ...current,
-        [providerId]: (result.logs || []) as MarketplaceSyncLogView[],
-      }));
+      if (!response.ok || !result.success) throw new Error(result?.error || "Loglar alınamadı.");
+      setLogsByProvider((current) => ({ ...current, [providerId]: (result.logs || []) as MarketplaceSyncLogView[] }));
     } catch (logError) {
-      window.alert(logError instanceof Error ? logError.message : "Log yukleme hatasi.");
+      alert(logError instanceof Error ? logError.message : "Log yükleme hatası.");
     } finally {
       setBusyKey(null);
     }
@@ -169,15 +166,10 @@ export default function MarketsPage() {
     try {
       const response = await fetch(`/api/admin/marketplace-integrations/${providerId}/listings?limit=60`, { cache: "no-store" });
       const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result?.error || "Listingler alinamadi.");
-      }
-      setListingsByProvider((current) => ({
-        ...current,
-        [providerId]: (result.listings || []) as MarketplaceListingView[],
-      }));
+      if (!response.ok || !result.success) throw new Error(result?.error || "Listingler alınamadı.");
+      setListingsByProvider((current) => ({ ...current, [providerId]: (result.listings || []) as MarketplaceListingView[] }));
     } catch (listingError) {
-      window.alert(listingError instanceof Error ? listingError.message : "Listing yukleme hatasi.");
+      alert(listingError instanceof Error ? listingError.message : "Listing yükleme hatası.");
     } finally {
       setBusyKey(null);
     }
@@ -192,22 +184,16 @@ export default function MarketsPage() {
       const response = await fetch(`/api/admin/marketplace-integrations/${providerId}/connect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          credentials: form.credentials,
-          fieldMappings: form.fieldMappings,
-          settings: form.settings,
-        }),
+        body: JSON.stringify({ credentials: form.credentials, fieldMappings: form.fieldMappings, settings: form.settings }),
       });
       const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result?.error || "Baglanti kaydedilemedi.");
-      }
+      if (!response.ok || !result.success) throw new Error(result?.error || "Bağlantı kaydedilemedi.");
 
       await fetchIntegrations();
       await Promise.all([loadListings(providerId), loadLogs(providerId)]);
-      window.alert(result.testResult?.message || "Baglanti kaydedildi.");
+      alert(result.testResult?.message || "Bağlantı kaydedildi.");
     } catch (connectError) {
-      window.alert(connectError instanceof Error ? connectError.message : "Baglanti hatasi.");
+      alert(connectError instanceof Error ? connectError.message : "Bağlantı hatası.");
     } finally {
       setBusyKey(null);
     }
@@ -218,14 +204,12 @@ export default function MarketsPage() {
     try {
       const response = await fetch(`/api/admin/marketplace-integrations/${providerId}/test`, { method: "POST" });
       const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result?.error || "Baglanti testi basarisiz.");
-      }
-      window.alert(result.result?.message || "Baglanti testi basarili.");
+      if (!response.ok || !result.success) throw new Error(result?.error || "Bağlantı testi başarısız.");
+      alert(result.result?.message || "Bağlantı testi başarılı.");
       await fetchIntegrations();
       await loadLogs(providerId);
     } catch (testError) {
-      window.alert(testError instanceof Error ? testError.message : "Test hatasi.");
+      alert(testError instanceof Error ? testError.message : "Test hatası.");
     } finally {
       setBusyKey(null);
     }
@@ -236,395 +220,469 @@ export default function MarketsPage() {
     try {
       const response = await fetch(`/api/admin/marketplace-integrations/${providerId}/sync`, { method: "POST" });
       const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result?.error || "Senkronizasyon basarisiz.");
-      }
+      if (!response.ok || !result.success) throw new Error(result?.error || "Senkronizasyon başarısız.");
 
       await fetchIntegrations();
       await Promise.all([loadListings(providerId), loadLogs(providerId)]);
-      window.alert("Senkronizasyon tamamlandi.");
+      alert("Senkronizasyon tamamlandı.");
     } catch (syncError) {
-      window.alert(syncError instanceof Error ? syncError.message : "Senkronizasyon hatasi.");
+      alert(syncError instanceof Error ? syncError.message : "Senkronizasyon hatası.");
     } finally {
       setBusyKey(null);
     }
   };
 
-  useEffect(() => {
-    if (!selectedProvider) return;
-    if (listingsByProvider[selectedProvider] && logsByProvider[selectedProvider]) return;
+  const openDetail = (providerId: MarketplaceProvider) => {
+    setSelectedProvider(providerId);
+    setView("detail");
+    void Promise.all([loadListings(providerId), loadLogs(providerId)]);
+  };
 
-    void Promise.all([loadListings(selectedProvider), loadLogs(selectedProvider)]);
-  }, [selectedProvider, listingsByProvider, logsByProvider, loadListings, loadLogs]);
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50/50 p-6 md:p-8 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-  return (
-    <div className="min-h-screen bg-gray-50/60 p-6 md:p-8 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Pazaryeri Entegrasyonlari</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Baglanti, healthcheck, listing esleme, kuyruk ve siparis import akislarini tek panelden yonetin.
-          </p>
+  // LIST VIEW
+  if (view === "list") {
+    return (
+      <div className="min-h-screen bg-gray-50/50 p-6 md:p-8 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Pazaryeri Entegrasyonları</h1>
+            <p className="text-sm text-gray-500 mt-1">Trendyol, Hepsiburada, N11 ve diğer pazaryerlerini yönetin.</p>
+          </div>
+          <button
+            onClick={fetchIntegrations}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Yenile
+          </button>
         </div>
-        <button
-          onClick={fetchIntegrations}
-          className="inline-flex items-center gap-2 px-3 py-2 border border-gray-200 bg-white rounded-lg text-sm text-gray-700 hover:bg-gray-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          Listeyi Yenile
-        </button>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <SummaryCard title="Tanimli baglanti" value={totals.totalConnections} icon={Package} />
-        <SummaryCard title="Aktif provider" value={totals.activeConnections} icon={CheckCircle2} />
-        <SummaryCard title="Bekleyen kuyruk" value={totals.totalQueue} icon={RefreshCw} />
-        <SummaryCard title="Listing map" value={totals.totalListings} icon={ShoppingBag} />
-      </div>
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard title="Bağlantı" value={totals.totalConnections} icon={Store} color="blue" />
+          <StatCard title="Aktif" value={totals.activeConnections} icon={CheckCircle2} color="green" />
+          <StatCard title="Bekleyen" value={totals.totalQueue} icon={RefreshCw} color="amber" />
+          <StatCard title="Listing" value={totals.totalListings} icon={ShoppingBag} color="purple" />
+        </div>
 
-      {error && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            {error}
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {sortedIntegrations.map((integration) => {
-          const providerId = integration.provider.id;
-          const form = forms[providerId] || createFormState(integration);
-          const isSelected = selectedProvider === providerId;
-          const isConnected = integration.connection?.status === "active";
-          const statusBadge = isConnected
-            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-            : integration.connection?.status === "error"
-              ? "bg-red-50 text-red-700 border-red-200"
-              : "bg-gray-100 text-gray-700 border-gray-200";
+        {/* Provider Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {sortedIntegrations.map((integration) => {
+            const providerId = integration.provider.id;
+            const isConnected = integration.connection?.status === "active";
+            const hasError = integration.connection?.status === "error";
+            const colorStyle = PROVIDER_COLORS[providerId] || { bg: "bg-gray-100", text: "text-gray-700" };
 
-          return (
-            <section
-              key={providerId}
-              className={`bg-white border rounded-xl shadow-sm p-4 space-y-4 ${
-                isSelected ? "border-gray-900" : "border-gray-200"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${integration.provider.color} text-white flex items-center justify-center font-semibold`}>
+            return (
+              <button
+                key={providerId}
+                onClick={() => openDetail(providerId)}
+                className={cn(
+                  "text-left bg-white rounded-2xl border p-5 transition-all hover:shadow-md",
+                  isConnected ? "border-green-200" : hasError ? "border-red-200" : "border-gray-200"
+                )}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold shrink-0", colorStyle.bg, colorStyle.text)}>
                     {integration.provider.logo}
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">{integration.provider.name}</h2>
-                    <p className="text-sm text-gray-500">{integration.provider.description}</p>
-                    <div className="flex flex-wrap items-center gap-3 mt-1">
-                      <a className="text-xs text-blue-600 hover:underline" href={integration.provider.websiteUrl} target="_blank" rel="noreferrer">
-                        Panel
-                      </a>
-                      {integration.provider.docsUrl && (
-                        <a className="text-xs text-blue-600 hover:underline" href={integration.provider.docsUrl} target="_blank" rel="noreferrer">
-                          API Docs
-                        </a>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-gray-900">{integration.provider.name}</h3>
+                      {isConnected && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                    </div>
+                    <p className="text-sm text-gray-500 line-clamp-2">{integration.provider.description}</p>
+
+                    <div className="mt-3 flex items-center gap-2 flex-wrap">
+                      {isConnected ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Bağlı
+                        </span>
+                      ) : hasError ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          <AlertCircle className="w-3 h-3" />
+                          Hata
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                          <Unplug className="w-3 h-3" />
+                          Bağlı Değil
+                        </span>
                       )}
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedProvider(providerId)}
-                  className={`inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium ${statusBadge}`}
-                >
-                  {isConnected ? "Bagli" : integration.connection?.status === "error" ? "Hatali" : "Bagli degil"}
-                </button>
-              </div>
 
-              <div className="flex flex-wrap gap-2">
-                {integration.provider.capabilities.map((capability) => (
-                  <span key={capability} className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-[11px] text-gray-600">
-                    {capability}
-                  </span>
-                ))}
-              </div>
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <p className="text-xs text-gray-400">Bekleyen</p>
+                      <p className="font-semibold text-gray-900">{integration.queueStats.queued}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Listing</p>
+                      <p className="font-semibold text-gray-900">{integration.listingStats.total}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Hatalı</p>
+                      <p className={cn("font-semibold", integration.queueStats.failed > 0 ? "text-red-600" : "text-gray-900")}>
+                        {integration.queueStats.failed}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                <MiniInfoCard title="Bekleyen" value={integration.queueStats.queued} />
-                <MiniInfoCard title="Hatali" value={integration.queueStats.failed} danger={integration.queueStats.failed > 0} />
-                <MiniInfoCard title="Manual" value={integration.queueStats.manualActionRequired} danger={integration.queueStats.manualActionRequired > 0} />
-              </div>
+  // DETAIL VIEW
+  if (view === "detail" && selectedProvider) {
+    const integration = integrations.find((i) => i.provider.id === selectedProvider);
+    if (!integration) return null;
 
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                <MiniInfoCard title="Listing" value={integration.listingStats.total} />
-                <MiniInfoCard title="Aktif" value={integration.listingStats.active} />
-                <MiniInfoCard title="Hata" value={integration.listingStats.error} danger={integration.listingStats.error > 0} />
-              </div>
+    const providerId = integration.provider.id;
+    const form = forms[providerId] || createFormState(integration);
+    const isConnected = integration.connection?.status === "active";
+    const hasError = integration.connection?.status === "error";
+    const colorStyle = PROVIDER_COLORS[providerId] || { bg: "bg-gray-100", text: "text-gray-700" };
+    const listings = listingsByProvider[selectedProvider] || [];
+    const logs = logsByProvider[selectedProvider] || [];
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {integration.provider.credentialFields.map((field) => (
-                  <label key={field.key} className="text-sm">
-                    <span className="text-gray-600">
-                      {field.label}
-                      {field.required ? " *" : ""}
+    return (
+      <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Back Button */}
+          <button
+            onClick={() => setView("list")}
+            className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Tüm Pazaryerlerine Dön
+          </button>
+
+          {/* Header Card */}
+          <div className={cn("bg-white rounded-2xl border p-6", isConnected ? "border-green-200" : hasError ? "border-red-200" : "border-gray-200")}>
+            <div className="flex items-center gap-4">
+              <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold", colorStyle.bg, colorStyle.text)}>
+                {integration.provider.logo}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-2xl font-bold text-gray-900">{integration.provider.name}</h1>
+                  {isConnected ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Bağlı
                     </span>
-                    <input
-                      type={field.type === "password" ? "password" : "text"}
-                      value={form.credentials[field.key] || ""}
-                      onChange={(event) => updateCredential(providerId, field.key, event.target.value)}
-                      placeholder={field.placeholder || field.label}
-                      className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
-                    />
-                  </label>
-                ))}
+                  ) : hasError ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                      <AlertCircle className="w-3 h-3" />
+                      Hata
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                      <Unplug className="w-3 h-3" />
+                      Bağlı Değil
+                    </span>
+                  )}
+                </div>
+                <p className="text-gray-500 mt-1">{integration.provider.description}</p>
+                <div className="flex items-center gap-4 mt-2">
+                  <a href={integration.provider.websiteUrl} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
+                    Panel <ExternalLink className="w-3 h-3" />
+                  </a>
+                  {integration.provider.docsUrl && (
+                    <a href={integration.provider.docsUrl} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
+                      API Dökümanı <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left: Form */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* API Credentials */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Settings className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-gray-900">API Bilgileri</h2>
+                    <p className="text-sm text-gray-500">Pazaryeri panelinden alınan kimlik bilgileri</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {integration.provider.credentialFields.map((field) => (
+                    <div key={field.key} className={field.type === "textarea" ? "md:col-span-2" : ""}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {field.label}
+                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                      </label>
+                      {field.type === "textarea" ? (
+                        <textarea
+                          value={form.credentials[field.key] || ""}
+                          onChange={(e) => updateCredential(providerId, field.key, e.target.value)}
+                          placeholder={field.placeholder || field.label}
+                          rows={3}
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        />
+                      ) : (
+                        <input
+                          type={field.type === "password" ? "password" : "text"}
+                          value={form.credentials[field.key] || ""}
+                          onChange={(e) => updateCredential(providerId, field.key, e.target.value)}
+                          placeholder={field.placeholder || field.label}
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        />
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">{field.description}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
 
+              {/* Field Mappings */}
               {integration.provider.mappingFields.length > 0 && (
-                <div className="border border-gray-100 rounded-lg p-3 space-y-3">
-                  <h3 className="font-medium text-gray-900 text-sm">Alan esleme ve operasyon ayarlari</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                      <Package className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="font-semibold text-gray-900">Alan Eşleme</h2>
+                      <p className="text-sm text-gray-500">Ürün alanlarını pazaryeri alanlarıyla eşleştirin</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {integration.provider.mappingFields.map((field) => (
-                      <label key={field.key} className="text-sm">
-                        <span className="text-gray-600">{field.label}</span>
+                      <div key={field.key}>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{field.label}</label>
                         <input
                           value={form.fieldMappings[field.key] || ""}
-                          onChange={(event) => updateMapping(providerId, field.key, event.target.value)}
+                          onChange={(e) => updateMapping(providerId, field.key, e.target.value)}
                           placeholder={field.placeholder || "Opsiyonel"}
-                          className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm"
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                         />
-                      </label>
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div className="border border-gray-100 rounded-lg p-3 space-y-2 text-sm">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-gray-500">Webhook</span>
-                  <span className="font-medium text-gray-900">{integration.provider.supportsWebhook ? "Destekli" : "Polling"}</span>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-gray-500">Son healthcheck</span>
-                  <span className="font-medium text-gray-900">
-                    {integration.connection?.lastHealthcheckAt
-                      ? new Date(integration.connection.lastHealthcheckAt).toLocaleString("tr-TR")
-                      : "-"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-gray-500">Son sync</span>
-                  <span className="font-medium text-gray-900">
-                    {integration.connection?.lastSyncAt ? new Date(integration.connection.lastSyncAt).toLocaleString("tr-TR") : "-"}
-                  </span>
-                </div>
-                {integration.connection?.lastHealthcheckMessage && (
-                  <p className="text-xs text-gray-500">{integration.connection.lastHealthcheckMessage}</p>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <ActionButton
-                  icon={Save}
-                  label="Baglan"
-                  loading={busyKey === `${providerId}:connect`}
-                  onClick={() => connectProvider(providerId)}
-                />
-                <ActionButton
-                  icon={ShieldCheck}
-                  label="Baglanti testi"
-                  loading={busyKey === `${providerId}:test`}
-                  onClick={() => testProvider(providerId)}
-                />
-                <ActionButton
-                  icon={RefreshCw}
-                  label="Sync calistir"
-                  loading={busyKey === `${providerId}:sync`}
-                  onClick={() => syncProvider(providerId)}
-                />
-                <ActionButton
-                  icon={Package}
-                  label="Listingler"
-                  loading={busyKey === `${providerId}:listings`}
-                  onClick={() => {
-                    setSelectedProvider(providerId);
-                    void loadListings(providerId);
-                  }}
-                  variant="secondary"
-                />
-                <ActionButton
-                  icon={Terminal}
-                  label="Loglar"
-                  loading={busyKey === `${providerId}:logs`}
-                  onClick={() => {
-                    setSelectedProvider(providerId);
-                    void loadLogs(providerId);
-                  }}
-                  variant="secondary"
-                />
-              </div>
-
-              <div className="text-xs text-gray-500 flex items-center gap-2">
-                {isConnected ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    Baglanti aktif
-                  </>
-                ) : (
-                  <>
-                    <Unplug className="w-4 h-4 text-gray-400" />
-                    Baglanti kurulmadı
-                  </>
-                )}
-                <span className="ml-auto inline-flex items-center gap-1">
-                  <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
-                  {integration.provider.supportsWebhook ? "Webhook + poll fallback" : "Polling"}
-                </span>
-              </div>
-            </section>
-          );
-        })}
-      </div>
-
-      {selectedProvider && (
-        <div className="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-4">
-          <section className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-semibold text-gray-900">Listing eslemeleri</h3>
-                <p className="text-xs text-gray-500">SKU, external listing ve son sync durumu</p>
-              </div>
-              <button
-                onClick={() => void loadListings(selectedProvider)}
-                className="inline-flex items-center gap-2 px-3 py-2 text-xs border border-gray-200 rounded-lg bg-white hover:bg-gray-50"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${busyKey === `${selectedProvider}:listings` ? "animate-spin" : ""}`} />
-                Yenile
-              </button>
-            </div>
-            <div className="overflow-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left font-medium text-gray-500">Urun / varyant</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-500">SKU</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-500">External ID</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-500">Fiyat / stok</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-500">Durum</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(listingsByProvider[selectedProvider] || []).map((listing) => (
-                    <tr key={`${listing.provider}-${listing.variantId}`} className="border-t border-gray-100 align-top">
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">{listing.productName}</div>
-                        <div className="text-xs text-gray-500">{listing.variantName}</div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">{listing.sku || "-"}</div>
-                        {listing.barcode && <div className="text-xs text-gray-500">Barkod: {listing.barcode}</div>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">{listing.externalListingId || "-"}</div>
-                        {listing.externalSku && <div className="text-xs text-gray-500">SKU: {listing.externalSku}</div>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-gray-900">
-                          {listing.price.toLocaleString("tr-TR")} TL / {listing.stock}
-                        </div>
-                        {(listing.lastSyncedPrice !== null || listing.lastSyncedStock !== null) && (
-                          <div className="text-xs text-gray-500">
-                            Son sync: {listing.lastSyncedPrice ?? "-"} TL / {listing.lastSyncedStock ?? "-"}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                            listing.status === "active"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : listing.status === "error"
-                                ? "bg-red-50 text-red-700"
-                                : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {listing.status}
-                        </span>
-                        {listing.issue && <div className="mt-2 text-xs text-amber-700">{listing.issue}</div>}
-                        {listing.lastError && <div className="mt-1 text-xs text-red-600">{listing.lastError}</div>}
-                      </td>
-                    </tr>
-                  ))}
-                  {(listingsByProvider[selectedProvider] || []).length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">
-                        Listing verisi bulunamadi.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-semibold text-gray-900">Son sync loglari</h3>
-                <p className="text-xs text-gray-500">Queue, import ve webhook akislarinin son durumu</p>
-              </div>
-              <button
-                onClick={() => void loadLogs(selectedProvider)}
-                className="inline-flex items-center gap-2 px-3 py-2 text-xs border border-gray-200 rounded-lg bg-white hover:bg-gray-50"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${busyKey === `${selectedProvider}:logs` ? "animate-spin" : ""}`} />
-                Yenile
-              </button>
-            </div>
-            <div className="max-h-[540px] overflow-auto">
-              {(logsByProvider[selectedProvider] || []).map((log) => (
-                (() => {
-                  const providerStatusCode =
-                    log.payload && log.payload.providerStatusCode !== undefined && log.payload.providerStatusCode !== null
-                      ? String(log.payload.providerStatusCode)
-                      : "";
-                  const providerErrorCode =
-                    log.payload && log.payload.providerErrorCode !== undefined && log.payload.providerErrorCode !== null
-                      ? String(log.payload.providerErrorCode)
-                      : "";
-                  const hasMeta = Boolean(log.errorCode || providerStatusCode || providerErrorCode);
-
-                  return (
-                    <div key={log.id} className="px-4 py-3 border-t border-gray-100 text-sm">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-gray-900">{log.status}</span>
-                        <span className="text-xs text-gray-500">{new Date(log.createdAt).toLocaleString("tr-TR")}</span>
-                      </div>
-                      <div className="mt-1 text-xs text-gray-500">
-                        {log.direction} / {log.entityType}
-                        {log.entityId ? ` / ${log.entityId}` : ""}
-                      </div>
-                      {hasMeta && (
-                        <div className="mt-1 text-xs text-gray-500">
-                          {log.errorCode ? `Kod: ${log.errorCode}` : ""}
-                          {providerStatusCode ? ` HTTP: ${providerStatusCode}` : ""}
-                          {providerErrorCode ? ` Provider: ${providerErrorCode}` : ""}
-                        </div>
-                      )}
-                      {log.errorMessage && <p className="mt-2 text-xs text-red-600">{log.errorMessage}</p>}
+              {/* Listings Table */}
+              {listings.length > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <ShoppingBag className="w-5 h-5 text-gray-400" />
+                      <h3 className="font-semibold text-gray-900">Listing Eşleşmeleri</h3>
                     </div>
-                  );
-                })()
-              ))}
-              {(logsByProvider[selectedProvider] || []).length === 0 && (
-                <div className="px-4 py-8 text-center text-sm text-gray-500">Log verisi bulunamadi.</div>
+                    <button
+                      onClick={() => loadListings(selectedProvider)}
+                      disabled={busyKey === `${selectedProvider}:listings`}
+                      className="text-sm text-primary hover:underline disabled:opacity-50"
+                    >
+                      {busyKey === `${selectedProvider}:listings` ? "Yükleniyor..." : "Yenile"}
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Ürün</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">SKU</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Fiyat / Stok</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Durum</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {listings.slice(0, 10).map((listing) => (
+                          <tr key={listing.variantId} className="hover:bg-gray-50">
+                            <td className="px-4 py-3">
+                              <div className="font-medium text-gray-900">{listing.productName}</div>
+                              <div className="text-xs text-gray-500">{listing.variantName}</div>
+                            </td>
+                            <td className="px-4 py-3 font-mono text-xs">{listing.sku || "-"}</td>
+                            <td className="px-4 py-3">
+                              {listing.price.toLocaleString("tr-TR")} ₺ / {listing.stock}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={cn(
+                                  "inline-flex px-2 py-1 rounded-full text-xs font-medium",
+                                  listing.status === "active" && "bg-green-100 text-green-700",
+                                  listing.status === "error" && "bg-red-100 text-red-700",
+                                  listing.status === "pending" && "bg-amber-100 text-amber-700"
+                                )}
+                              >
+                                {listing.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               )}
             </div>
-          </section>
+
+            {/* Right: Actions & Logs */}
+            <div className="space-y-6">
+              {/* Quick Actions */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                <h3 className="font-semibold text-gray-900 mb-4">İşlemler</h3>
+                <div className="space-y-3">
+                  <ActionButton
+                    icon={Save}
+                    label="Bağlan / Kaydet"
+                    loading={busyKey === `${providerId}:connect`}
+                    onClick={() => connectProvider(providerId)}
+                    variant="primary"
+                  />
+                  <ActionButton
+                    icon={ShieldCheck}
+                    label="Bağlantıyı Test Et"
+                    loading={busyKey === `${providerId}:test`}
+                    onClick={() => testProvider(providerId)}
+                    variant="secondary"
+                  />
+                  <ActionButton
+                    icon={RefreshCw}
+                    label="Senkronize Et"
+                    loading={busyKey === `${providerId}:sync`}
+                    onClick={() => syncProvider(providerId)}
+                    variant="secondary"
+                  />
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-gray-100 space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Webhook</span>
+                    <span className="font-medium">{integration.provider.supportsWebhook ? "Destekli" : "Polling"}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Son Senkron</span>
+                    <span className="font-medium">
+                      {integration.connection?.lastSyncAt
+                        ? new Date(integration.connection.lastSyncAt).toLocaleDateString("tr-TR")
+                        : "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                <h3 className="font-semibold text-gray-900 mb-4">Kuyruk Durumu</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <span className="text-sm text-gray-600">Bekleyen</span>
+                    <span className="font-semibold text-gray-900">{integration.queueStats.queued}</span>
+                  </div>
+                  <div className={cn("flex items-center justify-between p-3 rounded-xl", integration.queueStats.failed > 0 ? "bg-red-50" : "bg-gray-50")}>
+                    <span className={cn("text-sm", integration.queueStats.failed > 0 ? "text-red-600" : "text-gray-600")}>Hatalı</span>
+                    <span className={cn("font-semibold", integration.queueStats.failed > 0 ? "text-red-700" : "text-gray-900")}>
+                      {integration.queueStats.failed}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <span className="text-sm text-gray-600">Listing</span>
+                    <span className="font-semibold text-gray-900">{integration.listingStats.total}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Logs */}
+              {logs.length > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900">Son Loglar</h3>
+                    <button
+                      onClick={() => loadLogs(selectedProvider)}
+                      disabled={busyKey === `${selectedProvider}:logs`}
+                      className="text-xs text-primary hover:underline disabled:opacity-50"
+                    >
+                      Yenile
+                    </button>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-auto">
+                    {logs.slice(0, 5).map((log) => (
+                      <div key={log.id} className="p-3 bg-gray-50 rounded-xl text-xs">
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={cn(
+                              "font-medium",
+                              log.status === "success" ? "text-green-700" : log.status === "error" ? "text-red-700" : "text-gray-700"
+                            )}
+                          >
+                            {log.status}
+                          </span>
+                          <span className="text-gray-400">{new Date(log.createdAt).toLocaleDateString("tr-TR")}</span>
+                        </div>
+                        <p className="text-gray-500 mt-1">
+                          {log.direction} / {log.entityType}
+                        </p>
+                        {log.errorMessage && <p className="text-red-600 mt-1">{log.errorMessage}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
+
+  return null;
 }
 
-function SummaryCard({ title, value, icon: Icon }: { title: string; value: number; icon: ElementType }) {
+function StatCard({ title, value, icon: Icon, color }: { title: string; value: number; icon: ElementType; color: "blue" | "green" | "amber" | "purple" }) {
+  const colors = {
+    blue: "bg-blue-100 text-blue-600",
+    green: "bg-green-100 text-green-600",
+    amber: "bg-amber-100 text-amber-600",
+    purple: "bg-purple-100 text-purple-600",
+  };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex items-center gap-4">
-      <div className="w-12 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center">
-        <Icon className="w-5 h-5" />
-      </div>
-      <div>
-        <div className="text-xs uppercase tracking-wider text-gray-500">{title}</div>
-        <div className="text-2xl font-semibold text-gray-900">{value}</div>
+    <div className="bg-white rounded-2xl border border-gray-200 p-5">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs font-medium text-gray-500 uppercase mb-1">{title}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
+        </div>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colors[color]}`}>
+          <Icon className="w-5 h-5" />
+        </div>
       </div>
     </div>
   );
@@ -643,28 +701,19 @@ function ActionButton({
   loading?: boolean;
   variant?: "primary" | "secondary";
 }) {
-  const className =
-    variant === "primary"
-      ? "bg-gray-900 text-white hover:bg-gray-800"
-      : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50";
-
   return (
     <button
       onClick={onClick}
       disabled={loading}
-      className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-60 ${className}`}
+      className={cn(
+        "w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-colors disabled:opacity-50",
+        variant === "primary"
+          ? "bg-primary text-white hover:bg-primary/90"
+          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+      )}
     >
       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon className="w-4 h-4" />}
       {label}
     </button>
-  );
-}
-
-function MiniInfoCard({ title, value, danger = false }: { title: string; value: number; danger?: boolean }) {
-  return (
-    <div className={`rounded-lg border px-2 py-2 ${danger ? "border-red-200 bg-red-50" : "border-gray-200 bg-gray-50"}`}>
-      <p className={`text-[11px] ${danger ? "text-red-600" : "text-gray-500"}`}>{title}</p>
-      <p className={`text-sm font-semibold ${danger ? "text-red-700" : "text-gray-900"}`}>{value}</p>
-    </div>
   );
 }
