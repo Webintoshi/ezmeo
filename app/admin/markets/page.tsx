@@ -1,25 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ElementType, ReactElement } from "react";
-import {
-  TrendyolLogo,
-  HepsiburadaLogo,
-  N11Logo,
-  AmazonTrLogo,
-} from "@/components/marketplace/marketplace-logos";
-
-// Logo mapping function (outside component to avoid hook issues)
-function getMarketplaceLogo(providerId: string, size: number): ReactElement | null {
-  const logos: Record<string, React.FC<{ size?: number }>> = {
-    trendyol: TrendyolLogo,
-    hepsiburada: HepsiburadaLogo,
-    n11: N11Logo,
-    amazon_tr: AmazonTrLogo,
-  };
-  const LogoComponent = logos[providerId];
-  return LogoComponent ? <LogoComponent size={size} /> : null;
-}
+import type { ElementType } from "react";
 import {
   CheckCircle2,
   ChevronLeft,
@@ -316,8 +298,17 @@ export default function MarketsPage() {
                 )}
               >
                 <div className="flex items-start gap-4">
-                  <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden", colorStyle.bg, colorStyle.text)}>
-                    {getMarketplaceLogo(providerId, 40)}
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden bg-white">
+                    <img 
+                      src={`/marketplace-logos/${providerId}.png`} 
+                      alt={integration.provider.name}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.parentElement!.innerHTML = `<span class="text-xl font-bold">${integration.provider.logo}</span>`;
+                      }}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -401,8 +392,17 @@ export default function MarketsPage() {
           {/* Header Card */}
           <div className={cn("bg-white rounded-2xl border p-6", isConnected ? "border-green-200" : hasError ? "border-red-200" : "border-gray-200")}>
             <div className="flex items-center gap-4">
-              <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold overflow-hidden", colorStyle.bg, colorStyle.text)}>
-                {getMarketplaceLogo(providerId, 48) || integration.provider.logo}
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden bg-white">
+                <img 
+                  src={`/marketplace-logos/${providerId}.png`} 
+                  alt={integration.provider.name}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    target.parentElement!.innerHTML = `<span class="text-2xl font-bold">${integration.provider.logo}</span>`;
+                  }}
+                />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
