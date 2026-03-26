@@ -298,8 +298,12 @@ export default function MarketsPage() {
                 )}
               >
                 <div className="flex items-start gap-4">
-                  <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold shrink-0", colorStyle.bg, colorStyle.text)}>
-                    {integration.provider.logo}
+                  <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden", colorStyle.bg, colorStyle.text)}>
+                    {integration.provider.logoComponent ? (
+                      <integration.provider.logoComponent size={40} />
+                    ) : (
+                      integration.provider.logo
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -383,8 +387,12 @@ export default function MarketsPage() {
           {/* Header Card */}
           <div className={cn("bg-white rounded-2xl border p-6", isConnected ? "border-green-200" : hasError ? "border-red-200" : "border-gray-200")}>
             <div className="flex items-center gap-4">
-              <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold", colorStyle.bg, colorStyle.text)}>
-                {integration.provider.logo}
+              <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold overflow-hidden", colorStyle.bg, colorStyle.text)}>
+                {integration.provider.logoComponent ? (
+                  <integration.provider.logoComponent size={48} />
+                ) : (
+                  integration.provider.logo
+                )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">

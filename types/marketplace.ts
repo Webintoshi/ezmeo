@@ -81,6 +81,7 @@ export interface MarketplaceProviderDefinition {
   websiteUrl: string;
   docsUrl?: string;
   logo: string;
+  logoComponent?: React.FC<{ size?: number }>;
   color: string;
   supportsWebhook: boolean;
   credentialFields: MarketplaceFieldDefinition[];

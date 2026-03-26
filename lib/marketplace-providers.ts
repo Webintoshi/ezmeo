@@ -9,6 +9,12 @@ import { createTrendyolAdapter } from "@/lib/marketplace/adapters/trendyol";
 import { createHepsiburadaAdapter } from "@/lib/marketplace/adapters/hepsiburada";
 import { createN11Adapter } from "@/lib/marketplace/adapters/n11";
 import { createAmazonTrAdapter } from "@/lib/marketplace/adapters/amazon-tr";
+import {
+  TrendyolLogo,
+  HepsiburadaLogo,
+  N11Logo,
+  AmazonTrLogo,
+} from "@/components/marketplace/marketplace-logos";
 
 export const MARKETPLACE_PROVIDER_DEFINITIONS: MarketplaceProviderDefinition[] = [
   {
@@ -18,6 +24,7 @@ export const MARKETPLACE_PROVIDER_DEFINITIONS: MarketplaceProviderDefinition[] =
     websiteUrl: "https://partner.trendyol.com",
     docsUrl: "https://developers.trendyol.com",
     logo: "TY",
+    logoComponent: TrendyolLogo,
     color: "from-orange-500 to-red-600",
     supportsWebhook: true,
     credentialFields: [
@@ -41,6 +48,7 @@ export const MARKETPLACE_PROVIDER_DEFINITIONS: MarketplaceProviderDefinition[] =
     websiteUrl: "https://merchant.hepsiburada.com",
     docsUrl: "https://developers.hepsiburada.com",
     logo: "HB",
+    logoComponent: HepsiburadaLogo,
     color: "from-blue-500 to-indigo-600",
     supportsWebhook: true,
     credentialFields: [
@@ -65,6 +73,7 @@ export const MARKETPLACE_PROVIDER_DEFINITIONS: MarketplaceProviderDefinition[] =
     websiteUrl: "https://seller.n11.com",
     docsUrl: "https://api.n11.com",
     logo: "N11",
+    logoComponent: N11Logo,
     color: "from-purple-500 to-pink-600",
     supportsWebhook: false,
     credentialFields: [
@@ -85,6 +94,7 @@ export const MARKETPLACE_PROVIDER_DEFINITIONS: MarketplaceProviderDefinition[] =
     websiteUrl: "https://sellercentral.amazon.com.tr",
     docsUrl: "https://developer-docs.amazon.com/sp-api",
     logo: "AMZ",
+    logoComponent: AmazonTrLogo,
     color: "from-slate-700 to-black",
     supportsWebhook: false,
     credentialFields: [
