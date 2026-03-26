@@ -3,6 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ElementType } from "react";
 import {
+  TrendyolLogo,
+  HepsiburadaLogo,
+  N11Logo,
+  AmazonTrLogo,
+} from "@/components/marketplace/marketplace-logos";
+import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -288,6 +294,17 @@ export default function MarketsPage() {
             const hasError = integration.connection?.status === "error";
             const colorStyle = PROVIDER_COLORS[providerId] || { bg: "bg-gray-100", text: "text-gray-700" };
 
+  // Client-side logo mapping
+  const LogoComponent = useMemo(() => {
+    const logos: Record<string, React.FC<{ size?: number }>> = {
+      trendyol: TrendyolLogo,
+      hepsiburada: HepsiburadaLogo,
+      n11: N11Logo,
+      amazon_tr: AmazonTrLogo,
+    };
+    return logos[providerId];
+  }, [providerId]);
+
             return (
               <button
                 key={providerId}
@@ -299,8 +316,8 @@ export default function MarketsPage() {
               >
                 <div className="flex items-start gap-4">
                   <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden", colorStyle.bg, colorStyle.text)}>
-                    {integration.provider.logoComponent ? (
-                      <integration.provider.logoComponent size={40} />
+                    {LogoComponent ? (
+                      <LogoComponent size={40} />
                     ) : (
                       integration.provider.logo
                     )}
@@ -372,6 +389,17 @@ export default function MarketsPage() {
     const listings = listingsByProvider[selectedProvider] || [];
     const logs = logsByProvider[selectedProvider] || [];
 
+    // Client-side logo mapping for detail view
+    const DetailLogoComponent = useMemo(() => {
+      const logos: Record<string, React.FC<{ size?: number }>> = {
+        trendyol: TrendyolLogo,
+        hepsiburada: HepsiburadaLogo,
+        n11: N11Logo,
+        amazon_tr: AmazonTrLogo,
+      };
+      return logos[providerId];
+    }, [providerId]);
+
     return (
       <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -388,8 +416,8 @@ export default function MarketsPage() {
           <div className={cn("bg-white rounded-2xl border p-6", isConnected ? "border-green-200" : hasError ? "border-red-200" : "border-gray-200")}>
             <div className="flex items-center gap-4">
               <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold overflow-hidden", colorStyle.bg, colorStyle.text)}>
-                {integration.provider.logoComponent ? (
-                  <integration.provider.logoComponent size={48} />
+                {DetailLogoComponent ? (
+                  <DetailLogoComponent size={48} />
                 ) : (
                   integration.provider.logo
                 )}
