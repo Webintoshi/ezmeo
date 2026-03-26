@@ -300,7 +300,7 @@ export default function MarketsPage() {
                 <div className="flex items-start gap-4">
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden bg-white">
                     <img 
-                      src={`/marketplace-logos/${providerId}.png`} 
+                      src={`/marketplace-logos/${providerId.replace('_', '-')}.png`} 
                       alt={integration.provider.name}
                       className="w-full h-full object-contain"
                       onError={(e) => {
@@ -394,7 +394,7 @@ export default function MarketsPage() {
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden bg-white">
                 <img 
-                  src={`/marketplace-logos/${providerId}.png`} 
+                  src={`/marketplace-logos/${providerId.replace('_', '-')}.png`} 
                   alt={integration.provider.name}
                   className="w-full h-full object-contain"
                   onError={(e) => {
