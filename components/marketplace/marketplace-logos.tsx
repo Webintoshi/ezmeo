@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import Image from "next/image";
+import React, { useState } from "react";
 
 interface LogoProps {
   className?: string;
@@ -16,105 +15,129 @@ const LOGO_PATHS: Record<string, string> = {
   amazon_tr: "/marketplace-logos/amazon-tr.png",
 };
 
-// Varsayılan placeholder logolar (SVG) - gerçek logolar yüklenene kadar
-export function TrendyolLogo({ className = "", size = 40 }: LogoProps) {
+// Placeholder component
+function Placeholder({ text, bg, size }: { text: string; bg: string; size: number }) {
   return (
-    <Image
+    <div
+      style={{
+        width: size,
+        height: size,
+        background: bg,
+        borderRadius: 10,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "white",
+        fontWeight: "bold",
+        fontSize: size > 40 ? 16 : 14,
+      }}
+    >
+      {text}
+    </div>
+  );
+}
+
+// Trendyol Logo
+export function TrendyolLogo({ className = "", size = 40 }: LogoProps) {
+  const [error, setError] = useState(false);
+  
+  if (error) {
+    return <Placeholder text="TY" bg="#F27A1A" size={size} />;
+  }
+  
+  return (
+    <img
       src={LOGO_PATHS.trendyol}
       alt="Trendyol"
       width={size}
       height={size}
       className={className}
-      onError={(e) => {
-        // Logo yüklenemezse placeholder göster
-        const target = e.target as HTMLImageElement;
-        target.style.display = "none";
-        const parent = target.parentElement;
-        if (parent) {
-          parent.innerHTML = `<div style="width:${size}px;height:${size}px;background:#F27A1A;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;">TY</div>`;
-        }
-      }}
+      style={{ borderRadius: 10, objectFit: "contain" }}
+      onError={() => setError(true)}
     />
   );
 }
 
+// Hepsiburada Logo
 export function HepsiburadaLogo({ className = "", size = 40 }: LogoProps) {
+  const [error, setError] = useState(false);
+  
+  if (error) {
+    return <Placeholder text="HB" bg="linear-gradient(135deg,#FF6000,#FF8A00)" size={size} />;
+  }
+  
   return (
-    <Image
+    <img
       src={LOGO_PATHS.hepsiburada}
       alt="Hepsiburada"
       width={size}
       height={size}
       className={className}
-      onError={(e) => {
-        const target = e.target as HTMLImageElement;
-        target.style.display = "none";
-        const parent = target.parentElement;
-        if (parent) {
-          parent.innerHTML = `<div style="width:${size}px;height:${size}px;background:linear-gradient(135deg,#FF6000,#FF8A00);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:16px;">HB</div>`;
-        }
-      }}
+      style={{ borderRadius: 10, objectFit: "contain" }}
+      onError={() => setError(true)}
     />
   );
 }
 
+// N11 Logo
 export function N11Logo({ className = "", size = 40 }: LogoProps) {
+  const [error, setError] = useState(false);
+  
+  if (error) {
+    return <Placeholder text="n11" bg="#5D196A" size={size} />;
+  }
+  
   return (
-    <Image
+    <img
       src={LOGO_PATHS.n11}
       alt="N11"
       width={size}
       height={size}
       className={className}
-      onError={(e) => {
-        const target = e.target as HTMLImageElement;
-        target.style.display = "none";
-        const parent = target.parentElement;
-        if (parent) {
-          parent.innerHTML = `<div style="width:${size}px;height:${size}px;background:#5D196A;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;">n11</div>`;
-        }
-      }}
+      style={{ borderRadius: 10, objectFit: "contain" }}
+      onError={() => setError(true)}
     />
   );
 }
 
+// Amazon TR Logo
 export function AmazonTrLogo({ className = "", size = 40 }: LogoProps) {
+  const [error, setError] = useState(false);
+  
+  if (error) {
+    return <Placeholder text="a" bg="#232F3E" size={size} />;
+  }
+  
   return (
-    <Image
+    <img
       src={LOGO_PATHS.amazon_tr}
       alt="Amazon TR"
       width={size}
       height={size}
       className={className}
-      onError={(e) => {
-        const target = e.target as HTMLImageElement;
-        target.style.display = "none";
-        const parent = target.parentElement;
-        if (parent) {
-          parent.innerHTML = `<div style="width:${size}px;height:${size}px;background:#232F3E;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#FF9900;font-weight:bold;font-size:14px;">a</div>`;
-        }
-      }}
+      style={{ borderRadius: 10, objectFit: "contain" }}
+      onError={() => setError(true)}
     />
   );
 }
 
 // Çiçek Sepeti (opsiyonel)
 export function CicekSepetiLogo({ className = "", size = 40 }: LogoProps) {
+  const [error, setError] = useState(false);
+  
+  if (error) {
+    return <Placeholder text="ÇS" bg="#E91E63" size={size} />;
+  }
+  
   return (
-    <Image
+    <img
       src="/marketplace-logos/ciceksepeti.png"
       alt="Çiçek Sepeti"
       width={size}
       height={size}
       className={className}
-      onError={(e) => {
-        const target = e.target as HTMLImageElement;
-        target.style.display = "none";
-        const parent = target.parentElement;
-        if (parent) {
-          parent.innerHTML = `<div style="width:${size}px;height:${size}px;background:#E91E63;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:12px;">ÇS</div>`;
-        }
-      }}
+      style={{ borderRadius: 10, objectFit: "contain" }}
+      onError={() => setError(true)}
     />
   );
 }
