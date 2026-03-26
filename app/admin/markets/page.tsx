@@ -1,13 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ElementType } from "react";
+import type { ElementType, ReactElement } from "react";
 import {
   TrendyolLogo,
   HepsiburadaLogo,
   N11Logo,
   AmazonTrLogo,
 } from "@/components/marketplace/marketplace-logos";
+
+// Logo mapping function (outside component to avoid hook issues)
+function getMarketplaceLogo(providerId: string, size: number): ReactElement | null {
+  const logos: Record<string, React.FC<{ size?: number }>> = {
+    trendyol: TrendyolLogo,
+    hepsiburada: HepsiburadaLogo,
+    n11: N11Logo,
+    amazon_tr: AmazonTrLogo,
+  };
+  const LogoComponent = logos[providerId];
+  return LogoComponent ? <LogoComponent size={size} /> : null;
+}
 import {
   CheckCircle2,
   ChevronLeft,
@@ -292,18 +304,7 @@ export default function MarketsPage() {
             const providerId = integration.provider.id;
             const isConnected = integration.connection?.status === "active";
             const hasError = integration.connection?.status === "error";
-            const colorStyle = PROVIDER_COLORS[providerId] || { bg: "bg-gray-100", text: "text-gray-700" };
-
-  // Client-side logo mapping
-  const LogoComponent = useMemo(() => {
-    const logos: Record<string, React.FC<{ size?: number }>> = {
-      trendyol: TrendyolLogo,
-      hepsiburada: HepsiburadaLogo,
-      n11: N11Logo,
-      amazon_tr: AmazonTrLogo,
-    };
-    return logos[providerId];
-  }, [providerId]);
+                      const colorStyle = PROVIDER_COLORS[providerId] || { bg: "bg-gray-100", text: "text-gray-700" };
 
             return (
               <button
@@ -316,11 +317,7 @@ export default function MarketsPage() {
               >
                 <div className="flex items-start gap-4">
                   <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden", colorStyle.bg, colorStyle.text)}>
-                    {LogoComponent ? (
-                      <LogoComponent size={40} />
-                    ) : (
-                      integration.provider.logo
-                    )}
+                    {getMarketplaceLogo(providerId, 40)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -389,17 +386,6 @@ export default function MarketsPage() {
     const listings = listingsByProvider[selectedProvider] || [];
     const logs = logsByProvider[selectedProvider] || [];
 
-    // Client-side logo mapping for detail view
-    const DetailLogoComponent = useMemo(() => {
-      const logos: Record<string, React.FC<{ size?: number }>> = {
-        trendyol: TrendyolLogo,
-        hepsiburada: HepsiburadaLogo,
-        n11: N11Logo,
-        amazon_tr: AmazonTrLogo,
-      };
-      return logos[providerId];
-    }, [providerId]);
-
     return (
       <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -416,11 +402,7 @@ export default function MarketsPage() {
           <div className={cn("bg-white rounded-2xl border p-6", isConnected ? "border-green-200" : hasError ? "border-red-200" : "border-gray-200")}>
             <div className="flex items-center gap-4">
               <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold overflow-hidden", colorStyle.bg, colorStyle.text)}>
-                {DetailLogoComponent ? (
-                  <DetailLogoComponent size={48} />
-                ) : (
-                  integration.provider.logo
-                )}
+                {getMarketplaceLogo(providerId, 48) || integration.provider.logo}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
