@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,20 +11,63 @@ import { PAYMENT_PROVIDER_REGISTRY } from "@/lib/payment-providers";
 import { addPaymentGateway, getDefaultPaymentGatewayConfig, validatePaymentGatewayConfig } from "@/lib/payments";
 import { PaymentGateway, PaymentGatewayFormState } from "@/types/payment";
 
-function getGatewayIcon(gateway: PaymentGateway) {
-    if (gateway === "bank_transfer") {
-        return Building2;
+const PAYMENT_LOGO_PATHS: Record<PaymentGateway, string> = {
+    paytr: "/payment-logos/paytr.png",
+    iyzico: "/payment-logos/iyzico.png",
+    paynet: "/payment-logos/paynet.png",
+    craftgate: "/payment-logos/craftgate.png",
+    stripe: "/payment-logos/stripe.png",
+    bank_transfer: "/payment-logos/bank-transfer.png",
+    cod: "/payment-logos/cod.png",
+};
+
+const GATEWAY_ICONS = {
+    paytr: CreditCard,
+    iyzico: CreditCard,
+    paynet: CreditCard,
+    craftgate: Waypoints,
+    stripe: CreditCard,
+    bank_transfer: Building2,
+    cod: Package,
+} satisfies Record<PaymentGateway, typeof CreditCard>;
+
+function PaymentProviderLogo({
+    gateway,
+    name,
+    accentClassName,
+    size,
+    iconClassName,
+}: {
+    gateway: PaymentGateway;
+    name: string;
+    accentClassName: string;
+    size: number;
+    iconClassName: string;
+}) {
+    const Icon = GATEWAY_ICONS[gateway];
+    const [hasError, setHasError] = useState(false);
+    const src = PAYMENT_LOGO_PATHS[gateway];
+
+    if (!src || hasError) {
+        return (
+            <div className={`h-full w-full bg-gradient-to-r ${accentClassName} rounded-xl flex items-center justify-center shadow-sm text-white`}>
+                <Icon className={iconClassName} />
+            </div>
+        );
     }
 
-    if (gateway === "cod") {
-        return Package;
-    }
-
-    if (gateway === "craftgate") {
-        return Waypoints;
-    }
-
-    return CreditCard;
+    return (
+        <div className="h-full w-full rounded-xl flex items-center justify-center bg-white shadow-sm overflow-hidden">
+            <Image
+                src={src}
+                alt={name}
+                width={size}
+                height={size}
+                className="h-full w-full object-contain"
+                onError={() => setHasError(true)}
+            />
+        </div>
+    );
 }
 
 export default function NewPaymentGatewayPage() {
@@ -110,16 +154,20 @@ export default function NewPaymentGatewayPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {PAYMENT_PROVIDER_REGISTRY.map((provider) => {
-                            const Icon = getGatewayIcon(provider.id);
-
                             return (
                                 <button
                                     key={provider.id}
                                     onClick={() => handleGatewaySelect(provider.id)}
                                     className="p-6 border border-gray-200 rounded-xl text-left hover:border-gray-900 hover:shadow-md transition-all group bg-gray-50/30"
                                 >
-                                    <div className={`w-12 h-12 bg-gradient-to-r ${provider.accentClassName} rounded-xl flex items-center justify-center mb-4 shadow-sm text-white`}>
-                                        <Icon className="w-6 h-6" />
+                                    <div className="w-12 h-12 mb-4">
+                                        <PaymentProviderLogo
+                                            gateway={provider.id}
+                                            name={provider.name}
+                                            accentClassName={provider.accentClassName}
+                                            size={48}
+                                            iconClassName="w-6 h-6"
+                                        />
                                     </div>
                                     <h3 className="font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
                                         {provider.name}
@@ -141,9 +189,20 @@ export default function NewPaymentGatewayPage() {
                 <div className="space-y-6">
                     {selectedDefinition && (
                         <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-gray-900">{selectedDefinition.name}</p>
-                                <p className="text-sm text-gray-500 mt-1">{selectedDefinition.description}</p>
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 shrink-0">
+                                    <PaymentProviderLogo
+                                        gateway={selectedDefinition.id}
+                                        name={selectedDefinition.name}
+                                        accentClassName={selectedDefinition.accentClassName}
+                                        size={56}
+                                        iconClassName="w-7 h-7"
+                                    />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-gray-900">{selectedDefinition.name}</p>
+                                    <p className="text-sm text-gray-500 mt-1">{selectedDefinition.description}</p>
+                                </div>
                             </div>
                             <div className="flex gap-3">
                                 <a
