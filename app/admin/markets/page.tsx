@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ElementType } from "react";
+import type { ComponentType, ElementType } from "react";
 import {
   CheckCircle2,
   ChevronLeft,
-  ChevronRight,
   ExternalLink,
   Loader2,
   Package,
@@ -15,11 +14,15 @@ import {
   ShieldCheck,
   ShoppingBag,
   Store,
-  Terminal,
   Unplug,
   AlertCircle,
-  ChevronDown,
 } from "lucide-react";
+import {
+  AmazonTrLogo,
+  HepsiburadaLogo,
+  N11Logo,
+  TrendyolLogo,
+} from "@/components/marketplace/marketplace-logos";
 import { cn } from "@/lib/utils";
 import type {
   MarketplaceIntegrationView,
@@ -53,13 +56,55 @@ function createFormState(item: MarketplaceIntegrationView): ProviderFormState {
 }
 
 // Sağlayıcı renkleri
-const PROVIDER_COLORS: Record<string, { bg: string; text: string }> = {
+type ProviderColorStyle = {
+  bg: string;
+  text: string;
+};
+
+const PROVIDER_COLORS: Record<string, ProviderColorStyle> = {
   trendyol: { bg: "bg-orange-100", text: "text-orange-700" },
   hepsiburada: { bg: "bg-red-100", text: "text-red-700" },
   n11: { bg: "bg-blue-100", text: "text-blue-700" },
-  amazon: { bg: "bg-slate-100", text: "text-slate-700" },
+  amazon_tr: { bg: "bg-slate-100", text: "text-slate-700" },
   ciceksepeti: { bg: "bg-pink-100", text: "text-pink-700" },
 };
+
+const PROVIDER_LOGOS: Partial<Record<MarketplaceProvider, ComponentType<{ size?: number }>>> = {
+  trendyol: TrendyolLogo,
+  hepsiburada: HepsiburadaLogo,
+  n11: N11Logo,
+  amazon_tr: AmazonTrLogo,
+};
+
+function ProviderLogo({
+  provider,
+  size,
+  colorStyle,
+  className,
+}: {
+  provider: MarketplaceIntegrationView["provider"];
+  size: number;
+  colorStyle: ProviderColorStyle;
+  className?: string;
+}) {
+  const LogoComponent = PROVIDER_LOGOS[provider.id];
+
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-center shrink-0 overflow-hidden rounded-2xl",
+        LogoComponent ? "bg-white" : `${colorStyle.bg} ${colorStyle.text}`,
+        className
+      )}
+    >
+      {LogoComponent ? (
+        <LogoComponent size={size} />
+      ) : (
+        <span className={cn("font-bold leading-none", size >= 64 ? "text-2xl" : "text-xl")}>{provider.logo}</span>
+      )}
+    </div>
+  );
+}
 
 export default function MarketsPage() {
   const [loading, setLoading] = useState(true);
@@ -286,7 +331,7 @@ export default function MarketsPage() {
             const providerId = integration.provider.id;
             const isConnected = integration.connection?.status === "active";
             const hasError = integration.connection?.status === "error";
-                      const colorStyle = PROVIDER_COLORS[providerId] || { bg: "bg-gray-100", text: "text-gray-700" };
+            const colorStyle = PROVIDER_COLORS[providerId] || { bg: "bg-gray-100", text: "text-gray-700" };
 
             return (
               <button
@@ -298,18 +343,12 @@ export default function MarketsPage() {
                 )}
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden bg-white">
-                    <img 
-                      src={`/marketplace-logos/${providerId.replace('_', '-')}.png`} 
-                      alt={integration.provider.name}
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.parentElement!.innerHTML = `<span class="text-xl font-bold">${integration.provider.logo}</span>`;
-                      }}
-                    />
-                  </div>
+                  <ProviderLogo
+                    provider={integration.provider}
+                    size={56}
+                    colorStyle={colorStyle}
+                    className="h-14 w-14"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-gray-900">{integration.provider.name}</h3>
@@ -392,18 +431,12 @@ export default function MarketsPage() {
           {/* Header Card */}
           <div className={cn("bg-white rounded-2xl border p-6", isConnected ? "border-green-200" : hasError ? "border-red-200" : "border-gray-200")}>
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden bg-white">
-                <img 
-                  src={`/marketplace-logos/${providerId.replace('_', '-')}.png`} 
-                  alt={integration.provider.name}
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    target.parentElement!.innerHTML = `<span class="text-2xl font-bold">${integration.provider.logo}</span>`;
-                  }}
-                />
-              </div>
+              <ProviderLogo
+                provider={integration.provider}
+                size={64}
+                colorStyle={colorStyle}
+                className="h-16 w-16"
+              />
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-2xl font-bold text-gray-900">{integration.provider.name}</h1>
