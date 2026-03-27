@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { ElementType } from "react";
 import {
@@ -17,7 +18,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import type { AccountingIntegrationView } from "@/types/accounting";
+import type { AccountingIntegrationView, AccountingProvider } from "@/types/accounting";
 
 // Entegrasyon sağlayıcı stilleri
 type ProviderStyle = { bg: string; text: string; abbr: string; color: string };
@@ -25,10 +26,57 @@ const PROVIDER_STYLES: Record<string, ProviderStyle> = {
   parasut: { bg: "bg-purple-100", text: "text-purple-700", abbr: "P", color: "purple" },
   bizimhesap: { bg: "bg-blue-100", text: "text-blue-700", abbr: "BH", color: "blue" },
   mikro: { bg: "bg-orange-100", text: "text-orange-700", abbr: "M", color: "orange" },
-  logo: { bg: "bg-red-100", text: "text-red-700", abbr: "L", color: "red" },
+  logo_isbasi: { bg: "bg-red-100", text: "text-red-700", abbr: "L", color: "red" },
   kolaybi: { bg: "bg-green-100", text: "text-green-700", abbr: "KB", color: "green" },
   mukellef: { bg: "bg-indigo-100", text: "text-indigo-700", abbr: "MK", color: "indigo" },
 };
+
+const ACCOUNTING_LOGO_PATHS: Record<AccountingProvider, string> = {
+  parasut: "/accounting-logos/parasut.png",
+  bizimhesap: "/accounting-logos/bizimhesap.png",
+  mikro: "/accounting-logos/mikro.png",
+  logo_isbasi: "/accounting-logos/logo-isbasi.png",
+  kolaybi: "/accounting-logos/kolaybi.png",
+  mukellef: "/accounting-logos/mukellef.png",
+};
+
+function AccountingProviderLogo({
+  providerId,
+  providerName,
+  providerStyle,
+  size,
+  className,
+}: {
+  providerId: AccountingProvider;
+  providerName: string;
+  providerStyle: ProviderStyle;
+  size: number;
+  className: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+  const src = ACCOUNTING_LOGO_PATHS[providerId];
+
+  if (!src || hasError) {
+    return (
+      <div className={`${className} rounded-2xl ${providerStyle.bg} ${providerStyle.text} flex items-center justify-center`}>
+        <span className={`font-bold leading-none ${size >= 64 ? "text-2xl" : "text-xl"}`}>{providerStyle.abbr}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${className} rounded-2xl bg-white flex items-center justify-center overflow-hidden`}>
+      <Image
+        src={src}
+        alt={providerName}
+        width={size}
+        height={size}
+        className="h-full w-full object-contain"
+        onError={() => setHasError(true)}
+      />
+    </div>
+  );
+}
 
 type View = "list" | "detail";
 
@@ -297,9 +345,13 @@ export default function AccountingIntegrationsPage() {
                 >
                   <div className="flex items-start gap-4">
                     {/* Logo */}
-                    <div className={`w-14 h-14 rounded-xl ${style.bg} ${style.text} flex items-center justify-center text-xl font-bold shrink-0`}>
-                      {style.abbr}
-                    </div>
+                    <AccountingProviderLogo
+                      providerId={integration.provider.id}
+                      providerName={integration.provider.name}
+                      providerStyle={style}
+                      size={56}
+                      className="w-14 h-14 shrink-0"
+                    />
 
                     {/* Bilgiler */}
                     <div className="flex-1 min-w-0">
@@ -401,9 +453,13 @@ export default function AccountingIntegrationsPage() {
           {/* Başlık Kartı */}
           <div className={`bg-white rounded-2xl border p-6 mb-6 ${isConnected ? "border-green-200" : hasError ? "border-red-200" : "border-gray-200"}`}>
             <div className="flex items-center gap-4">
-              <div className={`w-16 h-16 rounded-2xl ${style.bg} ${style.text} flex items-center justify-center text-2xl font-bold`}>
-                {style.abbr}
-              </div>
+              <AccountingProviderLogo
+                providerId={selectedProvider.provider.id}
+                providerName={selectedProvider.provider.name}
+                providerStyle={style}
+                size={64}
+                className="w-16 h-16"
+              />
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-2xl font-bold text-gray-900">{selectedProvider.provider.name}</h1>
