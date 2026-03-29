@@ -8,6 +8,7 @@ const MAX_DIMENSIONS = {
     products: { width: 2048, height: 2048 },
     categories: { width: 1200, height: 1200 },
     banners: { width: 1920, height: 1080 },
+    branding: { width: 1200, height: 1200 },
     "promo-banners": { width: 1920, height: 1350 },
     default: { width: 1920, height: 1920 }
 };
@@ -16,6 +17,7 @@ const THUMBNAIL_SIZES = {
     products: { width: 400, height: 400 },
     categories: { width: 300, height: 300 },
     banners: { width: 640, height: 360 },
+    branding: { width: 320, height: 320 },
     "promo-banners": { width: 540, height: 675 },
     default: { width: 300, height: 300 }
 };
@@ -23,6 +25,7 @@ const THUMBNAIL_SIZES = {
 function getFolderConfig(folder: string): string {
     if (folder === 'promo-banners') return 'promo-banners';
     if (folder === 'banners' || folder === 'hero-banners') return 'banners';
+    if (folder === 'branding') return 'branding';
     if (folder in MAX_DIMENSIONS) return folder;
     return 'default';
 }

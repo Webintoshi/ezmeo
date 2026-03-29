@@ -121,7 +121,11 @@ export interface StoreInfo {
     phone: string;
     address: string;
     currency: string;
-    taxRate: number;
+    timezone?: string;
+    taxRate?: number;
+    logoUrl?: string;
+    socialInstagram?: string;
+    socialTwitter?: string;
 }
 
 /**

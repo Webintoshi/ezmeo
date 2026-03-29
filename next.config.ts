@@ -35,6 +35,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'cdn.ezmeo.com',
+        pathname: '/branding/**',
+      },
+      {
+        protocol: 'https',
         hostname: '**.r2.cloudflarestorage.com',
         pathname: '/**',
       },

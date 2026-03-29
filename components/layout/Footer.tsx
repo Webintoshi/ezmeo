@@ -14,6 +14,8 @@ import { useStoreInfo } from "@/lib/store-info-context";
 export function Footer() {
   const { storeInfo } = useStoreInfo();
   const currentYear = new Date().getFullYear();
+  const logoSrc = storeInfo?.logoUrl || "/logo.webp";
+  const storeName = storeInfo?.name || SITE_NAME;
 
   const contactInfo = storeInfo ? {
     email: storeInfo.email || CONTACT_INFO.email,
@@ -37,12 +39,13 @@ export function Footer() {
           <div className="lg:col-span-4">
             <Link href="/" className="inline-block mb-5">
               <Image 
-                src="/logo.webp" 
-                alt={SITE_NAME} 
+                src={logoSrc} 
+                alt={storeName} 
                 width={110}
                 height={40}
                 className="h-10 w-auto"
                 sizes="110px"
+                unoptimized={logoSrc.startsWith("http")}
               />
             </Link>
             <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-xs">
