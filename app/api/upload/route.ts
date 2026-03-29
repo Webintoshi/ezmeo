@@ -22,7 +22,7 @@ const THUMBNAIL_SIZES = {
 
 function getFolderConfig(folder: string): string {
     if (folder === 'promo-banners') return 'promo-banners';
-    if (folder === 'banners') return 'banners';
+    if (folder === 'banners' || folder === 'hero-banners') return 'banners';
     if (folder in MAX_DIMENSIONS) return folder;
     return 'default';
 }
@@ -212,7 +212,10 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error("Upload API error:", error);
         return NextResponse.json(
-            { success: false, error: "Internal server error" },
+            {
+                success: false,
+                error: error instanceof Error ? error.message : "Internal server error",
+            },
             { status: 500 }
         );
     }
