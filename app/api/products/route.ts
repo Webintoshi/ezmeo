@@ -28,6 +28,252 @@ function logMarketplaceQueueError(error: unknown, context: string) {
     console.error(`Marketplace queue sync failed (${context}):`, error);
 }
 
+const OPTIONAL_PRODUCT_COLUMNS = new Set([
+    "images_v2",
+    "subcategory",
+    "is_active",
+    "is_new",
+    "vegan",
+    "gluten_free",
+    "sugar_free",
+    "high_protein",
+    "rating",
+    "review_count",
+    "status",
+    "is_draft",
+    "published_at",
+    "tax_rate",
+    "brand",
+    "country_of_origin",
+    "sku",
+    "gtin",
+    "dimensions",
+    "related_products",
+    "complementary_products",
+    "seo_keywords",
+    "seo_focus_keyword",
+    "og_image",
+    "canonical_url",
+    "seo_robots",
+    "track_stock",
+    "low_stock_threshold",
+    "nutrition_basis",
+    "serving_size",
+    "serving_per_container",
+    "allergens",
+    "vitamins",
+    "ingredients",
+    "storage_conditions",
+    "shelf_life_days",
+    "calories",
+    "protein",
+    "carbs",
+    "fat",
+    "fiber",
+    "sugar",
+    "saturated_fat",
+    "sodium",
+]);
+
+const OPTIONAL_PRODUCT_VARIANT_COLUMNS = new Set([
+    "cost",
+    "barcode",
+    "group_name",
+    "unit",
+    "max_purchase_quantity",
+    "warehouse_location",
+    "images",
+]);
+
+function getMissingTableColumn(error: unknown, tableName: string): string | null {
+    const message =
+        error instanceof Error
+            ? error.message
+            : typeof error === "object" && error !== null && "message" in error
+                ? String((error as { message?: unknown }).message ?? "")
+                : String(error ?? "");
+
+    const cachePattern = new RegExp(`Could not find the '([^']+)' column of '${tableName}'`, "i");
+    const relationPattern = new RegExp(`column "([^"]+)" of relation "${tableName}" does not exist`, "i");
+
+    return message.match(cachePattern)?.[1] ?? message.match(relationPattern)?.[1] ?? null;
+}
+
+function stripUnsupportedTableColumn<T extends Record<string, unknown>>(
+    payload: T,
+    error: unknown,
+    tableName: string,
+    allowedColumns: Set<string>,
+): T | null {
+    const missingColumn = getMissingTableColumn(error, tableName);
+    if (!missingColumn || !allowedColumns.has(missingColumn) || !(missingColumn in payload)) {
+        return null;
+    }
+
+    const nextPayload = { ...payload };
+    delete nextPayload[missingColumn];
+    return nextPayload as T;
+}
+
+function stripUnsupportedTableColumnFromRows<T extends Record<string, unknown>>(
+    rows: T[],
+    error: unknown,
+    tableName: string,
+    allowedColumns: Set<string>,
+): T[] | null {
+    const missingColumn = getMissingTableColumn(error, tableName);
+    if (!missingColumn || !allowedColumns.has(missingColumn) || rows.every((row) => !(missingColumn in row))) {
+        return null;
+    }
+
+    return rows.map((row) => {
+        if (!(missingColumn in row)) {
+            return row;
+        }
+
+        const nextRow = { ...row };
+        delete nextRow[missingColumn];
+        return nextRow;
+    });
+}
+
+type SupabaseTableClient = {
+    from: (table: string) => {
+        insert: (payload: unknown) => any;
+        update: (payload: unknown) => any;
+    };
+};
+
+async function insertProductWithFallback(
+    supabase: SupabaseTableClient,
+    payload: Record<string, unknown>,
+): Promise<({ id: string } & Record<string, unknown>)> {
+    let insertPayload = payload;
+
+    while (true) {
+        const { data, error } = await supabase
+            .from("products")
+            .insert(insertPayload)
+            .select()
+            .single();
+
+        if (!error) {
+            if (!data || typeof data !== "object" || !("id" in data) || typeof data.id !== "string") {
+                throw new Error("Product insert did not return a valid product ID");
+            }
+
+            return data as ({ id: string } & Record<string, unknown>);
+        }
+
+        const strippedPayload = stripUnsupportedTableColumn(
+            insertPayload,
+            error,
+            "products",
+            OPTIONAL_PRODUCT_COLUMNS,
+        );
+
+        if (!strippedPayload) {
+            throw error instanceof Error ? error : new Error(String(error ?? "Product insert failed"));
+        }
+
+        insertPayload = strippedPayload;
+    }
+}
+
+async function insertProductVariantsWithFallback(
+    supabase: SupabaseTableClient,
+    rows: Record<string, unknown>[],
+): Promise<void> {
+    let insertRows = rows;
+
+    while (insertRows.length > 0) {
+        const { error } = await supabase
+            .from("product_variants")
+            .insert(insertRows);
+
+        if (!error) {
+            return;
+        }
+
+        const strippedRows = stripUnsupportedTableColumnFromRows(
+            insertRows,
+            error,
+            "product_variants",
+            OPTIONAL_PRODUCT_VARIANT_COLUMNS,
+        );
+
+        if (!strippedRows) {
+            throw error instanceof Error ? error : new Error(String(error ?? "Variants insert failed"));
+        }
+
+        insertRows = strippedRows;
+    }
+}
+
+async function updateProductWithFallback(
+    supabase: SupabaseTableClient,
+    id: string,
+    payload: Record<string, unknown>,
+): Promise<void> {
+    let updatePayload = payload;
+
+    while (Object.keys(updatePayload).length > 0) {
+        const { error } = await supabase
+            .from("products")
+            .update(updatePayload)
+            .eq("id", id);
+
+        if (!error) {
+            return;
+        }
+
+        const strippedPayload = stripUnsupportedTableColumn(
+            updatePayload,
+            error,
+            "products",
+            OPTIONAL_PRODUCT_COLUMNS,
+        );
+
+        if (!strippedPayload) {
+            throw new Error(`Product update failed: ${error instanceof Error ? error.message : String(error ?? "")}`);
+        }
+
+        updatePayload = strippedPayload;
+    }
+}
+
+async function updateProductVariantWithFallback(
+    supabase: SupabaseTableClient,
+    id: string,
+    payload: Record<string, unknown>,
+): Promise<void> {
+    let updatePayload = payload;
+
+    while (Object.keys(updatePayload).length > 0) {
+        const { error } = await supabase
+            .from("product_variants")
+            .update(updatePayload)
+            .eq("id", id);
+
+        if (!error) {
+            return;
+        }
+
+        const strippedPayload = stripUnsupportedTableColumn(
+            updatePayload,
+            error,
+            "product_variants",
+            OPTIONAL_PRODUCT_VARIANT_COLUMNS,
+        );
+
+        if (!strippedPayload) {
+            throw new Error(`Variant update failed: ${error instanceof Error ? error.message : String(error ?? "")}`);
+        }
+
+        updatePayload = strippedPayload;
+    }
+}
+
 // GET /api/products - Get all products or filter by query params
 export async function GET(request: NextRequest) {
     try {
@@ -253,9 +499,7 @@ export async function POST(request: NextRequest) {
         const normalizedImages = productData.images || normalizedImagesV2.map((img: Record<string, unknown>) => img.url);
 
         // 3. Ana ürünü oluştur
-        const { data: product, error: productError } = await supabase
-            .from("products")
-            .insert({
+        const product = await insertProductWithFallback(supabase as SupabaseTableClient, {
                 name: productData.name,
                 slug: productData.slug,
                 description: productData.description || null,
@@ -311,14 +555,7 @@ export async function POST(request: NextRequest) {
                 sugar: productData.sugar || 0,
                 saturated_fat: productData.saturated_fat || 0,
                 sodium: productData.sodium || 0,
-            })
-            .select()
-            .single();
-
-        if (productError) {
-            console.error("Product insert error:", productError);
-            throw productError;
-        }
+            });
 
         console.log("Product created with ID:", product.id);
         
@@ -346,14 +583,10 @@ export async function POST(request: NextRequest) {
 
             console.log("Inserting variants:", JSON.stringify(variantsToInsert, null, 2));
 
-            const { error: variantsError } = await supabase
-                .from("product_variants")
-                .insert(variantsToInsert);
-
-            if (variantsError) {
-                console.error("Variants insert error:", variantsError);
-                throw variantsError;
-            }
+            await insertProductVariantsWithFallback(
+                supabase as SupabaseTableClient,
+                variantsToInsert,
+            );
             console.log("Variants inserted successfully");
         } else {
             console.log("No variants to insert");
@@ -582,6 +815,14 @@ export async function PUT(request: NextRequest) {
 
         // Ana ürünü güncelle
         if (Object.keys(updateData).length > 0) {
+            await updateProductWithFallback(
+                supabase as SupabaseTableClient,
+                id,
+                updateData,
+            );
+        }
+
+        if (false && Object.keys(updateData).length > 0) {
             const { error: productError } = await supabase
                 .from("products")
                 .update(updateData)
@@ -719,14 +960,10 @@ export async function PUT(request: NextRequest) {
 
                 console.log("Inserting variants:", variantsToInsert);
 
-                const { error: variantsError } = await supabase
-                    .from("product_variants")
-                    .insert(variantsToInsert);
-
-                if (variantsError) {
-                    console.error("Variants insert error:", variantsError);
-                    throw new Error(`Variants insert failed: ${variantsError.message}`);
-                }
+                await insertProductVariantsWithFallback(
+                    supabase as SupabaseTableClient,
+                    variantsToInsert,
+                );
             }
         }
 

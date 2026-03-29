@@ -176,6 +176,130 @@ async function getSupabaseClient() {
   return createServerClient();
 }
 
+const OPTIONAL_CATEGORY_COLUMNS = new Set([
+  "icon",
+  "is_active",
+  "seo_title",
+  "seo_description",
+  "seo_keywords",
+  "faq",
+  "geo_data",
+]);
+
+function getMissingTableColumn(error: unknown, tableName: string): string | null {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error !== null && "message" in error
+        ? String((error as { message?: unknown }).message ?? "")
+        : String(error ?? "");
+
+  const cachePattern = new RegExp(`Could not find the '([^']+)' column of '${tableName}'`, "i");
+  const relationPattern = new RegExp(`column \"([^\"]+)\" of relation \"${tableName}\" does not exist`, "i");
+
+  return message.match(cachePattern)?.[1] ?? message.match(relationPattern)?.[1] ?? null;
+}
+
+function stripUnsupportedTableColumn<T extends Record<string, unknown>>(
+  payload: T,
+  error: unknown,
+  tableName: string,
+  allowedColumns: Set<string>,
+): T | null {
+  const missingColumn = getMissingTableColumn(error, tableName);
+  if (!missingColumn || !allowedColumns.has(missingColumn) || !(missingColumn in payload)) {
+    return null;
+  }
+
+  const nextPayload = { ...payload };
+  delete nextPayload[missingColumn];
+  return nextPayload as T;
+}
+
+async function insertCategoryWithFallback(
+  supabase: Awaited<ReturnType<typeof getSupabaseClient>>,
+  payload: Record<string, unknown>,
+) {
+  let insertPayload = payload;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("categories")
+      .insert(insertPayload)
+      .select()
+      .single();
+
+    if (!error) {
+      return data;
+    }
+
+    const strippedPayload = stripUnsupportedTableColumn(
+      insertPayload,
+      error,
+      "categories",
+      OPTIONAL_CATEGORY_COLUMNS,
+    );
+
+    if (!strippedPayload) {
+      if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "23505") {
+        throw new APIError("Category with this slug already exists", 409, "DUPLICATE_SLUG");
+      }
+
+      throw new APIError("Failed to create category", 500, "CREATE_ERROR");
+    }
+
+    insertPayload = strippedPayload;
+  }
+}
+
+async function updateCategoryWithFallback(
+  supabase: Awaited<ReturnType<typeof getSupabaseClient>>,
+  id: string,
+  payload: Record<string, unknown>,
+) {
+  let updatePayload = payload;
+
+  while (Object.keys(updatePayload).length > 0) {
+    const { data, error } = await supabase
+      .from("categories")
+      .update(updatePayload)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (!error) {
+      return data;
+    }
+
+    const strippedPayload = stripUnsupportedTableColumn(
+      updatePayload,
+      error,
+      "categories",
+      OPTIONAL_CATEGORY_COLUMNS,
+    );
+
+    if (!strippedPayload) {
+      if (typeof error === "object" && error !== null && "code" in error) {
+        const knownError = error as { code?: string };
+
+        if (knownError.code === "PGRST116") {
+          throw new APIError("Category not found", 404, "NOT_FOUND");
+        }
+
+        if (knownError.code === "23505") {
+          throw new APIError("Category with this slug already exists", 409, "DUPLICATE_SLUG");
+        }
+      }
+
+      throw new APIError("Failed to update category", 500, "UPDATE_ERROR");
+    }
+
+    updatePayload = strippedPayload;
+  }
+
+  return null;
+}
+
 // ============================================================================
 // API HANDLERS
 // ============================================================================
@@ -231,12 +355,23 @@ export async function GET(request: NextRequest) {
         throw new APIError("Invalid slug format", 400, "INVALID_SLUG");
       }
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("categories")
         .select("*")
         .eq("slug", slug)
         .eq("is_active", true)
         .single();
+
+      if (error && getMissingTableColumn(error, "categories") === "is_active") {
+        const fallback = await supabase
+          .from("categories")
+          .select("*")
+          .eq("slug", slug)
+          .single();
+
+        data = fallback.data;
+        error = fallback.error;
+      }
       
       if (error) {
         if (error.code === "PGRST116") {
@@ -253,11 +388,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all active categories
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("categories")
       .select("*")
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
+
+    if (error && getMissingTableColumn(error, "categories") === "is_active") {
+      const fallback = await supabase
+        .from("categories")
+        .select("*")
+        .order("sort_order", { ascending: true });
+
+      data = fallback.data;
+      error = fallback.error;
+    }
     
     if (error) {
       throw new APIError("Database error", 500, "DB_ERROR");
@@ -376,24 +521,50 @@ export async function PUT(request: NextRequest) {
     // Perform update
     const supabase = await getSupabaseClient();
 
-    const { data, error } = await supabase
-      .from("categories")
-      .update(updateData)
-      .eq("id", id)
-      .select()
-      .single();
+    let categoryUpdatePayload = updateData as Record<string, unknown>;
+    let data: unknown = null;
+    let error: ({ code?: string } & Error) | null = null;
+
+    while (Object.keys(categoryUpdatePayload).length > 0) {
+      const result = await supabase
+        .from("categories")
+        .update(categoryUpdatePayload)
+        .eq("id", id)
+        .select()
+        .single();
+
+      data = result.data;
+      error = result.error as (({ code?: string } & Error) | null);
+
+      if (!error) {
+        break;
+      }
+
+      const strippedPayload = stripUnsupportedTableColumn(
+        categoryUpdatePayload,
+        error,
+        "categories",
+        OPTIONAL_CATEGORY_COLUMNS,
+      );
+
+      if (!strippedPayload) {
+        console.error("Category update error:", error);
+
+        if (error.code === "PGRST116") {
+          throw new APIError("Category not found", 404, "NOT_FOUND");
+        }
+
+        if (error.code === "23505") {
+          throw new APIError("Category with this slug already exists", 409, "DUPLICATE_SLUG");
+        }
+
+        throw new APIError("Failed to update category", 500, "UPDATE_ERROR");
+      }
+
+      categoryUpdatePayload = strippedPayload;
+    }
 
     if (error) {
-      console.error("Category update error:", error);
-      
-      if (error.code === "PGRST116") {
-        throw new APIError("Category not found", 404, "NOT_FOUND");
-      }
-      
-      if (error.code === "23505") { // Unique violation
-        throw new APIError("Category with this slug already exists", 409, "DUPLICATE_SLUG");
-      }
-      
       throw new APIError("Failed to update category", 500, "UPDATE_ERROR");
     }
 
@@ -447,9 +618,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = await getSupabaseClient();
 
-    const { data: newCategory, error } = await supabase
-      .from("categories")
-      .insert({
+    const newCategory = await insertCategoryWithFallback(supabase, {
         name: sanitizeString(data.name, 200),
         slug: sanitizeString(String(data.slug).toLowerCase(), 100),
         description: data.description ? sanitizeString(String(data.description), 2000) : null,
@@ -464,19 +633,7 @@ export async function POST(request: NextRequest) {
         seo_keywords: Array.isArray(data.seo_keywords) ? data.seo_keywords : [],
         faq: Array.isArray(data.faq) ? data.faq : [],
         geo_data: data.geo_data || { keyTakeaways: [], entities: [] }
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Category creation error:", error);
-      
-      if (error.code === "23505") {
-        throw new APIError("Category with this slug already exists", 409, "DUPLICATE_SLUG");
-      }
-      
-      throw new APIError("Failed to create category", 500, "CREATE_ERROR");
-    }
+      });
 
     if (!isValidCategory(newCategory)) {
       throw new APIError("Invalid data returned from database", 500, "INVALID_RESPONSE");
@@ -510,10 +667,19 @@ export async function DELETE(request: NextRequest) {
     const supabase = await getSupabaseClient();
 
     // Soft delete (set is_active to false)
-    const { error } = await supabase
+    let { error } = await supabase
       .from("categories")
       .update({ is_active: false })
       .eq("id", id);
+
+    if (error && getMissingTableColumn(error, "categories") === "is_active") {
+      const fallback = await supabase
+        .from("categories")
+        .delete()
+        .eq("id", id);
+
+      error = fallback.error;
+    }
 
     if (error) {
       console.error("Category delete error:", error);
